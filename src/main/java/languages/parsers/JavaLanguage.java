@@ -124,7 +124,7 @@ public class JavaLanguage extends Language {
             case "!=" -> new NeOp(left, right);
             case ">=" -> new GeOp(left, right);
             case "<=" -> new LeOp(left, right);
-            default -> throw new UnsupportedOperationException();
+            default -> throw new UnsupportedOperationException(STR."Can't parse operator \{getCodePiece(operator)}");
         };
     }
 
