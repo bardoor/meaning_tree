@@ -2,6 +2,8 @@ package languages.parsers;
 import meaning_tree.*;
 import org.treesitter.*;
 
+import java.util.SplittableRandom;
+
 public class JavaLanguage extends Language {
     public MeaningTree getMeaningTree(String code) {
         TSParser parser = new TSParser();
@@ -16,13 +18,33 @@ public class JavaLanguage extends Language {
     private Node fromTSNode(TSNode node) {
         return switch (node.getType()) {
             case "program" -> fromProgramTSNode(node);
+            case "expression_statement" -> fromExpressionStatementTSNode(node);
+            case "parenthesized_expression" -> fromParenthesizedExpressionTSNode(node);
             case "binary_expression" -> fromBinaryExpressionTSNode(node);
+            case "unary_expression" -> fromUnaryExpressionTSNode(node);
             case null, default -> throw new UnsupportedOperationException();
         };
     }
 
     private Node fromProgramTSNode(TSNode node) {
         return fromTSNode(node.getChild(0));
+    }
+
+    private Node fromExpressionStatementTSNode(TSNode node) {
+        return fromTSNode(node.getChild(0));
+    }
+
+    private Node fromParenthesizedExpressionTSNode(TSNode node) {
+        return fromTSNode(node.getChild(0));
+    }
+
+    private Node fromUnaryExpressionTSNode(TSNode node) {
+        Expression argument = (Expression) fromTSNode(node.getChildByFieldName("operand"));
+        TSNode operation = node.getChildByFieldName("operator");
+        return switch (getCodePiece(operation)) {
+            case "!" -> new NotOp(argument);
+            case null, default -> throw new UnsupportedOperationException();
+        };
     }
 
     private Node fromBinaryExpressionTSNode(TSNode node) {
@@ -44,5 +66,6 @@ public class JavaLanguage extends Language {
             default -> throw new UnsupportedOperationException();
         };
     }
+
 
 }
