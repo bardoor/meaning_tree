@@ -25,7 +25,13 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromTSNode(TSNode node) {
-        return switch (node.getType()) {
+        String nodeType;
+        try {
+            nodeType = node.getType();
+        } catch (TSException _) {
+            return null;
+        }
+        return switch (nodeType) {
             case "program" -> fromProgramTSNode(node);
             case "block" -> fromBlockTSNode(node);
             case "statement" -> fromStatementTSNode(node);
@@ -47,7 +53,7 @@ public class JavaLanguage extends Language {
 
     private Node fromBlockTSNode(TSNode node) {
         CompoundStatement compoundStatement = new CompoundStatement();
-        for (int i = 0; i < node.getChildCount(); i++) {
+        for (int i = 1; i < node.getChildCount() - 1; i++) {
             Node child = fromTSNode(node.getChild(i));
             compoundStatement.add(child);
         }
@@ -66,8 +72,13 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromConditionTSNode(TSNode node) {
-        // Тут что-то сложнее должно быдь...
-        return fromTSNode(node.getChildByFieldName("binary_expression"));
+        for (int i = 0; i < node.getChildCount(); i++) {
+            System.out.println(node.getChild(i).getType());
+        }
+        // TODO: Что-то сделать с этим...
+        // У condition дети: '(', 'binary_expression', ')'
+        // По имени binary_expression почему-то получить не удалось
+        return fromTSNode(node.getChild(1));
     }
 
     private Node fromExpressionStatementTSNode(TSNode node) {
