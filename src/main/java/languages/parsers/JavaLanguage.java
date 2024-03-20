@@ -1,4 +1,5 @@
 package languages.parsers;
+import jdk.jshell.spi.ExecutionControl;
 import meaning_tree.*;
 import org.treesitter.*;
 
@@ -16,9 +17,14 @@ public class JavaLanguage {
     }
 
     private Node fromTSNode(TSNode node) {
-        return null;
+        return switch (node.getType()) {
+            case "program" -> fromProgramTSNode(node);
+            case null, default -> throw new RuntimeException("Not implemented yet!");
+        };
     }
 
-
+    private Node fromProgramTSNode(TSNode node) {
+        return fromTSNode(node.getChild(0));
+    }
 
 }
