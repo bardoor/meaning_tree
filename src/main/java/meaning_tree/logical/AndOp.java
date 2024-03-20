@@ -1,4 +1,7 @@
-package meaning_tree;
+package meaning_tree.logical;
+
+import meaning_tree.BinaryExpression;
+import meaning_tree.Expression;
 
 public class AndOp extends BinaryExpression {
     public AndOp(Expression left, Expression right) {
