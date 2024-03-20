@@ -4,7 +4,7 @@ import meaning_tree.MeaningTree;
 import org.treesitter.TSNode;
 
 abstract public class Language {
-    protected final String _code = "";
+    protected String _code = "";
 
     public abstract MeaningTree getMeaningTree(String code);
 
