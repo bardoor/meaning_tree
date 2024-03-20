@@ -3,9 +3,7 @@ import jdk.jshell.spi.ExecutionControl;
 import meaning_tree.*;
 import org.treesitter.*;
 
-public class JavaLanguage {
-    private final String _code = "";
-
+public class JavaLanguage extends Language {
     public MeaningTree getMeaningTree(String code) {
         TSParser parser = new TSParser();
         TSLanguage javaLanguage = new TreeSitterJava();
@@ -26,5 +24,6 @@ public class JavaLanguage {
     private Node fromProgramTSNode(TSNode node) {
         return fromTSNode(node.getChild(0));
     }
+
 
 }
