@@ -1,5 +1,4 @@
 package languages.parsers;
-import jdk.jshell.spi.ExecutionControl;
 import meaning_tree.*;
 import org.treesitter.*;
 
@@ -17,7 +16,8 @@ public class JavaLanguage extends Language {
     private Node fromTSNode(TSNode node) {
         return switch (node.getType()) {
             case "program" -> fromProgramTSNode(node);
-            case null, default -> throw new RuntimeException("Not implemented yet!");
+            case "binary_expression" -> fromBinaryExpressionTSNode(node);
+            case null, default -> throw new UnsupportedOperationException();
         };
     }
 
@@ -25,5 +25,24 @@ public class JavaLanguage extends Language {
         return fromTSNode(node.getChild(0));
     }
 
+    private Node fromBinaryExpressionTSNode(TSNode node) {
+        Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
+        Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
+        TSNode operator = node.getChildByFieldName("operator");
+
+        return switch (getCodePiece(operator)) {
+            case "+" -> new AddOp(left, right);
+            case "-" -> new SubOp(left, right);
+            case "*" -> new MulOp(left, right);
+            case "/" -> new DivOp(left, right);
+            case "<" -> new LtOp(left, right);
+            case ">" -> new GtOp(left, right);
+            case "==" -> new EqOp(left, right);
+            case "!=" -> new NeOp(left, right);
+            case ">=" -> new GeOp(left, right);
+            case "<=" -> new LeOp(left, right);
+            default -> throw new UnsupportedOperationException();
+        };
+    }
 
 }
