@@ -1,8 +1,10 @@
 package languages.parsers;
 import meaning_tree.*;
+import meaning_tree.math.*;
+import meaning_tree.literals.*;
+import meaning_tree.logical.*;
+import meaning_tree.comparasion.*;
 import org.treesitter.*;
-
-import java.util.SplittableRandom;
 
 public class JavaLanguage extends Language {
     public MeaningTree getMeaningTree(String code) {
@@ -18,10 +20,13 @@ public class JavaLanguage extends Language {
     private Node fromTSNode(TSNode node) {
         return switch (node.getType()) {
             case "program" -> fromProgramTSNode(node);
+            case "block" -> fromBlockTSNode(node);
             case "expression_statement" -> fromExpressionStatementTSNode(node);
             case "parenthesized_expression" -> fromParenthesizedExpressionTSNode(node);
             case "binary_expression" -> fromBinaryExpressionTSNode(node);
             case "unary_expression" -> fromUnaryExpressionTSNode(node);
+            case "decimal_integer_literal" -> fromIntegerLiteralTSNode(node);
+            case "decimal_floating_point_literal" -> fromFloatLiteralTSNode(node);
             case null, default -> throw new UnsupportedOperationException();
         };
     }
@@ -30,12 +35,31 @@ public class JavaLanguage extends Language {
         return fromTSNode(node.getChild(0));
     }
 
+    private Node fromBlockTSNode(TSNode node) {
+        CompoundStatement compoundStatement = new CompoundStatement();
+        for (int i = 0; i < node.getChildCount(); i++) {
+            Node child = fromTSNode(node.getChild(i));
+            compoundStatement.add(child);
+        }
+        return compoundStatement;
+    }
+
     private Node fromExpressionStatementTSNode(TSNode node) {
         return fromTSNode(node.getChild(0));
     }
 
     private Node fromParenthesizedExpressionTSNode(TSNode node) {
         return fromTSNode(node.getChild(0));
+    }
+
+    private Node fromIntegerLiteralTSNode(TSNode node) {
+        String value = getCodePiece(node);
+        return new IntegerLiteral(value);
+    }
+
+    private Node fromFloatLiteralTSNode(TSNode node) {
+        String value = getCodePiece(node);
+        return new FloatLiteral(value);
     }
 
     private Node fromUnaryExpressionTSNode(TSNode node) {
