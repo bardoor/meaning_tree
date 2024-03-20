@@ -1,4 +1,7 @@
-package meaning_tree;
+package meaning_tree.logical;
+
+import meaning_tree.Expression;
+import meaning_tree.UnaryExpression;
 
 public class NotOp extends UnaryExpression {
     public NotOp(Expression argument) {

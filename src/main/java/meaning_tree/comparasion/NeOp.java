@@ -1,4 +1,7 @@
-package meaning_tree;
+package meaning_tree.comparasion;
+
+import meaning_tree.BinaryExpression;
+import meaning_tree.Expression;
 
 public class NeOp extends BinaryExpression {
     public NeOp(Expression left, Expression right) {

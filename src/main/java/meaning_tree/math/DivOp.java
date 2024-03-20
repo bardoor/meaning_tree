@@ -1,4 +1,7 @@
-package meaning_tree;
+package meaning_tree.math;
+
+import meaning_tree.BinaryExpression;
+import meaning_tree.Expression;
 
 public class DivOp extends BinaryExpression {
     public DivOp(Expression left, Expression right) {

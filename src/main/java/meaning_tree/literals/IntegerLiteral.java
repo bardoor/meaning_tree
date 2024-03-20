@@ -1,10 +1,10 @@
-package meaning_tree;
+package meaning_tree.literals;
 
-public class FloatLiteral extends NumericLiteral {
-    private final double _value;
+public class IntegerLiteral extends NumericLiteral {
+    private final int _value;
 
-    public FloatLiteral(String s) {
-        _value = Double.parseDouble(s);
+    public IntegerLiteral(String s) {
+        _value = Integer.parseInt(s);
     }
 
     @Override
