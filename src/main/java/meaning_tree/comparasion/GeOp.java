@@ -1,4 +1,4 @@
-package meaning_tree.logical;
+package meaning_tree.comparasion;
 
 import meaning_tree.BinaryExpression;
 import meaning_tree.Expression;
