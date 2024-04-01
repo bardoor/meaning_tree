@@ -9,11 +9,11 @@ public class AssignmentExpression extends Expression {
         _rvalue = value;
     }
 
-    public Identifier getLeft() {
+    public Identifier getLValue() {
         return _lvalue;
     }
 
-    public Expression getRight() {
+    public Expression getRValue() {
         return _rvalue;
     }
 
