@@ -3,6 +3,7 @@ import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.statements.ConditionStatement;
 import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -75,7 +76,7 @@ public class JavaLanguage extends Language {
     private Node fromIfStatementTSNode(TSNode node) {
         Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
         CompoundStatement consequence = (CompoundStatement) fromTSNode(node.getChildByFieldName("consequence"));
-        CompoundStatement alternative = (CompoundStatement) fromTSNode(node.getChildByFieldName("alternative"));
+        ConditionStatement alternative = (ConditionStatement) fromTSNode(node.getChildByFieldName("alternative"));
         return new IfStatement(condition, consequence, alternative);
     }
 
