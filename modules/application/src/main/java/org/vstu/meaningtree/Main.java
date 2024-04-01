@@ -1,5 +1,6 @@
 package org.vstu.meaningtree;
 import org.vstu.meaningtree.languages.parsers.JavaLanguage;
+import org.vstu.meaningtree.languages.viewers.JavaViewer;
 
 import java.io.IOException;
 
