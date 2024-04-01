@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages.parsers;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.statements.ConditionStatement;
@@ -95,7 +96,8 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromParenthesizedExpressionTSNode(TSNode node) {
-        return fromTSNode(node.getChild(0));
+        Expression expr = (Expression) fromTSNode(node.getChild(1));
+        return new ParenthesizedExpression(expr);
     }
 
     private Node fromIntegerLiteralTSNode(TSNode node) {
