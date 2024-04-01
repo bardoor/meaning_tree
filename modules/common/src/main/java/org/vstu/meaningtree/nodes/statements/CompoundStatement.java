@@ -23,8 +23,8 @@ public class CompoundStatement extends Node implements Iterable<Node> {
     public String generateDot() {
         StringBuilder builder = new StringBuilder();
         for (Node node : _nodes) {
-            builder.append(String.format("%s -> %s\n", _id, node.getId()));
             builder.append(node.generateDot());
+            builder.append(String.format("%s -- %s;\n", _id, node.getId()));
         }
         return builder.toString();
     }
