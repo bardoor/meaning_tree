@@ -7,6 +7,6 @@ abstract public class NumericLiteral extends Literal {
 
     @Override
     public String generateDot() {
-        return String.format("%s [label=\"%s\"", _id, getClass().getSimpleName());
+        return String.format("%s [label=\"%s\"", _id, getValue());
     }
 }
