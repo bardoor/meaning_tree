@@ -3,8 +3,8 @@ package org.vstu.meaningtree.nodes.logical;
 import org.vstu.meaningtree.nodes.BinaryExpression;
 import org.vstu.meaningtree.nodes.Expression;
 
-public class OrOp extends BinaryExpression {
-    public OrOp(Expression left, Expression right) {
+public class LongCircuitAndOp extends BinaryExpression {
+    public LongCircuitAndOp(Expression left, Expression right) {
         super(left, right);
     }
 
