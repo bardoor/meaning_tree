@@ -4,40 +4,34 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.vstu.meaningtree</groupId>
-    <artifactId>meaningtree-modules</artifactId>
+    <artifactId>python-language</artifactId>
     <version>1.0-SNAPSHOT</version>
-
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>modules/application</module>
-        <module>modules/common</module>
-        <module>modules/languages/java</module>
-        <module>modules/languages/python</module>
-    </modules>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
     <dependencies>
-        <!-- add tree sitter -->
+        <dependency>
+            <groupId>org.vstu.meaningtree</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- add java parser -->
         <dependency>
             <groupId>io.github.bonede</groupId>
-            <artifactId>tree-sitter</artifactId>
-            <version>0.22.2</version>
+            <artifactId>tree-sitter-python</artifactId>
+            <version>0.20.4</version>
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>repo1</id>
-            <url>https://repo1.maven.org/maven2/</url>
-        </repository>
-    </repositories>
-
-
+    <parent>
+        <artifactId>meaningtree-modules</artifactId>
+        <groupId>org.vstu.meaningtree</groupId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+    
 </project>
