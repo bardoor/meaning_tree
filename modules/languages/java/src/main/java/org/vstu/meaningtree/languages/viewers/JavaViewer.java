@@ -16,10 +16,18 @@ import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
 
 public class JavaViewer extends Viewer {
+
+    private static final String _INDENTATION = "    ";
+    private int _indentLevel;
+
+    public JavaViewer() {
+        _indentLevel = 0;
+    }
 
     @Override
     public String toString(Node node) {
@@ -46,6 +54,7 @@ public class JavaViewer extends Viewer {
             case AssignmentStatement stmt -> toString(stmt);
             case VariableDeclaration stmt -> toString(stmt);
             case CompoundStatement stmt -> toString(stmt);
+            case ExpressionStatement stmt -> toString(stmt);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -158,13 +167,61 @@ public class JavaViewer extends Viewer {
         return String.format("%s %s;", toString(stmt.getType()), toString(stmt.getName()));
     }
 
+    private void increaseIndentLevel() {
+        _indentLevel++;
+    }
+
+    private void decreaseIndentLevel() {
+        _indentLevel--;
+
+        if (_indentLevel < 0) {
+            throw new RuntimeException("Indentation level can't be less than zero");
+        }
+    }
+
+    private String indent(String s) {
+        if (_indentLevel == 0) {
+            return s;
+        }
+        return _INDENTATION.repeat(Math.max(0, _indentLevel)) + s;
+    }
+
     public String toString(CompoundStatement stmt) {
         StringBuilder builder = new StringBuilder();
-        builder.append("{\n");
+        builder.append(indent("{\n"));
+        increaseIndentLevel();
         for (Node node : stmt) {
-            builder.append(String.format("%s\n", toString(node)));
+            String s;
+            /*
+                Костыль: перед блоком всегда добавляется индетация, чтобы не дублировать
+                добавление в случае блока внутри блока, нужно проверять тип узла...
+                Пример:
+                    Это "{10 + 231; {124 + 143;} 31 + 341;}" транслируется в
+
+                    {
+                        10 + 231;
+                            {
+                            124 + 143;
+                        }
+                        31 + 341;
+                    }
+
+                    без проверки ниже...
+             */
+            if (node instanceof CompoundStatement) {
+                s = String.format("%s\n", toString(node));
+            }
+            else {
+                s = indent(String.format("%s\n", toString(node)));
+            }
+            builder.append(s);
         }
-        builder.append("}\n");
+        decreaseIndentLevel();
+        builder.append(indent("}"));
         return builder.toString();
+    }
+
+    public String toString(ExpressionStatement stmt) {
+        return String.format("%s;", toString(stmt.getExpression()));
     }
 }

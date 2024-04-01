@@ -5,6 +5,7 @@ import org.vstu.meaningtree.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.statements.ConditionStatement;
+import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -92,7 +93,8 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromExpressionStatementTSNode(TSNode node) {
-        return fromTSNode(node.getChild(0));
+        Expression expr = (Expression) fromTSNode(node.getChild(0));
+        return new ExpressionStatement(expr);
     }
 
     private Node fromParenthesizedExpressionTSNode(TSNode node) {
