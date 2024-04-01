@@ -7,9 +7,4 @@ public class FloorDivOp extends BinaryExpression {
     public FloorDivOp(Expression left, Expression right) {
         super(left, right);
     }
-
-    @Override
-    public String generateDot() {
-        throw new UnsupportedOperationException();
-    }
 }
