@@ -29,12 +29,12 @@ public class IfStatement extends ConditionStatement {
     @Override
     public String generateDot() {
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("%s [label=\"%s\"]", _id, getClass()));
-        builder.append(String.format("%s -> %s", _id, _condition.getId()));
+        builder.append(String.format("%s [label=\"%s\"]\n", _id, getClass().getSimpleName()));
+        builder.append(String.format("%s -> %s\n", _id, _condition.getId()));
         builder.append(_condition.generateDot());
 
         if (_elseBranch.isPresent()) {
-            builder.append(String.format("%s -> %s", _id, _elseBranch.get().getId()));
+            builder.append(String.format("%s -> %s\n", _id, _elseBranch.get().getId()));
             builder.append(_elseBranch.get().generateDot());
         }
 

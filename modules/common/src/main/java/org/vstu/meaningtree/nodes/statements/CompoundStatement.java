@@ -21,7 +21,12 @@ public class CompoundStatement extends Node implements Iterable<Node> {
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        StringBuilder builder = new StringBuilder();
+        for (Node node : _nodes) {
+            builder.append(String.format("%s -> %s\n", _id, node.getId()));
+            builder.append(node.generateDot());
+        }
+        return builder.toString();
     }
 
     @Override
