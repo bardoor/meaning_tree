@@ -7,9 +7,4 @@ public class UnaryMinusOp extends UnaryExpression {
     public UnaryMinusOp(Expression argument) {
         super(argument);
     }
-
-    @Override
-    public String generateDot() {
-        throw new UnsupportedOperationException();
-    }
 }

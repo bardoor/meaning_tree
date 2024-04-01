@@ -8,9 +8,4 @@ public class PrefixDecrementOp extends UnaryExpression {
     public PrefixDecrementOp(Expression value) {
         super(value);
     }
-
-    @Override
-    public String generateDot() {
-        throw new UnsupportedOperationException();
-    }
 }
