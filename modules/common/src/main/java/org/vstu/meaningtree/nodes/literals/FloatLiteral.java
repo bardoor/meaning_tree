@@ -11,9 +11,4 @@ public class FloatLiteral extends NumericLiteral {
     public Number getValue() {
         return _value;
     }
-
-    @Override
-    public String generateDot() {
-        throw new UnsupportedOperationException();
-    }
 }
