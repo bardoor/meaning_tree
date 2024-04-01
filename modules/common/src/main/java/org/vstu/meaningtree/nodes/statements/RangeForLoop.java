@@ -35,6 +35,8 @@ public class RangeForLoop extends Statement {
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        return String.format("%s [label=\"%s(start=%d, end=%d, step=%d)]\"\n", _id, getClass().getSimpleName(), _start, _end, _step)
+                + String.format("%s -> %s\n", _id, _body.getId())
+                + _body.generateDot();
     }
 }

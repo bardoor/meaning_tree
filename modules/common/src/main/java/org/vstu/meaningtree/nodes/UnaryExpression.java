@@ -13,7 +13,7 @@ abstract public class UnaryExpression extends Expression {
 
     @Override
     public String generateDot() {
-        return String.format("%s [label=\"%s\"]\n", _id, getClass())
+        return String.format("%s [label=\"%s\"]\n", _id, getClass().getSimpleName())
                 + String.format("%s -> %s\n", _id, _argument.getId())
                 + _argument.generateDot();
     }
