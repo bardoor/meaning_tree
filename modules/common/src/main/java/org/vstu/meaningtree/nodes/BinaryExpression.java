@@ -16,4 +16,13 @@ abstract public class BinaryExpression extends Expression {
     public Expression getRight() {
         return _right;
     }
+
+    @Override
+    public String generateDot() {
+        return String.format("%s [label=\"%s\"]\n", _id, getClass())
+                + String.format("%s -> %s\n", _id, _left.getId())
+                + String.format("%s -> %s\n", _id, _right.getId())
+                + _left.generateDot()
+                + _right.generateDot();
+    }
 }
