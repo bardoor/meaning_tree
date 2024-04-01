@@ -8,6 +8,9 @@ import guru.nidi.graphviz.parse.Parser;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.vstu.meaningtree.nodes.Node;
 
@@ -25,7 +28,7 @@ public class MeaningTree {
     }
 
     public String generateDot() {
-        return "graph MeaningTree {\ndpi=300;\n" + _rootNode.generateDot() + "}";
+        return normalizeDot("graph MeaningTree {\ndpi=200;\n" + _rootNode.generateDot() + "}");
     }
 
     public void show() throws IOException {
@@ -42,6 +45,26 @@ public class MeaningTree {
         frame.getContentPane().add(label, BorderLayout.CENTER);
         frame.pack();
         frame.setVisible(true);
+    }
+
+    private static String normalizeDot(String dot) {
+        String[] lines = dot.split("\n");
+
+        StringBuilder connections = new StringBuilder();
+        StringBuilder result = new StringBuilder();
+
+        for (String line : lines) {
+            if (line.contains("--") || line.equals("}")) {
+                connections.append(line).append("\n");
+            }
+            else {
+                result.append(line).append("\n");
+            }
+        }
+
+        result.append(connections);
+
+        return result.toString();
     }
 
 }

@@ -15,7 +15,7 @@ public abstract class ConditionStatement extends Statement {
 
     @Override
     public String generateDot() {
-        return String.format("%s [label=\"%s\";\n", _id, _id.getClass().getSimpleName())
+        return String.format("%s [label=\"%s\"];\n", _id, _id.getClass().getSimpleName())
                 + _body.generateDot()
                 + String.format("%s -- %s;\n", _id, _body.getId());
     }
