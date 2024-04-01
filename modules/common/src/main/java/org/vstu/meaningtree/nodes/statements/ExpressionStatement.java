@@ -17,6 +17,8 @@ public class ExpressionStatement extends Statement {
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        return String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName())
+                + String.format("%s -- %s;\n", _id, _expr.getId())
+                + _expr.generateDot();
     }
 }
