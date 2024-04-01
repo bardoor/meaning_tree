@@ -1,11 +1,13 @@
 package org.vstu.meaningtree.nodes;
 
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 abstract public class Node {
-    protected String _id = UUID.randomUUID().toString();
+    protected static AtomicInteger _id_generator = new AtomicInteger();
+    protected Integer _id = _id_generator.incrementAndGet();
     public abstract String generateDot();
-    public String getId() {
+
+    public Integer getId() {
         return _id;
     }
 }

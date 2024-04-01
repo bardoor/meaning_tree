@@ -19,10 +19,10 @@ abstract public class BinaryExpression extends Expression {
 
     @Override
     public String generateDot() {
-        return String.format("%s [label=\"%s\"]\n", _id, getClass().getSimpleName())
-                + String.format("%s -> %s\n", _id, _left.getId())
-                + String.format("%s -> %s\n", _id, _right.getId())
+        return String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName())
                 + _left.generateDot()
-                + _right.generateDot();
+                + _right.generateDot()
+                + String.format("%s -- %s;\n", _id, _left.getId())
+                + String.format("%s -- %s;\n", _id, _right.getId());
     }
 }

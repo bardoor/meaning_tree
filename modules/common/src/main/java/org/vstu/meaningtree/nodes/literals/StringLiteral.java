@@ -15,6 +15,6 @@ public class StringLiteral extends Literal {
 
     @Override
     public String generateDot() {
-        return String.format("%s [label=\"%s\"]\n", _id, value);
+        return String.format("%s [label=\"%s\"];\n", _id, value);
     }
 }
