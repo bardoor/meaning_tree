@@ -8,8 +8,8 @@ import java.util.List;
 public class CompoundComparison extends Expression {
     private final List<BinaryComparison> comparisons;
 
-    public CompoundComparison(List<BinaryComparison> comparisons) {
-        this.comparisons = comparisons;
+    public CompoundComparison(BinaryComparison ... comparisons) {
+        this.comparisons = List.of(comparisons);
     }
 
     @Override
