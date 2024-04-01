@@ -7,9 +7,4 @@ public class PostfixDecrementOp extends UnaryExpression {
     public PostfixDecrementOp(Expression argument) {
         super(argument);
     }
-
-    @Override
-    public String generateDot() {
-        throw new UnsupportedOperationException();
-    }
 }
