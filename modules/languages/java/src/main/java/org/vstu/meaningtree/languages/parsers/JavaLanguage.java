@@ -1,12 +1,11 @@
 package org.vstu.meaningtree.languages.parsers;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.languages.parsers.Language;
-import org.vstu.meaningtree.nodes.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.IfStatement;
+import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.Node;
-import org.vstu.meaningtree.nodes.comparasion.*;
+import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.logical.NotOp;
@@ -130,7 +129,7 @@ public class JavaLanguage extends Language {
             case "<" -> new LtOp(left, right);
             case ">" -> new GtOp(left, right);
             case "==" -> new EqOp(left, right);
-            case "!=" -> new NeOp(left, right);
+            case "!=" -> new NotEqOp(left, right);
             case ">=" -> new GeOp(left, right);
             case "<=" -> new LeOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));

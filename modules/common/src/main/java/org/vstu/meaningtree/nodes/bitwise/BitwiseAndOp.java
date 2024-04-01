@@ -1,10 +1,10 @@
-package org.vstu.meaningtree.nodes.comparasion;
+package org.vstu.meaningtree.nodes.bitwise;
 
 import org.vstu.meaningtree.nodes.BinaryExpression;
 import org.vstu.meaningtree.nodes.Expression;
 
-public class LtOp extends BinaryExpression {
-    public LtOp(Expression left, Expression right) {
+public class BitwiseAndOp extends BinaryExpression {
+    public BitwiseAndOp(Expression left, Expression right) {
         super(left, right);
     }
 

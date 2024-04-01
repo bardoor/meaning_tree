@@ -1,4 +1,6 @@
-package org.vstu.meaningtree.nodes;
+package org.vstu.meaningtree.nodes.statements;
+
+import org.vstu.meaningtree.nodes.Statement;
 
 public class RangeForLoop extends Statement {
     private final int _start;

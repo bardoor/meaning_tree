@@ -1,19 +1,20 @@
-package org.vstu.meaningtree.nodes;
+package org.vstu.meaningtree.nodes.statements;
+
+import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.Optional;
 
-public class IfStatement extends Statement {
+public class IfStatement extends ConditionStatement {
     private final Expression _condition;
-    private final CompoundStatement _thenBranch;
-    private final Optional<CompoundStatement> _elseBranch;
+    private final Optional<ConditionStatement> _elseBranch;
 
     public IfStatement(Expression condition, CompoundStatement thenBranch) {
         this(condition, thenBranch, null);
     }
 
-    public IfStatement(Expression condition, CompoundStatement thenBranch, CompoundStatement elseBranch) {
+    public IfStatement(Expression condition, CompoundStatement thenBranch, ConditionStatement elseBranch) {
+        super(thenBranch);
         _condition = condition;
-        _thenBranch = thenBranch;
         _elseBranch = Optional.ofNullable(elseBranch);
     }
 
@@ -21,11 +22,7 @@ public class IfStatement extends Statement {
         return _condition;
     }
 
-    public CompoundStatement getThenBranch() {
-        return _thenBranch;
-    }
-
-    public Optional<CompoundStatement> getElseBranch() {
+    public Optional<ConditionStatement> getElseBranch() {
         return _elseBranch;
     }
 

@@ -1,4 +1,6 @@
-package org.vstu.meaningtree.nodes;
+package org.vstu.meaningtree.nodes.statements;
+
+import org.vstu.meaningtree.nodes.Node;
 
 import java.util.ArrayList;
 import java.util.Arrays;

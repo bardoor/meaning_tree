@@ -1,10 +1,10 @@
-package org.vstu.meaningtree.nodes.comparasion;
+package org.vstu.meaningtree.nodes.unary;
 
 import org.vstu.meaningtree.nodes.BinaryExpression;
 import org.vstu.meaningtree.nodes.Expression;
 
-public class GeOp extends BinaryExpression {
-    public GeOp(Expression left, Expression right) {
+public class PrefixDecrementOp extends BinaryExpression {
+    public PrefixDecrementOp(Expression left, Expression right) {
         super(left, right);
     }
 

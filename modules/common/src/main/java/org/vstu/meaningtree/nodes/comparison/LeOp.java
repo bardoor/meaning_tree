@@ -1,10 +1,10 @@
-package org.vstu.meaningtree.nodes.comparasion;
+package org.vstu.meaningtree.nodes.comparison;
 
 import org.vstu.meaningtree.nodes.BinaryExpression;
 import org.vstu.meaningtree.nodes.Expression;
 
-public class NeOp extends BinaryExpression {
-    public NeOp(Expression left, Expression right) {
+public class LeOp extends BinaryExpression implements BinaryComparison {
+    public LeOp(Expression left, Expression right) {
         super(left, right);
     }
 
