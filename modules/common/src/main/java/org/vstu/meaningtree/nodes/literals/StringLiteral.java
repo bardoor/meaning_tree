@@ -15,6 +15,6 @@ public class StringLiteral extends Literal {
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        return value + "\n";
     }
 }
