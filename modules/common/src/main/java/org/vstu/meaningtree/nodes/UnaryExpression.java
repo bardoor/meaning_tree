@@ -10,4 +10,11 @@ abstract public class UnaryExpression extends Expression {
     public Expression getArgument() {
         return _argument;
     }
+
+    @Override
+    public String generateDot() {
+        return String.format("%s [label=\"%s\"]\n", _id, getClass())
+                + String.format("%s -> %s\n", _id, _argument.getId())
+                + _argument.generateDot();
+    }
 }
