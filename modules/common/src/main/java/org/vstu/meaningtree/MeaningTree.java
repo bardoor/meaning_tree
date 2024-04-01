@@ -8,9 +8,7 @@ import guru.nidi.graphviz.parse.Parser;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 import org.vstu.meaningtree.nodes.Node;
 
