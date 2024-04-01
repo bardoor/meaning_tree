@@ -1,7 +1,7 @@
 package org.vstu.meaningtree.nodes.statements;
 
 public class ElseStatement extends ConditionStatement {
-    protected ElseStatement(CompoundStatement thenBranch) {
+    public ElseStatement(CompoundStatement thenBranch) {
         super(thenBranch);
     }
 
