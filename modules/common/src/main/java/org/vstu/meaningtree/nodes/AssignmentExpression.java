@@ -1,12 +1,20 @@
 package org.vstu.meaningtree.nodes;
 
 public class AssignmentExpression extends Expression {
-    private final Identifier lvalue;
-    private final Expression rvalue;
+    private final Identifier _lvalue;
+    private final Expression _rvalue;
 
     public AssignmentExpression(Identifier id, Expression value) {
-        this.lvalue = id;
-        this.rvalue = value;
+        _lvalue = id;
+        _rvalue = value;
+    }
+
+    public Identifier getLeft() {
+        return _lvalue;
+    }
+
+    public Expression getRight() {
+        return _rvalue;
     }
 
     @Override
