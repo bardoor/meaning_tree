@@ -162,11 +162,15 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(VariableDefinition stmt) {
+        //TODO: fix for declaration and definition
+        /*
         if (stmt.hasInitializer()) {
             return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
         }
 
         return String.format("%s %s;", toString(stmt.getType()), toString(stmt.getName()));
+         */
+        return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
     }
 
     private void increaseIndentLevel() {

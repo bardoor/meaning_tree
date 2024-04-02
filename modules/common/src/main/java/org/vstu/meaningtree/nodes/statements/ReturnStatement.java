@@ -24,7 +24,7 @@ public class ReturnStatement extends Statement {
         return _expr.get();
     }
 
-    private boolean hasExpression() {
+    public boolean hasExpression() {
         return _expr.isPresent();
     }
 }

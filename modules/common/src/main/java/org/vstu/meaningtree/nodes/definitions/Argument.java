@@ -31,12 +31,12 @@ public class Argument {
 
     public Expression getInitialExpression() {
         if (!hasInitialExpression()) {
-            throw new RuntimeException("Initial expression isn't present")
+            throw new RuntimeException("Initial expression isn't present");
         }
         return _initial.get();
     }
 
-    private boolean hasInitialExpression() {
+    public boolean hasInitialExpression() {
         return _initial.isPresent();
     }
 
