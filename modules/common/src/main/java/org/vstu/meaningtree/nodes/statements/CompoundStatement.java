@@ -1,13 +1,14 @@
 package org.vstu.meaningtree.nodes.statements;
 
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.Statement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class CompoundStatement extends Node implements Iterable<Node> {
+public class CompoundStatement extends Statement implements Iterable<Node> {
     private final List<Node> _nodes;
 
     public CompoundStatement(Node... nodes) {

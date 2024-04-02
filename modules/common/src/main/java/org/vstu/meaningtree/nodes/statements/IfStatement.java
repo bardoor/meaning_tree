@@ -1,28 +1,24 @@
 package org.vstu.meaningtree.nodes.statements;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Statement;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
-public class IfStatement extends ConditionStatement {
-    private final Expression _condition;
-    private final Optional<CompoundStatement> _elseBranch;
+public class IfStatement extends Statement {
+    private final List<ConditionBranch> _branches = new ArrayList<>();
+    private final Optional<Statement> _elseBranch;
 
-    public IfStatement(Expression condition, CompoundStatement thenBranch) {
-        this(condition, thenBranch, null);
-    }
 
-    public IfStatement(Expression condition, CompoundStatement thenBranch, CompoundStatement elseBranch) {
-        super(thenBranch);
-        _condition = condition;
+    public IfStatement(Expression condition, Statement thenBranch, Statement elseBranch) {
+        super();
         _elseBranch = Optional.ofNullable(elseBranch);
+        _branches.add(new ConditionBranch(condition, thenBranch));
     }
 
-    public Expression getCondition() {
-        return _condition;
-    }
-
-    public CompoundStatement getElseBranch() {
+    public Statement getElseBranch() {
         if (!hasElseBranch()) {
             throw new RuntimeException("If statement does not have else branch");
         }
@@ -36,12 +32,16 @@ public class IfStatement extends ConditionStatement {
 
     @Override
     public String generateDot() {
+        //TODO: fix for new structure
+        throw new UnsupportedOperationException();
+        /*
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
-        builder.append(_body.generateDot());
-        builder.append(_condition.generateDot());
-        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _body.getId(), "body"));
-        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _condition.getId(), "condition"));
+
+        // builder.append(_body.generateDot());
+        // builder.append(_condition.generateDot());
+        // builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _body.getId(), "body"));
+        // builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _condition.getId(), "condition"));
 
         if (_elseBranch.isPresent()) {
             builder.append(_elseBranch.get().generateDot());
@@ -49,5 +49,6 @@ public class IfStatement extends ConditionStatement {
         }
 
         return builder.toString();
+        */
     }
 }
