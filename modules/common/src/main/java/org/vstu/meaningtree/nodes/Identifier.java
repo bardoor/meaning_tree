@@ -13,6 +13,6 @@ public class Identifier extends Expression {
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        return String.format("%s [label=\"%s\"];\n", _id, getName());
     }
 }
