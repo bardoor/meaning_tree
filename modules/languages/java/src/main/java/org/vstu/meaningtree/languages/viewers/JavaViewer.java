@@ -6,6 +6,7 @@ import org.vstu.meaningtree.VariableDeclaration;
 import org.vstu.meaningtree.languages.viewers.Viewer;
 import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.BinaryExpression;
+import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
@@ -17,6 +18,7 @@ import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
 
@@ -55,6 +57,7 @@ public class JavaViewer extends Viewer {
             case VariableDeclaration stmt -> toString(stmt);
             case CompoundStatement stmt -> toString(stmt);
             case ExpressionStatement stmt -> toString(stmt);
+            case Identifier expr -> toString(expr);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -223,5 +226,13 @@ public class JavaViewer extends Viewer {
 
     public String toString(ExpressionStatement stmt) {
         return String.format("%s;", toString(stmt.getExpression()));
+    }
+
+    public String toString(Identifier identifier) {
+        return identifier.getName();
+    }
+
+    public String toString(IfStatement stmt) {
+        
     }
 }
