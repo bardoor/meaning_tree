@@ -26,23 +26,7 @@ public class MeaningTree {
     }
 
     public String generateDot() {
-        return normalizeDot("graph MeaningTree {\ndpi=125;\n" + _rootNode.generateDot() + "}");
-    }
-
-    public void show() throws IOException {
-        String dotString = generateDot();
-
-        MutableGraph tree = new Parser().read(dotString);
-
-        File outputImage = new File("tree.png");
-        Graphviz.fromGraph(tree).render(Format.PNG).toFile(outputImage);
-
-        JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        JLabel label = new JLabel(new ImageIcon(outputImage.getAbsolutePath()));
-        frame.getContentPane().add(label, BorderLayout.CENTER);
-        frame.pack();
-        frame.setVisible(true);
+        return normalizeDot("graph MeaningTree {\ndpi=255;\n" + _rootNode.generateDot() + "}");
     }
 
     private static String normalizeDot(String dot) {
