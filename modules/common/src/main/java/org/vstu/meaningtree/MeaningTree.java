@@ -1,18 +1,6 @@
 package org.vstu.meaningtree;
 
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.MutableGraph;
-import guru.nidi.graphviz.parse.Parser;
-
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-
-
 import org.vstu.meaningtree.nodes.Node;
-
-import javax.swing.*;
 
 public class MeaningTree {
     private final Node _rootNode;
