@@ -269,7 +269,9 @@ public class JavaViewer extends Viewer {
 
         boolean addSemi = true;
         if (generalForLoop.hasInitializer()) {
-            String init = toString(generalForLoop.getInitializer());
+            //TODO: fix compilation problem
+            //String init = toString(generalForLoop.getInitializer());
+            String init = "";
             if (init.stripTrailing().endsWith(";")) {
                 addSemi = false;
             }
