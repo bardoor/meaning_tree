@@ -233,6 +233,6 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(IfStatement stmt) {
-
+        return "";
     }
 }
