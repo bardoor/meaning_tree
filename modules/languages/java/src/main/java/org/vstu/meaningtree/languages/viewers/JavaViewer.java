@@ -6,6 +6,7 @@ import org.vstu.meaningtree.VariableDeclaration;
 import org.vstu.meaningtree.languages.viewers.Viewer;
 import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.BinaryExpression;
+import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
@@ -17,6 +18,7 @@ import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
 
@@ -55,6 +57,8 @@ public class JavaViewer extends Viewer {
             case VariableDeclaration stmt -> toString(stmt);
             case CompoundStatement stmt -> toString(stmt);
             case ExpressionStatement stmt -> toString(stmt);
+            case Identifier expr -> toString(expr);
+            case IfStatement stmt -> toString(stmt);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -208,7 +212,8 @@ public class JavaViewer extends Viewer {
 
                     без проверки ниже...
              */
-            if (node instanceof CompoundStatement) {
+            if (node instanceof CompoundStatement
+                    || node instanceof IfStatement) {
                 s = String.format("%s\n", toString(node));
             }
             else {
@@ -223,5 +228,30 @@ public class JavaViewer extends Viewer {
 
     public String toString(ExpressionStatement stmt) {
         return String.format("%s;", toString(stmt.getExpression()));
+    }
+
+    public String toString(Identifier identifier) {
+        return identifier.getName();
+    }
+
+    public String toString(IfStatement stmt) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("if ("));
+        String condition = toString(stmt.getCondition());
+        builder.append(condition);
+        builder.append(")\n");
+
+        String body = toString(stmt.getBody());
+        builder.append(body);
+
+        if (stmt.hasElseBranch()) {
+            builder.append("\n");
+            builder.append(indent("else\n"));
+            String elseBranch = toString(stmt.getElseBranch()).stripLeading();
+            builder.append(elseBranch);
+        }
+
+        return builder.toString();
     }
 }

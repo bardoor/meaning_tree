@@ -2,6 +2,10 @@ package org.vstu.meaningtree.languages.parsers;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.ParenthesizedExpression;
+import org.vstu.meaningtree.Type;
+import org.vstu.meaningtree.VariableDeclaration;
+import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
@@ -13,6 +17,8 @@ import org.vstu.meaningtree.nodes.math.AddOp;
 import org.vstu.meaningtree.nodes.math.DivOp;
 import org.vstu.meaningtree.nodes.math.MulOp;
 import org.vstu.meaningtree.nodes.math.SubOp;
+import org.vstu.meaningtree.nodes.types.FloatType;
+import org.vstu.meaningtree.nodes.types.IntType;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,8 +57,38 @@ public class JavaLanguage extends Language {
             case "unary_expression" -> fromUnaryExpressionTSNode(node);
             case "decimal_integer_literal" -> fromIntegerLiteralTSNode(node);
             case "decimal_floating_point_literal" -> fromFloatLiteralTSNode(node);
+            case "local_variable_declaration" -> fromVariableDeclarationTSNode(node);
+            case "for_statement" -> fromForStatementTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromForStatementTSNode(TSNode node) {
+        Node init = fromTSNode(node.getChildByFieldName("init"));
+
+        if (node.getChildByFieldName("init").getChildByFieldName("declarator").)
+    }
+
+    private Node fromVariableDeclarationTSNode(TSNode node) {
+        String typeName = getCodePiece(node.getChildByFieldName("type"));
+
+        Type type = switch (typeName) {
+            case "int", "short", "long" -> new IntType();
+            case "float", "double" -> new FloatType();
+            default -> throw new IllegalStateException("Unexpected value: " + typeName);
+        };
+
+        TSNode declarator = node.getChildByFieldName("declarator");
+
+        String variableName = getCodePiece(declarator.getChildByFieldName("name"));
+        Identifier identifier = new Identifier(variableName);
+
+        if (!declarator.getChildByFieldName("value").isNull()) {
+            Expression value = (Expression) fromTSNode(declarator.getChildByFieldName("value"));
+            return new VariableDeclaration(type, identifier, value);
+        }
+
+        return new VariableDeclaration(type, identifier);
     }
 
     private Node fromProgramTSNode(TSNode node) {
@@ -80,9 +116,6 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromConditionTSNode(TSNode node) {
-        for (int i = 0; i < node.getChildCount(); i++) {
-            System.out.println(node.getChild(i).getType());
-        }
         // TODO: Что-то сделать с этим...
         // У condition дети: '(', 'binary_expression', ')'
         // По имени binary_expression почему-то получить не удалось
