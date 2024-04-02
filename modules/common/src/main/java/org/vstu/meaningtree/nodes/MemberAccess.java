@@ -1,13 +1,13 @@
-package org.vstu.meaningtree;
+package org.vstu.meaningtree.nodes;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Identifier;
 
-public class NamespaceResolving extends Expression {
+public class MemberAccess extends Expression {
     protected final Expression expr;
     protected final Identifier member;
 
-    public NamespaceResolving(Expression expr, Identifier member) {
+    public MemberAccess(Expression expr, Identifier member) {
         this.expr = expr;
         this.member = member;
     }

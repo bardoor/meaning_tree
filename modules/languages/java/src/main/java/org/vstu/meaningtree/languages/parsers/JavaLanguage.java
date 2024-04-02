@@ -1,15 +1,13 @@
 package org.vstu.meaningtree.languages.parsers;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.ParenthesizedExpression;
-import org.vstu.meaningtree.Type;
-import org.vstu.meaningtree.VariableDeclaration;
-import org.vstu.meaningtree.nodes.AssignmentExpression;
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.definitions.VariableDefinition;
+import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
-import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
@@ -79,18 +77,20 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromForStatementTSNode(TSNode node) {
-        Node init = null, condition = null, update = null;
+        CanInitialize init = null;
+        Expression condition = null;
+        Expression update = null;
 
         if (!node.getChildByFieldName("init").isNull()) {
-            init = fromTSNode(node.getChildByFieldName("init"));
+            init = (CanInitialize) fromTSNode(node.getChildByFieldName("init"));
         }
 
         if (!node.getChildByFieldName("condition").isNull()) {
-            condition = fromTSNode(node.getChildByFieldName("condition"));
+            condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
         }
 
         if (!node.getChildByFieldName("update").isNull()) {
-            update = fromTSNode(node.getChildByFieldName("update"));
+            update = (Expression) fromTSNode(node.getChildByFieldName("update"));
         }
 
         CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
@@ -114,7 +114,7 @@ public class JavaLanguage extends Language {
 
         if (!declarator.getChildByFieldName("value").isNull()) {
             Expression value = (Expression) fromTSNode(declarator.getChildByFieldName("value"));
-            return new VariableDeclaration(type, identifier, value);
+            return new VariableDefinition(type, identifier, value);
         }
 
         return new VariableDeclaration(type, identifier);

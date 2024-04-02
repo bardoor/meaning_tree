@@ -6,7 +6,7 @@ import org.vstu.meaningtree.nodes.Statement;
 /**
  * Цикл по диапазону целых чисел (начало и конец являются частью диапазна) с заданным шагом.
  */
-public class RangeForLoop extends Statement {
+public class RangeForLoop extends ForLoop {
     private final int _start;
     private final int _end;
     private final int _step;

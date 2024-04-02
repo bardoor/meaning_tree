@@ -1,18 +1,20 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.vstu.meaningtree.nodes.CanInitialize;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.Statement;
 
 import java.util.Optional;
 
 public class GeneralForLoop extends ForLoop {
     //TODO: initializer is expression? What about VariableDeclaration
-    private final Optional<Node> _initializer;
-    private final Optional<Node> _condition;
-    private final Optional<Node> _update;
-    private final CompoundStatement _body;
+    private final Optional<CanInitialize> _initializer;
+    private final Optional<Expression> _condition;
+    private final Optional<Expression> _update;
+    private final Statement _body;
 
-    public GeneralForLoop(Node initializer, Node condition, Node update, CompoundStatement body) {
+    public GeneralForLoop(CanInitialize initializer, Expression condition, Expression update, Statement body) {
         this._initializer = Optional.ofNullable(initializer);
         this._condition = Optional.ofNullable(condition);
         this._update = Optional.ofNullable(update);
@@ -23,7 +25,7 @@ public class GeneralForLoop extends ForLoop {
         return _initializer.isPresent();
     }
 
-    public Node getInitializer() {
+    public CanInitialize getInitializer() {
         if (!hasInitializer()) {
             throw new RuntimeException("No initizalier");
         }
@@ -35,7 +37,7 @@ public class GeneralForLoop extends ForLoop {
         return _condition.isPresent();
     }
 
-    public Node getCondition() {
+    public Expression getCondition() {
         if (!hasCondition()) {
             throw new RuntimeException("No condition");
         }
@@ -47,7 +49,7 @@ public class GeneralForLoop extends ForLoop {
         return _update.isPresent();
     }
 
-    public Node getUpdate() {
+    public Expression getUpdate() {
         if (!hasUpdate()) {
             throw new RuntimeException("No update");
         }
@@ -55,7 +57,7 @@ public class GeneralForLoop extends ForLoop {
         return _update.get();
     }
 
-    public Node getBody() {
+    public Statement getBody() {
         return _body;
     }
 

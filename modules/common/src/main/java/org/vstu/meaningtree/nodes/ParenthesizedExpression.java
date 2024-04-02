@@ -1,4 +1,4 @@
-package org.vstu.meaningtree;
+package org.vstu.meaningtree.nodes;
 
 import org.vstu.meaningtree.nodes.Expression;
 

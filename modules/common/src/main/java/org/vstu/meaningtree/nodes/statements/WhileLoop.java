@@ -8,12 +8,12 @@ public class WhileLoop extends Statement {
         return condition;
     }
 
-    public CompoundStatement getBody() {
+    public Statement getBody() {
         return body;
     }
 
     protected final Expression condition;
-    protected final CompoundStatement body;
+    protected final Statement body;
 
     public WhileLoop(Expression condition, CompoundStatement body) {
         this.condition = condition;

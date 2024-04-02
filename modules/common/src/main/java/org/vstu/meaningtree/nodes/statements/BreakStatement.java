@@ -1,10 +1,8 @@
 package org.vstu.meaningtree.nodes.statements;
 
-public class ElseStatement extends ConditionStatement {
-    public ElseStatement(CompoundStatement thenBranch) {
-        super(thenBranch);
-    }
+import org.vstu.meaningtree.nodes.Statement;
 
+public class BreakStatement extends Statement {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();

@@ -1,9 +1,9 @@
 package org.vstu.meaningtree.languages.viewers;
 
-import org.vstu.meaningtree.ParenthesizedExpression;
-import org.vstu.meaningtree.Type;
-import org.vstu.meaningtree.VariableDeclaration;
-import org.vstu.meaningtree.languages.viewers.Viewer;
+import org.vstu.meaningtree.nodes.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.definitions.VariableDefinition;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.BinaryExpression;
 import org.vstu.meaningtree.nodes.Identifier;
@@ -161,7 +161,7 @@ public class JavaViewer extends Viewer {
         return "int";
     }
 
-    public String toString(VariableDeclaration stmt) {
+    public String toString(VariableDefinition stmt) {
         if (stmt.hasInitializer()) {
             return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
         }
@@ -234,6 +234,8 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(IfStatement stmt) {
+        //TODO: fix for new if structure
+        /*
         StringBuilder builder = new StringBuilder();
 
         builder.append(indent("if ("));
@@ -252,6 +254,8 @@ public class JavaViewer extends Viewer {
         }
 
         return builder.toString();
+        */
+        throw new UnsupportedOperationException();
     }
 
     public String toString(GeneralForLoop generalForLoop) {

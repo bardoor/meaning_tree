@@ -2,5 +2,5 @@ package org.vstu.meaningtree.nodes.types;
 
 import org.vstu.meaningtree.nodes.Type;
 
-public abstract class NumericType extends Type {
+public class StringType extends Type {
 }
