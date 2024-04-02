@@ -22,8 +22,16 @@ public class IfStatement extends ConditionStatement {
         return _condition;
     }
 
-    public Optional<CompoundStatement> getElseBranch() {
-        return _elseBranch;
+    public CompoundStatement getElseBranch() {
+        if (!hasElseBranch()) {
+            throw new RuntimeException("If statement does not have else branch");
+        }
+
+        return _elseBranch.get();
+    }
+
+    public boolean hasElseBranch() {
+        return _elseBranch.isPresent();
     }
 
     @Override

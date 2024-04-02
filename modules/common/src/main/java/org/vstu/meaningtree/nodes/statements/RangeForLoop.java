@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.Statement;
 
 /**
@@ -9,6 +10,7 @@ public class RangeForLoop extends Statement {
     private final int _start;
     private final int _end;
     private final int _step;
+    private final Identifier _indentifier;
     private final CompoundStatement _body;
 
     /**
@@ -18,10 +20,11 @@ public class RangeForLoop extends Statement {
      * @param step шаг
      * @param body тело цикла
      */
-    public RangeForLoop(int start, int end, int step, CompoundStatement body) {
+    public RangeForLoop(int start, int end, int step, Identifier identifier, CompoundStatement body) {
         _start = start;
         _end = end;
         _step = step;
+        _indentifier = identifier;
         _body = body;
     }
 

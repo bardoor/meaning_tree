@@ -58,6 +58,7 @@ public class JavaViewer extends Viewer {
             case CompoundStatement stmt -> toString(stmt);
             case ExpressionStatement stmt -> toString(stmt);
             case Identifier expr -> toString(expr);
+            case IfStatement stmt -> toString(stmt);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -211,7 +212,8 @@ public class JavaViewer extends Viewer {
 
                     без проверки ниже...
              */
-            if (node instanceof CompoundStatement) {
+            if (node instanceof CompoundStatement
+                    || node instanceof IfStatement) {
                 s = String.format("%s\n", toString(node));
             }
             else {
@@ -233,6 +235,23 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(IfStatement stmt) {
-        return "";
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("if ("));
+        String condition = toString(stmt.getCondition());
+        builder.append(condition);
+        builder.append(")\n");
+
+        String body = toString(stmt.getBody());
+        builder.append(body);
+
+        if (stmt.hasElseBranch()) {
+            builder.append("\n");
+            builder.append(indent("else\n"));
+            String elseBranch = toString(stmt.getElseBranch()).stripLeading();
+            builder.append(elseBranch);
+        }
+
+        return builder.toString();
     }
 }

@@ -57,12 +57,19 @@ public class JavaLanguage extends Language {
             case "unary_expression" -> fromUnaryExpressionTSNode(node);
             case "decimal_integer_literal" -> fromIntegerLiteralTSNode(node);
             case "decimal_floating_point_literal" -> fromFloatLiteralTSNode(node);
-            case "local_variable_declaration" -> fromVariableDeclarationTsNode(node);
+            case "local_variable_declaration" -> fromVariableDeclarationTSNode(node);
+            case "for_statement" -> fromForStatementTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
     }
 
-    private Node fromVariableDeclarationTsNode(TSNode node) {
+    private Node fromForStatementTSNode(TSNode node) {
+        Node init = fromTSNode(node.getChildByFieldName("init"));
+
+        if (node.getChildByFieldName("init").getChildByFieldName("declarator").)
+    }
+
+    private Node fromVariableDeclarationTSNode(TSNode node) {
         String typeName = getCodePiece(node.getChildByFieldName("type"));
 
         Type type = switch (typeName) {
@@ -109,9 +116,6 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromConditionTSNode(TSNode node) {
-        for (int i = 0; i < node.getChildCount(); i++) {
-            System.out.println(node.getChild(i).getType());
-        }
         // TODO: Что-то сделать с этим...
         // У condition дети: '(', 'binary_expression', ')'
         // По имени binary_expression почему-то получить не удалось

@@ -8,7 +8,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         System.setProperty("java.awt.headless", "false");
         JavaLanguage javaLanguage = new JavaLanguage();
-        MeaningTree mt = javaLanguage.getMeaningTree("if (5 + 10) {12 * 55; if (12 - 6) {12; 13; 15;}} else {5 - 100;}");
+        MeaningTree mt = javaLanguage.getMeaningTree("if (5 + 10) {12 * 55; if (12 - 6) {12; 13; 15;}}");
         mt.show();
     }
 }
