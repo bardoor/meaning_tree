@@ -2,11 +2,8 @@ package org.vstu.meaningtree.languages.parsers;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.ParenthesizedExpression;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.statements.ConditionStatement;
-import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
-import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
@@ -78,7 +75,7 @@ public class JavaLanguage extends Language {
     private Node fromIfStatementTSNode(TSNode node) {
         Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
         CompoundStatement consequence = (CompoundStatement) fromTSNode(node.getChildByFieldName("consequence"));
-        ConditionStatement alternative = (ConditionStatement) fromTSNode(node.getChildByFieldName("alternative"));
+        CompoundStatement alternative = (CompoundStatement) fromTSNode(node.getChildByFieldName("alternative"));
         return new IfStatement(condition, consequence, alternative);
     }
 

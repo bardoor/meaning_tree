@@ -26,7 +26,7 @@ public class MeaningTree {
     }
 
     public String generateDot() {
-        return normalizeDot("graph MeaningTree {\ndpi=200;\n" + _rootNode.generateDot() + "}");
+        return normalizeDot("graph MeaningTree {\ndpi=125;\n" + _rootNode.generateDot() + "}");
     }
 
     public void show() throws IOException {
