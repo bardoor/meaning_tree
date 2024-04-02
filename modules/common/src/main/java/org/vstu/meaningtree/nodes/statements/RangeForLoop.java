@@ -17,7 +17,7 @@ public class RangeForLoop extends Statement {
      * Создает цикл по диапазону.
      * @param start начало диапазона (включительно)
      * @param end конец диапазона (включительно)
-     * @param step шаг
+     * @param step _identifier
      * @param body тело цикла
      */
     public RangeForLoop(int start, int end, int step, Identifier identifier, CompoundStatement body) {
@@ -34,11 +34,16 @@ public class RangeForLoop extends Statement {
 
     public int getStep() { return _step; }
 
+    public Identifier getIdentifier() {
+        return _indentifier;
+    }
+
     public CompoundStatement getBody() { return _body; }
 
     @Override
     public String generateDot() {
-        return String.format("%s [label=\"%s(start=%d, end=%d, step=%d)\"];\n", _id, getClass().getSimpleName(), _start, _end, _step)
+        return String.format("%s [label=\"%s(var_name=\"%s\", start=%d, end=%d, step=%d)\"];\n",
+                    _id, getClass().getSimpleName(), _indentifier.getName(), _start, _end, _step)
                 + _body.generateDot()
                 + String.format("%s -> %s;\n", _id, _body.getId());
     }

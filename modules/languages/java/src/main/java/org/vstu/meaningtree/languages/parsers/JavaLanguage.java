@@ -4,6 +4,7 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.ParenthesizedExpression;
 import org.vstu.meaningtree.Type;
 import org.vstu.meaningtree.VariableDeclaration;
+import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
@@ -59,14 +60,42 @@ public class JavaLanguage extends Language {
             case "decimal_floating_point_literal" -> fromFloatLiteralTSNode(node);
             case "local_variable_declaration" -> fromVariableDeclarationTSNode(node);
             case "for_statement" -> fromForStatementTSNode(node);
+            case "assignment_expression" -> fromAssignmentExpressionTSNode(node);
+            case "identifier" -> fromIdentifierTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
     }
 
-    private Node fromForStatementTSNode(TSNode node) {
-        Node init = fromTSNode(node.getChildByFieldName("init"));
+    private Node fromIdentifierTSNode(TSNode node) {
+        String variableName = getCodePiece(node);
+        return new Identifier(variableName);
+    }
 
-        if (node.getChildByFieldName("init").getChildByFieldName("declarator").)
+    private Node fromAssignmentExpressionTSNode(TSNode node) {
+        String variableName = getCodePiece(node.getChildByFieldName("left"));
+        Identifier identifier = new Identifier(variableName);
+        Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
+        return new AssignmentExpression(identifier, right);
+    }
+
+    private Node fromForStatementTSNode(TSNode node) {
+        Node init = null, condition = null, update = null;
+
+        if (!node.getChildByFieldName("init").isNull()) {
+            init = fromTSNode(node.getChildByFieldName("init"));
+        }
+
+        if (!node.getChildByFieldName("condition").isNull()) {
+            condition = fromTSNode(node.getChildByFieldName("condition"));
+        }
+
+        if (!node.getChildByFieldName("update").isNull()) {
+            update = fromTSNode(node.getChildByFieldName("update"));
+        }
+
+        CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
+
+        return new GeneralForLoop(init, condition, update, body);
     }
 
     private Node fromVariableDeclarationTSNode(TSNode node) {

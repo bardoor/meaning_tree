@@ -15,10 +15,7 @@ import org.vstu.meaningtree.nodes.literals.StringLiteral;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
-import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
-import org.vstu.meaningtree.nodes.statements.IfStatement;
+import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
 
@@ -59,6 +56,7 @@ public class JavaViewer extends Viewer {
             case ExpressionStatement stmt -> toString(stmt);
             case Identifier expr -> toString(expr);
             case IfStatement stmt -> toString(stmt);
+            case GeneralForLoop stmt -> toString(stmt);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -213,7 +211,8 @@ public class JavaViewer extends Viewer {
                     без проверки ниже...
              */
             if (node instanceof CompoundStatement
-                    || node instanceof IfStatement) {
+                    || node instanceof IfStatement
+                    || node instanceof GeneralForLoop) {
                 s = String.format("%s\n", toString(node));
             }
             else {
@@ -251,6 +250,44 @@ public class JavaViewer extends Viewer {
             String elseBranch = toString(stmt.getElseBranch()).stripLeading();
             builder.append(elseBranch);
         }
+
+        return builder.toString();
+    }
+
+    public String toString(GeneralForLoop generalForLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("for ("));
+
+        boolean addSemi = true;
+        if (generalForLoop.hasInitializer()) {
+            String init = toString(generalForLoop.getInitializer());
+            if (init.stripTrailing().endsWith(";")) {
+                addSemi = false;
+            }
+            builder.append(init);
+        }
+        if (addSemi) {
+            builder.append("; ");
+        }
+        else {
+            builder.append(" ");
+        }
+
+        if (generalForLoop.hasCondition()) {
+            String condition = toString(generalForLoop.getCondition());
+            builder.append(condition);
+        }
+        builder.append("; ");
+
+        if (generalForLoop.hasUpdate()) {
+            String update = toString(generalForLoop.getUpdate());
+            builder.append(update);
+        }
+
+        builder.append(")\n");
+
+        builder.append(toString(generalForLoop.getBody()));
 
         return builder.toString();
     }
