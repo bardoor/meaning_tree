@@ -3,7 +3,6 @@ import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.definitions.VariableDefinition;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
@@ -114,7 +113,7 @@ public class JavaLanguage extends Language {
 
         if (!declarator.getChildByFieldName("value").isNull()) {
             Expression value = (Expression) fromTSNode(declarator.getChildByFieldName("value"));
-            return new VariableDefinition(type, identifier, value);
+            return new VariableDeclaration(type, identifier, value);
         }
 
         return new VariableDeclaration(type, identifier);

@@ -2,7 +2,6 @@ package org.vstu.meaningtree.languages.viewers;
 
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.definitions.VariableDefinition;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.BinaryExpression;
@@ -161,8 +160,8 @@ public class JavaViewer extends Viewer {
         return "int";
     }
 
-    public String toString(VariableDefinition stmt) {
-        //TODO: fix for declaration and definition
+    public String toString(VariableDeclaration stmt) {
+        //TODO: fix for new declaration interface
         /*
         if (stmt.hasInitializer()) {
             return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
@@ -170,7 +169,8 @@ public class JavaViewer extends Viewer {
 
         return String.format("%s %s;", toString(stmt.getType()), toString(stmt.getName()));
          */
-        return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
+        //return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
+        return "";
     }
 
     private void increaseIndentLevel() {
