@@ -8,7 +8,6 @@ import org.vstu.meaningtree.nodes.Statement;
 import java.util.Optional;
 
 public class GeneralForLoop extends ForLoop {
-    //TODO: initializer is expression? What about VariableDeclaration
     private final Optional<CanInitialize> _initializer;
     private final Optional<Expression> _condition;
     private final Optional<Expression> _update;
