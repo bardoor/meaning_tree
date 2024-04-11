@@ -7,17 +7,18 @@ import java.util.List;
 public class ProgramEntryPoint extends Node {
 
     /**
-     * For script languages: all content of code
-     * For languages that require main function, or main class: content of main function
+     * For script languages: all content of code (including comments)
+     * For languages that require main function, or main class: content of main (entry point) function
      *
-     * Developer must keep in mind implicit access to main class static fields and methods in main function body and find them in main class if it is required
+     * If main class with static fields and entry point function are separated (see docs for _globals field), developer must correctly access to this variables
      */
     private final List<Node> _body;
 
     /**
      * For script languages - empty list
-     * For languages that require main function, or main class: declarations, definitions, comments.
-     * Main class, if it's present in code, should be included in globals without main function
+     * For languages that require main function: global declarations and definitions
+     * For languages that require main class that contains only static fields and static methods: static methods as functions (excluding main), static fields as global variables
+     * For languages that require main class that also contains instance members (non-static fields and methods): main class with all fields excluding main function
      */
     private final List<Node> _globals;
 
