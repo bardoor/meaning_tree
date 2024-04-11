@@ -2,7 +2,6 @@ package org.vstu.meaningtree.nodes.statements;
 
 import org.vstu.meaningtree.nodes.CanInitialize;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 
 import java.util.Optional;
