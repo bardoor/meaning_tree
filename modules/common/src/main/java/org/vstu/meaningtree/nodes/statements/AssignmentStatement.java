@@ -2,10 +2,10 @@ package org.vstu.meaningtree.nodes.statements;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Identifier;
-import org.vstu.meaningtree.nodes.CanInitialize;
+import org.vstu.meaningtree.nodes.HasInitialization;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class AssignmentStatement extends Statement implements CanInitialize {
+public class AssignmentStatement extends Statement implements HasInitialization {
     private final Identifier _lvalue;
     private final Expression _rvalue;
 

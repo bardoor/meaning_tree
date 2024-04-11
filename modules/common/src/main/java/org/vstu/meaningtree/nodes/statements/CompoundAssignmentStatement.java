@@ -1,11 +1,11 @@
 package org.vstu.meaningtree.nodes.statements;
 
-import org.vstu.meaningtree.nodes.CanInitialize;
+import org.vstu.meaningtree.nodes.HasInitialization;
 import org.vstu.meaningtree.nodes.Node;
 
 import java.util.List;
 
-public class CompoundAssignmentStatement extends Node implements CanInitialize {
+public class CompoundAssignmentStatement extends Node implements HasInitialization {
     /**
      * This node used only in case of compound assignment in for header
      * Example: for(a = 1, b = 3; i < 3; i++)

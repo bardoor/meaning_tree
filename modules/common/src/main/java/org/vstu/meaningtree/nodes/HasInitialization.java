@@ -1,5 +1,5 @@
 package org.vstu.meaningtree.nodes;
 
-public interface CanInitialize {
+public interface HasInitialization {
     // used in general for-loop header as initializer
 }

@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.nodes.CanInitialize;
+import org.vstu.meaningtree.nodes.HasInitialization;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.Identifier;
@@ -8,7 +8,7 @@ import org.vstu.meaningtree.nodes.Identifier;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VariableDeclaration extends Declaration implements CanInitialize {
+public class VariableDeclaration extends Declaration implements HasInitialization {
     protected final Type _type;
     protected final List<VariableDeclarator> variableDeclaratorList;
 

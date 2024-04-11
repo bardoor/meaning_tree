@@ -76,12 +76,12 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromForStatementTSNode(TSNode node) {
-        CanInitialize init = null;
+        HasInitialization init = null;
         Expression condition = null;
         Expression update = null;
 
         if (!node.getChildByFieldName("init").isNull()) {
-            init = (CanInitialize) fromTSNode(node.getChildByFieldName("init"));
+            init = (HasInitialization) fromTSNode(node.getChildByFieldName("init"));
         }
 
         if (!node.getChildByFieldName("condition").isNull()) {

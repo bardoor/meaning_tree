@@ -1,18 +1,18 @@
 package org.vstu.meaningtree.nodes.statements;
 
-import org.vstu.meaningtree.nodes.CanInitialize;
+import org.vstu.meaningtree.nodes.HasInitialization;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
 import java.util.Optional;
 
 public class GeneralForLoop extends ForLoop {
-    private final Optional<CanInitialize> _initializer;
+    private final Optional<HasInitialization> _initializer;
     private final Optional<Expression> _condition;
     private final Optional<Expression> _update;
     private final Statement _body;
 
-    public GeneralForLoop(CanInitialize initializer, Expression condition, Expression update, Statement body) {
+    public GeneralForLoop(HasInitialization initializer, Expression condition, Expression update, Statement body) {
         this._initializer = Optional.ofNullable(initializer);
         this._condition = Optional.ofNullable(condition);
         this._update = Optional.ofNullable(update);
@@ -23,7 +23,7 @@ public class GeneralForLoop extends ForLoop {
         return _initializer.isPresent();
     }
 
-    public CanInitialize getInitializer() {
+    public HasInitialization getInitializer() {
         if (!hasInitializer()) {
             throw new RuntimeException("No initizalier");
         }

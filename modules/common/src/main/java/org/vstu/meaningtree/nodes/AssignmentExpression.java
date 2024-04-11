@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes;
 
-public class AssignmentExpression extends Expression implements CanInitialize {
+public class AssignmentExpression extends Expression implements HasInitialization {
     private final Identifier _lvalue;
     private final Expression _rvalue;
 
