@@ -9,14 +9,19 @@ import java.util.Optional;
 
 public class FunctionDeclaration extends Declaration {
     private final List<Argument> _arguments;
+    private final Identifier _name;
     private final Type _returnType;
     private final Optional<Annotation> annotation;
 
     public FunctionDeclaration(Identifier name, Type returnType, Annotation annotation, Argument ... arguments) {
-        super(name);
+        _name = name;
         this.annotation = Optional.ofNullable(annotation);
         this._arguments = List.of(arguments);
         this._returnType = returnType;
+    }
+
+    public Identifier getName() {
+        return _name;
     }
 
     public List<Argument> getArguments() {

@@ -7,10 +7,15 @@ import java.util.List;
 
 public class Annotation extends Declaration {
     private final List<Argument> arguments;
+    private final Identifier _name;
 
     public Annotation(Identifier name, Argument ... arguments) {
-        super(name);
+        _name = name;
         this.arguments = List.of(arguments);
+    }
+
+    public Identifier getName() {
+        return _name;
     }
 
     @Override

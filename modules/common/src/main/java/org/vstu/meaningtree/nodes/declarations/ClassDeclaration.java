@@ -4,7 +4,14 @@ import org.vstu.meaningtree.nodes.Identifier;
 
 public class ClassDeclaration extends Declaration {
     public ClassDeclaration(Identifier name) {
-        super(name);
+        super();
+        _name = name;
+    }
+
+    protected final Identifier _name;
+
+    public Identifier getName() {
+        return _name;
     }
 
     @Override
