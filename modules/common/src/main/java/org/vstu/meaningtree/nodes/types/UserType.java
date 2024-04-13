@@ -1,14 +1,14 @@
 package org.vstu.meaningtree.nodes.types;
 
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 import java.util.Optional;
 
 public class UserType extends Type {
-    private final Identifier _name;
+    private final SimpleIdentifier _name;
 
-    public Identifier getName() {
+    public SimpleIdentifier getName() {
         return _name;
     }
 
@@ -25,12 +25,12 @@ public class UserType extends Type {
 
     private final Optional<Type> _templateType;
 
-    public UserType(Identifier name, Type templateType) {
+    public UserType(SimpleIdentifier name, Type templateType) {
         _name = name;
         _templateType = Optional.ofNullable(templateType);
     }
 
-    public UserType(Identifier name) {
+    public UserType(SimpleIdentifier name) {
         _name = name;
         _templateType = Optional.ofNullable(null);
     }

@@ -5,6 +5,7 @@ import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -65,12 +66,12 @@ public class JavaLanguage extends Language {
 
     private Node fromIdentifierTSNode(TSNode node) {
         String variableName = getCodePiece(node);
-        return new Identifier(variableName);
+        return new SimpleIdentifier(variableName);
     }
 
     private Node fromAssignmentExpressionTSNode(TSNode node) {
         String variableName = getCodePiece(node.getChildByFieldName("left"));
-        Identifier identifier = new Identifier(variableName);
+        SimpleIdentifier identifier = new SimpleIdentifier(variableName);
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
         return new AssignmentExpression(identifier, right);
     }
@@ -109,7 +110,7 @@ public class JavaLanguage extends Language {
         TSNode declarator = node.getChildByFieldName("declarator");
 
         String variableName = getCodePiece(declarator.getChildByFieldName("name"));
-        Identifier identifier = new Identifier(variableName);
+        SimpleIdentifier identifier = new SimpleIdentifier(variableName);
 
         if (!declarator.getChildByFieldName("value").isNull()) {
             Expression value = (Expression) fromTSNode(declarator.getChildByFieldName("value"));

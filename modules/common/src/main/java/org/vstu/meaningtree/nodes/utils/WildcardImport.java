@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.utils;
 
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
-public class WildcardImport extends Identifier {
+public class WildcardImport extends SimpleIdentifier {
     public WildcardImport() {
         super("*");
     }

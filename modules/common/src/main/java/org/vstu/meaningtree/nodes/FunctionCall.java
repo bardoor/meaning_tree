@@ -1,12 +1,14 @@
 package org.vstu.meaningtree.nodes;
 
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionCall extends Expression {
-    protected final Identifier functionName;
+    protected final SimpleIdentifier functionName;
 
-    public Identifier getFunctionName() {
+    public SimpleIdentifier getFunctionName() {
         return functionName;
     }
 
@@ -16,7 +18,7 @@ public class FunctionCall extends Expression {
 
     protected final ArrayList<Expression> arguments;
 
-    public FunctionCall(Identifier functionName, ArrayList<Expression> arguments) {
+    public FunctionCall(SimpleIdentifier functionName, ArrayList<Expression> arguments) {
         this.functionName = functionName;
         this.arguments = arguments;
     }

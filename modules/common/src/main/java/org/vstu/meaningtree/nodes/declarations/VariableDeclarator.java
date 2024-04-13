@@ -1,20 +1,20 @@
 package org.vstu.meaningtree.nodes.declarations;
 
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 import java.util.Optional;
 
 public class VariableDeclarator {
-    private final Identifier _identifier;
+    private final SimpleIdentifier _identifier;
     private final Optional<Expression> _rvalue;
 
-    public VariableDeclarator(Identifier identifier, Expression rvalue) {
+    public VariableDeclarator(SimpleIdentifier identifier, Expression rvalue) {
         _identifier = identifier;
         _rvalue = Optional.ofNullable(rvalue);
     }
 
-    public VariableDeclarator(Identifier identifier) {
+    public VariableDeclarator(SimpleIdentifier identifier) {
         this(identifier, null);
     }
 
@@ -29,7 +29,7 @@ public class VariableDeclarator {
         return _rvalue.isPresent();
     }
 
-    public Identifier getIdentifier() {
+    public SimpleIdentifier getIdentifier() {
         return _identifier;
     }
 }

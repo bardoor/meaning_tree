@@ -1,10 +1,12 @@
-package org.vstu.meaningtree.nodes;
+package org.vstu.meaningtree.nodes.identifiers;
+
+import org.vstu.meaningtree.nodes.Expression;
 
 public class QualifiedIdentifier extends Expression {
     private final ScopedIdentifier _scope;
-    private final Identifier _member;
+    private final SimpleIdentifier _member;
 
-    public QualifiedIdentifier(ScopedIdentifier scope, Identifier member) {
+    public QualifiedIdentifier(ScopedIdentifier scope, SimpleIdentifier member) {
         _scope = scope;
         _member = member;
     }
@@ -13,7 +15,7 @@ public class QualifiedIdentifier extends Expression {
         return _scope;
     }
 
-    public Identifier getMember() {
+    public SimpleIdentifier getMember() {
         return _member;
     }
 
