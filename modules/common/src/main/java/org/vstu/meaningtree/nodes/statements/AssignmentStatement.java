@@ -1,17 +1,24 @@
 package org.vstu.meaningtree.nodes.statements;
 
-import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Identifier;
-import org.vstu.meaningtree.nodes.HasInitialization;
-import org.vstu.meaningtree.nodes.Statement;
+import org.vstu.meaningtree.nodes.*;
 
 public class AssignmentStatement extends Statement implements HasInitialization {
     private final Identifier _lvalue;
     private final Expression _rvalue;
+    private final AugmentedAssignmentOperator _op;
 
-    public AssignmentStatement(Identifier id, Expression value) {
+    public AssignmentStatement(Identifier id, Expression value, AugmentedAssignmentOperator op) {
         _lvalue = id;
         _rvalue = value;
+        _op = op;
+    }
+
+    public AssignmentStatement(Identifier id, Expression value) {
+        this(id, value, AugmentedAssignmentOperator.NONE);
+    }
+
+    public AugmentedAssignmentOperator getAugmentedOperator() {
+        return _op;
     }
 
     public Identifier getLValue() {
