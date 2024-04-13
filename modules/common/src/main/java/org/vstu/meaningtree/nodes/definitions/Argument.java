@@ -2,7 +2,7 @@ package org.vstu.meaningtree.nodes.definitions;
 
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 import java.util.Optional;
 
@@ -14,14 +14,14 @@ public class Argument {
         return _type;
     }
 
-    public Identifier getName() {
+    public SimpleIdentifier getName() {
         return _name;
     }
 
-    private final Identifier _name;
+    private final SimpleIdentifier _name;
     private final Optional<Expression> _initial;
 
-    public Argument(Type type, boolean isListUnpacking, Identifier name, Expression initial) {
+    public Argument(Type type, boolean isListUnpacking, SimpleIdentifier name, Expression initial) {
         super();
         _type = type;
         _isListUnpacking = isListUnpacking;

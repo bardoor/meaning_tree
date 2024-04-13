@@ -1,16 +1,16 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 public class ClassDeclaration extends Declaration {
-    public ClassDeclaration(Identifier name) {
+    public ClassDeclaration(SimpleIdentifier name) {
         super();
         _name = name;
     }
 
-    protected final Identifier _name;
+    protected final SimpleIdentifier _name;
 
-    public Identifier getName() {
+    public SimpleIdentifier getName() {
         return _name;
     }
 

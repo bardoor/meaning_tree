@@ -1,7 +1,6 @@
 package org.vstu.meaningtree.nodes.statements;
 
-import org.vstu.meaningtree.nodes.Identifier;
-import org.vstu.meaningtree.nodes.Statement;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 /**
  * Цикл по диапазону целых чисел (начало и конец являются частью диапазна) с заданным шагом.
@@ -10,7 +9,7 @@ public class RangeForLoop extends ForLoop {
     private final int _start;
     private final int _end;
     private final int _step;
-    private final Identifier _indentifier;
+    private final SimpleIdentifier _indentifier;
     private final CompoundStatement _body;
 
     /**
@@ -20,7 +19,7 @@ public class RangeForLoop extends ForLoop {
      * @param step _identifier
      * @param body тело цикла
      */
-    public RangeForLoop(int start, int end, int step, Identifier identifier, CompoundStatement body) {
+    public RangeForLoop(int start, int end, int step, SimpleIdentifier identifier, CompoundStatement body) {
         _start = start;
         _end = end;
         _step = step;
@@ -34,7 +33,7 @@ public class RangeForLoop extends ForLoop {
 
     public int getStep() { return _step; }
 
-    public Identifier getIdentifier() {
+    public SimpleIdentifier getIdentifier() {
         return _indentifier;
     }
 

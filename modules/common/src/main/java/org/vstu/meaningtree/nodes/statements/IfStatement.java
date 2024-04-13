@@ -8,14 +8,21 @@ import java.util.List;
 import java.util.Optional;
 
 public class IfStatement extends Statement {
-    private final List<ConditionBranch> _branches = new ArrayList<>();
+    private final List<ConditionBranch> _branches;
     private final Optional<Statement> _elseBranch;
 
 
     public IfStatement(Expression condition, Statement thenBranch, Statement elseBranch) {
         super();
         _elseBranch = Optional.ofNullable(elseBranch);
+        _branches = new ArrayList<>();
         _branches.add(new ConditionBranch(condition, thenBranch));
+    }
+
+    public IfStatement(List<ConditionBranch> branches, Statement elseBranch) {
+        super();
+        _elseBranch = Optional.ofNullable(elseBranch);
+        _branches = new ArrayList<>(branches);
     }
 
     public Statement getElseBranch() {

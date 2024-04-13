@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.nodes;
 
+import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
+
 public class Import extends Node {
     public enum Type {
         LIBRARY,

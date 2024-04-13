@@ -1,20 +1,20 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.definitions.Argument;
 
 import java.util.List;
 
 public class Annotation extends Declaration {
     private final List<Argument> arguments;
-    private final Identifier _name;
+    private final SimpleIdentifier _name;
 
-    public Annotation(Identifier name, Argument ... arguments) {
+    public Annotation(SimpleIdentifier name, Argument ... arguments) {
         _name = name;
         this.arguments = List.of(arguments);
     }
 
-    public Identifier getName() {
+    public SimpleIdentifier getName() {
         return _name;
     }
 

@@ -2,19 +2,19 @@ package org.vstu.meaningtree.nodes.declarations;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 public class FieldDeclaration extends VariableDeclaration {
     private final VisibilityModifier modifier;
     private final boolean isStatic;
 
-    public FieldDeclaration(Type type, Identifier name, VisibilityModifier modifier, boolean isStatic) {
+    public FieldDeclaration(Type type, SimpleIdentifier name, VisibilityModifier modifier, boolean isStatic) {
         super(type, name);
         this.modifier = modifier;
         this.isStatic = isStatic;
     }
 
-    public FieldDeclaration(Type type, Identifier name, Expression value, VisibilityModifier modifier, boolean isStatic) {
+    public FieldDeclaration(Type type, SimpleIdentifier name, Expression value, VisibilityModifier modifier, boolean isStatic) {
         super(type, name, value);
         this.modifier = modifier;
         this.isStatic = isStatic;
@@ -27,12 +27,12 @@ public class FieldDeclaration extends VariableDeclaration {
         this.isStatic = isStatic;
     }
 
-    public FieldDeclaration(Type type, Identifier name) {
+    public FieldDeclaration(Type type, SimpleIdentifier name) {
         this(type, name, VisibilityModifier.NONE, false);
     }
 
 
-    public FieldDeclaration(Type type, Identifier name, Expression value) {
+    public FieldDeclaration(Type type, SimpleIdentifier name, Expression value) {
         this(type, name, value, VisibilityModifier.NONE, false);
     }
 

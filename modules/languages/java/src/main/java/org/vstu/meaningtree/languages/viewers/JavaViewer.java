@@ -5,7 +5,7 @@ import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.BinaryExpression;
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
@@ -53,7 +53,7 @@ public class JavaViewer extends Viewer {
             case VariableDeclaration stmt -> toString(stmt);
             case CompoundStatement stmt -> toString(stmt);
             case ExpressionStatement stmt -> toString(stmt);
-            case Identifier expr -> toString(expr);
+            case SimpleIdentifier expr -> toString(expr);
             case IfStatement stmt -> toString(stmt);
             case GeneralForLoop stmt -> toString(stmt);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
@@ -233,7 +233,7 @@ public class JavaViewer extends Viewer {
         return String.format("%s;", toString(stmt.getExpression()));
     }
 
-    public String toString(Identifier identifier) {
+    public String toString(SimpleIdentifier identifier) {
         return identifier.getName();
     }
 

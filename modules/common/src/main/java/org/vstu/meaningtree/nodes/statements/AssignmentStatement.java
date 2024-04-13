@@ -3,17 +3,17 @@ package org.vstu.meaningtree.nodes.statements;
 import org.vstu.meaningtree.nodes.*;
 
 public class AssignmentStatement extends Statement implements HasInitialization {
-    private final Identifier _lvalue;
+    private final Expression _lvalue;
     private final Expression _rvalue;
     private final AugmentedAssignmentOperator _op;
 
-    public AssignmentStatement(Identifier id, Expression value, AugmentedAssignmentOperator op) {
+    public AssignmentStatement(Expression id, Expression value, AugmentedAssignmentOperator op) {
         _lvalue = id;
         _rvalue = value;
         _op = op;
     }
 
-    public AssignmentStatement(Identifier id, Expression value) {
+    public AssignmentStatement(Expression id, Expression value) {
         this(id, value, AugmentedAssignmentOperator.NONE);
     }
 
@@ -21,7 +21,7 @@ public class AssignmentStatement extends Statement implements HasInitialization 
         return _op;
     }
 
-    public Identifier getLValue() {
+    public Expression getLValue() {
         return _lvalue;
     }
 

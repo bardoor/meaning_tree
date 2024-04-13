@@ -1,13 +1,12 @@
 package org.vstu.meaningtree.nodes;
 
-import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 public class MemberAccess extends Expression {
     protected final Expression expr;
-    protected final Identifier member;
+    protected final SimpleIdentifier member;
 
-    public MemberAccess(Expression expr, Identifier member) {
+    public MemberAccess(Expression expr, SimpleIdentifier member) {
         this.expr = expr;
         this.member = member;
     }
@@ -16,7 +15,7 @@ public class MemberAccess extends Expression {
         return expr;
     }
 
-    public Identifier getMember() {
+    public SimpleIdentifier getMember() {
         return member;
     }
 
