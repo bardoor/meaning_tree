@@ -31,8 +31,6 @@ public class PythonLanguage extends Language {
      - support entry point
      - for, for-each
      - while
-     - ternary operator
-     - dict literal
      - classes support
      - import
      */
@@ -71,11 +69,13 @@ public class PythonLanguage extends Language {
             case "identifier" -> fromIdentifier(node);
             case "comparison_operator" -> fromComparisonTSNode(node);
             case "list", "set", "tuple" -> fromList(node, node.getType());
+            case "dictionary" -> fromDictionary(node);
             case "string" -> fromString(node);
             case "slice" -> fromSlice(node);
             case "comment" -> fromComment(node);
             case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
+            case "wildcard_import" -> ScopedIdentifier.ALL;
             case "break_statement" -> new BreakStatement();
             case "continue_statement" -> new ContinueStatement();
             case "subscript" -> fromIndexTSNode(node);
@@ -98,6 +98,16 @@ public class PythonLanguage extends Language {
         Expression expr = (Expression) fromTSNode(node.getChildByFieldName("object"));
         SimpleIdentifier member = (SimpleIdentifier) fromTSNode(node.getChildByFieldName("attribute"));
         return new MemberAccess(expr, member);
+    }
+
+    private Node fromDictionary(TSNode node) {
+        SortedMap<Expression, Expression> dict = new TreeMap<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            Expression key = (Expression) fromTSNode(node.getChild(i).getChildByFieldName("key"));
+            Expression value = (Expression) fromTSNode(node.getChild(i).getChildByFieldName("value"));
+            dict.put(key, value);
+        }
+        return new DictionaryLiteral(dict);
     }
 
     private Node fromTernaryOperatorTSNode(TSNode node) {
