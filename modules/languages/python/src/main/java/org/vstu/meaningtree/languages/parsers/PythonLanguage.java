@@ -9,10 +9,7 @@ import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.math.*;
-import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.nodes.statements.ConditionBranch;
-import org.vstu.meaningtree.nodes.statements.IfStatement;
+import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.unary.UnaryMinusOp;
 import org.vstu.meaningtree.nodes.unary.UnaryPlusOp;
 
@@ -29,7 +26,6 @@ public class PythonLanguage extends Language {
      - support functions and methods with decorators and type annotations
      - function calls and object initalization
      - variable declarations with type annotations
-     - break, continue, return
      - parse member access and indexing
      - support slicing
      - boolean operators
@@ -78,9 +74,19 @@ public class PythonLanguage extends Language {
             case "string" -> fromString(node);
             case "comment" -> fromComment(node);
             case "none" -> new NullLiteral();
+            case "break_statement" -> new BreakStatement();
+            case "continue_statement" -> new ContinueStatement();
+            case "return_statement" -> fromReturnTSNode(node);
             case "assignment", "named_expression" -> fromAssignmentTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromReturnTSNode(TSNode node) {
+        if (node.getNamedChildCount() > 0) {
+            return new ReturnStatement((Expression) fromTSNode(node.getNamedChild(0)));
+        }
+        return new ReturnStatement(null);
     }
 
     private Node createEntryPoint(TSNode node) {
