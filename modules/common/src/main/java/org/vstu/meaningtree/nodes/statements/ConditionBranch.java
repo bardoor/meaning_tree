@@ -20,7 +20,7 @@ public class ConditionBranch extends Node {
     public String generateDot() {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(String.format("%s [label=\"%s\"];\n", _id, _condition.toString()));
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
         builder.append(_condition.generateDot());
         builder.append(_body.generateDot());
         builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _condition.getId(), "condition"));
