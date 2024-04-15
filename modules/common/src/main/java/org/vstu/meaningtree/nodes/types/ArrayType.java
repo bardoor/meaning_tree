@@ -5,12 +5,11 @@ import org.vstu.meaningtree.nodes.Type;
 
 import java.util.Optional;
 
-public class ArrayType extends Type {
-    private final Type _itemType;
+public class ArrayType extends PlainCollectionType {
     private final Optional<Expression> _size;
 
     public ArrayType(Type itemType, Expression size) {
-        _itemType = itemType;
+        super(itemType);
         _size = Optional.ofNullable(size);
     }
 
@@ -27,9 +26,5 @@ public class ArrayType extends Type {
             throw new RuntimeException("Size of array isn't present");
         }
         return _size.get();
-    }
-
-    public Type get_itemType() {
-        return _itemType;
     }
 }
