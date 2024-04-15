@@ -5,9 +5,12 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
+import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.unary.UnaryMinusOp;
@@ -22,13 +25,10 @@ import java.util.regex.Pattern;
 public class PythonLanguage extends Language {
     /*
     TODO:
-     - support entry point
      - support functions and methods with decorators and type annotations
      - function calls and object initalization
      - variable declarations with type annotations
-     - parse member access and indexing
-     - support slicing
-     - boolean operators
+     - support entry point
      - for, for-each
      - while
      - ternary operator
@@ -72,14 +72,73 @@ public class PythonLanguage extends Language {
             case "comparison_operator" -> fromComparisonTSNode(node);
             case "list", "set", "tuple" -> fromList(node, node.getType());
             case "string" -> fromString(node);
+            case "slice" -> fromSlice(node);
             case "comment" -> fromComment(node);
+            case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
             case "break_statement" -> new BreakStatement();
             case "continue_statement" -> new ContinueStatement();
+            case "subscript" -> fromIndexTSNode(node);
+            case "dotted_name" -> fromDottedNameTSNode(node);
+            case "attribute"-> fromAttributeTSNode(node);
             case "return_statement" -> fromReturnTSNode(node);
+            case "conditional_expresstion"-> fromTernaryOperatorTSNode(node);
             case "assignment", "named_expression" -> fromAssignmentTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromIndexTSNode(TSNode node) {
+        Expression base = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        Expression index = (Expression) fromTSNode(node.getChildByFieldName("subscript"));
+        return new IndexExpression(base, index);
+    }
+
+    private Node fromAttributeTSNode(TSNode node) {
+        Expression expr = (Expression) fromTSNode(node.getChildByFieldName("object"));
+        SimpleIdentifier member = (SimpleIdentifier) fromTSNode(node.getChildByFieldName("attribute"));
+        return new MemberAccess(expr, member);
+    }
+
+    private Node fromTernaryOperatorTSNode(TSNode node) {
+        Expression thenExpr = (Expression) fromTSNode(node.getNamedChild(0));
+        Expression ifCond = (Expression) fromTSNode(node.getNamedChild(1));
+        Expression elseExpr = (Expression) fromTSNode(node.getNamedChild(2));
+        return new TernaryOperator(ifCond, thenExpr, elseExpr);
+    }
+
+    private Node fromDottedNameTSNode(TSNode node) {
+        List<SimpleIdentifier> members = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            members.add((SimpleIdentifier) fromTSNode(node.getNamedChild(i)));
+        }
+        return new ScopedIdentifier(members.toArray(new SimpleIdentifier[0]));
+    }
+
+    private Node fromSlice(TSNode node) {
+        Expression start = null;
+        Expression stop = null;
+        Expression step = null;
+
+        int stage = 0;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            if (node.getChild(i).getType().equals(":")) {
+                stage += 1;
+            } else {
+                switch (stage) {
+                    case 0:
+                        start = (Expression) fromTSNode(node.getChild(i));
+                        break;
+                    case 1:
+                        stop = (Expression) fromTSNode(node.getChild(i));
+                        break;
+                    case 2:
+                        step = (Expression) fromTSNode(node.getChild(i));
+                        break;
+                }
+            }
+        }
+        return new Range(start, stop, step);
     }
 
     private Node fromReturnTSNode(TSNode node) {
@@ -320,6 +379,19 @@ public class PythonLanguage extends Language {
             }
         }
         return new CompoundComparison(comparisons.toArray(new BinaryComparison[0]));
+    }
+
+    private Node fromBooleanOperatorTSNode(TSNode node) {
+        Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
+        Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
+        TSNode operator = node.getChildByFieldName("operator");
+
+        if (getCodePiece(operator).equals("and")) {
+            return new ShortCircuitAndOp(left, right);
+        } else if (getCodePiece(operator).equals("or")) {
+            return new ShortCircuitOrOp(left, right);
+        }
+        return null;
     }
 
     private Node fromBinaryExpressionTSNode(TSNode node) {
