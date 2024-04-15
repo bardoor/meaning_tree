@@ -5,6 +5,7 @@ import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.BinaryExpression;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -160,17 +161,38 @@ public class JavaViewer extends Viewer {
         return "int";
     }
 
-    public String toString(VariableDeclaration stmt) {
-        //TODO: fix for new declaration interface
-        /*
-        if (stmt.hasInitializer()) {
-            return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
+    private String toString(VariableDeclarator varDecl) {
+        StringBuilder builder = new StringBuilder();
+
+        String identifier = toString(varDecl.getIdentifier());
+        builder.append(identifier);
+
+        if (varDecl.hasInitialization()) {
+            String init = toString(varDecl.getRValue());
+            builder.append(" = ").append(init);
         }
 
-        return String.format("%s %s;", toString(stmt.getType()), toString(stmt.getName()));
-         */
-        //return String.format("%s %s = %s;", toString(stmt.getType()), toString(stmt.getName()), toString(stmt.getRValue()));
-        return "";
+        return builder.toString();
+    }
+
+    public String toString(VariableDeclaration stmt) {
+        StringBuilder builder = new StringBuilder();
+
+        String declarationType = toString(stmt.getType());
+        builder.append(declarationType).append(" ");
+
+        for (VariableDeclarator varDecl : stmt.getDeclarators()) {
+            builder.append(toString(varDecl)).append(", ");
+        }
+        // Чтобы избежать лишней головной боли на проверки "а последняя ли это декларация",
+        // я автоматически после каждой декларации добавляю запятую и пробел,
+        // но для последней декларации они не нужны, поэтому эти два символа удаляются,
+        // как сделать красивее - не знаю...
+        builder.deleteCharAt(builder.length() - 1);
+        builder.deleteCharAt(builder.length() - 1);
+
+        builder.append(";");
+        return builder.toString();
     }
 
     private void increaseIndentLevel() {
