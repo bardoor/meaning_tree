@@ -5,6 +5,7 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
@@ -13,6 +14,7 @@ import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.UnaryMinusOp;
 import org.vstu.meaningtree.nodes.unary.UnaryPlusOp;
 
@@ -27,7 +29,6 @@ public class PythonLanguage extends Language {
     TODO:
      - support functions and methods with decorators and type annotations
      - function calls and object initalization
-     - variable declarations with type annotations
      - support entry point
      - for, for-each
      - while
@@ -197,10 +198,55 @@ public class PythonLanguage extends Language {
         return new Comment(getCodePiece(node).replace("#", "").trim());
     }
 
+    private Type determineType(TSNode typeNode) {
+        if (typeNode.getNamedChildCount() > 0 && typeNode.getNamedChild(0).getType().equals("generic_type")) {
+            TSNode genericTypeNode = typeNode.getNamedChild(0);
+            List<Type> genericTypes = new ArrayList<>();
+            String typeName = getCodePiece(typeNode.getNamedChild(0));
+            for (int i = 0; i < genericTypeNode.getNamedChildCount(); i++) {
+                genericTypes.add(determineType(genericTypeNode.getNamedChild(i)));
+            }
+            switch (typeName) {
+                case "list":
+                    return new ListType(genericTypes.getFirst());
+                case "tuple":
+                    return new UnmodifiableListType(genericTypes.getFirst());
+                case "dict":
+                    return new DictionaryType(genericTypes.getFirst(), genericTypes.get(1));
+                default:
+                    return new GenericUserType(new SimpleIdentifier(typeName), genericTypes.toArray(new Type[0]));
+            }
+        }
+        switch (getCodePiece(typeNode)) {
+            case "str":
+                return new StringType();
+            case "int":
+                return new IntType();
+            case "float":
+                return new FloatType();
+            case "list":
+                return new ListType(new UnknownType());
+            case "tuple":
+                return new UnmodifiableListType(new UnknownType());
+            case "dict":
+                return new DictionaryType(new UnknownType(), new UnknownType());
+            case "set":
+                return new SetType(new UnknownType());
+            default:
+                return new UserType(new SimpleIdentifier(getCodePiece(typeNode)));
+        }
+    }
+
     private Node fromAssignmentTSNode(TSNode node) {
         TSNode operator = node.getChildByFieldName("left").getNextSibling();
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
+
+        if (!node.getChildByFieldName("type").isNull()) {
+            Type type = determineType(node.getChildByFieldName("type"));
+            return new VariableDeclaration(type, (SimpleIdentifier) left, right);
+        }
+
         if (getCodePiece(operator).equals("=")) {
             return new AssignmentStatement(left, right);
         } else if (getCodePiece(operator).equals(":=")){
