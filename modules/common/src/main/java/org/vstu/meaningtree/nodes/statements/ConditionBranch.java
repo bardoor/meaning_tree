@@ -1,9 +1,10 @@
 package org.vstu.meaningtree.nodes.statements;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class ConditionBranch {
+public class ConditionBranch extends Node {
     public Expression getCondition() {
         return _condition;
     }
