@@ -18,6 +18,14 @@ public class ConditionBranch extends Node {
     }
 
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, _condition.toString()));
+        builder.append(_condition.generateDot());
+        builder.append(_body.generateDot());
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _condition.getId(), "condition"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _body.getId(), "body"));
+
+        return builder.toString();
     }
 }
