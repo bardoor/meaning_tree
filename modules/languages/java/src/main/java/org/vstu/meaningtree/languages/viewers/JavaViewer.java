@@ -18,6 +18,8 @@ import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
 
+import java.util.List;
+
 public class JavaViewer extends Viewer {
 
     private static final String _INDENTATION = "    ";
@@ -56,6 +58,7 @@ public class JavaViewer extends Viewer {
             case SimpleIdentifier expr -> toString(expr);
             case IfStatement stmt -> toString(stmt);
             case GeneralForLoop stmt -> toString(stmt);
+            case CompoundComparison cmp -> toString(cmp);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -237,9 +240,69 @@ public class JavaViewer extends Viewer {
         return identifier.getName();
     }
 
+    private String toString(ConditionBranch branch) {
+        StringBuilder builder = new StringBuilder();
+
+        String cond = toString(branch.getCondition());
+        builder.append("(").append(cond).append(")\n");
+
+        String body = toString(branch.getBody());
+        builder.append(body);
+
+        return builder.toString();
+    }
+
+    private String toString(BinaryComparison binComp) {
+        return switch (binComp) {
+            case EqOp op -> toString(op);
+            case GeOp op -> toString(op);
+            case GtOp op -> toString(op);
+            case LeOp op -> toString(op);
+            case LtOp op -> toString(op);
+            case NotEqOp op -> toString(op);
+            default -> throw new IllegalStateException("Unexpected value: " + binComp);
+        };
+    }
+
+    public String toString(CompoundComparison cmp) {
+        StringBuilder builder = new StringBuilder();
+
+        for (BinaryComparison binComp : cmp.getComparisons()) {
+            builder.append(toString(binComp)).append(" && ");
+        }
+
+        builder.delete(builder.length() - 4, builder.length());
+
+        return builder.toString();
+    }
+
     public String toString(IfStatement stmt) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("if "));
+        List<ConditionBranch> branches = stmt.getBranches();
+        builder.append(toString(branches.getFirst())).append("\n");
+
+        for (ConditionBranch branch : branches.subList(1, branches.size())) {
+            builder
+                    .append(indent("else if "))
+                    .append(toString(branch))
+                    .append("\n");
+        }
+
+        if (stmt.hasElseBranch()) {
+            builder.append(indent("else\n"));
+            String elseBranch = toString(stmt.getElseBranch()).stripLeading();
+            builder.append(elseBranch);
+        }
+        else {
+            // Удаляем лишний перевод строки, если ветки else нет
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
         //TODO: fix for new if structure
         /*
+
         StringBuilder builder = new StringBuilder();
 
         builder.append(indent("if ("));
@@ -259,7 +322,8 @@ public class JavaViewer extends Viewer {
 
         return builder.toString();
         */
-        throw new UnsupportedOperationException();
+
+        return builder.toString();
     }
 
     public String toString(GeneralForLoop generalForLoop) {

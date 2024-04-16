@@ -5,16 +5,20 @@ import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 
 public class ConditionBranch extends Node {
-    public Expression getCondition() {
-        return _condition;
-    }
-
     protected final Expression _condition;
     protected final Statement _body;
 
     public ConditionBranch(Expression condition, Statement body) {
         _condition = condition;
         _body = body;
+    }
+
+    public Expression getCondition() {
+        return _condition;
+    }
+
+    public Statement getBody() {
+        return _body;
     }
 
     public String generateDot() {

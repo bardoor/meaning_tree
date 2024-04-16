@@ -25,6 +25,10 @@ public class IfStatement extends Statement {
         _branches = new ArrayList<>(branches);
     }
 
+    public List<ConditionBranch> getBranches() {
+        return _branches;
+    }
+
     public Statement getElseBranch() {
         if (!hasElseBranch()) {
             throw new RuntimeException("If statement does not have else branch");
