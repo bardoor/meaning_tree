@@ -5,6 +5,7 @@ import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
@@ -21,7 +22,9 @@ import org.vstu.meaningtree.nodes.types.IntType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class JavaLanguage extends Language {
     TSLanguage _language;
@@ -105,6 +108,19 @@ public class JavaLanguage extends Language {
         return new GeneralForLoop(init, condition, update, body);
     }
 
+    private VariableDeclarator fromVariableDeclarator(TSNode node) {
+        String name = getCodePiece(node.getChildByFieldName("name"));
+        SimpleIdentifier ident = new SimpleIdentifier(name);
+
+        if (!node.getChildByFieldName("value").isNull()) {
+            Expression value = (Expression) fromTSNode(node.getChildByFieldName("value"));
+            return new VariableDeclarator(ident, value);
+        }
+        else {
+            return new VariableDeclarator(ident);
+        }
+    }
+
     private Node fromVariableDeclarationTSNode(TSNode node) {
         String typeName = getCodePiece(node.getChildByFieldName("type"));
 
@@ -114,27 +130,24 @@ public class JavaLanguage extends Language {
             default -> throw new IllegalStateException("Unexpected value: " + typeName);
         };
 
-        TSNode declarator = node.getChildByFieldName("declarator");
+        List<VariableDeclarator> decls = new ArrayList<>();
 
-        /*
         TSQuery all_declarators = new TSQuery(_language, "(variable_declarator) @decls");
         TSQueryCursor cursor = new TSQueryCursor();
         cursor.exec(all_declarators, node);
         TSQueryMatch match = new TSQueryMatch();
         while (cursor.nextMatch(match)) {
-            cursor.
+            TSQueryCapture capture = match.getCaptures()[0];
+            VariableDeclarator decl = fromVariableDeclarator(capture.getNode());
+            decls.add(decl);
         }
-         */
+        //while (cursor.nextMatch(match)) {
+        //    System.out.println(match.getCaptures());
+        //}
 
-        String variableName = getCodePiece(declarator.getChildByFieldName("name"));
-        SimpleIdentifier identifier = new SimpleIdentifier(variableName);
-
-        if (!declarator.getChildByFieldName("value").isNull()) {
-            Expression value = (Expression) fromTSNode(declarator.getChildByFieldName("value"));
-            return new VariableDeclaration(type, identifier, value);
-        }
-
-        return new VariableDeclaration(type, identifier);
+        VariableDeclarator[] declarators = new VariableDeclarator[decls.size()];
+        decls.toArray(declarators);
+        return new VariableDeclaration(type, declarators);
     }
 
     private Node fromProgramTSNode(TSNode node) {
