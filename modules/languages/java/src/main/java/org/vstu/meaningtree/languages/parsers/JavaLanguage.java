@@ -116,6 +116,7 @@ public class JavaLanguage extends Language {
 
         TSNode declarator = node.getChildByFieldName("declarator");
 
+        /*
         TSQuery all_declarators = new TSQuery(_language, "(variable_declarator) @decls");
         TSQueryCursor cursor = new TSQueryCursor();
         cursor.exec(all_declarators, node);
@@ -123,6 +124,7 @@ public class JavaLanguage extends Language {
         while (cursor.nextMatch(match)) {
             cursor.
         }
+         */
 
         String variableName = getCodePiece(declarator.getChildByFieldName("name"));
         SimpleIdentifier identifier = new SimpleIdentifier(variableName);
