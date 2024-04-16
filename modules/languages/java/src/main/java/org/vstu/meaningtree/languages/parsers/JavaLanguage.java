@@ -21,15 +21,22 @@ import org.vstu.meaningtree.nodes.types.IntType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class JavaLanguage extends Language {
+    TSLanguage _language;
+    TSParser _parser;
+
+    public JavaLanguage() {
+        _language = new TreeSitterJava();
+        _parser = new TSParser();
+        _parser.setLanguage(_language);
+    }
+
     public MeaningTree getMeaningTree(String code) {
         _code = code;
-        TSParser parser = new TSParser();
-        TSLanguage javaLanguage = new TreeSitterJava();
 
-        parser.setLanguage(javaLanguage);
-        TSTree tree = parser.parseString(null, code);
+        TSTree tree = _parser.parseString(null, code);
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
@@ -108,6 +115,16 @@ public class JavaLanguage extends Language {
         };
 
         TSNode declarator = node.getChildByFieldName("declarator");
+
+        /*
+        TSQuery all_declarators = new TSQuery(_language, "(variable_declarator) @decls");
+        TSQueryCursor cursor = new TSQueryCursor();
+        cursor.exec(all_declarators, node);
+        TSQueryMatch match = new TSQueryMatch();
+        while (cursor.nextMatch(match)) {
+            cursor.
+        }
+         */
 
         String variableName = getCodePiece(declarator.getChildByFieldName("name"));
         SimpleIdentifier identifier = new SimpleIdentifier(variableName);
