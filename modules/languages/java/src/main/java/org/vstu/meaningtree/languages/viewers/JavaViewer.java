@@ -12,6 +12,7 @@ import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
@@ -48,6 +49,7 @@ public class JavaViewer extends Viewer {
             case NotEqOp op -> toString(op);
             case ShortCircuitAndOp op -> toString(op);
             case ShortCircuitOrOp op -> toString(op);
+            case NotOp op -> toString(op);
             case ParenthesizedExpression expr -> toString(expr);
             case AssignmentExpression expr -> toString(expr);
             case AssignmentStatement stmt -> toString(stmt);
@@ -131,6 +133,10 @@ public class JavaViewer extends Viewer {
 
     public String toString(ShortCircuitOrOp op) {
         return toString(op, "||");
+    }
+
+    public String toString(NotOp op) {
+        return String.format("!%s", toString(op.getArgument()));
     }
 
     public String toString(ParenthesizedExpression expr) {
