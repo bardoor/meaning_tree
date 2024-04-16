@@ -1,13 +1,9 @@
 package org.vstu.meaningtree.languages.viewers;
 
-import org.vstu.meaningtree.nodes.ParenthesizedExpression;
-import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.AssignmentExpression;
-import org.vstu.meaningtree.nodes.BinaryExpression;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
@@ -290,6 +286,15 @@ public class JavaViewer extends Viewer {
         throw new UnsupportedOperationException();
     }
 
+    private String toString(HasInitialization init) {
+        return switch (init) {
+            case AssignmentExpression expr -> toString(expr);
+            case AssignmentStatement stmt -> toString(stmt);
+            case VariableDeclaration decl -> toString(decl);
+            default -> throw new IllegalStateException("Unexpected value: " + init);
+        };
+    }
+
     public String toString(GeneralForLoop generalForLoop) {
         StringBuilder builder = new StringBuilder();
 
@@ -297,9 +302,7 @@ public class JavaViewer extends Viewer {
 
         boolean addSemi = true;
         if (generalForLoop.hasInitializer()) {
-            //TODO: fix compilation problem
-            //String init = toString(generalForLoop.getInitializer());
-            String init = "";
+            String init = toString(generalForLoop.getInitializer());
             if (init.stripTrailing().endsWith(";")) {
                 addSemi = false;
             }
