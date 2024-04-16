@@ -364,7 +364,7 @@ public class PythonLanguage extends Language {
     }
 
     private Node fromParenthesizedExpressionTSNode(TSNode node) {
-        return new ParenthesizedExpression((Expression) fromTSNode(node.getChild(0)));
+        return new ParenthesizedExpression((Expression) fromTSNode(node.getChild(1)));
     }
 
     private Node fromIntegerLiteralTSNode(TSNode node) {
