@@ -1,23 +1,22 @@
 package org.vstu.meaningtree.languages.viewers;
 
-import org.vstu.meaningtree.nodes.ParenthesizedExpression;
-import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.AssignmentExpression;
-import org.vstu.meaningtree.nodes.BinaryExpression;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
+
+import java.util.List;
 
 public class JavaViewer extends Viewer {
 
@@ -48,6 +47,7 @@ public class JavaViewer extends Viewer {
             case NotEqOp op -> toString(op);
             case ShortCircuitAndOp op -> toString(op);
             case ShortCircuitOrOp op -> toString(op);
+            case NotOp op -> toString(op);
             case ParenthesizedExpression expr -> toString(expr);
             case AssignmentExpression expr -> toString(expr);
             case AssignmentStatement stmt -> toString(stmt);
@@ -57,6 +57,7 @@ public class JavaViewer extends Viewer {
             case SimpleIdentifier expr -> toString(expr);
             case IfStatement stmt -> toString(stmt);
             case GeneralForLoop stmt -> toString(stmt);
+            case CompoundComparison cmp -> toString(cmp);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -131,6 +132,10 @@ public class JavaViewer extends Viewer {
 
     public String toString(ShortCircuitOrOp op) {
         return toString(op, "||");
+    }
+
+    public String toString(NotOp op) {
+        return String.format("!%s", toString(op.getArgument()));
     }
 
     public String toString(ParenthesizedExpression expr) {
@@ -259,9 +264,69 @@ public class JavaViewer extends Viewer {
         return identifier.getName();
     }
 
+    private String toString(ConditionBranch branch) {
+        StringBuilder builder = new StringBuilder();
+
+        String cond = toString(branch.getCondition());
+        builder.append("(").append(cond).append(")\n");
+
+        String body = toString(branch.getBody());
+        builder.append(body);
+
+        return builder.toString();
+    }
+
+    private String toString(BinaryComparison binComp) {
+        return switch (binComp) {
+            case EqOp op -> toString(op);
+            case GeOp op -> toString(op);
+            case GtOp op -> toString(op);
+            case LeOp op -> toString(op);
+            case LtOp op -> toString(op);
+            case NotEqOp op -> toString(op);
+            default -> throw new IllegalStateException("Unexpected value: " + binComp);
+        };
+    }
+
+    public String toString(CompoundComparison cmp) {
+        StringBuilder builder = new StringBuilder();
+
+        for (BinaryComparison binComp : cmp.getComparisons()) {
+            builder.append(toString(binComp)).append(" && ");
+        }
+
+        builder.delete(builder.length() - 4, builder.length());
+
+        return builder.toString();
+    }
+
     public String toString(IfStatement stmt) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("if "));
+        List<ConditionBranch> branches = stmt.getBranches();
+        builder.append(toString(branches.getFirst())).append("\n");
+
+        for (ConditionBranch branch : branches.subList(1, branches.size())) {
+            builder
+                    .append(indent("else if "))
+                    .append(toString(branch))
+                    .append("\n");
+        }
+
+        if (stmt.hasElseBranch()) {
+            builder.append(indent("else\n"));
+            String elseBranch = toString(stmt.getElseBranch()).stripLeading();
+            builder.append(elseBranch);
+        }
+        else {
+            // Удаляем лишний перевод строки, если ветки else нет
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
         //TODO: fix for new if structure
         /*
+
         StringBuilder builder = new StringBuilder();
 
         builder.append(indent("if ("));
@@ -281,7 +346,17 @@ public class JavaViewer extends Viewer {
 
         return builder.toString();
         */
-        throw new UnsupportedOperationException();
+
+        return builder.toString();
+    }
+
+    private String toString(HasInitialization init) {
+        return switch (init) {
+            case AssignmentExpression expr -> toString(expr);
+            case AssignmentStatement stmt -> toString(stmt);
+            case VariableDeclaration decl -> toString(decl);
+            default -> throw new IllegalStateException("Unexpected value: " + init);
+        };
     }
 
     public String toString(GeneralForLoop generalForLoop) {
@@ -291,9 +366,7 @@ public class JavaViewer extends Viewer {
 
         boolean addSemi = true;
         if (generalForLoop.hasInitializer()) {
-            //TODO: fix compilation problem
-            //String init = toString(generalForLoop.getInitializer());
-            String init = "";
+            String init = toString(generalForLoop.getInitializer());
             if (init.stripTrailing().endsWith(";")) {
                 addSemi = false;
             }

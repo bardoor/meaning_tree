@@ -1,13 +1,10 @@
 package org.vstu.meaningtree.nodes.statements;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class ConditionBranch {
-    public Expression getCondition() {
-        return _condition;
-    }
-
+public class ConditionBranch extends Node {
     protected final Expression _condition;
     protected final Statement _body;
 
@@ -16,7 +13,23 @@ public class ConditionBranch {
         _body = body;
     }
 
+    public Expression getCondition() {
+        return _condition;
+    }
+
+    public Statement getBody() {
+        return _body;
+    }
+
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
+        builder.append(_condition.generateDot());
+        builder.append(_body.generateDot());
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _condition.getId(), "condition"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _body.getId(), "body"));
+
+        return builder.toString();
     }
 }
