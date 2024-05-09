@@ -6,4 +6,9 @@ public class SetType extends PlainCollectionType {
     public SetType(Type itemType) {
         super(itemType);
     }
+
+    @Override
+    public String generateDot() {
+        throw new UnsupportedOperationException();
+    }
 }

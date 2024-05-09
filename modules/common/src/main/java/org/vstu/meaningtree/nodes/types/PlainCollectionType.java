@@ -17,4 +17,9 @@ public class PlainCollectionType extends Type implements Generic {
     public Type getItemType() {
         return _itemType;
     }
+
+    @Override
+    public String generateDot() {
+        throw new UnsupportedOperationException();
+    }
 }

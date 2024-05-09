@@ -27,4 +27,9 @@ public class ArrayType extends PlainCollectionType {
         }
         return _size.get();
     }
+
+    @Override
+    public String generateDot() {
+        throw new UnsupportedOperationException();
+    }
 }

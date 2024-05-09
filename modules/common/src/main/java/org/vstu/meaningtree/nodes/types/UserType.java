@@ -16,4 +16,9 @@ public class UserType extends Type {
     public UserType(SimpleIdentifier name) {
         _name = name;
     }
+
+    @Override
+    public String generateDot() {
+        throw new UnsupportedOperationException();
+    }
 }

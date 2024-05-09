@@ -23,4 +23,9 @@ public class DictionaryType extends Type implements Generic {
     public Type[] getTypeParameters() {
         return new Type[] {_keyType, _valueType};
     }
+
+    @Override
+    public String generateDot() {
+        throw new UnsupportedOperationException();
+    }
 }

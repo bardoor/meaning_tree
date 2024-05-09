@@ -15,4 +15,9 @@ public class GenericUserType extends UserType implements Generic{
     public Type[] getTypeParameters() {
         return _templateParameters;
     }
+
+    @Override
+    public String generateDot() {
+        throw new UnsupportedOperationException();
+    }
 }

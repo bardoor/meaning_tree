@@ -1,4 +1,4 @@
 package org.vstu.meaningtree.nodes;
 
-public abstract class Type {
+public abstract class Type extends Node {
 }
