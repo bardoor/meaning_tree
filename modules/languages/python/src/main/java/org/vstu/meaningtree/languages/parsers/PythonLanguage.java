@@ -5,10 +5,8 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.declarations.Annotation;
-import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.declarations.DeclarationArgument;
+import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.DefinitionArgument;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
@@ -27,14 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class PythonLanguage extends Language {
-    /*
-    TODO:
-     - classes support
-     - import
-     */
 
     @Override
     public MeaningTree getMeaningTree(String code) {
@@ -76,6 +68,7 @@ public class PythonLanguage extends Language {
             case "string" -> fromString(node);
             case "slice" -> fromSlice(node);
             case "for_statement" -> fromForLoop(node);
+            case "class_definition" -> fromClass(node);
             case "comment" -> fromComment(node);
             case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
@@ -86,6 +79,7 @@ public class PythonLanguage extends Language {
             case "continue_statement" -> new ContinueStatement();
             case "subscript" -> fromIndexTSNode(node);
             case "dotted_name" -> fromDottedNameTSNode(node);
+            case "import_statement", "import_from_statement" -> fromImportNodes(node);
             case "attribute"-> fromAttributeTSNode(node);
             case "return_statement" -> fromReturnTSNode(node);
             case "conditional_expresstion"-> fromTernaryOperatorTSNode(node);
@@ -99,6 +93,22 @@ public class PythonLanguage extends Language {
         SimpleIdentifier ident = (SimpleIdentifier) fromTSNode(node.getChildByFieldName("name"));
         Expression expr = (Expression) fromTSNode(node.getChildByFieldName("value"));
         return new DefinitionArgument(ident, expr);
+    }
+
+    private Import fromImportNodes(TSNode node) {
+        Identifier scope = null;
+        if (!node.getChildByFieldName("module_name").isNull()) {
+            scope = (Identifier) fromTSNode(node.getChildByFieldName("module_name"));
+        }
+        TSNode moduleNode = node.getChildByFieldName("name");
+        Identifier alias = null, member = null;
+        if (moduleNode.getType().equals("aliased_import")) {
+            alias = (Identifier) fromTSNode(moduleNode.getChildByFieldName("alias"));
+            member = (Identifier) fromTSNode(moduleNode.getChildByFieldName("name"));
+        } else {
+            member = (Identifier) fromTSNode(moduleNode);
+        }
+        return new Import(Import.ImportType.LIBRARY, scope, alias, member);
     }
 
     private FunctionCall fromFunctionCall(TSNode node) {
@@ -160,6 +170,28 @@ public class PythonLanguage extends Language {
         }
         SimpleIdentifier identifier = (SimpleIdentifier) fromTSNode(namedChild.getNamedChild(0));
         return new DeclarationArgument(type, isListUnpacking, identifier, initial);
+    }
+
+    private ClassDefinition fromClass(TSNode node) {
+        ClassDeclaration classDecl = new ClassDeclaration((SimpleIdentifier) fromTSNode(node));
+        Type type = new UserType(classDecl.getName());
+        CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
+        List<Node> nodes = new ArrayList<>();
+        for (Node bodyNode : body) {
+            if (bodyNode instanceof VariableDeclaration var) {
+                nodes.add(var.makeField(VisibilityModifier.PUBLIC, false));
+            } else if (bodyNode instanceof FunctionDefinition func) {
+                boolean isStatic = false;
+                Annotation anno = ((FunctionDeclaration) (func.getDeclaration())).getAnnotation();
+                if (anno != null) {
+                    isStatic = anno.getName().toString().equals("staticmethod") || anno.getName().toString().equals("classmethod");
+                }
+                nodes.add(func.makeMethod(type, isStatic, VisibilityModifier.PUBLIC));
+            } else {
+                nodes.add(bodyNode);
+            }
+        }
+        return new ClassDefinition(classDecl, nodes);
     }
 
     private Statement fromForLoop(TSNode node) {
