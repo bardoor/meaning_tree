@@ -5,7 +5,11 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.declarations.Annotation;
+import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.DeclarationArgument;
+import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
@@ -76,6 +80,7 @@ public class PythonLanguage extends Language {
             case "comment" -> fromComment(node);
             case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
+            case "type" -> determineType(node);
             case "wildcard_import" -> ScopedIdentifier.ALL;
             case "break_statement" -> new BreakStatement();
             case "continue_statement" -> new ContinueStatement();
@@ -85,8 +90,42 @@ public class PythonLanguage extends Language {
             case "return_statement" -> fromReturnTSNode(node);
             case "conditional_expresstion"-> fromTernaryOperatorTSNode(node);
             case "assignment", "named_expression" -> fromAssignmentTSNode(node);
+            case "function_definition", "decorated_definition" -> fromFunctionTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromFunctionTSNode(TSNode node) {
+        Annotation anno = null;
+        if (node.getType().equals("decorated_definition")) {
+            node = node.getChildByFieldName("definition");
+        }
+        SimpleIdentifier name = new SimpleIdentifier(getCodePiece(node.getChildByFieldName("name")));
+        List<DeclarationArgument> arguments = new ArrayList<>();
+        for (int i = 0; i < node.getChildByFieldName("parameters").getNamedChildCount(); i++) {
+            arguments.add(formArgument(node.getNamedChild(i)));
+        }
+        Type returnType = determineType(node.getChildByFieldName("return_type"));
+        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+        return new FunctionDefinition(new FunctionDeclaration(name, returnType, null, arguments.toArray(new DeclarationArgument[0])), body);
+    }
+
+    private DeclarationArgument formArgument(TSNode namedChild) {
+        Type type = null;
+        Expression initial = null;
+        boolean isListUnpacking = false;
+        if (namedChild.getType().equals("typed_parameter")) {
+            type = determineType(namedChild.getChildByFieldName("type"));
+        }  else if (namedChild.getType().equals("typed_default_parameter")) {
+            type = determineType(namedChild.getChildByFieldName("type"));
+            initial = (Expression) fromTSNode(namedChild.getChildByFieldName("value"));
+        } else if (namedChild.getType().equals("default_parameter")) {
+            initial = (Expression) fromTSNode(namedChild.getChildByFieldName("value"));
+        } else if (namedChild.getType().equals("list_splat_pattern")) {
+            isListUnpacking = true;
+        }
+        SimpleIdentifier identifier = (SimpleIdentifier) fromTSNode(namedChild.getNamedChild(0));
+        return new DeclarationArgument(type, isListUnpacking, identifier, initial);
     }
 
     private Node fromIndexTSNode(TSNode node) {

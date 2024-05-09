@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.identifiers;
 
-import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Identifier;
 
-public class QualifiedIdentifier extends Expression {
+public class QualifiedIdentifier extends Identifier {
     private final ScopedIdentifier _scope;
     private final SimpleIdentifier _member;
 

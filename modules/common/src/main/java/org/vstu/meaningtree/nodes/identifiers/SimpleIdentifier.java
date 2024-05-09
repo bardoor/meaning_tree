@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.identifiers;
 
-import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Identifier;
 
-public class SimpleIdentifier extends Expression {
+public class SimpleIdentifier extends Identifier {
     protected final String name;
 
     public SimpleIdentifier(String name) {

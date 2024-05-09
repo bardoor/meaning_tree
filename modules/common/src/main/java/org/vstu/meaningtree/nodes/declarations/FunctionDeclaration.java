@@ -2,19 +2,17 @@ package org.vstu.meaningtree.nodes.declarations;
 
 import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.definitions.Argument;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 import java.util.List;
 import java.util.Optional;
 
 public class FunctionDeclaration extends Declaration {
-    private final List<Argument> _arguments;
+    private final List<DeclarationArgument> _arguments;
     private final Identifier _name;
     private final Type _returnType;
     private final Optional<Annotation> annotation;
 
-    public FunctionDeclaration(Identifier name, Type returnType, Annotation annotation, Argument ... arguments) {
+    public FunctionDeclaration(Identifier name, Type returnType, Annotation annotation, DeclarationArgument... arguments) {
         _name = name;
         this.annotation = Optional.ofNullable(annotation);
         this._arguments = List.of(arguments);
@@ -25,7 +23,7 @@ public class FunctionDeclaration extends Declaration {
         return _name;
     }
 
-    public List<Argument> getArguments() {
+    public List<DeclarationArgument> getArguments() {
         return _arguments;
     }
 
