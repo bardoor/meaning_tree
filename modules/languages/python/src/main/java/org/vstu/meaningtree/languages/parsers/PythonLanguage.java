@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 public class PythonLanguage extends Language {
     /*
     TODO:
-     - support entry point
      - classes support
      - import
      */
@@ -58,7 +57,8 @@ public class PythonLanguage extends Language {
         }
         String nodeType = node.getType();
         return switch (nodeType) {
-            case "module", "block" -> fromCompoundTSNode(node);
+            case "module" -> createEntryPoint(node);
+            case "block" -> fromCompoundTSNode(node);
             case "if_statement" -> fromIfStatementTSNode(node);
             case "expression_statement" -> fromExpressionStatementTSNode(node);
             case "parenthesized_expression" -> fromParenthesizedExpressionTSNode(node);
@@ -273,23 +273,31 @@ public class PythonLanguage extends Language {
 
     private Node createEntryPoint(TSNode node) {
         // detect if __name__ == __main__ construction
-        Pattern pattern = Pattern.compile("__name__\\s+==\\s['\\\"]__main__['\\\"]");
-        for (int i = 0; i < node.getNamedChildCount(); i++) {
-            TSNode children = node.getChild(i);
-            if (children.getType().equals("if_statement")) {
-                if (pattern.matcher(getCodePiece(children.getChildByFieldName("condition"))).hasMatch()) {
-                    TSNode body = children.getChildByFieldName("consequence");
-                    if (body.getNamedChildCount() == 1 && body.getNamedChild(0).getNamedChild(0).getType().equals("call")) {
-                        String functionName = getCodePiece(body.getNamedChild(0).getNamedChild(0).getChildByFieldName("function"));
-                        // TODO: check function availability, else wrap all content
-                    } else {
-                        //TODO: wrap all content to created by tree main function
+        CompoundStatement compound = fromCompoundTSNode(node);
+        String functionName = null;
+        for (Node programNode : compound) {
+            if (programNode instanceof IfStatement ifStmt) {
+                ConditionBranch mainBranch = ifStmt.getBranches().get(0);
+                if (mainBranch.getCondition() instanceof EqOp eqOp) {
+                    if (eqOp.getLeft().toString().equals("__name__") && eqOp.getRight().toString().equals("__main__")) {
+                        CompoundStatement body = (CompoundStatement) mainBranch.getBody();
+                        if (body.getLength() == 1 && body.getNodes()[0] instanceof FunctionCall call) {
+                            if (call.getFunctionName() instanceof SimpleIdentifier) {
+                                functionName = call.getFunctionName().toString();
+                            }
+                        }
                     }
+                    //TODO: add various main condition body support
                 }
             }
         }
-        // TODO: if main function isn't detected: wrap all content to body
-        return null;
+        FunctionDefinition mainFunction = null;
+        for (Node programNode : compound) {
+            if (programNode instanceof FunctionDefinition func && func.getName().toString().equals(functionName)) {
+                mainFunction = func;
+            }
+        }
+        return new ProgramEntryPoint(List.of(compound.getNodes()), mainFunction);
     }
 
     private Identifier fromIdentifier(TSNode node) {
