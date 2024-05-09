@@ -16,10 +16,23 @@ import org.vstu.meaningtree.nodes.unary.*;
 public class PythonViewer extends Viewer {
     /*
     TODO:
-     - program entry point
+     - comparisons
+     - unary/binary ops
+     - WHAT about priority?
      - tabulation
-     - implement methods
+     - support if/for/for-each/while/ternary/do-while/switch
+     - assignment support, variable declaration
+     - parenthesize
+     - literal support, comment support
+     - break/return/contiune
+     - identifiers
+     - program entry point
      - general for-loop transformation
+     - compound comparison detection
+     - support function calls and new object/array, indexing
+     - function support
+     - class support
+     - import support
      */
 
     @Override
