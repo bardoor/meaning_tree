@@ -15,7 +15,7 @@ public class WhileLoop extends Statement {
     protected final Expression condition;
     protected final Statement body;
 
-    public WhileLoop(Expression condition, CompoundStatement body) {
+    public WhileLoop(Expression condition, Statement body) {
         this.condition = condition;
         this.body = body;
     }
