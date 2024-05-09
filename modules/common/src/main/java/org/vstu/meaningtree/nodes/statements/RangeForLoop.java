@@ -1,16 +1,18 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 /**
  * Цикл по диапазону целых чисел (начало и конец являются частью диапазна) с заданным шагом.
  */
 public class RangeForLoop extends ForLoop {
-    private final int _start;
-    private final int _end;
-    private final int _step;
+    private final Expression _start;
+    private final Expression _end;
+    private final Expression _step;
     private final SimpleIdentifier _indentifier;
-    private final CompoundStatement _body;
+    private final Statement _body;
 
     /**
      * Создает цикл по диапазону.
@@ -19,7 +21,7 @@ public class RangeForLoop extends ForLoop {
      * @param step _identifier
      * @param body тело цикла
      */
-    public RangeForLoop(int start, int end, int step, SimpleIdentifier identifier, CompoundStatement body) {
+    public RangeForLoop(Expression start, Expression end, Expression step, SimpleIdentifier identifier, Statement body) {
         _start = start;
         _end = end;
         _step = step;
@@ -27,20 +29,21 @@ public class RangeForLoop extends ForLoop {
         _body = body;
     }
 
-    public int getStart() { return _start; }
+    public Expression getStart() { return _start; }
 
-    public int getEnd() { return _end; }
+    public Expression getEnd() { return _end; }
 
-    public int getStep() { return _step; }
+    public Expression getStep() { return _step; }
 
     public SimpleIdentifier getIdentifier() {
         return _indentifier;
     }
 
-    public CompoundStatement getBody() { return _body; }
+    public Statement getBody() { return _body; }
 
     @Override
     public String generateDot() {
+        //TODO: fix for new format
         return String.format("%s [label=\"%s(var_name=\"%s\", start=%d, end=%d, step=%d)\"];\n",
                     _id, getClass().getSimpleName(), _indentifier.getName(), _start, _end, _step)
                 + _body.generateDot()

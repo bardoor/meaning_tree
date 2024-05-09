@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionCall extends Expression {
-    protected final SimpleIdentifier functionName;
+    protected final Identifier functionName;
 
-    public SimpleIdentifier getFunctionName() {
+    public Identifier getFunctionName() {
         return functionName;
     }
 
@@ -16,11 +16,11 @@ public class FunctionCall extends Expression {
         return new ArrayList<>(arguments);
     }
 
-    protected final ArrayList<Expression> arguments;
+    protected final List<Expression> arguments;
 
-    public FunctionCall(SimpleIdentifier functionName, ArrayList<Expression> arguments) {
+    public FunctionCall(Identifier functionName, Expression ... arguments) {
         this.functionName = functionName;
-        this.arguments = arguments;
+        this.arguments = List.of(arguments);
     }
 
     @Override
