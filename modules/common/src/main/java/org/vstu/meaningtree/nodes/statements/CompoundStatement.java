@@ -35,4 +35,12 @@ public class CompoundStatement extends Statement implements Iterable<Node> {
     public Iterator<Node> iterator() {
         return _nodes.iterator();
     }
+
+    public int getLength() {
+        return _nodes.size();
+    }
+
+    public Node[] getNodes() {
+        return _nodes.toArray(new Node[0]);
+    }
 }

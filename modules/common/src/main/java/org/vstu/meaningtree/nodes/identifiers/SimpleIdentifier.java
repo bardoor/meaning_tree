@@ -14,6 +14,11 @@ public class SimpleIdentifier extends Identifier {
     }
 
     @Override
+    public String toString() {
+        return getName();
+    }
+
+    @Override
     public String generateDot() {
         return String.format("%s [label=\"%s\"];\n", _id, getName());
     }

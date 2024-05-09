@@ -20,6 +20,11 @@ public class QualifiedIdentifier extends Identifier {
     }
 
     @Override
+    public String toString() {
+        return _scope.toString() + "::" + _member.toString();
+    }
+
+    @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
     }

@@ -4,6 +4,7 @@ import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.utils.WildcardImport;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ScopedIdentifier extends Identifier {
     private final List<SimpleIdentifier> _scopeResolutionList;
@@ -21,5 +22,10 @@ public class ScopedIdentifier extends Identifier {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String toString() {
+        return _scopeResolutionList.stream().map(SimpleIdentifier::toString).collect(Collectors.joining("."));
     }
 }

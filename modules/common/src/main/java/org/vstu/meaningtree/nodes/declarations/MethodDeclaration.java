@@ -15,6 +15,10 @@ public class MethodDeclaration extends FunctionDeclaration {
         this.isStatic = isStatic;
     }
 
+    public Type getOwner() {
+        return _owner;
+    }
+
     public VisibilityModifier getVisibilityModifier() {
         return modifier;
     }
