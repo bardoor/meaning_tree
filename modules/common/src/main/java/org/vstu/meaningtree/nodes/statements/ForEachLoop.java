@@ -14,12 +14,7 @@ public class ForEachLoop extends Statement {
         _expr = expr;
         _body = body;
     }
-
-    @Override
-    public String generateDot() {
-        throw new UnsupportedOperationException();
-    }
-
+    
     public Expression getExpression() {
         return _expr;
     }
@@ -32,3 +27,4 @@ public class ForEachLoop extends Statement {
         return _body;
     }
 }
+
