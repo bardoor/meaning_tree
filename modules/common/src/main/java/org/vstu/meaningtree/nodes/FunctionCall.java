@@ -19,8 +19,12 @@ public class FunctionCall extends Expression {
     protected final List<Expression> arguments;
 
     public FunctionCall(Identifier functionName, Expression ... arguments) {
+        this(functionName, List.of(arguments));
+    }
+
+    public FunctionCall(Identifier functionName, List<Expression> arguments) {
         this.functionName = functionName;
-        this.arguments = List.of(arguments);
+        this.arguments = arguments;
     }
 
     @Override

@@ -123,10 +123,20 @@ public class PythonLanguage extends Language {
         }
         List<Expression> exprs = new ArrayList<>();
         TSNode arguments = node.getChildByFieldName("arguments");
-        for (int i = 0; i < arguments.getNamedChildCount(); i++) {
-            exprs.add((Expression) fromTSNode(arguments.getNamedChild(i)));
+        for (int i = 0; i < arguments.getChildCount(); i++) {
+            /*
+                Нельзя использовать arguments.getNamedChildCount() и вообще любой "getNamed...",
+                т.к. был зафиксирован баг: при запросе getNamedChild(index) выяснилось, что index
+                ни на что не влияет и может принимать любые значения, всегда возвращается только первый ребенок!
+             */
+            String tsNodeChildType = arguments.getChild(i).getType();
+            if (tsNodeChildType.equals("(") || tsNodeChildType.equals(")") || tsNodeChildType.equals(",")) {
+                continue;
+            }
+            Expression expr = (Expression) fromTSNode(arguments.getChild(i));
+            exprs.add(expr);
         }
-        return new FunctionCall((Identifier) ident, exprs.toArray(new Expression[0]));
+        return new FunctionCall((Identifier) ident, exprs);
     }
 
     private Annotation fromDecorator(TSNode node) {

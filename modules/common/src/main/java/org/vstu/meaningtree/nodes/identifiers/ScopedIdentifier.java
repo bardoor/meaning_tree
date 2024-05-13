@@ -15,8 +15,8 @@ public class ScopedIdentifier extends Identifier {
         _scopeResolutionList = List.of(identifiers);
     }
 
-    public SimpleIdentifier[] getScopeResolution() {
-        return _scopeResolutionList.toArray(new SimpleIdentifier[0]);
+    public List<SimpleIdentifier> getScopeResolution() {
+        return _scopeResolutionList;
     }
 
     @Override

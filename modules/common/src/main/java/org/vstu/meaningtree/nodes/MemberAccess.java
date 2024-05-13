@@ -30,7 +30,7 @@ public class MemberAccess extends Expression {
         throw new UnsupportedOperationException();
     }
 
-    public Node toScopedIdentifier() {
+    public ScopedIdentifier toScopedIdentifier() {
         List<SimpleIdentifier> idents = new ArrayList<>();
         idents.add(member);
         _unwrapScoped(expr, idents);
@@ -46,7 +46,7 @@ public class MemberAccess extends Expression {
                 _unwrapScoped(memberAccess.getExpression(), list);
             }
             case ScopedIdentifier scoped -> {
-                List<SimpleIdentifier> idents = Arrays.asList(scoped.getScopeResolution());
+                List<SimpleIdentifier> idents = scoped.getScopeResolution();
                 Collections.reverse(idents);
                 list.addAll(idents);
             }

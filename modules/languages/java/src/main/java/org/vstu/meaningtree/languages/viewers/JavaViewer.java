@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages.viewers;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
@@ -59,6 +60,8 @@ public class JavaViewer extends Viewer {
             case GeneralForLoop stmt -> toString(stmt);
             case CompoundComparison cmp -> toString(cmp);
             case RangeForLoop rangeLoop -> toString(rangeLoop);
+            case ProgramEntryPoint entryPoint -> toString(entryPoint);
+            case FunctionCall funcCall -> toString(funcCall);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -431,7 +434,7 @@ public class JavaViewer extends Viewer {
                     toString(forRangeLoop.getStart()),
                     toString(forRangeLoop.getIdentifier()),
                     toString(forRangeLoop.getEnd()),
-                    getForRangeHeader(forRangeLoop)
+                    getForRangeUpdate(forRangeLoop)
             );
         }
         else if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.DOWN) {
@@ -441,7 +444,7 @@ public class JavaViewer extends Viewer {
                     toString(forRangeLoop.getStart()),
                     toString(forRangeLoop.getIdentifier()),
                     toString(forRangeLoop.getEnd()),
-                    getForRangeHeader(forRangeLoop)
+                    getForRangeUpdate(forRangeLoop)
             );
         }
 
@@ -453,5 +456,39 @@ public class JavaViewer extends Viewer {
                 getForRangeHeader(forRangeLoop) +
                 ")\n" +
                 toString(forRangeLoop.getBody());
+    }
+
+    public String toString(ProgramEntryPoint entryPoint) {
+        StringBuilder builder = new StringBuilder();
+        for (Node node : entryPoint.getBody()) {
+            builder.append(toString(node));
+        }
+        return builder.toString();
+    }
+
+    public String toString(ScopedIdentifier scopedIdent) {
+        StringBuilder builder = new StringBuilder();
+
+        for (var ident : scopedIdent.getScopeResolution()) {
+            builder.append(toString(ident)).append(".");
+        }
+        builder.deleteCharAt(builder.length() - 1); // Удаляем последнюю точку
+
+        return builder.toString();
+    }
+
+    public String toString(FunctionCall funcCall) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(toString(funcCall.getFunctionName())).append("(");
+        for (Expression expr : funcCall.getArguments()) {
+            builder.append(toString(expr)).append(", ");
+        }
+        // Удаляем два последних символа - запятую и пробел
+        builder.deleteCharAt(builder.length() - 1);
+        builder.deleteCharAt(builder.length() - 1);
+        builder.append(")");
+
+        return builder.toString();
     }
 }
