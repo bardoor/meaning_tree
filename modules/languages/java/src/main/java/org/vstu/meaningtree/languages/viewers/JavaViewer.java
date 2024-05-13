@@ -62,6 +62,8 @@ public class JavaViewer extends Viewer {
             case RangeForLoop rangeLoop -> toString(rangeLoop);
             case ProgramEntryPoint entryPoint -> toString(entryPoint);
             case FunctionCall funcCall -> toString(funcCall);
+            case WhileLoop whileLoop -> toString(whileLoop);
+            case ScopedIdentifier scopedIdent -> toString(scopedIdent);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -490,5 +492,10 @@ public class JavaViewer extends Viewer {
         builder.append(")");
 
         return builder.toString();
+    }
+
+    public String toString(WhileLoop whileLoop) {
+        return indent("while (") + toString(whileLoop.getCondition()) + ")\n" +
+                toString(whileLoop.getBody());
     }
 }

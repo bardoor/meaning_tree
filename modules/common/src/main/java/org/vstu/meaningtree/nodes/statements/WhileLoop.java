@@ -4,11 +4,11 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
 public class WhileLoop extends Statement {
-    public Expression get_condition() {
+    public Expression getCondition() {
         return _condition;
     }
 
-    public Statement get_body() {
+    public Statement getBody() {
         return _body;
     }
 
