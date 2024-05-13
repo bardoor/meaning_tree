@@ -44,11 +44,23 @@ public class RangeForLoop extends ForLoop {
 
     @Override
     public String generateDot() {
-        //TODO: fix for new format
-        return String.format("%s [label=\"%s(var_name=\"%s\", start=%d, end=%d, step=%d)\"];\n",
-                    _id, getClass().getSimpleName(), _identifier.getName(), _start, _end, _step)
-                + _body.generateDot()
-                + String.format("%s -> %s;\n", _id, _body.getId());
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
+
+        builder.append(_start.generateDot());
+        builder.append(_end.generateDot());
+        builder.append(_step.generateDot());
+        builder.append(_identifier.generateDot());
+        builder.append(_body.generateDot());
+
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _start.getId(), "start"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _end.getId(), "end"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _step.getId(), "step"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _identifier.getId(), "ident"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _body.getId(), "body"));
+
+        return builder.toString();
     }
 
     public enum RANGE_TYPE {
