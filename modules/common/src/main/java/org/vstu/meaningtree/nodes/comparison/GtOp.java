@@ -8,8 +8,5 @@ public class GtOp extends BinaryComparison {
         super(left, right);
     }
 
-    @Override
-    public String generateDot() {
-        throw new UnsupportedOperationException();
-    }
+
 }

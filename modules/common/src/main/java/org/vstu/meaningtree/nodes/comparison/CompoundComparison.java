@@ -6,18 +6,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CompoundComparison extends Expression {
-    private final List<BinaryComparison> comparisons;
+    private final List<BinaryComparison> _comparisons;
 
     public CompoundComparison(BinaryComparison ... comparisons) {
-        this.comparisons = List.of(comparisons);
+        this._comparisons = List.of(comparisons);
     }
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
+
+        for (BinaryComparison comparison : _comparisons) {
+            builder.append(comparison.generateDot());
+            builder.append(String.format("%s -- %s;\n", _id, comparison.getId()));
+        }
+
+        return builder.toString();
     }
 
-    public List<BinaryComparison> getComparisons() {
-        return new ArrayList<>(comparisons);
+    public List<BinaryComparison> get_comparisons() {
+        return new ArrayList<>(_comparisons);
     }
 }
