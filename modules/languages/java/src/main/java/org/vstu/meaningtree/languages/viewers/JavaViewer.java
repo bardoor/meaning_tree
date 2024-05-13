@@ -153,7 +153,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(AssignmentStatement stmt) {
-        return String.format("%s = %s;", toString(stmt.getLValue()), toString(stmt.getRValue()));
+        return String.format("%s = %s", toString(stmt.getLValue()), toString(stmt.getRValue()));
     }
 
     private String toString (Type t) {
@@ -249,11 +249,12 @@ public class JavaViewer extends Viewer {
              */
             if (node instanceof CompoundStatement
                     || node instanceof IfStatement
-                    || node instanceof GeneralForLoop) {
+                    || node instanceof GeneralForLoop
+                    || node instanceof RangeForLoop) {
                 s = String.format("%s\n", toString(node));
             }
             else {
-                s = indent(String.format("%s\n", toString(node)));
+                s = indent(String.format("%s;\n", toString(node)));
             }
             builder.append(s);
         }
@@ -263,7 +264,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(ExpressionStatement stmt) {
-        return String.format("%s;", toString(stmt.getExpression()));
+        return String.format("%s", toString(stmt.getExpression()));
     }
 
     public String toString(SimpleIdentifier identifier) {
