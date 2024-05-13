@@ -62,6 +62,14 @@ public class ProgramEntryPoint extends Node {
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
+        for (var node : _body) {
+            builder.append(node.generateDot());
+            builder.append(String.format("%s -- %s;\n", _id, node.getId()));
+        }
+
+        return builder.toString();
     }
 }
