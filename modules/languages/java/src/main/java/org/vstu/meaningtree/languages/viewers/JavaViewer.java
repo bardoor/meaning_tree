@@ -58,6 +58,7 @@ public class JavaViewer extends Viewer {
             case IfStatement stmt -> toString(stmt);
             case GeneralForLoop stmt -> toString(stmt);
             case CompoundComparison cmp -> toString(cmp);
+            case RangeForLoop rangeLoop -> toString(rangeLoop);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -395,5 +396,62 @@ public class JavaViewer extends Viewer {
         builder.append(toString(generalForLoop.getBody()));
 
         return builder.toString();
+    }
+
+    private String getForRangeUpdate(RangeForLoop forRangeLoop) {
+        if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.UP) {
+            int stepValue = forRangeLoop.getStepValue();
+
+            if (stepValue == 1) {
+                return String.format("%s++", toString(forRangeLoop.getIdentifier()));
+            }
+            else {
+                return String.format("%s += %d", toString(forRangeLoop.getIdentifier()), stepValue);
+            }
+        }
+        else if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.DOWN) {
+            int stepValue = forRangeLoop.getStepValue();
+
+            if (stepValue == 1) {
+                return String.format("%s--", toString(forRangeLoop.getIdentifier()));
+            }
+            else {
+                return String.format("%s -= %d", toString(forRangeLoop.getIdentifier()), stepValue);
+            }
+        }
+
+        throw new RuntimeException("Can't determine range type in for loop");
+    }
+
+    private String getForRangeHeader(RangeForLoop forRangeLoop) {
+        if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.UP) {
+            String header = "int %s = %s; %s < %s; %s";
+            return header.formatted(
+                    toString(forRangeLoop.getIdentifier()),
+                    toString(forRangeLoop.getStart()),
+                    toString(forRangeLoop.getIdentifier()),
+                    toString(forRangeLoop.getEnd()),
+                    getForRangeHeader(forRangeLoop)
+            );
+        }
+        else if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.DOWN) {
+            String header = "int %s = %s; %s > %s; %s";
+            return header.formatted(
+                    toString(forRangeLoop.getIdentifier()),
+                    toString(forRangeLoop.getStart()),
+                    toString(forRangeLoop.getIdentifier()),
+                    toString(forRangeLoop.getEnd()),
+                    getForRangeHeader(forRangeLoop)
+            );
+        }
+
+        throw new RuntimeException("Can't determine range type in for loop");
+    }
+
+    public String toString(RangeForLoop forRangeLoop) {
+        return indent("for (") +
+                getForRangeHeader(forRangeLoop) +
+                ")\n" +
+                toString(forRangeLoop.getBody());
     }
 }

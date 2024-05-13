@@ -213,10 +213,13 @@ public class PythonLanguage extends Language {
                         throw new IllegalArgumentException("Range requires at least 1 argument");
                     case 1:
                         stop = args.getFirst();
+                        start = new IntegerLiteral("0");
+                        step = new IntegerLiteral("1");
                         break;
                     case 2:
                         start = args.getFirst();
                         stop = args.get(1);
+                        step = new IntegerLiteral("1");
                         break;
                     default:
                         start = args.getFirst();
