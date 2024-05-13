@@ -427,7 +427,7 @@ public class PythonLanguage extends Language {
                     augOp = AugmentedAssignmentOperator.DIV;
                     break;
                 case "//=":
-                    augOp = AugmentedAssignmentOperator.FLOORDIV;
+                    augOp = AugmentedAssignmentOperator.FLOOR_DIV;
                     break;
                 case "|=":
                     augOp = AugmentedAssignmentOperator.BITWISE_OR;
