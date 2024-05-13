@@ -70,6 +70,7 @@ public class JavaLanguage extends Language {
             case "for_statement" -> fromForStatementTSNode(node);
             case "assignment_expression" -> fromAssignmentExpressionTSNode(node);
             case "identifier" -> fromIdentifierTSNode(node);
+            case "while_statement" -> fromWhileTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
     }
@@ -152,6 +153,16 @@ public class JavaLanguage extends Language {
 
     private Node fromProgramTSNode(TSNode node) {
         return fromTSNode(node.getChild(0));
+    }
+
+    private WhileLoop fromWhileTSNode(TSNode node) {
+        TSNode tsCond = node.getChildByFieldName("condition");
+        Expression mtCond = (Expression) fromTSNode(tsCond);
+
+        TSNode tsBody = node.getChildByFieldName("body");
+        Statement mtBody = (Statement) fromTSNode(tsBody);
+
+        return new WhileLoop(mtCond, mtBody);
     }
 
     private Node fromBlockTSNode(TSNode node) {
