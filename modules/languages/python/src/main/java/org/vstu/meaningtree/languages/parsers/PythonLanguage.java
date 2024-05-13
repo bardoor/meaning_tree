@@ -88,8 +88,9 @@ public class PythonLanguage extends Language {
             case "attribute"-> fromAttributeTSNode(node);
             case "return_statement" -> fromReturnTSNode(node);
             case "conditional_expresstion"-> fromTernaryOperatorTSNode(node);
-            case "assignment", "named_expression" -> fromAssignmentTSNode(node);
+            case "assignment", "named_expression", "augmented_assignment" -> fromAssignmentTSNode(node);
             case "function_definition", "decorated_definition" -> fromFunctionTSNode(node);
+            case "while_statement" -> fromWhileLoop(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
     }
