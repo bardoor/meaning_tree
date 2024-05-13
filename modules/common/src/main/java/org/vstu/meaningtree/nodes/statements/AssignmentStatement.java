@@ -31,6 +31,16 @@ public class AssignmentStatement extends Statement implements HasInitialization 
 
     @Override
     public String generateDot() {
-        throw new UnsupportedOperationException();
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, _op.toString()));
+
+        builder.append(_lvalue.generateDot());
+        builder.append(_rvalue.generateDot());
+
+        builder.append(String.format("%s -- %s;\n", _id, _lvalue.getId()));
+        builder.append(String.format("%s -- %s;\n", _id, _rvalue.getId()));
+
+        return builder.toString();
     }
 }
