@@ -23,16 +23,17 @@ import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
 
 public class JavaViewer extends Viewer {
 
-    private static final String _INDENTATION = "    ";
+    private final String _indentation;
     private int _indentLevel;
-    private boolean _openBracketOnSameLine;
+    private final boolean _openBracketOnSameLine;
 
-    public JavaViewer(boolean openBracketOnSameLine) {
+    public JavaViewer(int indentSpaceCount, boolean openBracketOnSameLine) {
+        _indentation = " ".repeat(indentSpaceCount);
         _indentLevel = 0;
         _openBracketOnSameLine = openBracketOnSameLine;
     }
 
-    public JavaViewer() { this(true); }
+    public JavaViewer() { this(4, true); }
 
     @Override
     public String toString(Node node) {
@@ -259,7 +260,8 @@ public class JavaViewer extends Viewer {
         if (_indentLevel == 0) {
             return s;
         }
-        return _INDENTATION.repeat(Math.max(0, _indentLevel)) + s;
+
+        return _indentation.repeat(Math.max(0, _indentLevel)) + s;
     }
 
     public String toString(CompoundStatement stmt) {
