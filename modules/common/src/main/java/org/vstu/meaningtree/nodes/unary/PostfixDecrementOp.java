@@ -1,10 +1,10 @@
 package org.vstu.meaningtree.nodes.unary;
 
-import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.UnaryExpression;
 
 public class PostfixDecrementOp extends UnaryExpression {
-    public PostfixDecrementOp(Expression argument) {
+    public PostfixDecrementOp(Identifier argument) {
         super(argument);
     }
 }

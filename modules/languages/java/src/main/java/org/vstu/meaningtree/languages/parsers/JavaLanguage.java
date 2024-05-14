@@ -19,6 +19,10 @@ import org.vstu.meaningtree.nodes.math.MulOp;
 import org.vstu.meaningtree.nodes.math.SubOp;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
+import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
+import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
+import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
+import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,8 +75,32 @@ public class JavaLanguage extends Language {
             case "assignment_expression" -> fromAssignmentExpressionTSNode(node);
             case "identifier" -> fromIdentifierTSNode(node);
             case "while_statement" -> fromWhileTSNode(node);
+            case "update_expression" -> fromUpdateExpressionTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromUpdateExpressionTSNode(TSNode node) {
+        String code = getCodePiece(node);
+
+        if (code.endsWith("++")) {
+            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
+            return new PostfixIncrementOp(identifier);
+        }
+        else if (code.startsWith("++")) {
+            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
+            return new PrefixIncrementOp(identifier);
+        }
+        else if (code.endsWith("--")) {
+            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
+            return new PostfixDecrementOp(identifier);
+        }
+        else if (code.startsWith("--")) {
+            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
+            return new PrefixDecrementOp(identifier);
+        }
+
+        throw new IllegalArgumentException();
     }
 
     private Node fromIdentifierTSNode(TSNode node) {

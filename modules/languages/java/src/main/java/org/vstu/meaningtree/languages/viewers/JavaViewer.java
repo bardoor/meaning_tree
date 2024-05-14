@@ -16,6 +16,10 @@ import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.FloatType;
 import org.vstu.meaningtree.nodes.types.IntType;
+import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
+import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
+import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
+import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
 import java.util.List;
 
@@ -71,7 +75,11 @@ public class JavaViewer extends Viewer {
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
-            default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
+            case PostfixIncrementOp inc -> toString(inc);
+            case PostfixDecrementOp dec -> toString(dec);
+            case PrefixIncrementOp inc -> toString(inc);
+            case PrefixDecrementOp dec -> toString(dec);
+            case null, default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
 
@@ -544,5 +552,21 @@ public class JavaViewer extends Viewer {
             decreaseIndentLevel();
             return result;
         }
+    }
+
+    private String toString(PostfixIncrementOp inc) {
+        return toString(inc.getArgument()) + "++";
+    }
+
+    private String toString(PostfixDecrementOp dec) {
+        return toString(dec.getArgument()) + "--";
+    }
+
+    private String toString(PrefixIncrementOp inc) {
+        return toString(inc.getArgument()) + "++";
+    }
+
+    private String toString(PrefixDecrementOp dec) {
+        return toString(dec.getArgument()) + "--";
     }
 }
