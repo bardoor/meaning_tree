@@ -484,12 +484,17 @@ public class JavaViewer extends Viewer {
 
     public String toString(RangeForLoop forRangeLoop) {
         String header = "for (" + getForRangeHeader(forRangeLoop) + ")";
-        String body = toString(forRangeLoop.getBody());
 
-        if (_openBracketOnSameLine) {
-            return header + " " + body;
+        Statement body = forRangeLoop.getBody();
+        if (body instanceof CompoundStatement compStmt) {
+            return header + (_openBracketOnSameLine ? " " : "\n") + toString(compStmt);
         }
-        return header + "\n" + indent(body);
+        else {
+            increaseIndentLevel();
+            String result = header + "\n" + indent(toString(body));
+            decreaseIndentLevel();
+            return result;
+        }
     }
 
     public String toString(ProgramEntryPoint entryPoint) {
@@ -528,11 +533,16 @@ public class JavaViewer extends Viewer {
 
     public String toString(WhileLoop whileLoop) {
         String header = "while (" + toString(whileLoop.getCondition()) + ")";
-        String body = toString(whileLoop.getBody());
 
-        if (_openBracketOnSameLine) {
-            return header + " " + body;
+        Statement body = whileLoop.getBody();
+        if (body instanceof CompoundStatement compStmt) {
+            return header + (_openBracketOnSameLine ? " " : "\n") + toString(compStmt);
         }
-        return header + "\n" + indent(body);
+        else {
+            increaseIndentLevel();
+            String result = header + "\n" + indent(toString(body));
+            decreaseIndentLevel();
+            return result;
+        }
     }
 }
