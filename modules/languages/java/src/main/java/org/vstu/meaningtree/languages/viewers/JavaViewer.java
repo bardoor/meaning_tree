@@ -527,7 +527,12 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(WhileLoop whileLoop) {
-        return "while (" + toString(whileLoop.getCondition()) + ")\n" +
-                toString(whileLoop.getBody());
+        String header = "while (" + toString(whileLoop.getCondition()) + ")";
+        String body = toString(whileLoop.getBody());
+
+        if (_openBracketOnSameLine) {
+            return header + " " + body;
+        }
+        return header + "\n" + indent(body);
     }
 }
