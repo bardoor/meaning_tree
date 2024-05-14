@@ -25,10 +25,14 @@ public class JavaViewer extends Viewer {
 
     private static final String _INDENTATION = "    ";
     private int _indentLevel;
+    private boolean _openBracketOnSameLine;
 
-    public JavaViewer() {
+    public JavaViewer(boolean openBracketOnSameLine) {
         _indentLevel = 0;
+        _openBracketOnSameLine = openBracketOnSameLine;
     }
+
+    public JavaViewer() { this(true); }
 
     @Override
     public String toString(Node node) {
@@ -186,7 +190,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(AssignmentStatement stmt) {
-        return toString(stmt.getAugmentedOperator(), stmt.getLValue(), stmt.getRValue());
+        return "%s;".formatted(toString(stmt.getAugmentedOperator(), stmt.getLValue(), stmt.getRValue()));
     }
 
     private String toString (Type t) {
@@ -260,35 +264,10 @@ public class JavaViewer extends Viewer {
 
     public String toString(CompoundStatement stmt) {
         StringBuilder builder = new StringBuilder();
-        builder.append(indent("{\n"));
+        builder.append("{\n");
         increaseIndentLevel();
         for (Node node : stmt) {
-            String s;
-            /*
-                Костыль: перед блоком всегда добавляется индетация, чтобы не дублировать
-                добавление в случае блока внутри блока, нужно проверять тип узла...
-                Пример:
-                    Это "{10 + 231; {124 + 143;} 31 + 341;}" транслируется в
-
-                    {
-                        10 + 231;
-                            {
-                            124 + 143;
-                        }
-                        31 + 341;
-                    }
-
-                    без проверки ниже...
-             */
-            if (node instanceof CompoundStatement
-                    || node instanceof IfStatement
-                    || node instanceof GeneralForLoop
-                    || node instanceof RangeForLoop) {
-                s = String.format("%s\n", toString(node));
-            }
-            else {
-                s = indent(String.format("%s;\n", toString(node)));
-            }
+            String s = indent(String.format("%s\n", toString(node)));
             builder.append(s);
         }
         decreaseIndentLevel();
@@ -297,7 +276,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(ExpressionStatement stmt) {
-        return String.format("%s", toString(stmt.getExpression()));
+        return String.format("%s;", toString(stmt.getExpression()));
     }
 
     public String toString(SimpleIdentifier identifier) {
@@ -402,7 +381,7 @@ public class JavaViewer extends Viewer {
     public String toString(GeneralForLoop generalForLoop) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(indent("for ("));
+        builder.append("for (");
 
         boolean addSemi = true;
         if (generalForLoop.hasInitializer()) {
@@ -488,10 +467,13 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(RangeForLoop forRangeLoop) {
-        return indent("for (") +
-                getForRangeHeader(forRangeLoop) +
-                ")\n" +
-                toString(forRangeLoop.getBody());
+        String header = "for (" + getForRangeHeader(forRangeLoop) + ")";
+        String body = toString(forRangeLoop.getBody());
+
+        if (_openBracketOnSameLine) {
+            return header + " " + body;
+        }
+        return header + "\n" + indent(body);
     }
 
     public String toString(ProgramEntryPoint entryPoint) {
@@ -529,7 +511,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(WhileLoop whileLoop) {
-        return indent("while (") + toString(whileLoop.getCondition()) + ")\n" +
+        return "while (" + toString(whileLoop.getCondition()) + ")\n" +
                 toString(whileLoop.getBody());
     }
 }
