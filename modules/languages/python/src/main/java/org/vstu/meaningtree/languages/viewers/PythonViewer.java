@@ -2,8 +2,7 @@ package org.vstu.meaningtree.languages.viewers;
 
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
-import org.vstu.meaningtree.nodes.comparison.BinaryComparison;
-import org.vstu.meaningtree.nodes.comparison.CompoundComparison;
+import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
@@ -12,6 +11,7 @@ import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.unary.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -20,8 +20,8 @@ public class PythonViewer extends Viewer {
     TODO:
      - comparisons
      - unary/binary ops
-     - WHAT about priority?
      - tabulation
+     - WHAT about priority?
      - support if/for/for-each/while/ternary/do-while/switch
      - assignment support, variable declaration
      - parenthesize
@@ -49,8 +49,8 @@ public class PythonViewer extends Viewer {
             return blockToString(exprNode);
         } else if (node instanceof BinaryComparison cmpNode) {
             return comparisonToString(cmpNode);
-        } else if (node instanceof CompoundComparison) {
-            return compoundComparisonToString(node);
+        } else if (node instanceof CompoundComparison compound) {
+            return compoundComparisonToString(compound);
         } else {
             return "";
         }
@@ -138,11 +138,25 @@ public class PythonViewer extends Viewer {
         return null;
     }
 
-    private String comparisonToString(Node node) {
-        return "";
+    private String comparisonToString(BinaryComparison node) {
+        String pattern = "";
+        if (node instanceof EqOp) {
+            pattern = "%s == %s";
+        } else if (node instanceof NotEqOp) {
+            pattern = "%s != %s";
+        } else if (node instanceof GeOp) {
+            pattern = "%s >= %s";
+        } else if (node instanceof LeOp) {
+            pattern = "%s <= %s";
+        } else if (node instanceof GtOp) {
+            pattern = "%s > %s";
+        } else if (node instanceof LtOp) {
+            pattern = "%s < %s";
+        }
+        return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
     }
 
-    private String compoundComparisonToString(Node node) {
+    private String compoundComparisonToString(CompoundComparison node) {
         return "";
     }
 }
