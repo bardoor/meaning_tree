@@ -1,16 +1,18 @@
 package org.vstu.meaningtree.languages.viewers;
 
-import org.vstu.meaningtree.nodes.BinaryExpression;
-import org.vstu.meaningtree.nodes.Node;
-import org.vstu.meaningtree.nodes.UnaryExpression;
+import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.BinaryComparison;
 import org.vstu.meaningtree.nodes.comparison.CompoundComparison;
 import org.vstu.meaningtree.nodes.logical.NotOp;
+import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.IfStatement;
 import org.vstu.meaningtree.nodes.unary.*;
+
+import java.util.List;
 
 
 public class PythonViewer extends Viewer {
@@ -41,12 +43,12 @@ public class PythonViewer extends Viewer {
             return binaryOpToString((BinaryExpression) node);
         } else if (node instanceof IfStatement) {
             return conditionToString(node);
-        } else if (node instanceof UnaryExpression) {
-            return unaryToString((UnaryExpression) node);
-        } else if (node instanceof CompoundStatement) {
-            return blockToString((CompoundStatement) node);
-        } else if (node instanceof BinaryComparison) {
-            return comparisonToString(node);
+        } else if (node instanceof UnaryExpression exprNode) {
+            return unaryToString(exprNode);
+        } else if (node instanceof CompoundStatement exprNode) {
+            return blockToString(exprNode);
+        } else if (node instanceof BinaryComparison cmpNode) {
+            return comparisonToString(cmpNode);
         } else if (node instanceof CompoundComparison) {
             return compoundComparisonToString(node);
         } else {
@@ -80,6 +82,15 @@ public class PythonViewer extends Viewer {
             pattern = "%s << %s";
         } else if (node instanceof XorOp) {
             pattern = "%s ^ %s";
+        } else if (node instanceof ShortCircuitAndOp) {
+            CompoundComparison compound = detectCompoundComparison(node);
+            if (compound == null) {
+                pattern = "%s and %s";
+            } else {
+                return compoundComparisonToString(compound);
+            }
+        } else if (node instanceof ShortCircuitOrOp) {
+            pattern = "%s or %s";
         }
         return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
     }
@@ -114,6 +125,17 @@ public class PythonViewer extends Viewer {
             builder.append('\n');
         }
         return builder.toString();
+    }
+
+    private CompoundComparison detectCompoundComparison(Node expressionNode) {
+        if (expressionNode instanceof ShortCircuitAndOp op) {
+            Expression left = op.getLeft();
+            Expression right = op.getRight();
+            if (left instanceof BinaryComparison leftOp && right instanceof BinaryComparison rightOp) {
+                return new CompoundComparison(leftOp, rightOp);
+            }
+        }
+        return null;
     }
 
     private String comparisonToString(Node node) {
