@@ -23,7 +23,7 @@
         <dependency>
             <groupId>io.github.bonede</groupId>
             <artifactId>tree-sitter-python</artifactId>
-            <version>0.20.4</version>
+            <version>0.21.0</version>
         </dependency>
     </dependencies>
 
