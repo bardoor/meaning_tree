@@ -19,6 +19,8 @@ import org.vstu.meaningtree.nodes.types.IntType;
 
 import java.util.List;
 
+import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
+
 public class JavaViewer extends Viewer {
 
     private static final String _INDENTATION = "    ";
@@ -148,12 +150,43 @@ public class JavaViewer extends Viewer {
         return String.format("(%s)", toString(expr.getExpression()));
     }
 
+    private String toString(AugmentedAssignmentOperator op, Expression left, Expression right) {
+        String l = toString(left);
+        String r = toString(right);
+
+        // В Java нет встроенного оператора возведения в степень, следовательно,
+        // нет и соотвествующего оператора присванивания, поэтому этот случай обрабатываем по особому
+        // TODO: нужно убедится, что был импортирован модуль Math
+        if (op == POW) {
+            return "%s = Math.pow(%s, %s)".formatted(l, l, r);
+        }
+
+        String o = switch (op) {
+            case NONE -> "=";
+            case ADD -> "+=";
+            case SUB -> "-=";
+            case MUL -> "*=";
+            // В Java тип деления определяется не видом операции, а типом операндов,
+            // поэтому один и тот же оператор
+            case DIV, FLOOR_DIV -> "/=";
+            case BITWISE_AND -> "&=";
+            case BITWISE_OR -> "|=";
+            case BITWISE_XOR -> "^=";
+            case BITWISE_SHIFT_LEFT -> "<<=";
+            case BITWISE_SHIFT_RIGHT -> ">>=";
+            case MOD -> "%=";
+            default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+        };
+
+        return "%s %s %s".formatted(l, o, r);
+    }
+
     public String toString(AssignmentExpression expr) {
-        return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
+        return toString(expr.getAugmentedOperator(), expr.getLValue(), expr.getRValue());
     }
 
     public String toString(AssignmentStatement stmt) {
-        return String.format("%s = %s", toString(stmt.getLValue()), toString(stmt.getRValue()));
+        return toString(stmt.getAugmentedOperator(), stmt.getLValue(), stmt.getRValue());
     }
 
     private String toString (Type t) {
