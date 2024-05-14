@@ -180,8 +180,8 @@ public class JavaLanguage extends Language {
 
     private Node fromIfStatementTSNode(TSNode node) {
         Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
-        CompoundStatement consequence = (CompoundStatement) fromTSNode(node.getChildByFieldName("consequence"));
-        CompoundStatement alternative = (CompoundStatement) fromTSNode(node.getChildByFieldName("alternative"));
+        Statement consequence = (Statement) fromTSNode(node.getChildByFieldName("consequence"));
+        Statement alternative = (Statement) fromTSNode(node.getChildByFieldName("alternative"));
         return new IfStatement(condition, consequence, alternative);
     }
 

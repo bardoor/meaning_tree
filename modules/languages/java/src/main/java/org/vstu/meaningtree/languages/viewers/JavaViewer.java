@@ -289,10 +289,33 @@ public class JavaViewer extends Viewer {
         StringBuilder builder = new StringBuilder();
 
         String cond = toString(branch.getCondition());
-        builder.append("(").append(cond).append(")\n");
+        builder
+                .append("(")
+                .append(cond)
+                .append(")");
 
-        String body = toString(branch.getBody());
-        builder.append(body);
+        Statement body = branch.getBody();
+        if (body instanceof CompoundStatement compStmt) {
+            // Если телом ветки является блок кода, то необходимо определить
+            // куда нужно добавить фигурные скобки и добавить само тело
+            // Пример (для случая, когда скобка на той же строке):
+            // if (a > b) {
+            //     max = a;
+            // }
+            builder
+                    .append(_openBracketOnSameLine ? " " : "\n")
+                    .append(toString(compStmt));
+        }
+        else {
+            // В случае если тело ветки не блок кода, то добавляем отступ
+            // и вставляем тело
+            // Пример:
+            // if (a > b)
+            //     max = a;
+            increaseIndentLevel();
+            builder.append("\n").append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
 
         return builder.toString();
     }
@@ -324,7 +347,7 @@ public class JavaViewer extends Viewer {
     public String toString(IfStatement stmt) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(indent("if "));
+        builder.append("if ");
         List<ConditionBranch> branches = stmt.getBranches();
         builder.append(toString(branches.getFirst())).append("\n");
 
@@ -336,37 +359,28 @@ public class JavaViewer extends Viewer {
         }
 
         if (stmt.hasElseBranch()) {
-            builder.append(indent("else\n"));
-            String elseBranch = toString(stmt.getElseBranch()).stripLeading();
-            builder.append(elseBranch);
+            builder.append(indent("else"));
+
+            Statement elseBranch = stmt.getElseBranch();
+            if (elseBranch instanceof IfStatement innerIfStmt) {
+                builder
+                        .append(" ")
+                        .append(toString(innerIfStmt));
+            }
+            else if (elseBranch instanceof CompoundStatement innerCompStmt) {
+                builder.append(_openBracketOnSameLine ? " " : "\n");
+                builder.append(toString(innerCompStmt));
+            }
+            else {
+                builder
+                        .append("\n")
+                        .append(toString(elseBranch));
+            }
         }
         else {
             // Удаляем лишний перевод строки, если ветки else нет
             builder.deleteCharAt(builder.length() - 1);
         }
-
-        //TODO: fix for new if structure
-        /*
-
-        StringBuilder builder = new StringBuilder();
-
-        builder.append(indent("if ("));
-        String condition = toString(stmt.getCondition());
-        builder.append(condition);
-        builder.append(")\n");
-
-        String body = toString(stmt.getBody());
-        builder.append(body);
-
-        if (stmt.hasElseBranch()) {
-            builder.append("\n");
-            builder.append(indent("else\n"));
-            String elseBranch = toString(stmt.getElseBranch()).stripLeading();
-            builder.append(elseBranch);
-        }
-
-        return builder.toString();
-        */
 
         return builder.toString();
     }
