@@ -1,4 +1,7 @@
-package org.vstu.meaningtree.nodes;
+package org.vstu.meaningtree.nodes.statements;
+
+import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.Statement;
 
 public class PackageDeclaration extends Statement {
     private final Identifier _packageName;

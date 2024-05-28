@@ -80,6 +80,7 @@ public class JavaViewer extends Viewer {
             case PrefixIncrementOp inc -> toString(inc);
             case PrefixDecrementOp dec -> toString(dec);
             case PowOp op -> toString(op);
+            case PackageDeclaration decl -> toString(decl);
             case null, default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -574,5 +575,9 @@ public class JavaViewer extends Viewer {
     private String toString(PowOp op) {
         // TODO: убедится, что импортирован модуль Math
         return "Math.pow(%s, %s)".formatted(toString(op.getLeft()), toString(op.getRight()));
+    }
+
+    private String toString(PackageDeclaration decl) {
+        return "package %s;".formatted(toString(decl.getPackageName()));
     }
 }

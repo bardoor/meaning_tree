@@ -15,6 +15,10 @@ public class ScopedIdentifier extends Identifier {
         _scopeResolutionList = List.of(identifiers);
     }
 
+    public ScopedIdentifier(List<SimpleIdentifier> identifiers) {
+        _scopeResolutionList = List.copyOf(identifiers);
+    }
+
     public List<SimpleIdentifier> getScopeResolution() {
         return _scopeResolutionList;
     }

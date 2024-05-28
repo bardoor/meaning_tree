@@ -6,6 +6,7 @@ import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
@@ -76,8 +77,28 @@ public class JavaLanguage extends Language {
             case "identifier" -> fromIdentifierTSNode(node);
             case "while_statement" -> fromWhileTSNode(node);
             case "update_expression" -> fromUpdateExpressionTSNode(node);
+            case "package_declaration" -> fromPackageDeclarationTSNode(node);
+            case "scoped_identifier" -> fromScopedIdentifierTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromScopedIdentifierTSNode(TSNode node) {
+        TSNode scope = node;
+
+        List<SimpleIdentifier> scopes = new ArrayList<>();
+        while (scope.getType().equals("scoped_identifier")) {
+            scopes.add((SimpleIdentifier) fromIdentifierTSNode(scope.getChildByFieldName("name")));
+            scope = scope.getChildByFieldName("scope");
+        }
+        scopes.add((SimpleIdentifier) fromIdentifierTSNode(scope));
+
+        return new ScopedIdentifier(scopes.reversed());
+    }
+
+    private Node fromPackageDeclarationTSNode(TSNode node) {
+        TSNode packageName = node.getChild(1);
+        return new PackageDeclaration((Identifier) fromIdentifierTSNode(packageName));
     }
 
     private Node fromUpdateExpressionTSNode(TSNode node) {
@@ -104,6 +125,9 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromIdentifierTSNode(TSNode node) {
+        if (node.getType().equals("scoped_identifier")) {
+            return fromScopedIdentifierTSNode(node);
+        }
         String variableName = getCodePiece(node);
         return new SimpleIdentifier(variableName);
     }
