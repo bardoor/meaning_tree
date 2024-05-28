@@ -1,8 +1,11 @@
 package org.vstu.meaningtree.languages.viewers;
 
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.declarations.VisibilityModifier;
+import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -81,8 +84,33 @@ public class JavaViewer extends Viewer {
             case PrefixDecrementOp dec -> toString(dec);
             case PowOp op -> toString(op);
             case PackageDeclaration decl -> toString(decl);
+            case ClassDeclaration decl -> toString(decl);
+            case ClassDefinition def -> toString(def);
             case null, default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(VisibilityModifier modifier) {
+        return switch (modifier) {
+            case NONE -> "";
+            case PUBLIC -> "public";
+            case PRIVATE -> "private";
+            case PROTECTED -> "protected";
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
+    private String toString(ClassDeclaration decl) {
+        String visibilyModifier = "";
+        if (decl.getVisibilityModifier() != VisibilityModifier.NONE) {
+            visibilyModifier = "%s ".formatted(toString(decl.getVisibilityModifier()));
+        }
+
+        return visibilyModifier + "class " + toString(decl.getName());
+    }
+
+    private String toString(ClassDefinition def) {
+        return "%s %s".formatted(toString(def.getDeclaration()), toString(def.getBody()));
     }
 
     public String toString(FloatLiteral literal) {

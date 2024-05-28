@@ -4,8 +4,11 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.declarations.VisibilityModifier;
+import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
@@ -79,8 +82,57 @@ public class JavaLanguage extends Language {
             case "update_expression" -> fromUpdateExpressionTSNode(node);
             case "package_declaration" -> fromPackageDeclarationTSNode(node);
             case "scoped_identifier" -> fromScopedIdentifierTSNode(node);
+            case "class_declaration" -> fromClassDeclarationTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private VisibilityModifier fromModifiers(TSNode node) {
+        // Внутри проиходит считывание лишь модификаторов области видимости,
+        // причем допускается всего лишь 1 или 0 идентификаторов (несмотря на список).
+        // Должно ли так быть - неизвестно, нужно разобраться...
+        List<VisibilityModifier> modifiers = new ArrayList<>();
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            modifiers.add(
+                    switch (node.getChild(i).getType()) {
+                        case "public" -> VisibilityModifier.PUBLIC;
+                        case "private" -> VisibilityModifier.PRIVATE;
+                        case "protected" -> VisibilityModifier.PROTECTED;
+                        default -> throw new IllegalArgumentException("Unknown identifier: %s".formatted(node.getChild(i).getType()));
+                    }
+            );
+        }
+
+        if (modifiers.size() > 1) {
+            throw new RuntimeException("Can't process more than one modifier");
+        }
+
+        return modifiers.isEmpty() ? VisibilityModifier.NONE : modifiers.getFirst();
+    }
+
+    private Node fromClassDeclarationTSNode(TSNode node) {
+        int currentChildIndex = 0;
+
+        VisibilityModifier modifier = VisibilityModifier.NONE;
+        if (node.getChild(currentChildIndex).getType().equals("modifiers")) {
+            modifier = fromModifiers(node.getChild(currentChildIndex));
+            currentChildIndex++;
+        }
+
+        // Скипаем слово "class"
+        currentChildIndex++;
+
+        Identifier className = (Identifier) fromIdentifierTSNode(node.getChild(currentChildIndex));
+        currentChildIndex++;
+
+        // Парсим тело класса как блочное выражение... Правильно ли? Кто знает...
+        CompoundStatement classBody = (CompoundStatement) fromBlockTSNode(node.getChild(currentChildIndex));
+        currentChildIndex++;
+
+        ClassDeclaration decl = new ClassDeclaration(modifier, className);
+        // TODO: нужно поменять getNodes() у CompoundStatement, чтобы он не массив возвращал
+        return new ClassDefinition(decl, classBody);
     }
 
     private Node fromScopedIdentifierTSNode(TSNode node) {

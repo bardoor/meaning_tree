@@ -1,16 +1,25 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.Identifier;
 
 public class ClassDeclaration extends Declaration {
-    public ClassDeclaration(SimpleIdentifier name) {
-        super();
+    protected final VisibilityModifier _modifier;
+    protected final Identifier _name;
+
+    public ClassDeclaration(VisibilityModifier modifier, Identifier name) {
+        _modifier = modifier;
         _name = name;
     }
 
-    protected final SimpleIdentifier _name;
+    public ClassDeclaration(Identifier name) {
+        this(VisibilityModifier.NONE, name);
+    }
 
-    public SimpleIdentifier getName() {
+    public VisibilityModifier getVisibilityModifier() {
+        return _modifier;
+    }
+
+    public Identifier getName() {
         return _name;
     }
 
