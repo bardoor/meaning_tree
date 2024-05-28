@@ -62,7 +62,7 @@ public class PythonLanguage extends Language {
             case "binary_operator" -> fromBinaryExpressionTSNode(node);
             case "unary_expression" -> fromUnaryExpressionTSNode(node);
             case "not_operator" -> fromNotOperatorTSNode(node);
-            case "pass_statement" -> null;
+            case "pass_statement" -> fromPassStatement(node);
             case "integer" -> fromIntegerLiteralTSNode(node);
             case "float" -> fromFloatLiteralTSNode(node);
             case "identifier" -> fromIdentifier(node);
@@ -93,6 +93,10 @@ public class PythonLanguage extends Language {
             case "while_statement" -> fromWhileLoop(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromPassStatement(TSNode node) {
+        return new PassStatement();
     }
 
     private DefinitionArgument fromDefinitionArgument(TSNode node) {
