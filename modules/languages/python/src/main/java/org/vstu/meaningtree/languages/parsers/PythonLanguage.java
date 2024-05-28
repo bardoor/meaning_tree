@@ -506,7 +506,7 @@ public class PythonLanguage extends Language {
             if (altNode.getType().equals("elif_clause")) {
                 branches.add(createConditionBranchTSNode(altNode));
             } else {
-                elseBranch = (Statement) fromTSNode(altNode.getChildByFieldName("block"));
+                elseBranch = (Statement) fromTSNode(altNode.getChildByFieldName("body"));
             }
             altNode = altNode.getNextNamedSibling();
         }
@@ -537,8 +537,11 @@ public class PythonLanguage extends Language {
 
 
     private Node fromExpressionStatementTSNode(TSNode node) {
-        Expression expr = (Expression) fromTSNode(node.getChild(0));
-        return new ExpressionStatement(expr);
+        Node n = fromTSNode(node.getChild(0));
+        if (n instanceof Statement) {
+            return n;
+        }
+        return new ExpressionStatement((Expression) n);
     }
 
     private ParenthesizedExpression fromParenthesizedExpressionTSNode(TSNode node) {
