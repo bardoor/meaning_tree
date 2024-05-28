@@ -564,11 +564,11 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(PrefixIncrementOp inc) {
-        return toString(inc.getArgument()) + "++";
+        return "++" + toString(inc.getArgument());
     }
 
     private String toString(PrefixDecrementOp dec) {
-        return toString(dec.getArgument()) + "--";
+        return "--" + toString(dec.getArgument());
     }
 
     private String toString(PowOp op) {
