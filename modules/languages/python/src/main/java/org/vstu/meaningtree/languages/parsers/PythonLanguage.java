@@ -189,7 +189,7 @@ public class PythonLanguage extends Language {
     }
 
     private ClassDefinition fromClass(TSNode node) {
-        ClassDeclaration classDecl = new ClassDeclaration((SimpleIdentifier) fromTSNode(node));
+        ClassDeclaration classDecl = new ClassDeclaration((SimpleIdentifier) fromTSNode(node.getChildByFieldName("name")));
         Type type = new UserType((SimpleIdentifier) classDecl.getName());
         CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
         List<Node> nodes = new ArrayList<>();
