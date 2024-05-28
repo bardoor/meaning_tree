@@ -89,6 +89,13 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromFieldDeclarationTSNode(TSNode node) {
+        int currentChildIndex = 0;
+
+        VisibilityModifier modifier = VisibilityModifier.NONE;
+        if (node.getChild(currentChildIndex).getType().equals("modifiers")) {
+            modifier = fromModifiers(node.getChild(currentChildIndex));
+        }
+
         return null;
     }
 
@@ -261,7 +268,11 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromProgramTSNode(TSNode node) {
-        return fromTSNode(node.getChild(0));
+        List<Node> nodes = new ArrayList<>();
+        for (int i = 0; i < node.getChildCount(); i++) {
+            nodes.add(fromTSNode(node.getChild(i)));
+        }
+        return new CompoundStatement(nodes);
     }
 
     private WhileLoop fromWhileTSNode(TSNode node) {

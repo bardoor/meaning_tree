@@ -548,7 +548,7 @@ public class JavaViewer extends Viewer {
     public String toString(ProgramEntryPoint entryPoint) {
         StringBuilder builder = new StringBuilder();
         for (Node node : entryPoint.getBody()) {
-            builder.append(toString(node));
+            builder.append("%s\n".formatted(toString(node)));
         }
         return builder.toString();
     }

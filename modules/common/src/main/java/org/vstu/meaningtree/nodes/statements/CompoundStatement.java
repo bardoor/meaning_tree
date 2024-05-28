@@ -12,8 +12,11 @@ public class CompoundStatement extends Statement implements Iterable<Node> {
     private final List<Node> _nodes;
 
     public CompoundStatement(Node... nodes) {
-        _nodes = new ArrayList<>();
-        _nodes.addAll(Arrays.asList(nodes));
+        this(List.of(nodes));
+    }
+
+    public CompoundStatement(List<Node> nodes) {
+        _nodes = List.copyOf(nodes);
     }
 
     public void add(Node node) {
