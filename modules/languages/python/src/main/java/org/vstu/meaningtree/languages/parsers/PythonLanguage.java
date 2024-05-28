@@ -360,9 +360,11 @@ public class PythonLanguage extends Language {
     }
 
     private Node fromString(TSNode node) {
-        TSNode content = node.getChildByFieldName("string_content");
+        // TSNode content = node.getChildByFieldName("string_content");
+        TSNode content = node.getChild(1);
         //TODO: hardcode output in viewer? What about escaping and ", ', """
-        if (node.getChildByFieldName("string_start").getType().equals("\"\"\"")
+        // if (node.getChildByFieldName("string_start").getType().equals("\"\"\"")
+        if (node.getChild(0).getType().equals("\"\"\"")
                 && node.getParent().getType().equals("expression_statement")) {
             return new Comment(getCodePiece(content));
         }
@@ -535,7 +537,8 @@ public class PythonLanguage extends Language {
 
 
     private Node fromExpressionStatementTSNode(TSNode node) {
-        return fromTSNode(node.getChild(0));
+        Expression expr = (Expression) fromTSNode(node.getChild(0));
+        return new ExpressionStatement(expr);
     }
 
     private ParenthesizedExpression fromParenthesizedExpressionTSNode(TSNode node) {
