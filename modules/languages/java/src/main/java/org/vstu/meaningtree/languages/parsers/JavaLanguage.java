@@ -83,8 +83,13 @@ public class JavaLanguage extends Language {
             case "package_declaration" -> fromPackageDeclarationTSNode(node);
             case "scoped_identifier" -> fromScopedIdentifierTSNode(node);
             case "class_declaration" -> fromClassDeclarationTSNode(node);
+            case "field_declaration" -> fromFieldDeclarationTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromFieldDeclarationTSNode(TSNode node) {
+        return null;
     }
 
     private VisibilityModifier fromModifiers(TSNode node) {

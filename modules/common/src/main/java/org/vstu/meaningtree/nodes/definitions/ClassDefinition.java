@@ -42,6 +42,9 @@ public class ClassDefinition extends Definition {
 
     // TODO: !!!!!! костыль, сделан только для удобства передачи CompoundStatement как class body
     public CompoundStatement getBody() {
+        if (_body.isEmpty()) {
+            return new CompoundStatement();
+        }
         Node[] nodes = new Node[_body.size()];
         _body.toArray(nodes);
         return new CompoundStatement(nodes);
