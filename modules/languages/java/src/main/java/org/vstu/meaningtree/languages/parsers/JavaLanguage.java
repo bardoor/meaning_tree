@@ -4,13 +4,11 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
-import org.vstu.meaningtree.nodes.declarations.VisibilityModifier;
+import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.literals.StringLiteral;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -84,8 +82,17 @@ public class JavaLanguage extends Language {
             case "scoped_identifier" -> fromScopedIdentifierTSNode(node);
             case "class_declaration" -> fromClassDeclarationTSNode(node);
             case "field_declaration" -> fromFieldDeclarationTSNode(node);
+            case "string_literal" -> fromStringLiteralTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromStringLiteralTSNode(TSNode node) {
+        if (node.getEndByte() - node.getStartByte() == 1) {
+            return new StringLiteral("");
+        }
+        String content = getCodePiece(node.getChild(0));
+        return new StringLiteral(content);
     }
 
     private Node fromFieldDeclarationTSNode(TSNode node) {
@@ -96,7 +103,8 @@ public class JavaLanguage extends Language {
             modifier = fromModifiers(node.getChild(currentChildIndex));
         }
 
-        return null;
+        VariableDeclaration decl = (VariableDeclaration) fromVariableDeclarationTSNode(node);
+        return new FieldDeclaration(decl.getType(), modifier, false, decl.getDeclarators());
     }
 
     private VisibilityModifier fromModifiers(TSNode node) {
@@ -239,6 +247,12 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromVariableDeclarationTSNode(TSNode node) {
+        VisibilityModifier modifier = VisibilityModifier.NONE;
+        TSNode possibleModifiers = node.getChild(0);
+        if (possibleModifiers.getType().equals("modifiers")) {
+            modifier = fromModifiers(possibleModifiers);
+        }
+
         String typeName = getCodePiece(node.getChildByFieldName("type"));
 
         Type type = switch (typeName) {
@@ -264,6 +278,11 @@ public class JavaLanguage extends Language {
 
         VariableDeclarator[] declarators = new VariableDeclarator[decls.size()];
         decls.toArray(declarators);
+
+        if (modifier != VisibilityModifier.NONE) {
+            return new FieldDeclaration(type, modifier, false, declarators);
+        }
+
         return new VariableDeclaration(type, declarators);
     }
 

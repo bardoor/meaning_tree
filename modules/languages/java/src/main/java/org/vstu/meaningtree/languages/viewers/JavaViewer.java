@@ -1,10 +1,7 @@
 package org.vstu.meaningtree.languages.viewers;
 
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
-import org.vstu.meaningtree.nodes.declarations.VisibilityModifier;
+import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
@@ -24,6 +21,7 @@ import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
+import java.beans.FeatureDescriptor;
 import java.util.List;
 
 import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
@@ -66,6 +64,7 @@ public class JavaViewer extends Viewer {
             case ParenthesizedExpression expr -> toString(expr);
             case AssignmentExpression expr -> toString(expr);
             case AssignmentStatement stmt -> toString(stmt);
+            case FieldDeclaration decl -> toString(decl);
             case VariableDeclaration stmt -> toString(stmt);
             case CompoundStatement stmt -> toString(stmt);
             case ExpressionStatement stmt -> toString(stmt);
@@ -87,8 +86,39 @@ public class JavaViewer extends Viewer {
             case ClassDeclaration decl -> toString(decl);
             case ClassDefinition def -> toString(def);
             case PassStatement stmt -> toString(stmt);
+            case Comment comment -> toString(comment);
+            case BreakStatement stmt -> toString(stmt);
+            case ContinueStatement stmt -> toString(stmt);
+
             case null, default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(ContinueStatement stmt) {
+        return "continue";
+    }
+
+    private String toString(BreakStatement stmt) {
+        return "break";
+    }
+
+    private String toString(Comment comment) {
+        return "\\\\ %s".formatted(comment.getContent());
+    }
+
+    private String toString(FieldDeclaration decl) {
+        StringBuilder builder = new StringBuilder();
+
+        // Добавляем модификатор видимости
+        builder.append(toString(decl.getVisibilityModifier())).append(" ");
+        if (decl.isStatic()) {
+            builder.append("static ");
+        }
+
+        VariableDeclaration varDecl = new VariableDeclaration(decl.getType(), decl.getDeclarators());
+        builder.append(toString(varDecl));
+
+        return builder.toString();
     }
 
     private String toString(PassStatement stmt) {
@@ -127,6 +157,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(StringLiteral literal) {
+        String value = literal.getValue();
         return String.format("\"%s\"", literal.getValue());
     }
 
@@ -571,9 +602,12 @@ public class JavaViewer extends Viewer {
         for (Expression expr : funcCall.getArguments()) {
             builder.append(toString(expr)).append(", ");
         }
-        // Удаляем два последних символа - запятую и пробел
-        builder.deleteCharAt(builder.length() - 1);
-        builder.deleteCharAt(builder.length() - 1);
+
+        if (!funcCall.getArguments().isEmpty()) {
+            // Удаляем два последних символа - запятую и пробел
+            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
+        }
         builder.append(")");
 
         return builder.toString();

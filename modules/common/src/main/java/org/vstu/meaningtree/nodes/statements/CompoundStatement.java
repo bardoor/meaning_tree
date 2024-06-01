@@ -16,7 +16,7 @@ public class CompoundStatement extends Statement implements Iterable<Node> {
     }
 
     public CompoundStatement(List<Node> nodes) {
-        _nodes = List.copyOf(nodes);
+        _nodes = new ArrayList<>(nodes);
     }
 
     public void add(Node node) {
