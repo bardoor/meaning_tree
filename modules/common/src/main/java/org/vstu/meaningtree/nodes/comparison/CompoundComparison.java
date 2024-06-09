@@ -8,7 +8,15 @@ import java.util.List;
 public class CompoundComparison extends Expression {
     private final List<BinaryComparison> _comparisons;
 
+    /**
+     * @param comparisons - отсортированный список сравнений (example of view: {a < b, b < c} => a < b < c)
+     */
     public CompoundComparison(BinaryComparison ... comparisons) {
+        for (int i = 0; i < comparisons.length - 1; i++) {
+            if (!comparisons[i].getRight().equals(comparisons[i+1].getLeft())) {
+                throw new IllegalArgumentException("Comparisons must be sorted. In pair of comparisons right operand of first must be equal to left operand of second comparison");
+            }
+        }
         this._comparisons = List.of(comparisons);
     }
 
@@ -26,7 +34,7 @@ public class CompoundComparison extends Expression {
         return builder.toString();
     }
 
-    public List<BinaryComparison> get_comparisons() {
+    public List<BinaryComparison> getComparisons() {
         return new ArrayList<>(_comparisons);
     }
 }

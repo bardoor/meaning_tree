@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.nodes;
 
+import java.util.Objects;
+
 public class TernaryOperator extends Expression {
     private final Expression _condition;
     private final Expression _thenExpr;
@@ -26,5 +28,18 @@ public class TernaryOperator extends Expression {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TernaryOperator that = (TernaryOperator) o;
+        return Objects.equals(_condition, that._condition) && Objects.equals(_thenExpr, that._thenExpr) && Objects.equals(_elseExpr, that._elseExpr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_condition, _thenExpr, _elseExpr);
     }
 }

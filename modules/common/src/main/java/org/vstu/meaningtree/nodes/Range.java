@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class Range extends Expression {
@@ -61,5 +62,18 @@ public class Range extends Expression {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Range range = (Range) o;
+        return Objects.equals(_start, range._start) && Objects.equals(_stop, range._stop) && Objects.equals(_step, range._step);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_start, _stop, _step);
     }
 }

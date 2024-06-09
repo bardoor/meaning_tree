@@ -4,6 +4,7 @@ import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class FunctionCall extends Expression {
     protected final Identifier functionName;
@@ -30,5 +31,18 @@ public class FunctionCall extends Expression {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FunctionCall that = (FunctionCall) o;
+        return Objects.equals(functionName, that.functionName) && Objects.equals(arguments, that.arguments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(functionName, arguments);
     }
 }

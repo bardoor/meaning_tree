@@ -21,7 +21,6 @@ import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
-import java.beans.FeatureDescriptor;
 import java.util.List;
 
 import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
@@ -414,7 +413,7 @@ public class JavaViewer extends Viewer {
     public String toString(CompoundComparison cmp) {
         StringBuilder builder = new StringBuilder();
 
-        for (BinaryComparison binComp : cmp.get_comparisons()) {
+        for (BinaryComparison binComp : cmp.getComparisons()) {
             builder.append(toString(binComp)).append(" && ");
         }
 

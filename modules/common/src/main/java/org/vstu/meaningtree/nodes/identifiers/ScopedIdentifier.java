@@ -4,6 +4,7 @@ import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.utils.WildcardImport;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ScopedIdentifier extends Identifier {
@@ -31,5 +32,18 @@ public class ScopedIdentifier extends Identifier {
     @Override
     public String toString() {
         return _scopeResolutionList.stream().map(SimpleIdentifier::toString).collect(Collectors.joining("."));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ScopedIdentifier that = (ScopedIdentifier) o;
+        return Objects.equals(_scopeResolutionList, that._scopeResolutionList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_scopeResolutionList);
     }
 }

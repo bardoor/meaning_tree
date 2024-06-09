@@ -2,6 +2,8 @@ package org.vstu.meaningtree.nodes.identifiers;
 
 import org.vstu.meaningtree.nodes.Identifier;
 
+import java.util.Objects;
+
 public class QualifiedIdentifier extends Identifier {
     private final ScopedIdentifier _scope;
     private final SimpleIdentifier _member;
@@ -27,5 +29,18 @@ public class QualifiedIdentifier extends Identifier {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        QualifiedIdentifier that = (QualifiedIdentifier) o;
+        return Objects.equals(_scope, that._scope) && Objects.equals(_member, that._member);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_scope, _member);
     }
 }

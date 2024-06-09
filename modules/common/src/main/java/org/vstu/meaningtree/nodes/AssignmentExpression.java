@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.nodes;
 
+import java.util.Objects;
+
 public class AssignmentExpression extends Expression implements HasInitialization {
     private final Expression _lvalue;
     private final Expression _rvalue;
@@ -40,5 +42,18 @@ public class AssignmentExpression extends Expression implements HasInitializatio
         builder.append(String.format("%s -- %s;\n", _id, _rvalue.getId()));
 
         return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AssignmentExpression that = (AssignmentExpression) o;
+        return Objects.equals(_lvalue, that._lvalue) && Objects.equals(_rvalue, that._rvalue) && _op == that._op;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_lvalue, _rvalue, _op);
     }
 }

@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.literals;
 
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -20,5 +21,18 @@ public class DictionaryLiteral extends Literal {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DictionaryLiteral that = (DictionaryLiteral) o;
+        return Objects.equals(_content, that._content);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_content);
     }
 }

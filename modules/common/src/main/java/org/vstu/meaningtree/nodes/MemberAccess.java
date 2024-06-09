@@ -3,10 +3,7 @@ package org.vstu.meaningtree.nodes;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class MemberAccess extends Expression {
     protected final Expression expr;
@@ -53,5 +50,18 @@ public class MemberAccess extends Expression {
             case null, default ->
                     throw new UnsupportedOperationException("Member access cannot be converted to scoped identifier, not identifier node found");
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MemberAccess that = (MemberAccess) o;
+        return Objects.equals(expr, that.expr) && Objects.equals(member, that.member);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expr, member);
     }
 }
