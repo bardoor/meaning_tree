@@ -1,11 +1,13 @@
 package org.vstu.meaningtree.languages.viewers;
 
+import org.vstu.meaningtree.languages.PythonSpecialTreeTransformations;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
@@ -15,18 +17,13 @@ import org.vstu.meaningtree.nodes.unary.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
 
 
 public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
     /*
     TODO:
-     - range
-     - literal support, comment support
-     - assignment support, variable declaration
-     - tabulation
-     - support for/for-each/while/do-while/switch
-     - return
      - program entry point
      - general for-loop transformation
      - function support
@@ -53,13 +50,138 @@ public class PythonViewer extends Viewer {
             case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
             case TernaryOperator ternary -> String.format("%s ? %s : %s", toString(ternary.getCondition()), toString(ternary.getThenExpr()), toString(ternary.getElseExpr()));
             case ParenthesizedExpression paren -> String.format("(%s)", toString(paren.getExpression()));
-            case ObjectNewExpression newExpr -> callsToString(node);
-            case ArrayNewExpression newExpr -> callsToString(node);
-            case FunctionCall funcCall -> callsToString(node);
+            case ObjectNewExpression newExpr -> callsToString(newExpr);
+            case ArrayNewExpression newExpr -> callsToString(newExpr);
+            case FunctionCall funcCall -> callsToString(funcCall);
             case BreakStatement breakStmt -> "break";
+            case Range range -> rangeToString(range);
             case ContinueStatement continueStatement -> "continue";
+            case Comment comment -> commentToString(comment);
+            case Literal literal -> literalToString(literal);
+            case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
+            case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
+            case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
+            case ForLoop forLoop -> loopToString(forLoop, tab);
+            case WhileLoop whileLoop -> loopToString(whileLoop, tab);
+            case DoWhileLoop doWhileLoop -> loopToString(doWhileLoop, tab);
+            case SwitchStatement switchStmt -> loopToString(switchStmt, tab);
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
+    }
+
+    private String loopToString(Statement stmt, Tab tab) {
+        StringBuilder builder = new StringBuilder();
+        if (stmt instanceof RangeForLoop rangeFor) {
+            builder.append(String.format("for %s in range(%s, %s, %s):\n",
+                    toString(rangeFor.getIdentifier()),
+                    toString(rangeFor.getStart()),
+                    toString(rangeFor.getEnd()),
+                    toString(rangeFor.getStep())
+            ));
+            builder.append(toString(rangeFor.getBody(), tab));
+        } else if (stmt instanceof GeneralForLoop generalFor) {
+            return toString(PythonSpecialTreeTransformations.representGeneralFor(generalFor));
+        } else if (stmt instanceof DoWhileLoop doWhile) {
+            return toString(PythonSpecialTreeTransformations.representDoWhile(doWhile));
+        } else if (stmt instanceof WhileLoop whileLoop) {
+            builder.append(String.format("while %s:\n", toString(whileLoop.getCondition())));
+            builder.append(toString(whileLoop.getBody(), tab));
+        } else if (stmt instanceof ForEachLoop forEachLoop) {
+            List<Expression> identifiers = new ArrayList<>();
+            for (VariableDeclarator decl : forEachLoop.getItem().getDeclarators()) {
+                identifiers.add(decl.getIdentifier());
+            }
+            builder.append(String.format("for %s in %s:\n", argumentsToString(identifiers), toString(forEachLoop.getExpression())));
+            builder.append(toString(forEachLoop.getBody(), tab));
+        } else if (stmt instanceof SwitchStatement switchStmt) {
+            tab = tab.up();
+            builder.append(String.format("match %s:\n", switchStmt.getTargetExpression()));
+            for (ConditionBranch caseBranch : switchStmt.getCases()) {
+                builder.append(String.format("%scase %s:\n%s\n\n", tab, toString(caseBranch.getCondition()), toString(caseBranch.getBody(), tab)));
+            }
+            if (switchStmt.hasDefaultCase()) {
+                builder.append(String.format("%scase _:\n%s\n", tab, toString(switchStmt.getDefaultCase(), tab)));
+            }
+        }
+        return builder.toString();
+    }
+
+    private String variableDeclarationToString(VariableDeclaration varDecl) {
+        StringBuilder lValues = new StringBuilder();
+        StringBuilder rValues = new StringBuilder();
+        VariableDeclarator[] decls = varDecl.getDeclarators();
+        for (int i = 0; i < decls.length; i++) {
+            lValues.append(toString(decls[i].getIdentifier()));
+            if (decls[i].hasInitialization()) {
+                rValues.append(toString(decls[i].getRValue()));
+            } else {
+                rValues.append("None");
+            }
+            if (i != decls.length - 1) {
+                lValues.append(", ");
+                rValues.append(", ");
+            }
+        }
+        return String.format("%s = %s", lValues, rValues);
+    }
+
+    private String assignmentExpressionToString(AssignmentExpression expr) {
+        return String.format("%s := %s", toString(expr.getLValue()), toString(expr.getRValue()));
+    }
+
+    private String assignmentToString(AssignmentStatement stmt) {
+        return String.format("%s = %s", toString(stmt.getLValue()), toString(stmt.getRValue()));
+    }
+
+    private String literalToString(Literal literal) {
+        if (literal instanceof NumericLiteral numLiteral) {
+            //TODO: What about various numeric representation like 0xABC, 0b010101, 0o334?
+            return numLiteral.getValue().toString();
+        } else if (literal instanceof StringLiteral strLiteral) {
+            //TODO: What about f-string, escaped characters, raw strings?
+            return String.format("\"%s\"", strLiteral.getValue());
+        } else if (literal instanceof ListLiteral list) {
+            return String.format("[%s]", argumentsToString(list.getList()));
+        } else if (literal instanceof SetLiteral set) {
+            return String.format("{%s}", argumentsToString(set.getList()));
+        } else if (literal instanceof UnmodifiableListLiteral tuple) {
+            return String.format("(%s)", argumentsToString(tuple.getList()));
+        } else if (literal instanceof DictionaryLiteral dict) {
+            SortedMap<Expression, Expression> map = dict.getDictionary();
+            StringBuilder builder = new StringBuilder();
+            builder.append('{');
+            for (Expression key : map.keySet()) {
+                builder.append(String.format("%s : %s,", key, map.get(key)));
+            }
+            builder.append("}", builder.length() - 1, builder.length());
+            return builder.toString();
+        } else {
+            return "None";
+        }
+    }
+
+    private String commentToString(Comment comment) {
+        if (comment.isMultiline()) {
+            return String.format("\"\"\"\n%s\n\"\"\"", comment.getContent());
+        } else {
+            return String.format("# %s", comment.getContent());
+        }
+    }
+
+    private String rangeToString(Range range) {
+        StringBuilder builder = new StringBuilder();
+        if (range.hasStart()) {
+            builder.append(toString(range.getStart()));
+        }
+        builder.append(':');
+        if (range.hasStop()) {
+            builder.append(toString(range.getStop()));
+        }
+        if (range.hasStep()) {
+            builder.append(':');
+            builder.append(toString(range.getStep()));
+        }
+        return builder.toString();
     }
 
     private String binaryOpToString(BinaryExpression node) {
@@ -164,7 +286,7 @@ public class PythonViewer extends Viewer {
         tab = tab.up();
         for (Node child : node) {
             builder.append(tab);
-            builder.append(toString(node));
+            builder.append(toString(node, tab));
             builder.append('\n');
         }
         return builder.toString();
