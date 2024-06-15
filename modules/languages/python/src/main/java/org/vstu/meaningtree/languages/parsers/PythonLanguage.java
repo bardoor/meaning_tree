@@ -32,7 +32,6 @@ public class PythonLanguage extends Language {
      - switch support
      */
 
-
     @Override
     public MeaningTree getMeaningTree(String code) {
         _code = code;
@@ -194,7 +193,7 @@ public class PythonLanguage extends Language {
 
     private ClassDefinition fromClass(TSNode node) {
         ClassDeclaration classDecl = new ClassDeclaration((SimpleIdentifier) fromTSNode(node.getChildByFieldName("name")));
-        Type type = new UserType((SimpleIdentifier) classDecl.getName());
+        UserType type = new UserType((SimpleIdentifier) classDecl.getName());
         CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
         List<Node> nodes = new ArrayList<>();
         for (Node bodyNode : body) {
@@ -329,30 +328,22 @@ public class PythonLanguage extends Language {
     private Node createEntryPoint(TSNode node) {
         // detect if __name__ == __main__ construction
         CompoundStatement compound = fromCompoundTSNode(node);
-        String functionName = null;
+        Node entryPointNode = null;
+        IfStatement entryPointIf = null;
         for (Node programNode : compound) {
             if (programNode instanceof IfStatement ifStmt) {
                 ConditionBranch mainBranch = ifStmt.getBranches().get(0);
                 if (mainBranch.getCondition() instanceof EqOp eqOp) {
                     if (eqOp.getLeft().toString().equals("__name__") && eqOp.getRight().toString().equals("__main__")) {
-                        CompoundStatement body = (CompoundStatement) mainBranch.getBody();
-                        if (body.getLength() == 1 && body.getNodes()[0] instanceof FunctionCall call) {
-                            if (call.getFunctionName() instanceof SimpleIdentifier) {
-                                functionName = call.getFunctionName().toString();
-                            }
-                        }
+                        entryPointNode = mainBranch.getBody();
+                        entryPointIf = ifStmt;
                     }
-                    //TODO: add various main condition body support
                 }
             }
         }
-        FunctionDefinition mainFunction = null;
-        for (Node programNode : compound) {
-            if (programNode instanceof FunctionDefinition func && func.getName().toString().equals(functionName)) {
-                mainFunction = func;
-            }
-        }
-        return new ProgramEntryPoint(List.of(compound.getNodes()), mainFunction);
+        List<Node> nodes = new ArrayList<>(List.of(compound.getNodes()));
+        nodes.remove(entryPointIf);
+        return new ProgramEntryPoint(nodes, entryPointNode);
     }
 
     private Identifier fromIdentifier(TSNode node) {

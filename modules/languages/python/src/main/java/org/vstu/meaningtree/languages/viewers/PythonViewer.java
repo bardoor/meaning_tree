@@ -5,8 +5,11 @@ import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
@@ -16,6 +19,7 @@ import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.unary.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -24,7 +28,6 @@ public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
     /*
     TODO:
-     - program entry point
      - general for-loop/while transformation
      - function support
      - class support
@@ -39,6 +42,7 @@ public class PythonViewer extends Viewer {
 
     public String toString(Node node, Tab tab) {
         return switch (node) {
+            case ProgramEntryPoint programEntryPoint -> entryPointToString(programEntryPoint, tab);
             case BinaryComparison cmpNode -> comparisonToString(cmpNode);
             case BinaryExpression binaryExpression -> binaryOpToString(binaryExpression);
             case IfStatement ifStatement -> conditionToString(ifStatement, tab);
@@ -67,6 +71,36 @@ public class PythonViewer extends Viewer {
             case SwitchStatement switchStmt -> loopToString(switchStmt, tab);
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
+    }
+
+    private String entryPointToString(ProgramEntryPoint programEntryPoint, Tab tab) {
+        IfStatement entryPointIf = null;
+        if (programEntryPoint.hasEntryPoint()) {
+            Node entryPointNode = programEntryPoint.getEntryPoint();
+            if (entryPointNode instanceof FunctionDefinition func) {
+                Identifier ident;
+                FunctionDeclaration funcDecl = (FunctionDeclaration) func.getDeclaration();
+                if (funcDecl instanceof MethodDeclaration method) {
+                    ident = new ScopedIdentifier(method.getOwner().getName(), method.getName());
+                } else {
+                    ident = func.getName();
+                }
+                //NOTE: default behaviour - ignore arguments in call main function
+                List<Expression> nulls = new ArrayList<>();
+                for (DeclarationArgument arg : funcDecl.getArguments()) {
+                    if (!arg.isListUnpacking()) {
+                        nulls.add(new NullLiteral());
+                    }
+                }
+                FunctionCall funcCall = new FunctionCall(ident, nulls.toArray(new Expression[0]));
+                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), new StringLiteral("__main__")), new CompoundStatement(funcCall),null);
+            } else if (entryPointNode instanceof CompoundStatement compound) {
+                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), new StringLiteral("__main__")), compound,null);
+            }
+        }
+        List<Node> nodes = new ArrayList<>(programEntryPoint.getBody());
+        nodes.add(entryPointIf);
+        return nodeListToString(nodes, tab);
     }
 
     private String loopToString(Statement stmt, Tab tab) {
