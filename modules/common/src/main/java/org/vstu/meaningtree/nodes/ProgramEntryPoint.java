@@ -8,12 +8,20 @@ import java.util.Optional;
 
 public class ProgramEntryPoint extends Node {
     /**
-     * Body has main class and entry point function,
-     * but language viewer must convert entry point in proper format
-     * (for example: without main class in C++)
+     * Body не содержит entryPointNode, если только точка входа - не метод главного класса.
+     * Однако entryPointNode может отсутствовать, тогда точка входа - body
+     * Viewer должен сам подстроиться под эту ситуацию и адаптировать под особенности своего языка
      */
     private final List<Node> _body;
-    private final Optional<FunctionDefinition> _entryPointFunction;
+
+    /**
+     * Может быть функцией, методом главного класса, либо просто составным оператором (например, как в Python)
+     */
+    private final Optional<Node> _entryPointNode;
+
+    /**
+     * Ссылка на главный класс. Он не исключается из body, нужен для удобства разработчиков поддержки для языков
+     */
     private final Optional<ClassDefinition> _mainClass;
 
     public ProgramEntryPoint(List<Node> body, ClassDefinition mainClass) {
@@ -24,14 +32,14 @@ public class ProgramEntryPoint extends Node {
         this(body, null, null);
     }
 
-    public ProgramEntryPoint(List<Node> body, FunctionDefinition entryPointFunction) {
-        this(body, null, null);
+    public ProgramEntryPoint(List<Node> body, Node entryPoint) {
+        this(body, null, entryPoint);
     }
 
-    public ProgramEntryPoint(List<Node> body, ClassDefinition mainClass, FunctionDefinition entryPointFunction) {
+    public ProgramEntryPoint(List<Node> body, ClassDefinition mainClass, Node entryPoint) {
         _body = body;
         _mainClass = Optional.ofNullable(mainClass);
-        _entryPointFunction = Optional.ofNullable(entryPointFunction);
+        _entryPointNode = Optional.ofNullable(entryPoint);
     }
 
     public List<Node> getBody() {
@@ -49,15 +57,15 @@ public class ProgramEntryPoint extends Node {
         return _mainClass.isPresent();
     }
 
-    public boolean hasEntryPointFunction() {
-        return _entryPointFunction.isPresent();
+    public boolean hasEntryPoint() {
+        return _entryPointNode.isPresent();
     }
 
-    public FunctionDefinition getEntryPointFunction() {
-        if (!hasEntryPointFunction()) {
+    public Node getEntryPoint() {
+        if (!hasEntryPoint()) {
             throw new RuntimeException("Main class is not present");
         }
-        return _entryPointFunction.get();
+        return _entryPointNode.get();
     }
 
     @Override
