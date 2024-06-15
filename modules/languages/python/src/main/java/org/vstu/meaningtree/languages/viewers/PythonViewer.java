@@ -25,7 +25,7 @@ public class PythonViewer extends Viewer {
     /*
     TODO:
      - program entry point
-     - general for-loop transformation
+     - general for-loop/while transformation
      - function support
      - class support
      - import support
@@ -287,6 +287,16 @@ public class PythonViewer extends Viewer {
         for (Node child : node) {
             builder.append(tab);
             builder.append(toString(node, tab));
+            builder.append('\n');
+        }
+        return builder.toString();
+    }
+
+    private String nodeListToString(List<Node> nodes, Tab tab) {
+        StringBuilder builder = new StringBuilder();
+        for (Node child : nodes) {
+            builder.append(tab);
+            builder.append(toString(child, tab));
             builder.append('\n');
         }
         return builder.toString();
