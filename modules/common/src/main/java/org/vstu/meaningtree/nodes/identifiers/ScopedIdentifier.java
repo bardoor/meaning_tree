@@ -31,6 +31,7 @@ public class ScopedIdentifier extends Identifier {
 
     @Override
     public String toString() {
+        //TODO: possible bad code: provided default view of programming language
         return _scopeResolutionList.stream().map(SimpleIdentifier::toString).collect(Collectors.joining("."));
     }
 

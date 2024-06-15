@@ -2,6 +2,7 @@ package org.vstu.meaningtree.nodes;
 
 import org.vstu.meaningtree.nodes.declarations.DeclarationArgument;
 import org.vstu.meaningtree.nodes.definitions.DefinitionArgument;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 import java.util.List;
 import java.util.Objects;

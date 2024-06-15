@@ -1,14 +1,16 @@
 package org.vstu.meaningtree.languages.viewers;
 
+import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.nodes.statements.IfStatement;
+import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.unary.*;
 
 import java.util.ArrayList;
@@ -19,18 +21,14 @@ public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
     /*
     TODO:
-     - identifiers
-     - parenthesize
      - range
      - literal support, comment support
-     - new expressions
      - assignment support, variable declaration
      - tabulation
-     - support if/for/for-each/while/ternary/do-while/switch
-     - break/return/contiune
+     - support for/for-each/while/do-while/switch
+     - return
      - program entry point
      - general for-loop transformation
-     - support function calls and new object/array, indexing
      - function support
      - class support
      - import support
@@ -38,13 +36,28 @@ public class PythonViewer extends Viewer {
 
     @Override
     public String toString(Node node) {
+        Tab tab = new Tab();
+        return toString(node, tab);
+    }
+
+    public String toString(Node node, Tab tab) {
         return switch (node) {
             case BinaryComparison cmpNode -> comparisonToString(cmpNode);
             case BinaryExpression binaryExpression -> binaryOpToString(binaryExpression);
-            case IfStatement ifStatement -> conditionToString(node);
+            case IfStatement ifStatement -> conditionToString(ifStatement, tab);
             case UnaryExpression exprNode -> unaryToString(exprNode);
-            case CompoundStatement exprNode -> blockToString(exprNode);
+            case CompoundStatement exprNode -> blockToString(exprNode, tab);
             case CompoundComparison compound -> compoundComparisonToString(compound);
+            case Identifier identifier -> identifier.toString();
+            case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
+            case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
+            case TernaryOperator ternary -> String.format("%s ? %s : %s", toString(ternary.getCondition()), toString(ternary.getThenExpr()), toString(ternary.getElseExpr()));
+            case ParenthesizedExpression paren -> String.format("(%s)", toString(paren.getExpression()));
+            case ObjectNewExpression newExpr -> callsToString(node);
+            case ArrayNewExpression newExpr -> callsToString(node);
+            case FunctionCall funcCall -> callsToString(node);
+            case BreakStatement breakStmt -> "break";
+            case ContinueStatement continueStatement -> "continue";
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
     }
@@ -90,8 +103,42 @@ public class PythonViewer extends Viewer {
         return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
     }
 
-    private String conditionToString(Node node) {
-        return "";
+    private String callsToString(Node node) {
+        if (node instanceof ArrayNewExpression newExpr) {
+            if (!newExpr.getInitialArray().isEmpty()) {
+                return String.format("[%s]", argumentsToString(newExpr.getInitialArray()));
+            } else {
+                return String.format("[%s for _ in range(%s)]", String.format("%s()", newExpr.getType()), toString(newExpr.getDimension()));
+            }
+        } else if (node instanceof ObjectNewExpression newExpr) {
+            return String.format("%s(%s)", newExpr.getType(), argumentsToString(newExpr.getConstructorArguments()));
+        } else if (node instanceof FunctionCall funcCall) {
+            return String.format("%s(%s)", funcCall.getFunctionName(), argumentsToString(funcCall.getArguments()));
+        } else {
+            throw new RuntimeException("Not a callable object");
+        }
+    }
+
+    private String argumentsToString(List<Expression> expressions) {
+        String[] exprStrings = new String[expressions.size()];
+        for (int i = 0; i < exprStrings.length; i++) {
+            exprStrings[i] = toString(expressions.get(i));
+        }
+        return String.join(", ", exprStrings);
+    }
+
+    private String conditionToString(IfStatement node, Tab tab) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < node.getBranches().size(); i++) {
+            String pattern = "elif %s:\n%s\n";
+            if (i == 0) {
+                pattern = "if %s:\n%s\n";
+            }
+            ConditionBranch branch = node.getBranches().get(i);
+            sb.append(String.format(pattern, branch.getCondition(), toString(branch.getBody(), tab)));
+        }
+        sb.append(String.format("else:%s\n", toString(node.getElseBranch(), tab)));
+        return sb.toString();
     }
 
     private String unaryToString(UnaryExpression node) {
@@ -112,10 +159,11 @@ public class PythonViewer extends Viewer {
         return String.format(pattern, toString(node.getArgument()));
     }
 
-    private String blockToString(CompoundStatement node) {
+    private String blockToString(CompoundStatement node, Tab tab) {
         StringBuilder builder = new StringBuilder();
+        tab = tab.up();
         for (Node child : node) {
-            builder.append("    ");
+            builder.append(tab);
             builder.append(toString(node));
             builder.append('\n');
         }
