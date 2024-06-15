@@ -7,6 +7,7 @@ import org.vstu.meaningtree.nodes.declarations.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VisibilityModifier;
+import org.vstu.meaningtree.nodes.types.UserType;
 
 public class FunctionDefinition extends Definition {
     private Statement _body;
@@ -20,7 +21,7 @@ public class FunctionDefinition extends Definition {
         return ((FunctionDeclaration) getDeclaration()).getName();
     }
 
-    public MethodDefinition makeMethod(Type owner, boolean isStatic, VisibilityModifier modifier) {
+    public MethodDefinition makeMethod(UserType owner, boolean isStatic, VisibilityModifier modifier) {
         FunctionDeclaration decl = (FunctionDeclaration) getDeclaration();
         return new MethodDefinition(
                 new MethodDeclaration(
