@@ -28,7 +28,7 @@ public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
     /*
     TODO:
-     - general for-loop/while transformation
+     - general for-loop transformation
      - function support
      - class support
      - import support
@@ -38,6 +38,17 @@ public class PythonViewer extends Viewer {
     public String toString(Node node) {
         Tab tab = new Tab();
         return toString(node, tab);
+    }
+
+    public String toString(Node ... nodes) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < nodes.length; i++) {
+            builder.append(toString(nodes[i]));
+            if (i != nodes.length - 1) {
+                builder.append("\n");
+            }
+        }
+        return builder.toString();
     }
 
     public String toString(Node node, Tab tab) {
@@ -58,6 +69,7 @@ public class PythonViewer extends Viewer {
             case ArrayNewExpression newExpr -> callsToString(newExpr);
             case FunctionCall funcCall -> callsToString(funcCall);
             case BreakStatement breakStmt -> "break";
+            case DeleteStatement delStmt -> String.format("del %s", toString(delStmt.getTarget()));
             case Range range -> rangeToString(range);
             case ContinueStatement continueStatement -> "continue";
             case Comment comment -> commentToString(comment);

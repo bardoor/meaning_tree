@@ -30,6 +30,7 @@ public class PythonLanguage extends Language {
     /*
     TODO:
      - switch support
+     - yield support (по огромным просьбам)
      */
 
     @Override
@@ -66,6 +67,7 @@ public class PythonLanguage extends Language {
             case "float" -> fromFloatLiteralTSNode(node);
             case "identifier" -> fromIdentifier(node);
             case "keyword_argument" -> fromDefinitionArgument(node);
+            case "delete_statement" -> new DeleteStatement((Expression) fromTSNode(node.getChild(0)));
             case "comparison_operator" -> fromComparisonTSNode(node);
             case "list", "set", "tuple" -> fromList(node, node.getType());
             case "dictionary" -> fromDictionary(node);
