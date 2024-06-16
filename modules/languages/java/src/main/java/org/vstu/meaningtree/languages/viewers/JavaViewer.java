@@ -84,11 +84,9 @@ public class JavaViewer extends Viewer {
             case PackageDeclaration decl -> toString(decl);
             case ClassDeclaration decl -> toString(decl);
             case ClassDefinition def -> toString(def);
-            case PassStatement stmt -> toString(stmt);
             case Comment comment -> toString(comment);
             case BreakStatement stmt -> toString(stmt);
             case ContinueStatement stmt -> toString(stmt);
-
             case null, default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -118,10 +116,6 @@ public class JavaViewer extends Viewer {
         builder.append(toString(varDecl));
 
         return builder.toString();
-    }
-
-    private String toString(PassStatement stmt) {
-        return "";
     }
 
     private String toString(VisibilityModifier modifier) {

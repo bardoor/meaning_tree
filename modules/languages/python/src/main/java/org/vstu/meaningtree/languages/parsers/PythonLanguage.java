@@ -61,7 +61,7 @@ public class PythonLanguage extends Language {
             case "binary_operator" -> fromBinaryExpressionTSNode(node);
             case "unary_expression" -> fromUnaryExpressionTSNode(node);
             case "not_operator" -> fromNotOperatorTSNode(node);
-            case "pass_statement" -> fromPassStatement(node);
+            case "pass_statement", "ellipsis" -> null;
             case "integer" -> fromIntegerLiteralTSNode(node);
             case "float" -> fromFloatLiteralTSNode(node);
             case "identifier" -> fromIdentifier(node);
@@ -94,10 +94,6 @@ public class PythonLanguage extends Language {
             case "while_statement" -> fromWhileLoop(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
-    }
-
-    private Node fromPassStatement(TSNode node) {
-        return new PassStatement();
     }
 
     private DefinitionArgument fromDefinitionArgument(TSNode node) {
@@ -484,7 +480,10 @@ public class PythonLanguage extends Language {
     private CompoundStatement fromCompoundTSNode(TSNode node) {
         ArrayList<Node> nodes = new ArrayList<>();
         for (int i = 0; i < node.getChildCount(); i++) {
-            nodes.add(fromTSNode(node.getChild(i)));
+            Node treeNode = fromTSNode(node.getChild(i));
+            if (treeNode != null) {
+                nodes.add(treeNode);
+            }
         }
         return new CompoundStatement(nodes.toArray(new Node[0]));
     }
