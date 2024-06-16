@@ -29,7 +29,6 @@ import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class JavaLanguage extends Language {
