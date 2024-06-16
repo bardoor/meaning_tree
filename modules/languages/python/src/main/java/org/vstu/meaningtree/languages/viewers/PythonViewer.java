@@ -324,6 +324,9 @@ public class PythonViewer extends Viewer {
     private String blockToString(CompoundStatement node, Tab tab) {
         StringBuilder builder = new StringBuilder();
         tab = tab.up();
+        if (node.getNodes().length == 0) {
+            return "pass";
+        }
         for (Node child : node) {
             builder.append(tab);
             builder.append(toString(node, tab));
@@ -334,6 +337,9 @@ public class PythonViewer extends Viewer {
 
     private String nodeListToString(List<Node> nodes, Tab tab) {
         StringBuilder builder = new StringBuilder();
+        if (nodes.isEmpty()) {
+            return "pass";
+        }
         for (Node child : nodes) {
             builder.append(tab);
             builder.append(toString(child, tab));
