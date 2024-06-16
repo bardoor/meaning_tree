@@ -174,6 +174,12 @@ public class PythonViewer extends Viewer {
         } else if (literal instanceof StringLiteral strLiteral) {
             //TODO: What about f-string, escaped characters, raw strings?
             return String.format("\"%s\"", strLiteral.getValue());
+        } else if (literal instanceof BoolLiteral bool) {
+           if (bool.getValue()) {
+               return "True";
+           } else {
+               return "False";
+           }
         } else if (literal instanceof ListLiteral list) {
             return String.format("[%s]", argumentsToString(list.getList()));
         } else if (literal instanceof SetLiteral set) {

@@ -12,6 +12,14 @@ public class DoWhileLoop extends Statement {
         this.body = body;
     }
 
+    public Expression getCondition() {
+        return condition;
+    }
+
+    public CompoundStatement getBody() {
+        return body;
+    }
+
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();

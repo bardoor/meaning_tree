@@ -77,6 +77,8 @@ public class PythonLanguage extends Language {
             case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
             case "type" -> determineType(node);
+            case "true" -> new BoolLiteral(true);
+            case "false" -> new BoolLiteral(false);
             case "call" -> fromFunctionCall(node);
             case "wildcard_import" -> ScopedIdentifier.ALL;
             case "break_statement" -> new BreakStatement();

@@ -6,8 +6,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 abstract public class BinaryExpression extends Expression {
-    private final Expression _left;
-    private final Expression _right;
+    protected final Expression _left;
+    protected final Expression _right;
 
     public BinaryExpression(Expression left, Expression right) {
         _left = left;
