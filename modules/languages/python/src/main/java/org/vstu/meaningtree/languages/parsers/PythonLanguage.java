@@ -1,6 +1,11 @@
 package org.vstu.meaningtree.languages.parsers;
 
-import org.treesitter.*;
+import org.treesitter.TreeSitterPython;
+import org.treesitter.TSLanguage;
+import org.treesitter.TSNode;
+import org.treesitter.TSTree;
+import org.treesitter.TSParser;
+
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
@@ -37,9 +42,9 @@ public class PythonLanguage extends Language {
     public MeaningTree getMeaningTree(String code) {
         _code = code;
         TSParser parser = new TSParser();
-        TSLanguage javaLanguage = new TreeSitterPython();
+        TSLanguage pyLanguage = new TreeSitterPython();
+        parser.setLanguage(pyLanguage);
 
-        parser.setLanguage(javaLanguage);
         TSTree tree = parser.parseString(null, code);
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
