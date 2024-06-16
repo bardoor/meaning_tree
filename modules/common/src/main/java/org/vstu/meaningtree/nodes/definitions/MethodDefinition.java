@@ -2,8 +2,10 @@ package org.vstu.meaningtree.nodes.definitions;
 
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.HasBodyStatement;
 
-public class MethodDefinition extends Definition {
+public class MethodDefinition extends Definition implements HasBodyStatement {
     private Statement _body;
 
     public MethodDefinition(MethodDeclaration declaration, Statement body) {
@@ -18,5 +20,10 @@ public class MethodDefinition extends Definition {
 
     public Statement getBody() {
         return _body;
+    }
+
+    @Override
+    public void makeBodyCompound() {
+        assert getBody() instanceof CompoundStatement;
     }
 }

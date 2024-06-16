@@ -3,7 +3,7 @@ package org.vstu.meaningtree.nodes.statements;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class WhileLoop extends Statement {
+public class WhileLoop extends Statement implements HasBodyStatement {
     public Expression getCondition() {
         return _condition;
     }
@@ -12,8 +12,15 @@ public class WhileLoop extends Statement {
         return _body;
     }
 
+    @Override
+    public void makeBodyCompound() {
+        if (!(_body instanceof CompoundStatement)) {
+            _body = new CompoundStatement(_body);
+        }
+    }
+
     protected final Expression _condition;
-    protected final Statement _body;
+    protected Statement _body;
 
     public WhileLoop(Expression condition, Statement body) {
         this._condition = condition;

@@ -10,13 +10,20 @@ public class GeneralForLoop extends ForLoop {
     private final Optional<HasInitialization> _initializer;
     private final Optional<Expression> _condition;
     private final Optional<Expression> _update;
-    private final Statement _body;
+    private Statement _body;
 
     public GeneralForLoop(HasInitialization initializer, Expression condition, Expression update, Statement body) {
         this._initializer = Optional.ofNullable(initializer);
         this._condition = Optional.ofNullable(condition);
         this._update = Optional.ofNullable(update);
         this._body = body;
+    }
+
+    @Override
+    public void makeBodyCompound() {
+        if (!(_body instanceof CompoundStatement)) {
+            _body = new CompoundStatement(_body);
+        }
     }
 
     public boolean hasInitializer() {

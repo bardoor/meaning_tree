@@ -7,9 +7,11 @@ import org.vstu.meaningtree.nodes.declarations.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VisibilityModifier;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.HasBodyStatement;
 import org.vstu.meaningtree.nodes.types.UserType;
 
-public class FunctionDefinition extends Definition {
+public class FunctionDefinition extends Definition implements HasBodyStatement {
     private Statement _body;
 
     public FunctionDefinition(FunctionDeclaration declaration, Statement body) {
@@ -38,5 +40,10 @@ public class FunctionDefinition extends Definition {
 
     public Statement getBody() {
         return _body;
+    }
+
+    @Override
+    public void makeBodyCompound() {
+        assert getBody() instanceof CompoundStatement;
     }
 }

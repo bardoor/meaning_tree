@@ -43,6 +43,14 @@ public class CompoundStatement extends Statement implements Iterable<Node> {
         return _nodes.size();
     }
 
+    public void substitute(int index, Node node) {
+        _nodes.set(index, node);
+    }
+
+    public void insert(int index, Node node) {
+        _nodes.add(index, node);
+    }
+
     public Node[] getNodes() {
         return _nodes.toArray(new Node[0]);
     }

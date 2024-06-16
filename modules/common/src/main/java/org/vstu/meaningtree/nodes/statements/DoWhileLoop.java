@@ -3,11 +3,11 @@ package org.vstu.meaningtree.nodes.statements;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class DoWhileLoop extends Statement {
+public class DoWhileLoop extends Statement implements HasBodyStatement {
     protected final Expression condition;
-    protected final CompoundStatement body;
+    protected Statement body;
 
-    public DoWhileLoop(Expression condition, CompoundStatement body) {
+    public DoWhileLoop(Expression condition, Statement body) {
         this.condition = condition;
         this.body = body;
     }
@@ -16,8 +16,15 @@ public class DoWhileLoop extends Statement {
         return condition;
     }
 
-    public CompoundStatement getBody() {
+    public Statement getBody() {
         return body;
+    }
+
+    @Override
+    public void makeBodyCompound() {
+        if (!(body instanceof CompoundStatement)) {
+            body = new CompoundStatement(body);
+        }
     }
 
     @Override

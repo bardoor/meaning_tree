@@ -4,9 +4,9 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class ConditionBranch extends Node {
+public class ConditionBranch extends Node implements HasBodyStatement {
     protected final Expression _condition;
-    protected final Statement _body;
+    protected Statement _body;
 
     public ConditionBranch(Expression condition, Statement body) {
         _condition = condition;
@@ -19,6 +19,13 @@ public class ConditionBranch extends Node {
 
     public Statement getBody() {
         return _body;
+    }
+
+    @Override
+    public void makeBodyCompound() {
+        if (!(_body instanceof CompoundStatement)) {
+            _body = new CompoundStatement(_body);
+        }
     }
 
     public String generateDot() {

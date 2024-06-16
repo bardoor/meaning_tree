@@ -13,7 +13,7 @@ public class RangeForLoop extends ForLoop {
     private final Expression _end;
     private final Expression _step;
     private final SimpleIdentifier _identifier;
-    private final Statement _body;
+    private Statement _body;
 
     /**
      * Создает цикл по диапазону.
@@ -41,6 +41,13 @@ public class RangeForLoop extends ForLoop {
     }
 
     public Statement getBody() { return _body; }
+
+    @Override
+    public void makeBodyCompound() {
+        if (!(_body instanceof CompoundStatement)) {
+            _body = new CompoundStatement(_body);
+        }
+    }
 
     @Override
     public String generateDot() {

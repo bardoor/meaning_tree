@@ -10,7 +10,7 @@ import java.util.Optional;
 public class SwitchStatement extends Statement {
     private final Expression targetExpression;
     private final List<ConditionBranch> cases;
-    private final Optional<Statement> defaultCase;
+    private Optional<Statement> defaultCase;
 
     public SwitchStatement(Expression targetExpression, List<ConditionBranch> cases, Statement defaultCase) {
         this.targetExpression = targetExpression;
@@ -44,5 +44,16 @@ public class SwitchStatement extends Statement {
 
     public boolean hasDefaultCase() {
         return defaultCase.isPresent();
+    }
+
+    public void makeBodyCompound() {
+        if (hasDefaultCase()) {
+            if (!(getDefaultCase() instanceof CompoundStatement)) {
+                defaultCase = Optional.of(new CompoundStatement(getDefaultCase()));
+            }
+        }
+        for (ConditionBranch branch : cases) {
+            branch.makeBodyCompound();
+        }
     }
 }

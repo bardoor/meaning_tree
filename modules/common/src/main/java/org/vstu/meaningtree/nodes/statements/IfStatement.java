@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public class IfStatement extends Statement {
     private final List<ConditionBranch> _branches;
-    private final Optional<Statement> _elseBranch;
+    private Optional<Statement> _elseBranch;
 
 
     public IfStatement(Expression condition, Statement thenBranch, Statement elseBranch) {
@@ -57,5 +57,16 @@ public class IfStatement extends Statement {
         }
 
         return builder.toString();
+    }
+
+    public void makeBodyCompound() {
+        if (hasElseBranch()) {
+            if (!(getElseBranch() instanceof CompoundStatement)) {
+                _elseBranch = Optional.of(new CompoundStatement(getElseBranch()));
+            }
+        }
+        for (ConditionBranch branch : _branches) {
+            branch.makeBodyCompound();
+        }
     }
 }
