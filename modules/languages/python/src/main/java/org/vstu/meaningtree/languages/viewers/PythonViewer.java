@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages.viewers;
 
+import com.sun.jdi.BooleanType;
 import org.vstu.meaningtree.languages.PythonSpecialTreeTransformations;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
@@ -16,8 +17,10 @@ import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
 
+import javax.lang.model.type.NullType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +31,7 @@ public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
     /*
     TODO:
-     - general for-loop transformation
+     - type hints in assignment, declaration support
      - function support
      - class support
      - import support
@@ -158,6 +161,8 @@ public class PythonViewer extends Viewer {
         VariableDeclarator[] decls = varDecl.getDeclarators();
         for (int i = 0; i < decls.length; i++) {
             lValues.append(toString(decls[i].getIdentifier()));
+            //NEED DISCUSSION, see typeToString notes
+            lValues.append(String.format(": %s", typeToString(varDecl.getType())));
             if (decls[i].hasInitialization()) {
                 rValues.append(toString(decls[i].getRValue()));
             } else {
@@ -169,6 +174,51 @@ public class PythonViewer extends Viewer {
             }
         }
         return String.format("%s = %s", lValues, rValues);
+    }
+
+    private String typeToString(Type type) {
+        //NOTE: python 3.9+ typing support, without using typing library
+        if (type instanceof IntType) {
+            return "int";
+        } else if (type instanceof FloatType) {
+            return "float";
+        } else if (type instanceof DictionaryType dictType) {
+            if (dictType.getKeyType() != null && dictType.getValueType() != null) {
+                return String.format("dict[%s, %s]", typeToString(dictType.getKeyType()), typeToString(dictType.getValueType()));
+            }
+            return "dict";
+        } else if (type instanceof StringType) {
+            return "str";
+        } else if (type instanceof BooleanType) {
+            return "bool";
+        } else if (type instanceof ListType listType) {
+            if (listType.getItemType() != null) {
+                return String.format("list[%s]",  typeToString(listType.getItemType()));
+            }
+            return "list";
+        } else if (type instanceof ArrayType listType) {
+            if (listType.getItemType() != null) {
+                return String.format("list[%s]",  typeToString(listType.getItemType()));
+            }
+            return "list";
+        } else if (type instanceof SetType setType) {
+            if (setType.getItemType() != null) {
+                return String.format("set[%s]",  typeToString(setType.getItemType()));
+            }
+            return "set";
+        } else if (type instanceof UnmodifiableListType tupleType) {
+            if (tupleType.getItemType() != null) {
+                return String.format("tuple[%s]",  typeToString(tupleType.getItemType()));
+            }
+            return "tuple";
+        } else if (type instanceof NullType) {
+            return "None";
+        } else if (type instanceof GenericUserType generic) {
+            return String.format("%s[%s]", generic.getName().toString(), String.join(",", Arrays.stream(generic.getTypeParameters()).map(this::typeToString).toList().toArray(new String[0])));
+        } else if (type instanceof UserType userType) {
+            return userType.getName().toString();
+        }
+        return "object";
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
