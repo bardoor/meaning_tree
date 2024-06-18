@@ -16,4 +16,8 @@ public class StatementSequence extends Statement {
     public List<Statement> getStatements() {
         return _statements;
     }
+
+    public boolean isOnlyAssignments() {
+        return _statements.stream().allMatch((Statement stmt) -> stmt instanceof AssignmentStatement);
+    }
 }

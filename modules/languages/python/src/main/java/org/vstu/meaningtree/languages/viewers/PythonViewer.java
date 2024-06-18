@@ -8,7 +8,6 @@ import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
-import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
@@ -31,7 +30,6 @@ public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
     /*
     TODO:
-     - type hints in assignment, declaration support
      - function support
      - class support
      - import support
@@ -84,8 +82,56 @@ public class PythonViewer extends Viewer {
             case WhileLoop whileLoop -> loopToString(whileLoop, tab);
             case DoWhileLoop doWhileLoop -> loopToString(doWhileLoop, tab);
             case SwitchStatement switchStmt -> loopToString(switchStmt, tab);
+            case StatementSequence stmtSequence -> {
+                if (stmtSequence.isOnlyAssignments()) {
+                    yield assignmentToString(stmtSequence);
+                } else {
+                    yield String.join(", ", stmtSequence.getStatements().stream().map((Statement nd) -> toString(nd, tab)).toList().toArray(new String[0]));
+                }
+            }
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
+    }
+
+    private String assignmentToString(StatementSequence stmtSequence) {
+        if (stmtSequence.isOnlyAssignments()) {
+            AugmentedAssignmentOperator augOp = ((AssignmentStatement) stmtSequence.getStatements().getFirst()).getAugmentedOperator();
+            String operator = switch (augOp) {
+                case ADD -> "+=";
+                case SUB -> "-=";
+                case MUL -> "*=";
+                case DIV -> "/=";
+                case FLOOR_DIV -> "//=";
+                case BITWISE_AND -> "&=";
+                case BITWISE_OR -> "|=";
+                case BITWISE_XOR -> "^=";
+                case BITWISE_SHIFT_LEFT -> "<<=";
+                case BITWISE_SHIFT_RIGHT -> ">>=";
+                case MOD -> "%=";
+                case POW -> "**=";
+                default -> "=";
+            };
+            List<Expression> lvalues = new ArrayList<>();
+            List<Expression> rvalues = new ArrayList<>();
+            for (Statement stmt : stmtSequence.getStatements()) {
+                AssignmentStatement assignment = (AssignmentStatement) stmt;
+                lvalues.add(assignment.getLValue());
+                rvalues.add(assignment.getRValue());
+            }
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < lvalues.size(); i++) {
+                builder.append(toString(lvalues.get(i)));
+            }
+            builder.append(' ');
+            builder.append(operator);
+            builder.append(' ');
+            for (int i = 0; i < lvalues.size(); i++) {
+                builder.append(toString(lvalues.get(i)));
+            }
+            return builder.toString();
+        } else {
+            throw new RuntimeException("Invalid usage of assignmentToString method");
+        }
     }
 
     private String entryPointToString(ProgramEntryPoint programEntryPoint, Tab tab) {
@@ -226,7 +272,23 @@ public class PythonViewer extends Viewer {
     }
 
     private String assignmentToString(AssignmentStatement stmt) {
-        return String.format("%s = %s", toString(stmt.getLValue()), toString(stmt.getRValue()));
+        AugmentedAssignmentOperator augOp = stmt.getAugmentedOperator();
+        String operator = switch (augOp) {
+            case ADD -> "+=";
+            case SUB -> "-=";
+            case MUL -> "*=";
+            case DIV -> "/=";
+            case FLOOR_DIV -> "//=";
+            case BITWISE_AND -> "&=";
+            case BITWISE_OR -> "|=";
+            case BITWISE_XOR -> "^=";
+            case BITWISE_SHIFT_LEFT -> "<<=";
+            case BITWISE_SHIFT_RIGHT -> ">>=";
+            case MOD -> "%=";
+            case POW -> "**=";
+            default -> "=";
+        };
+        return String.format("%s %s %s", toString(stmt.getLValue()), operator, toString(stmt.getRValue()));
     }
 
     private String literalToString(Literal literal) {

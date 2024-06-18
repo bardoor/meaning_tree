@@ -36,6 +36,7 @@ public class PythonLanguage extends Language {
     TODO:
      - switch support
      - yield support (по огромным просьбам)
+     - expression_statement из разных операторов (аналог , в C++)
      */
 
     @Override
@@ -412,6 +413,77 @@ public class PythonLanguage extends Language {
 
     private Node fromAssignmentTSNode(TSNode node) {
         TSNode operator = node.getChildByFieldName("left").getNextSibling();
+        AugmentedAssignmentOperator augOp;
+        switch (getCodePiece(operator)) {
+            case "+=":
+                augOp = AugmentedAssignmentOperator.ADD;
+                break;
+            case "-=":
+                augOp = AugmentedAssignmentOperator.SUB;
+                break;
+            case "*=":
+                augOp = AugmentedAssignmentOperator.MUL;
+                break;
+            case "/=":
+                augOp = AugmentedAssignmentOperator.DIV;
+                break;
+            case "//=":
+                augOp = AugmentedAssignmentOperator.FLOOR_DIV;
+                break;
+            case "|=":
+                augOp = AugmentedAssignmentOperator.BITWISE_OR;
+                break;
+            case "&=":
+                augOp = AugmentedAssignmentOperator.BITWISE_AND;
+                break;
+            case ">>=":
+                augOp = AugmentedAssignmentOperator.BITWISE_SHIFT_RIGHT;
+                break;
+            case "<<=":
+                augOp = AugmentedAssignmentOperator.BITWISE_SHIFT_LEFT;
+                break;
+            case "%=":
+                augOp = AugmentedAssignmentOperator.MOD;
+                break;
+            case "**=":
+                augOp = AugmentedAssignmentOperator.POW;
+                break;
+            case "^=":
+                augOp = AugmentedAssignmentOperator.BITWISE_XOR;
+                break;
+            default:
+                augOp = AugmentedAssignmentOperator.NONE;
+        }
+
+        if (node.getChildByFieldName("left").getType().equals("pattern_list")) {
+            List<Identifier> idents = new ArrayList<>();
+            for (int i = 0; i < node.getChildByFieldName("left").getNamedChildCount(); i++) {
+                //TODO: will be available in new version of tree-sitter backend
+                idents.add(fromIdentifier(node.getChildByFieldName("left").getNamedChild(i)));
+            }
+
+            List<Expression> exprs = new ArrayList<>();
+            if (node.getChildByFieldName("right").getType().equals("expression_list")) {
+                for (int i = 0; i < node.getChildByFieldName("right").getNamedChildCount(); i++) {
+                    exprs.add((Expression) fromTSNode(node.getChildByFieldName("right").getNamedChild(i)));
+                }
+            } else {
+                exprs.add((Expression) fromTSNode(node.getChildByFieldName("right")));
+            }
+            while (exprs.size() < idents.size()) {
+                exprs.add(new NullLiteral());
+            }
+            if (idents.size() < exprs.size()) {
+                throw new RuntimeException("Invalid using of unpacking construction");
+            }
+
+            List<AssignmentStatement> stmts = new ArrayList<>();
+            for (int i = 0; i < idents.size(); i++) {
+                stmts.add(new AssignmentStatement(idents.get(i), exprs.get(i), augOp));
+            }
+            return new StatementSequence(stmts.toArray(new AssignmentStatement[0]));
+        }
+
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
 
@@ -425,47 +497,6 @@ public class PythonLanguage extends Language {
         } else if (getCodePiece(operator).equals(":=")){
             return new AssignmentExpression(left, right);
         } else {
-            AugmentedAssignmentOperator augOp;
-            switch (getCodePiece(operator)) {
-                case "+=":
-                    augOp = AugmentedAssignmentOperator.ADD;
-                    break;
-                case "-=":
-                    augOp = AugmentedAssignmentOperator.SUB;
-                    break;
-                case "*=":
-                    augOp = AugmentedAssignmentOperator.MUL;
-                    break;
-                case "/=":
-                    augOp = AugmentedAssignmentOperator.DIV;
-                    break;
-                case "//=":
-                    augOp = AugmentedAssignmentOperator.FLOOR_DIV;
-                    break;
-                case "|=":
-                    augOp = AugmentedAssignmentOperator.BITWISE_OR;
-                    break;
-                case "&=":
-                    augOp = AugmentedAssignmentOperator.BITWISE_AND;
-                    break;
-                case ">>=":
-                    augOp = AugmentedAssignmentOperator.BITWISE_SHIFT_RIGHT;
-                    break;
-                case "<<=":
-                    augOp = AugmentedAssignmentOperator.BITWISE_SHIFT_LEFT;
-                    break;
-                case "%=":
-                    augOp = AugmentedAssignmentOperator.MOD;
-                    break;
-                case "**=":
-                    augOp = AugmentedAssignmentOperator.POW;
-                    break;
-                case "^=":
-                    augOp = AugmentedAssignmentOperator.BITWISE_XOR;
-                    break;
-                default:
-                    augOp = AugmentedAssignmentOperator.NONE;
-            }
             return new AssignmentStatement(left, right, augOp);
         }
     }
