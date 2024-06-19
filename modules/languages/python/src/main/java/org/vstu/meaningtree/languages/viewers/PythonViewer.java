@@ -7,9 +7,11 @@ import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.Definition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
@@ -20,6 +22,7 @@ import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
+import org.vstu.meaningtree.nodes.utils.WildcardImport;
 
 import javax.lang.model.type.NullType;
 import java.util.ArrayList;
@@ -30,11 +33,6 @@ import java.util.SortedMap;
 
 public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
-    /*
-    TODO:
-     - class support
-     - import support
-     */
 
     @Override
     public String toString(Node node) {
@@ -62,7 +60,7 @@ public class PythonViewer extends Viewer {
             case UnaryExpression exprNode -> unaryToString(exprNode);
             case CompoundStatement exprNode -> blockToString(exprNode, tab);
             case CompoundComparison compound -> compoundComparisonToString(compound);
-            case Identifier identifier -> identifier.toString();
+            case Identifier identifier -> identifierToString(identifier);
             case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
             case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
             case TernaryOperator ternary -> String.format("%s ? %s : %s", toString(ternary.getCondition()), toString(ternary.getThenExpr()), toString(ternary.getElseExpr()));
@@ -85,7 +83,10 @@ public class PythonViewer extends Viewer {
             case SwitchStatement switchStmt -> loopToString(switchStmt, tab);
             case MethodDefinition methodDef -> functionToString(methodDef, tab);
             case FunctionDefinition funcDef -> functionToString(funcDef, tab);
+            case ClassDeclaration classDecl -> classDeclToString(classDecl, tab);
+            case ClassDefinition classDef -> classToString(classDef, tab);
             case FunctionDeclaration funcDecl -> functionDeclarationToString(funcDecl, tab);
+            case Import importStmt -> importToString(importStmt);
             case StatementSequence stmtSequence -> {
                 if (stmtSequence.isOnlyAssignments()) {
                     yield assignmentToString(stmtSequence);
@@ -97,11 +98,53 @@ public class PythonViewer extends Viewer {
         };
     }
 
+    private String identifierToString(Identifier identifier) {
+        if (identifier instanceof WildcardImport) {
+            return "*";
+        } else if (identifier instanceof SimpleIdentifier ident) {
+            return ident.getName();
+        } else if (identifier instanceof ScopedIdentifier scopedIdent) {
+            return String.join(".", scopedIdent.getScopeResolution().stream().map(this::identifierToString).toList().toArray(new String[0]));
+        } else if (identifier instanceof QualifiedIdentifier qualifiedIdent) {
+            return String.format("%s.%s", identifierToString(qualifiedIdent.getScope()), identifierToString(qualifiedIdent.getMember()));
+        }
+        return identifier.toString();
+    }
+
+    private String importToString(Import importStmt) {
+        StringBuilder builder = new StringBuilder();
+        if (importStmt.hasMember()) {
+            builder.append(String.format("from %s import %s", toString(importStmt.getScope()), toString(importStmt.getMember())));
+        } else {
+            builder.append(String.format("import %s", toString(importStmt.getScope())));
+        }
+        if (importStmt.hasAlias()) {
+            builder.append(String.format(" as %s", toString(importStmt.getAlias())));
+        }
+        return builder.toString();
+    }
+
     private String functionDeclarationToString(FunctionDeclaration decl, Tab tab) {
         if (decl instanceof MethodDeclaration method) {
             return functionToString(new MethodDefinition(method, new CompoundStatement()), tab);
         }
         return functionToString(new FunctionDefinition(decl, new CompoundStatement()), tab);
+    }
+
+    private String classToString(ClassDefinition def, Tab tab) {
+        StringBuilder builder = new StringBuilder();
+        ClassDeclaration decl = (ClassDeclaration) def.getDeclaration();
+        if (decl.getParents().isEmpty()) {
+            builder.append(String.format("class %s:\n", toString(decl.getName())));
+        } else {
+            builder.append(String.format("class %s(%s):\n", toString(decl.getName()), String.join(",", decl.getParents().stream().map(this::typeToString).toList().toArray(new String[0]))));
+        }
+        builder.append(toString(def.getBody(), tab.up()));
+        return builder.toString();
+    }
+
+    private String classDeclToString(ClassDeclaration decl, Tab tab) {
+        return toString(new ClassDefinition(decl, new CompoundStatement()), tab);
     }
 
     private String functionToString(Definition func, Tab tab) {
