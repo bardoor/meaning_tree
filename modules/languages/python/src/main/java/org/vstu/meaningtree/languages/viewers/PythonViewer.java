@@ -32,6 +32,12 @@ import java.util.SortedMap;
 public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
 
+    /*
+    TODO:
+     - string literals
+     - numeric literals
+     */
+
     @Override
     public String toString(Node node) {
         Tab tab = new Tab();

@@ -34,7 +34,8 @@ import java.util.*;
 public class PythonLanguage extends Language {
     /*
     TODO:
-     - yield support (по огромным просьбам)
+     - string literals
+     - numeric literal parsing
      */
 
     @Override

@@ -8,7 +8,6 @@ import org.vstu.meaningtree.nodes.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.statements.*;
 
-import javax.swing.plaf.nimbus.State;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
