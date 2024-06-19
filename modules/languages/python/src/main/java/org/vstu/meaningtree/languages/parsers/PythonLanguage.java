@@ -34,7 +34,6 @@ import java.util.*;
 public class PythonLanguage extends Language {
     /*
     TODO:
-     - switch support
      - yield support (по огромным просьбам)
      - expression_statement из разных операторов (аналог , в C++)
      */
@@ -101,8 +100,37 @@ public class PythonLanguage extends Language {
             case "function_definition" -> fromFunctionTSNode(node);
             case "decorated_definition" -> detectAnnotated(node);
             case "while_statement" -> fromWhileLoop(node);
+            case "match_statement" -> fromMatchStatement(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromMatchStatement(TSNode node) {
+        Expression target = (Expression) fromTSNode(node.getChildByFieldName("subject"));
+        node = node.getChildByFieldName("body");
+        List<ConditionBranch> branches = new ArrayList<>();
+        Statement defaultBranch = null;
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            TSNode alternative = node.getNamedChild(i);
+            Expression condition;
+            VariableDeclaration newDecl = null;
+            if (alternative.getNamedChild(0).getNamedChildCount() == 0) {
+                defaultBranch = (Statement) fromTSNode(alternative.getChildByFieldName("consequence"));
+                continue;
+            } else if (alternative.getNamedChild(0).getNamedChild(0).getType().equals("as_pattern")) {
+                condition = (Expression) fromTSNode(alternative.getNamedChild(0).getNamedChild(0).getNamedChild(0).getNamedChild(0));
+                SimpleIdentifier ident = (SimpleIdentifier) fromTSNode(alternative.getNamedChild(0).getNamedChild(0).getNamedChild(1));
+                newDecl = new VariableDeclaration(new UnknownType(), ident, condition);
+            } else {
+                condition = (Expression) fromTSNode(alternative.getNamedChild(0).getNamedChild(0));
+            }
+            CompoundStatement compoundStatement = (CompoundStatement) fromTSNode(alternative.getChildByFieldName("consequence"));
+            if (newDecl != null) {
+                compoundStatement.insert(0, newDecl);
+            }
+            branches.add(new ConditionBranch(condition, compoundStatement));
+        }
+        return new SwitchStatement(target, branches, defaultBranch);
     }
 
     private Node detectAnnotated(TSNode node) {
