@@ -85,6 +85,7 @@ public class PythonViewer extends Viewer {
             case ClassDefinition classDef -> classToString(classDef, tab);
             case FunctionDeclaration funcDecl -> functionDeclarationToString(funcDecl, tab);
             case Import importStmt -> importToString(importStmt);
+            case ExpressionStatement exprStmt -> toString(exprStmt.getExpression());
             case StatementSequence stmtSequence -> {
                 if (stmtSequence.isOnlyAssignments()) {
                     yield assignmentToString(stmtSequence);

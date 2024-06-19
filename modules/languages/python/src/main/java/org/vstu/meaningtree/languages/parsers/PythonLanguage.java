@@ -35,7 +35,6 @@ public class PythonLanguage extends Language {
     /*
     TODO:
      - yield support (по огромным просьбам)
-     - expression_statement из разных операторов (аналог , в C++)
      */
 
     @Override
@@ -173,6 +172,7 @@ public class PythonLanguage extends Language {
         TSNode arguments = node.getChildByFieldName("arguments");
         for (int i = 0; i < arguments.getChildCount(); i++) {
             /*
+                TODO:
                 Нельзя использовать arguments.getNamedChildCount() и вообще любой "getNamed...",
                 т.к. был зафиксирован баг: при запросе getNamedChild(index) выяснилось, что index
                 ни на что не влияет и может принимать любые значения, всегда возвращается только первый ребенок!
@@ -401,10 +401,8 @@ public class PythonLanguage extends Language {
     }
 
     private Node fromString(TSNode node) {
-        // TSNode content = node.getChildByFieldName("string_content");
         TSNode content = node.getChild(1);
         //TODO: hardcode output in viewer? What about escaping and ", ', """
-        // if (node.getChildByFieldName("string_start").getType().equals("\"\"\"")
         if (node.getChild(0).getType().equals("\"\"\"")
                 && node.getParent().getType().equals("expression_statement")) {
             return new Comment(getCodePiece(content));
@@ -611,11 +609,24 @@ public class PythonLanguage extends Language {
 
 
     private Node fromExpressionStatementTSNode(TSNode node) {
-        Node n = fromTSNode(node.getChild(0));
-        if (n instanceof Statement) {
-            return n;
+        if (node.getNamedChildCount() == 1) {
+            Node n = fromTSNode(node.getChild(0));
+            if (n instanceof Statement) {
+                return n;
+            }
+            return new ExpressionStatement((Expression) n);
+        } else {
+            Statement[] statements = new Statement[node.getNamedChildCount()];
+            for (int i = 0; i < statements.length; i++) {
+                Node n = fromTSNode(node.getNamedChild(i));
+                if (n instanceof Statement stmt) {
+                    statements[i] = stmt;
+                } else {
+                    statements[i] = new ExpressionStatement((Expression) n);
+                }
+            }
+            return new StatementSequence(statements);
         }
-        return new ExpressionStatement((Expression) n);
     }
 
     private ParenthesizedExpression fromParenthesizedExpressionTSNode(TSNode node) {
