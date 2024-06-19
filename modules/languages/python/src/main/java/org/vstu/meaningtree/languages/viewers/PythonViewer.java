@@ -1,6 +1,5 @@
 package org.vstu.meaningtree.languages.viewers;
 
-import com.sun.jdi.BooleanType;
 import org.vstu.meaningtree.languages.PythonSpecialTreeTransformations;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
@@ -24,7 +23,6 @@ import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
 import org.vstu.meaningtree.nodes.utils.WildcardImport;
 
-import javax.lang.model.type.NullType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -352,8 +350,6 @@ public class PythonViewer extends Viewer {
                 return String.format("tuple[%s]",  typeToString(tupleType.getItemType()));
             }
             return "tuple";
-        } else if (type instanceof NullType) {
-            return "None";
         } else if (type instanceof GenericUserType generic) {
             return String.format("%s[%s]", generic.getName().toString(), String.join(",", Arrays.stream(generic.getTypeParameters()).map(this::typeToString).toList().toArray(new String[0])));
         } else if (type instanceof UserType userType) {
