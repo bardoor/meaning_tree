@@ -4,12 +4,14 @@ import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.types.UserType;
 
+import java.util.List;
+
 public class MethodDeclaration extends FunctionDeclaration {
     private final UserType _owner;
     private final VisibilityModifier modifier;
     private final boolean isStatic;
 
-    public MethodDeclaration(UserType owner, Identifier name, Type returnType, Annotation annotation, VisibilityModifier modifier, boolean isStatic, DeclarationArgument... arguments) {
+    public MethodDeclaration(UserType owner, Identifier name, Type returnType, List<Annotation> annotation, VisibilityModifier modifier, boolean isStatic, DeclarationArgument... arguments) {
         super(name, returnType, annotation, arguments);
         _owner = owner;
         this.modifier = modifier;

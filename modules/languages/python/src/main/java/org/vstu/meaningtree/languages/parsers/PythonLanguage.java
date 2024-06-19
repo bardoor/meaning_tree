@@ -98,10 +98,20 @@ public class PythonLanguage extends Language {
             case "return_statement" -> fromReturnTSNode(node);
             case "conditional_expresstion"-> fromTernaryOperatorTSNode(node);
             case "assignment", "named_expression", "augmented_assignment" -> fromAssignmentTSNode(node);
-            case "function_definition", "decorated_definition" -> fromFunctionTSNode(node);
+            case "function_definition" -> fromFunctionTSNode(node);
+            case "decorated_definition" -> detectAnnotated(node);
             case "while_statement" -> fromWhileLoop(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node detectAnnotated(TSNode node) {
+        TSNode definition = node.getChildByFieldName("definition");
+        if (definition.getType().equals("class_definition")) {
+            return fromClass(definition);
+        } else {
+            return fromFunctionTSNode(node);
+        }
     }
 
     private DefinitionArgument fromDefinitionArgument(TSNode node) {
@@ -164,9 +174,14 @@ public class PythonLanguage extends Language {
     }
 
     private Node fromFunctionTSNode(TSNode node) {
-        Annotation anno = null;
+        List<Annotation> anno = new ArrayList<>();
         if (node.getType().equals("decorated_definition")) {
-            anno = fromDecorator(node.getChildByFieldName("decorator"));
+            TSNode decorator = node.getNamedChild(0);
+            anno.add(fromDecorator(decorator));
+            while (decorator.getNextNamedSibling().getType().equals("decorator")) {
+                decorator = decorator.getNextNamedSibling();
+                anno.add(fromDecorator(decorator));
+            }
             node = node.getChildByFieldName("definition");
         }
         SimpleIdentifier name = new SimpleIdentifier(getCodePiece(node.getChildByFieldName("name")));
@@ -207,9 +222,10 @@ public class PythonLanguage extends Language {
                 nodes.add(var.makeField(VisibilityModifier.PUBLIC, false));
             } else if (bodyNode instanceof FunctionDefinition func) {
                 boolean isStatic = false;
-                Annotation anno = ((FunctionDeclaration) (func.getDeclaration())).getAnnotation();
-                if (anno != null) {
-                    isStatic = anno.getName().toString().equals("staticmethod") || anno.getName().toString().equals("classmethod");
+                List<Annotation> anno = ((FunctionDeclaration) (func.getDeclaration())).getAnnotations();
+                for (Annotation annotation : anno) {
+                    isStatic = annotation.getName().toString().equals("staticmethod") || annotation.getName().toString().equals("classmethod");
+                    if (isStatic) break;
                 }
                 nodes.add(func.makeMethod(type, isStatic, VisibilityModifier.PUBLIC));
             } else {

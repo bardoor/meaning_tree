@@ -6,6 +6,7 @@ import org.vstu.meaningtree.nodes.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,11 +14,11 @@ public class FunctionDeclaration extends Declaration {
     private final List<DeclarationArgument> _arguments;
     private final Identifier _name;
     private final Type _returnType;
-    private final Optional<Annotation> annotation;
+    private final List<Annotation> annotations;
 
-    public FunctionDeclaration(Identifier name, Type returnType, Annotation annotation, DeclarationArgument... arguments) {
+    public FunctionDeclaration(Identifier name, Type returnType, List<Annotation> annotations, DeclarationArgument... arguments) {
         _name = name;
-        this.annotation = Optional.ofNullable(annotation);
+        this.annotations = new ArrayList<>(annotations);
         this._arguments = List.of(arguments);
         this._returnType = returnType;
     }
@@ -48,14 +49,11 @@ public class FunctionDeclaration extends Declaration {
         throw new UnsupportedOperationException();
     }
 
-    public Annotation getAnnotation() {
-        if (!hasAnnotation()) {
-            throw new RuntimeException("Annotation isn't present");
-        }
-        return annotation.get();
+    public List<Annotation> getAnnotations() {
+        return new ArrayList<>(annotations);
     }
 
-    public boolean hasAnnotation() {
-        return annotation.isPresent();
+    public boolean hasAnnotations() {
+        return !annotations.isEmpty();
     }
 }
