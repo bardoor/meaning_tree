@@ -22,12 +22,6 @@ public class QualifiedIdentifier extends Identifier {
     }
 
     @Override
-    public String toString() {
-        //TODO: possible bad code: provided default view of programming language
-        return _scope.toString() + "::" + _member.toString();
-    }
-
-    @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
     }
