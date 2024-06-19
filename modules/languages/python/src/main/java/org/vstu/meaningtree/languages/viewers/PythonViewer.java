@@ -7,7 +7,9 @@ import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.definitions.Definition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
@@ -30,7 +32,6 @@ public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
     /*
     TODO:
-     - function support
      - class support
      - import support
      */
@@ -82,6 +83,9 @@ public class PythonViewer extends Viewer {
             case WhileLoop whileLoop -> loopToString(whileLoop, tab);
             case DoWhileLoop doWhileLoop -> loopToString(doWhileLoop, tab);
             case SwitchStatement switchStmt -> loopToString(switchStmt, tab);
+            case MethodDefinition methodDef -> functionToString(methodDef, tab);
+            case FunctionDefinition funcDef -> functionToString(funcDef, tab);
+            case FunctionDeclaration funcDecl -> functionDeclarationToString(funcDecl, tab);
             case StatementSequence stmtSequence -> {
                 if (stmtSequence.isOnlyAssignments()) {
                     yield assignmentToString(stmtSequence);
@@ -91,6 +95,52 @@ public class PythonViewer extends Viewer {
             }
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
+    }
+
+    private String functionDeclarationToString(FunctionDeclaration decl, Tab tab) {
+        if (decl instanceof MethodDeclaration method) {
+            return functionToString(new MethodDefinition(method, new CompoundStatement()), tab);
+        }
+        return functionToString(new FunctionDefinition(decl, new CompoundStatement()), tab);
+    }
+
+    private String functionToString(Definition func, Tab tab) {
+        StringBuilder function = new StringBuilder();
+        FunctionDeclaration decl = (FunctionDeclaration) func.getDeclaration();
+        for (Annotation anno : decl.getAnnotations()) {
+            if (anno.getArguments().length == 0) {
+                function.append(String.format("@%s(%s)\n", toString(anno.getName()), argumentsToString(Arrays.asList(anno.getArguments()))));
+            } else {
+                function.append(String.format("@%s\n", toString(anno.getName())));
+            }
+        }
+        function.append("def ");
+        function.append(decl.getName());
+        function.append("(");
+        List<DeclarationArgument> declArgs = decl.getArguments();
+        for (int i = 0; i < declArgs.size(); i++) {
+            DeclarationArgument arg = declArgs.get(i);
+            function.append(toString(arg.getName()));
+            if (!(arg.getType() instanceof UnknownType) && arg.getType() != null) {
+                function.append(": ");
+                function.append(typeToString(arg.getType()));
+            } else if (i == 0 && decl instanceof MethodDeclaration method) {
+                function.append(String.format(": %s", typeToString(method.getOwner())));
+            }
+            function.append(", ");
+        }
+        function.append(")");
+        if (decl.getReturnType() != null && !(decl.getReturnType() instanceof UnknownType)) {
+            function.append("->");
+            function.append(typeToString(decl.getReturnType()));
+        }
+        function.append(":\n");
+        if (func instanceof MethodDefinition methodDef) {
+            function.append(toString(methodDef.getBody(), tab.up()));
+        } else if (func instanceof FunctionDefinition funcDef) {
+            function.append(toString(funcDef.getBody(), tab.up()));
+        }
+        return function.toString();
     }
 
     private String assignmentToString(StatementSequence stmtSequence) {
@@ -208,7 +258,9 @@ public class PythonViewer extends Viewer {
         for (int i = 0; i < decls.length; i++) {
             lValues.append(toString(decls[i].getIdentifier()));
             //NEED DISCUSSION, see typeToString notes
-            lValues.append(String.format(": %s", typeToString(varDecl.getType())));
+            if (!(varDecl.getType() instanceof UnknownType) && varDecl.getType() != null) {
+                lValues.append(String.format(": %s", typeToString(varDecl.getType())));
+            }
             if (decls[i].hasInitialization()) {
                 rValues.append(toString(decls[i].getRValue()));
             } else {
