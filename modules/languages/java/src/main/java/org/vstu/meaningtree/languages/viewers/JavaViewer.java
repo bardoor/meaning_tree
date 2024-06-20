@@ -100,7 +100,7 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(Comment comment) {
-        return "\\\\ %s".formatted(comment.getContent());
+        return "\\\\ %s".formatted(comment.getEscapedContent());
     }
 
     private String toString(FieldDeclaration decl) {

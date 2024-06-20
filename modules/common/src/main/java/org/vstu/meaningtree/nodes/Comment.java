@@ -28,7 +28,7 @@ public class Comment extends Node {
     }
 
     public boolean isMultiline() {
-        return getContent().contains("\n");
+        return getUnescapedContent().contains("\n");
     }
 
     @Override
