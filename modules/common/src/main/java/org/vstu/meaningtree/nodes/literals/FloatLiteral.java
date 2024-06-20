@@ -4,14 +4,32 @@ import java.util.Objects;
 
 public class FloatLiteral extends NumericLiteral {
     private final double _value;
+    private final boolean _isDoublePrecision;
+
+    public FloatLiteral(String s, boolean isDoublePrecision) {
+        _value = Double.parseDouble(s);
+        _isDoublePrecision = isDoublePrecision;
+    }
 
     public FloatLiteral(String s) {
         _value = Double.parseDouble(s);
+        _isDoublePrecision = !s.toLowerCase().endsWith("f");
     }
 
     @Override
     public Number getValue() {
         return _value;
+    }
+
+    public double getDoubleValue() {return _value;}
+
+    @Override
+    public String getStringValue() {
+        return Double.toString(_value);
+    }
+
+    public boolean isDoublePrecision() {
+        return _isDoublePrecision;
     }
 
     @Override

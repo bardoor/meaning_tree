@@ -43,6 +43,10 @@ public class StringLiteral extends Literal {
         return getUnescapedValue().contains("\n");
     }
 
+    public Type getStringType() {
+        return stringType;
+    }
+
     @Override
     public String generateDot() {
         return String.format("%s [label=\"%s\"];\n", _id, value);
