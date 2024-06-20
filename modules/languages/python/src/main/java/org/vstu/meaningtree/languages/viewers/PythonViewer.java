@@ -395,7 +395,7 @@ public class PythonViewer extends Viewer {
             return numLiteral.getValue().toString();
         } else if (literal instanceof StringLiteral strLiteral) {
             //TODO: What about f-string, escaped characters, raw strings?
-            return String.format("\"%s\"", strLiteral.getValue());
+            return String.format("\"%s\"", strLiteral.getEscapedValue());
         } else if (literal instanceof BoolLiteral bool) {
            if (bool.getValue()) {
                return "True";

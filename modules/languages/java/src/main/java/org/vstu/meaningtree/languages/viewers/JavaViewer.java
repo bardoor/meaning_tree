@@ -150,8 +150,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(StringLiteral literal) {
-        String value = literal.getValue();
-        return String.format("\"%s\"", literal.getValue());
+        return String.format("\"%s\"", literal.getEscapedValue());
     }
 
     private String toString(BinaryExpression expr, String sign) {
