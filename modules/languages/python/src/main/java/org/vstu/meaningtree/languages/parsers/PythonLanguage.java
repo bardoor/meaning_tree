@@ -32,11 +32,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class PythonLanguage extends Language {
-    /*
-    TODO:
-     - string literals
-     - numeric literal parsing
-     */
 
     @Override
     public MeaningTree getMeaningTree(String code) {
@@ -407,7 +402,13 @@ public class PythonLanguage extends Language {
                 && node.getParent().getType().equals("expression_statement")) {
             return Comment.fromEscaped(getCodePiece(content));
         }
-        return StringLiteral.fromEscaped(getCodePiece(content), StringLiteral.Type.NONE);
+        StringLiteral.Type type = StringLiteral.Type.NONE;
+        if (node.getChild(0).getType().startsWith("f")) {
+            type = StringLiteral.Type.INTERPOLATION;
+        } else if (node.getChild(0).getType().startsWith("r")) {
+            type = StringLiteral.Type.RAW;
+        }
+        return StringLiteral.fromEscaped(getCodePiece(content), type);
     }
 
     private Comment fromComment(TSNode node) {

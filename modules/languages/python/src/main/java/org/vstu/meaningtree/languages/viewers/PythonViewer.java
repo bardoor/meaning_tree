@@ -32,12 +32,6 @@ import java.util.SortedMap;
 public class PythonViewer extends Viewer {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
 
-    /*
-    TODO:
-     - string literals
-     - numeric literals
-     */
-
     @Override
     public String toString(Node node) {
         Tab tab = new Tab();
@@ -391,11 +385,15 @@ public class PythonViewer extends Viewer {
 
     private String literalToString(Literal literal) {
         if (literal instanceof NumericLiteral numLiteral) {
-            //TODO: What about various numeric representation like 0xABC, 0b010101, 0o334?
-            return numLiteral.getValue().toString();
+            return numLiteral.getStringValue();
         } else if (literal instanceof StringLiteral strLiteral) {
-            //TODO: What about f-string, escaped characters, raw strings?
-            return String.format("\"%s\"", strLiteral.getEscapedValue());
+            String prefix;
+            switch (strLiteral.getStringType()) {
+                case INTERPOLATION -> prefix = "f";
+                case RAW ->  prefix = "r";
+                default -> prefix = "";
+            }
+            return String.format("%s\"%s\"", prefix, strLiteral.getEscapedValue());
         } else if (literal instanceof BoolLiteral bool) {
            if (bool.getValue()) {
                return "True";
