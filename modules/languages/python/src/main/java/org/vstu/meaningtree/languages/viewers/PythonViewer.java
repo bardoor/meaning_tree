@@ -252,9 +252,9 @@ public class PythonViewer extends Viewer {
                     }
                 }
                 FunctionCall funcCall = new FunctionCall(ident, nulls.toArray(new Expression[0]));
-                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), new StringLiteral("__main__")), new CompoundStatement(funcCall),null);
+                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), StringLiteral.fromUnescaped("__main__", StringLiteral.Type.NONE)), new CompoundStatement(funcCall),null);
             } else if (entryPointNode instanceof CompoundStatement compound) {
-                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), new StringLiteral("__main__")), compound,null);
+                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), StringLiteral.fromUnescaped("__main__", StringLiteral.Type.NONE)), compound,null);
             }
         }
         List<Node> nodes = new ArrayList<>(programEntryPoint.getBody());

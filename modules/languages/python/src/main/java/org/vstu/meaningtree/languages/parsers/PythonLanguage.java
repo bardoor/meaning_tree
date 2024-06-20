@@ -408,7 +408,7 @@ public class PythonLanguage extends Language {
                 && node.getParent().getType().equals("expression_statement")) {
             return new Comment(getCodePiece(content));
         }
-        return new StringLiteral(getCodePiece(content));
+        return StringLiteral.fromEscaped(getCodePiece(content), StringLiteral.Type.NONE);
     }
 
     private Comment fromComment(TSNode node) {

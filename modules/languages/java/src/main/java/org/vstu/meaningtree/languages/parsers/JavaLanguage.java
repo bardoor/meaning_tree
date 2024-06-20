@@ -88,10 +88,10 @@ public class JavaLanguage extends Language {
 
     private Node fromStringLiteralTSNode(TSNode node) {
         if (node.getEndByte() - node.getStartByte() == 1) {
-            return new StringLiteral("");
+            return StringLiteral.fromEscaped("", StringLiteral.Type.NONE);
         }
         String content = getCodePiece(node.getChild(0));
-        return new StringLiteral(content);
+        return StringLiteral.fromEscaped(content, StringLiteral.Type.NONE);
     }
 
     private Node fromFieldDeclarationTSNode(TSNode node) {
