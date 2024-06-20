@@ -403,16 +403,15 @@ public class PythonLanguage extends Language {
 
     private Node fromString(TSNode node) {
         TSNode content = node.getChild(1);
-        //TODO: hardcode output in viewer? What about escaping and ", ', """
         if (node.getChild(0).getType().equals("\"\"\"")
                 && node.getParent().getType().equals("expression_statement")) {
-            return new Comment(getCodePiece(content));
+            return Comment.fromEscaped(getCodePiece(content));
         }
         return StringLiteral.fromEscaped(getCodePiece(content), StringLiteral.Type.NONE);
     }
 
     private Comment fromComment(TSNode node) {
-        return new Comment(getCodePiece(node).replace("#", "").trim());
+        return Comment.fromEscaped(getCodePiece(node).replace("#", "").trim());
     }
 
     private Type determineType(TSNode typeNode) {
