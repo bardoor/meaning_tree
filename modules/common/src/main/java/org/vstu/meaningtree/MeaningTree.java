@@ -2,7 +2,9 @@ package org.vstu.meaningtree;
 
 import org.vstu.meaningtree.nodes.Node;
 
-public class MeaningTree {
+import java.io.Serializable;
+
+public class MeaningTree implements Serializable {
     private final Node _rootNode;
 
     public MeaningTree(Node rootNode) {

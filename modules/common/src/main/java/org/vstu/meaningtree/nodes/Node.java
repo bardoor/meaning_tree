@@ -1,10 +1,11 @@
 package org.vstu.meaningtree.nodes;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-abstract public class Node {
+abstract public class Node implements Serializable {
     protected static AtomicInteger _id_generator = new AtomicInteger();
     protected Integer _id = _id_generator.incrementAndGet();
 
