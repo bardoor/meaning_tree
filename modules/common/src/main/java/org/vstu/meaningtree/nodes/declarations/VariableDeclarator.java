@@ -1,32 +1,30 @@
 package org.vstu.meaningtree.nodes.declarations;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 import java.util.Optional;
 
-public class VariableDeclarator {
+public class VariableDeclarator extends Node {
     private final SimpleIdentifier _identifier;
-    private final Optional<Expression> _rvalue;
+    private final Expression _rvalue;
 
     public VariableDeclarator(SimpleIdentifier identifier, Expression rvalue) {
         _identifier = identifier;
-        _rvalue = Optional.ofNullable(rvalue);
+        _rvalue = rvalue;
     }
 
     public VariableDeclarator(SimpleIdentifier identifier) {
         this(identifier, null);
     }
 
-    public Expression getRValue() {
-        if (!hasInitialization()) {
-            throw new RuntimeException("Initializer is not present");
-        }
-        return _rvalue.get();
+    public Optional<Expression> getRValue() {
+        return Optional.ofNullable(_rvalue);
     }
 
     public boolean hasInitialization() {
-        return _rvalue.isPresent();
+        return _rvalue != null;
     }
 
     public SimpleIdentifier getIdentifier() {

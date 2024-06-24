@@ -304,7 +304,7 @@ public class PythonViewer extends Viewer {
                 lValues.append(String.format(": %s", typeToString(varDecl.getType())));
             }
             if (decls[i].hasInitialization()) {
-                rValues.append(toString(decls[i].getRValue()));
+                decls[i].getRValue().ifPresent(rValues::append);
             } else {
                 rValues.append("None");
             }

@@ -309,8 +309,9 @@ public class JavaViewer extends Viewer {
         builder.append(identifier);
 
         if (varDecl.hasInitialization()) {
-            String init = toString(varDecl.getRValue());
-            builder.append(" = ").append(init);
+            varDecl.getRValue().ifPresent(init ->
+                    builder.append(" = ").append(init)
+            );
         }
 
         return builder.toString();
