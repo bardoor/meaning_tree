@@ -37,5 +37,23 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+            <name>Maven libs</name>
+            <id>snapshots-repo</id>
+            <url>https://mavenlibs.com</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
 
 </project>
