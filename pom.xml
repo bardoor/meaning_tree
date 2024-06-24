@@ -15,6 +15,7 @@
         <module>modules/common</module>
         <module>modules/languages/java</module>
         <module>modules/languages/python</module>
+        <module>modules/languages/cpp</module>
     </modules>
 
     <properties>
