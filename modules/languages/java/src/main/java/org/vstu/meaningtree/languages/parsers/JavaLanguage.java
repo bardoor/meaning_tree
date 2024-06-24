@@ -19,8 +19,7 @@ import org.vstu.meaningtree.nodes.math.AddOp;
 import org.vstu.meaningtree.nodes.math.DivOp;
 import org.vstu.meaningtree.nodes.math.MulOp;
 import org.vstu.meaningtree.nodes.math.SubOp;
-import org.vstu.meaningtree.nodes.types.FloatType;
-import org.vstu.meaningtree.nodes.types.IntType;
+import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
@@ -249,6 +248,19 @@ public class JavaLanguage extends Language {
         }
     }
 
+    private Node fromTypeTSNode(TSNode node) {
+        String typeName = getCodePiece(node);
+
+        return switch (typeName) {
+            case "int", "short", "long", "byte", "char" -> new IntType();
+            case "float", "double" -> new FloatType();
+            case "boolean" -> new BooleanType();
+            case "void" -> new VoidType();
+            case "String" -> new StringType();
+            default -> throw new IllegalStateException("Unexpected value: " + typeName);
+        };
+    }
+
     private Node fromVariableDeclarationTSNode(TSNode node) {
         List<Modifier> modifiers = new ArrayList<>();
         TSNode possibleModifiers = node.getChild(0);
@@ -256,13 +268,7 @@ public class JavaLanguage extends Language {
             modifiers.addAll(fromModifiers(possibleModifiers));
         }
 
-        String typeName = getCodePiece(node.getChildByFieldName("type"));
-
-        Type type = switch (typeName) {
-            case "int", "short", "long" -> new IntType();
-            case "float", "double" -> new FloatType();
-            default -> throw new IllegalStateException("Unexpected value: " + typeName);
-        };
+        Type type = (Type) fromTypeTSNode(node.getChildByFieldName("type"));
 
         List<VariableDeclarator> decls = new ArrayList<>();
 
