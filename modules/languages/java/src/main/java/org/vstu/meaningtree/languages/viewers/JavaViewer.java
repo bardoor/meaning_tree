@@ -157,7 +157,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(IntegerLiteral literal) {
-        return String.format("%d", (int) literal.getValue());
+        return String.format("%d", (long) literal.getValue());
     }
 
     public String toString(StringLiteral literal) {
