@@ -106,35 +106,47 @@ public class JavaViewer extends Viewer {
     private String toString(FieldDeclaration decl) {
         StringBuilder builder = new StringBuilder();
 
-        // Добавляем модификатор видимости
-        builder.append(toString(decl.getVisibilityModifier())).append(" ");
-        if (decl.isStatic()) {
-            builder.append("static ");
+        String modifiers = toString(decl.getModifiers());
+        builder.append(modifiers);
+        // Добавляем пробел в конце, если есть хотя бы один модификатор
+        if (!builder.isEmpty()) {
+            builder.append(" ");
         }
 
-        VariableDeclaration varDecl = new VariableDeclaration(decl.getType(), decl.getDeclarators());
-        builder.append(toString(varDecl));
+        VariableDeclaration variableDeclaration = new VariableDeclaration(decl.getType(), decl.getDeclarators());
+        builder.append(toString(variableDeclaration));
 
         return builder.toString();
     }
 
-    private String toString(VisibilityModifier modifier) {
-        return switch (modifier) {
-            case NONE -> "";
-            case PUBLIC -> "public";
-            case PRIVATE -> "private";
-            case PROTECTED -> "protected";
-            default -> throw new IllegalArgumentException();
-        };
+    private String toString(List<Modifier> modifiers) {
+        StringBuilder builder = new StringBuilder();
+
+        for (Modifier modifier : modifiers) {
+            builder.append(
+                    switch (modifier) {
+                        case PUBLIC -> "public";
+                        case PRIVATE -> "private";
+                        case PROTECTED -> "protected";
+                        case ABSTRACT -> "abstract";
+                        case CONST -> "final";
+                        case STATIC -> "static";
+                        default -> throw new IllegalArgumentException();
+                    }
+            ).append(" ");
+        }
+
+        // Удаляем в конце ненужный пробел, если было более одного модификатора
+        if (!builder.isEmpty()) {
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        return builder.toString();
     }
 
     private String toString(ClassDeclaration decl) {
-        String visibilyModifier = "";
-        if (decl.getVisibilityModifier() != VisibilityModifier.NONE) {
-            visibilyModifier = "%s ".formatted(toString(decl.getVisibilityModifier()));
-        }
-
-        return visibilyModifier + "class " + toString(decl.getName());
+        String modifiers = toString(decl.getModifiers()) + " ";
+        return modifiers + "class " + toString(decl.getName());
     }
 
     private String toString(ClassDefinition def) {

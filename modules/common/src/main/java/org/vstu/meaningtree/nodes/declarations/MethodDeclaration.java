@@ -8,25 +8,19 @@ import java.util.List;
 
 public class MethodDeclaration extends FunctionDeclaration {
     private final UserType _owner;
-    private final VisibilityModifier modifier;
-    private final boolean isStatic;
+    private final List<Modifier> _modifiers;
 
-    public MethodDeclaration(UserType owner, Identifier name, Type returnType, List<Annotation> annotation, VisibilityModifier modifier, boolean isStatic, DeclarationArgument... arguments) {
+    public MethodDeclaration(UserType owner, Identifier name, Type returnType, List<Annotation> annotation, List<Modifier> modifiers, DeclarationArgument... arguments) {
         super(name, returnType, annotation, arguments);
         _owner = owner;
-        this.modifier = modifier;
-        this.isStatic = isStatic;
+        _modifiers = List.copyOf(modifiers);
     }
 
     public UserType getOwner() {
         return _owner;
     }
 
-    public VisibilityModifier getVisibilityModifier() {
-        return modifier;
-    }
-
-    public boolean isStatic() {
-        return isStatic;
+    public List<Modifier> getModifiers() {
+        return _modifiers;
     }
 }

@@ -82,8 +82,13 @@ public class JavaLanguage extends Language {
             case "class_declaration" -> fromClassDeclarationTSNode(node);
             case "field_declaration" -> fromFieldDeclarationTSNode(node);
             case "string_literal" -> fromStringLiteralTSNode(node);
+            case "method_declaration" -> fromMethodDeclarationTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromMethodDeclarationTSNode(TSNode node) {
+        return null;
     }
 
     private Node fromStringLiteralTSNode(TSNode node) {
@@ -97,45 +102,44 @@ public class JavaLanguage extends Language {
     private Node fromFieldDeclarationTSNode(TSNode node) {
         int currentChildIndex = 0;
 
-        VisibilityModifier modifier = VisibilityModifier.NONE;
+        List<Modifier> modifiers = new ArrayList<>();
         if (node.getChild(currentChildIndex).getType().equals("modifiers")) {
-            modifier = fromModifiers(node.getChild(currentChildIndex));
+            modifiers.addAll(fromModifiers(node.getChild(currentChildIndex)));
         }
 
-        VariableDeclaration decl = (VariableDeclaration) fromVariableDeclarationTSNode(node);
-        return new FieldDeclaration(decl.getType(), modifier, false, decl.getDeclarators());
+        VariableDeclaration declaration = (VariableDeclaration) fromVariableDeclarationTSNode(node);
+        return new FieldDeclaration(declaration.getType(), modifiers, declaration.getDeclarators());
     }
 
-    private VisibilityModifier fromModifiers(TSNode node) {
-        // Внутри проиходит считывание лишь модификаторов области видимости,
+    private List<Modifier> fromModifiers(TSNode node) {
+        // Внутри происходит считывание лишь модификаторов области видимости,
         // причем допускается всего лишь 1 или 0 идентификаторов (несмотря на список).
         // Должно ли так быть - неизвестно, нужно разобраться...
-        List<VisibilityModifier> modifiers = new ArrayList<>();
+        List<Modifier> modifiers = new ArrayList<>();
 
         for (int i = 0; i < node.getChildCount(); i++) {
             modifiers.add(
                     switch (node.getChild(i).getType()) {
-                        case "public" -> VisibilityModifier.PUBLIC;
-                        case "private" -> VisibilityModifier.PRIVATE;
-                        case "protected" -> VisibilityModifier.PROTECTED;
+                        case "public" -> Modifier.PUBLIC;
+                        case "private" -> Modifier.PRIVATE;
+                        case "protected" -> Modifier.PROTECTED;
+                        case "abstract" -> Modifier.ABSTRACT;
+                        case "final" -> Modifier.CONST;
+                        case "static" -> Modifier.STATIC;
                         default -> throw new IllegalArgumentException("Unknown identifier: %s".formatted(node.getChild(i).getType()));
                     }
             );
         }
 
-        if (modifiers.size() > 1) {
-            throw new RuntimeException("Can't process more than one modifier");
-        }
-
-        return modifiers.isEmpty() ? VisibilityModifier.NONE : modifiers.getFirst();
+        return modifiers;
     }
 
     private Node fromClassDeclarationTSNode(TSNode node) {
         int currentChildIndex = 0;
 
-        VisibilityModifier modifier = VisibilityModifier.NONE;
+        List<Modifier> modifiers = new ArrayList<>();
         if (node.getChild(currentChildIndex).getType().equals("modifiers")) {
-            modifier = fromModifiers(node.getChild(currentChildIndex));
+            modifiers.addAll(fromModifiers(node.getChild(currentChildIndex)));
             currentChildIndex++;
         }
 
@@ -149,7 +153,7 @@ public class JavaLanguage extends Language {
         CompoundStatement classBody = (CompoundStatement) fromBlockTSNode(node.getChild(currentChildIndex));
         currentChildIndex++;
 
-        ClassDeclaration decl = new ClassDeclaration(modifier, className);
+        ClassDeclaration decl = new ClassDeclaration(modifiers, className);
         // TODO: нужно поменять getNodes() у CompoundStatement, чтобы он не массив возвращал
         return new ClassDefinition(decl, classBody);
     }
@@ -246,10 +250,10 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromVariableDeclarationTSNode(TSNode node) {
-        VisibilityModifier modifier = VisibilityModifier.NONE;
+        List<Modifier> modifiers = new ArrayList<>();
         TSNode possibleModifiers = node.getChild(0);
         if (possibleModifiers.getType().equals("modifiers")) {
-            modifier = fromModifiers(possibleModifiers);
+            modifiers.addAll(fromModifiers(possibleModifiers));
         }
 
         String typeName = getCodePiece(node.getChildByFieldName("type"));
@@ -278,8 +282,8 @@ public class JavaLanguage extends Language {
         VariableDeclarator[] declarators = new VariableDeclarator[decls.size()];
         decls.toArray(declarators);
 
-        if (modifier != VisibilityModifier.NONE) {
-            return new FieldDeclaration(type, modifier, false, declarators);
+        if (!modifiers.isEmpty()) {
+            return new FieldDeclaration(type, modifiers, declarators);
         }
 
         return new VariableDeclaration(type, declarators);

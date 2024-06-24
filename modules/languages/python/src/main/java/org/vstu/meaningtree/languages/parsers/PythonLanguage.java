@@ -243,7 +243,7 @@ public class PythonLanguage extends Language {
         List<Node> nodes = new ArrayList<>();
         for (Node bodyNode : body) {
             if (bodyNode instanceof VariableDeclaration var) {
-                nodes.add(var.makeField(VisibilityModifier.PUBLIC, false));
+                nodes.add(var.makeField(List.of(Modifier.PUBLIC)));
             } else if (bodyNode instanceof FunctionDefinition func) {
                 boolean isStatic = false;
                 List<Annotation> anno = ((FunctionDeclaration) (func.getDeclaration())).getAnnotations();
@@ -251,7 +251,12 @@ public class PythonLanguage extends Language {
                     isStatic = annotation.getName().toString().equals("staticmethod") || annotation.getName().toString().equals("classmethod");
                     if (isStatic) break;
                 }
-                nodes.add(func.makeMethod(type, isStatic, VisibilityModifier.PUBLIC));
+                List<Modifier> modifiers = new ArrayList<>();
+                if (isStatic) {
+                    modifiers.add(Modifier.STATIC);
+                }
+                modifiers.add(Modifier.PUBLIC);
+                nodes.add(func.makeMethod(type, modifiers));
             } else {
                 nodes.add(bodyNode);
             }
