@@ -91,11 +91,16 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromStringLiteralTSNode(TSNode node) {
-        if (node.getEndByte() - node.getStartByte() == 1) {
-            return StringLiteral.fromEscaped("", StringLiteral.Type.NONE);
+        StringBuilder builder = new StringBuilder();
+
+        // Первый и последний ребенок - кавычки, их пропускаем.
+        // Дети string_literal это либо string_fragment, либо escape_sequence,
+        // поэтому ничего экранировать не нужно, они уже представлены так как надо
+        for (int i = 1; i < node.getChildCount() - 1; i++) {
+            builder.append(getCodePiece(node.getChild(i)));
         }
-        String content = getCodePiece(node.getChild(0));
-        return StringLiteral.fromEscaped(content, StringLiteral.Type.NONE);
+
+        return StringLiteral.fromEscaped(builder.toString(), StringLiteral.Type.NONE);
     }
 
     private Node fromFieldDeclarationTSNode(TSNode node) {

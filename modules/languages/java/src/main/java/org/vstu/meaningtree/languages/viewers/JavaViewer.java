@@ -14,8 +14,7 @@ import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.statements.*;
-import org.vstu.meaningtree.nodes.types.FloatType;
-import org.vstu.meaningtree.nodes.types.IntType;
+import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
@@ -276,6 +275,9 @@ public class JavaViewer extends Viewer {
         return switch (t) {
             case FloatType floatType -> toString(floatType);
             case IntType intType -> toString(intType);
+            case BooleanType booleanType -> toString(booleanType);
+            case StringType stringType -> toString(stringType);
+            case VoidType voidType -> toString(voidType);
             default -> throw new IllegalStateException("Unexpected value: " + t.getClass());
         };
     }
@@ -286,6 +288,18 @@ public class JavaViewer extends Viewer {
 
     private String toString(IntType t) {
         return "int";
+    }
+
+    private String toString(BooleanType t) {
+        return "boolean";
+    }
+
+    private String toString(StringType t) {
+        return "String";
+    }
+
+    private String toString(VoidType type) {
+        return "void";
     }
 
     private String toString(VariableDeclarator varDecl) {
