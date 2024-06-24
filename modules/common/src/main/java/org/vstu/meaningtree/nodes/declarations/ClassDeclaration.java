@@ -6,22 +6,22 @@ import org.vstu.meaningtree.nodes.Type;
 import java.util.List;
 
 public class ClassDeclaration extends Declaration {
-    protected final VisibilityModifier _modifier;
+    protected final List<Modifier> _modifiers;
     protected final Identifier _name;
     protected final List<Type> _parentTypes;
 
-    public ClassDeclaration(VisibilityModifier modifier, Identifier name, Type ... parents) {
-        _modifier = modifier;
+    public ClassDeclaration(List<Modifier> modifiers, Identifier name, Type ... parents) {
+        _modifiers = List.copyOf(modifiers);
         _name = name;
         _parentTypes = List.of(parents);
     }
 
     public ClassDeclaration(Identifier name) {
-        this(VisibilityModifier.NONE, name);
+        this(List.of(), name);
     }
 
-    public VisibilityModifier getVisibilityModifier() {
-        return _modifier;
+    public List<Modifier> getModifiers() {
+        return _modifiers;
     }
 
     public List<Type> getParents() {

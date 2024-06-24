@@ -4,47 +4,41 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
+import java.util.List;
+
 public class FieldDeclaration extends VariableDeclaration {
-    private final VisibilityModifier modifier;
-    private final boolean isStatic;
+    private final List<Modifier> _modifiers;
 
-    public FieldDeclaration(Type type, SimpleIdentifier name, VisibilityModifier modifier, boolean isStatic) {
+    public FieldDeclaration(Type type, SimpleIdentifier name, List<Modifier> modifiers) {
         super(type, name);
-        this.modifier = modifier;
-        this.isStatic = isStatic;
+        _modifiers = List.copyOf(modifiers);
     }
 
-    public FieldDeclaration(Type type, SimpleIdentifier name, Expression value, VisibilityModifier modifier, boolean isStatic) {
+    public FieldDeclaration(Type type, SimpleIdentifier name, Expression value, List<Modifier> modifiers) {
         super(type, name, value);
-        this.modifier = modifier;
-        this.isStatic = isStatic;
+        _modifiers = List.copyOf(modifiers);
     }
 
 
-    public FieldDeclaration(Type type, VisibilityModifier modifier, boolean isStatic, VariableDeclarator... fields) {
+    public FieldDeclaration(Type type, List<Modifier> modifiers, VariableDeclarator... fields) {
         super(type, fields);
-        this.modifier = modifier;
-        this.isStatic = isStatic;
+        _modifiers = List.copyOf(modifiers);
     }
 
     public FieldDeclaration(Type type, SimpleIdentifier name) {
-        this(type, name, VisibilityModifier.NONE, false);
+        this(type, name, List.of());
     }
 
 
     public FieldDeclaration(Type type, SimpleIdentifier name, Expression value) {
-        this(type, name, value, VisibilityModifier.NONE, false);
+        this(type, name, value, List.of());
     }
 
     public FieldDeclaration(Type type, VariableDeclarator... fields) {
-        this(type, VisibilityModifier.NONE, false, fields);
+        this(type, List.of(), fields);
     }
 
-    public VisibilityModifier getVisibilityModifier() {
-        return modifier;
-    }
-
-    public boolean isStatic() {
-        return isStatic;
+    public List<Modifier> getModifiers() {
+        return _modifiers;
     }
 }

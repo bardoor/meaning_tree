@@ -31,8 +31,8 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
         return _type;
     }
 
-    public FieldDeclaration makeField(VisibilityModifier modifier, boolean isStatic) {
-        return new FieldDeclaration(getType(), modifier, isStatic, getDeclarators());
+    public FieldDeclaration makeField(List<Modifier> modifiers) {
+        return new FieldDeclaration(getType(), modifiers, getDeclarators());
     }
 
     public VariableDeclarator[] getDeclarators() {
