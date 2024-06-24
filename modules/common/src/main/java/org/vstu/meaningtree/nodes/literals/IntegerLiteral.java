@@ -33,15 +33,14 @@ public class IntegerLiteral extends NumericLiteral {
         } else if (s.startsWith("0x")) {
             base = 16;
             _repr = Representation.HEX;
+        } else {
+            _repr = Representation.DECIMAL;
         }
         s = StringUtils.removeStart(s, "0b");
         s = StringUtils.removeStart(s, "0o");
         s = StringUtils.removeStart(s, "0x");
-        if (s.endsWith("l")) {
-            _isLongNumber = true;
-        } else {
-            _isLongNumber = false;
-        }
+
+        _isLongNumber = s.endsWith("l");
         s = StringUtils.removeEnd(s, "l");
         return Long.parseLong(s, base);
     }
@@ -95,5 +94,10 @@ public class IntegerLiteral extends NumericLiteral {
     @Override
     public int hashCode() {
         return Objects.hashCode(_value);
+    }
+
+    @Override
+    public String toString() {
+        return getStringValue();
     }
 }
