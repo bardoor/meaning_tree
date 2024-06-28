@@ -16,6 +16,7 @@
         <module>modules/languages/java</module>
         <module>modules/languages/python</module>
         <module>modules/languages/cpp</module>
+        <module>tests</module>
     </modules>
 
     <properties>
