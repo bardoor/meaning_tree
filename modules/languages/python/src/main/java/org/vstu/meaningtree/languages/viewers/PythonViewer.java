@@ -30,7 +30,6 @@ import java.util.SortedMap;
 
 
 public class PythonViewer extends Viewer {
-    private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
 
     @Override
     public String toString(Node node) {
@@ -252,7 +251,9 @@ public class PythonViewer extends Viewer {
             }
         }
         List<Node> nodes = new ArrayList<>(programEntryPoint.getBody());
-        nodes.add(entryPointIf);
+        if (entryPointIf != null) {
+            nodes.add(entryPointIf);
+        }
         return nodeListToString(nodes, tab);
     }
 
@@ -471,13 +472,11 @@ public class PythonViewer extends Viewer {
         } else if (node instanceof XorOp) {
             pattern = "%s ^ %s";
         } else if (node instanceof ShortCircuitAndOp) {
-            Node result = detectCompoundComparison(node);
+            Node result = PythonSpecialTreeTransformations.detectCompoundComparison(node);
             if (result instanceof CompoundComparison) {
                 return compoundComparisonToString((CompoundComparison) result);
-            } else if (result instanceof ShortCircuitAndOp) {
-                pattern = "%s and %s";
-            } else {
-                return toString(node);
+            } else if (result instanceof ShortCircuitAndOp resultOp) {
+                return String.format("%s and %s", toString(resultOp.getLeft()), toString(resultOp.getRight()));
             }
         } else if (node instanceof ShortCircuitOrOp) {
             pattern = "%s or %s";
@@ -568,150 +567,6 @@ public class PythonViewer extends Viewer {
         return builder.toString();
     }
 
-    // COMPARISONS SECTION //
-    //TODO: very unstable code, needed more tests
-    private Node detectCompoundComparison(Node expressionNode) {
-        if (expressionNode instanceof ShortCircuitAndOp op) {
-            Expression left = op.getLeft();
-            Expression right = op.getRight();
-
-            ArrayList<Expression> secondary = new ArrayList<>();
-            ArrayList<BinaryComparison> primary = new ArrayList<>();
-            _collectCompoundStatementElements(left, primary, secondary);
-            _collectCompoundStatementElements(right, primary, secondary);
-            ArrayList<BinaryComparison> primaryCopy = new ArrayList<>(primary);
-            TaggedBinaryComparisonOperand[] expressions = new TaggedBinaryComparisonOperand[2 * primary.size() + 1];
-            for (int i = 1; i < expressions.length - 1 && !primary.isEmpty(); i+=3) {
-                BinaryComparison expr = primary.removeFirst();
-                Expression leftOperand = expr.getLeft();
-                Expression rightOperand = expr.getRight();
-                int leftOperandFoundWeight = _findSameExpression(leftOperand, expressions);
-                int rightOperandFoundWeight = _findSameExpression(rightOperand, expressions);
-
-                int leftWeight, rightWeight;
-                if (expr instanceof LtOp || expr instanceof LeOp) {
-                    leftWeight = leftOperandFoundWeight != -1 ? leftOperandFoundWeight : i;
-                    rightWeight = rightOperandFoundWeight != -1 ? rightOperandFoundWeight : i + 1;
-                } else {
-                    leftWeight = leftOperandFoundWeight != -1 ? leftOperandFoundWeight : i + 1;
-                    rightWeight = rightOperandFoundWeight != -1 ? rightOperandFoundWeight : i;
-                }
-
-                if (expr instanceof LtOp || expr instanceof LeOp) {
-                    if (leftWeight < rightWeight) {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(leftOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(rightOperand, expr instanceof LeOp);
-                    } else {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(rightOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(leftOperand, expr instanceof LeOp);
-                    }
-                } else if (expr instanceof GeOp || expr instanceof GtOp) {
-                    if (leftWeight > rightWeight) {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(leftOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(rightOperand, expr instanceof GeOp);
-                    } else {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(rightOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(leftOperand, expr instanceof GeOp);
-                    }
-                }
-            }
-            for (BinaryComparison cmp : primaryCopy) {
-                Expression leftOperand = cmp.getLeft();
-                Expression rightOperand = cmp.getRight();
-
-                int leftWeight = _findSameExpression(leftOperand, expressions);
-                int rightWeight = _findSameExpression(rightOperand, expressions);
-
-                if (Math.abs(leftWeight - rightWeight) == 1) {
-                    continue;
-                }
-
-                if (leftWeight > rightWeight) {
-                    int tmp = leftWeight;
-                    leftWeight = rightWeight;
-                    rightWeight = tmp;
-                }
-
-                int leftA, leftB, rightA, rightB;
-                for (leftA = leftWeight; leftA > 0 && expressions[leftA] != null; leftA--);
-                for (leftB = leftWeight; leftB < expressions.length && expressions[leftB] != null; leftB++);
-
-                for (rightA = rightWeight; rightA > 0 && expressions[rightA] != null; rightA--);
-                for (rightB = rightWeight; rightB < expressions.length && expressions[rightB] != null; rightB++);
-
-                rightA++;
-                rightB--;
-                leftA++;
-                rightB--;
-
-                boolean isEnoughPlace = true;
-                for (int i = leftB + 1; i < leftB + (rightB - rightA + 1); i++) {
-                    isEnoughPlace &= expressions[i] == null;
-                }
-
-                if (isEnoughPlace) {
-                    for (int i = leftB + 1; i < leftB + (rightB - rightA + 1); i++) {
-                        expressions[i] = expressions[rightA];
-                        expressions[rightA] = null;
-                        rightA++;
-                    }
-                    assert rightA == rightB + 1;
-                }
-            }
-            List<BinaryComparison> tempComparisons = new ArrayList<>();
-            List<CompoundComparison> compounds = new ArrayList<>();
-            for (int i = 0; i < expressions.length - 1; i++) {
-                if (expressions[i] == null || expressions[i + 1] == null) {
-                    if (!tempComparisons.isEmpty()) {
-                        compounds.add(new CompoundComparison(tempComparisons.toArray(new BinaryComparison[0])));
-                    }
-                } else {
-                    if (expressions[i + 1].hasEqual) {
-                        tempComparisons.add(new LeOp(expressions[i].wrapped, expressions[i + 1].wrapped));
-                    } else {
-                        tempComparisons.add(new LtOp(expressions[i].wrapped, expressions[i + 1].wrapped));
-                    }
-                }
-            }
-            if (compounds.size() == 1 && secondary.isEmpty()) {
-                return compounds.getFirst();
-            }
-            Expression primaryAndOp = BinaryExpression.fromManyOperands(compounds.toArray(new Expression[0]), 0, ShortCircuitAndOp.class);
-            Expression secondaryAndOp = BinaryExpression.fromManyOperands(secondary.toArray(new Expression[0]), 0, ShortCircuitAndOp.class);
-            return new ShortCircuitAndOp(primaryAndOp, secondaryAndOp);
-        }
-        return expressionNode;
-    }
-
-    private int _findSameExpression(Expression expr, TaggedBinaryComparisonOperand[] weighted) {
-        for (int i = 0; i < weighted.length; i++) {
-            if (expr.equals(weighted[i].wrapped)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private boolean _collectCompoundStatementElements(Expression node, List<BinaryComparison> primary, List<Expression> secondary) {
-        if (node instanceof BinaryComparison op) {
-            if (op instanceof NotEqOp || op instanceof EqOp) {
-                secondary.add(op);
-            } else {
-                primary.add(op);
-            }
-        } else if (node instanceof ShortCircuitAndOp op) {
-            boolean result = _collectCompoundStatementElements(node, primary, secondary);
-            if (!result) {
-                secondary.add(op);
-                return false;
-            }
-            return result;
-        } else {
-            secondary.add(node);
-        }
-        return false;
-    }
-
     private String comparisonToString(BinaryComparison node) {
         String pattern = "";
         if (node instanceof EqOp) {
@@ -751,6 +606,4 @@ public class PythonViewer extends Viewer {
         }
         return sb.toString();
     }
-
-    // END COMPARISONS SECTION //
 }

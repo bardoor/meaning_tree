@@ -45,11 +45,15 @@ abstract public class BinaryExpression extends Expression {
     }
 
     public static Expression fromManyOperands(Expression[] array, int startIndex, Class<? extends BinaryExpression> whatClassNeeded){
+        if (array.length == 0) {
+            throw new ArrayIndexOutOfBoundsException("Empty array has been passed");
+        }
+
         if (startIndex >= array.length - 1) {
             return array[startIndex];
         }
         try {
-            return whatClassNeeded.getConstructor().newInstance(array[startIndex], fromManyOperands(array, startIndex + 1, whatClassNeeded));
+            return whatClassNeeded.getConstructor(Expression.class, Expression.class).newInstance(array[startIndex], fromManyOperands(array, startIndex + 1, whatClassNeeded));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

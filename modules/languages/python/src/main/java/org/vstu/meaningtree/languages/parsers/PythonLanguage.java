@@ -656,19 +656,6 @@ public class PythonLanguage extends Language {
         List<BinaryComparison> comparisons = new ArrayList<>();
 
         for (int i = 0; i < node.getChildCount(); i++) {
-            if (operands.size() == 2) {
-                Expression firstOp = (Expression) fromTSNode(operands.removeFirst());
-                TSNode secondNode = operands.removeFirst();
-                Expression secondOp = (Expression) fromTSNode(secondNode);
-                try {
-                    BinaryComparison object = operator.getDeclaredConstructor(Expression.class, Expression.class).newInstance(firstOp, secondOp);
-                    comparisons.add(object);
-                } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
-                         NoSuchMethodException e) {
-                    throw new RuntimeException(e);
-                }
-                operands.add(secondNode);
-            }
             TSNode children = node.getChild(i);
 
             switch (children.getType()) {
@@ -693,18 +680,22 @@ public class PythonLanguage extends Language {
                 default:
                     operands.add(children);
             }
-        }
-        if (operands.size() == 2) {
-            Expression firstOp = (Expression) fromTSNode(operands.removeFirst());
-            TSNode secondNode = operands.removeFirst();
-            Expression secondOp = (Expression) fromTSNode(secondNode);
-            try {
-                BinaryComparison object = operator.getDeclaredConstructor(Expression.class, Expression.class).newInstance(firstOp, secondOp);
-                comparisons.add(object);
-            } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
-                     NoSuchMethodException e) {
-                throw new RuntimeException(e);
+            if (operands.size() == 2) {
+                Expression firstOp = (Expression) fromTSNode(operands.removeFirst());
+                TSNode secondNode = operands.removeFirst();
+                Expression secondOp = (Expression) fromTSNode(secondNode);
+                try {
+                    BinaryComparison object = operator.getDeclaredConstructor(Expression.class, Expression.class).newInstance(firstOp, secondOp);
+                    comparisons.add(object);
+                } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
+                         NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+                operands.add(secondNode);
             }
+        }
+        if (comparisons.size() == 1) {
+            return comparisons.getFirst();
         }
         return new CompoundComparison(comparisons.toArray(new BinaryComparison[0]));
     }
