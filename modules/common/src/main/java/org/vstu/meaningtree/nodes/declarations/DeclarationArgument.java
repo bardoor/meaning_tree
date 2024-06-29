@@ -22,7 +22,6 @@ public class DeclarationArgument extends Declaration {
     private final Optional<Expression> _initial;
 
     public DeclarationArgument(Type type, boolean isListUnpacking, SimpleIdentifier name, Expression initial) {
-        super();
         _type = type;
         _isListUnpacking = isListUnpacking;
         _name = name;
