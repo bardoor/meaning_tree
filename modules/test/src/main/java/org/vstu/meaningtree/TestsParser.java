@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class TestsParser {
     public static TestGroup[] parse(String tests) {
-        Pattern groupPattern = Pattern.compile("group:\\s+\\w+\\s+(?:(?!^\\s*group:).)*", Pattern.DOTALL);
+        Pattern groupPattern = Pattern.compile("group:\\s+\\w+\\s+(?:(?!^\\s*group:).)*", Pattern.DOTALL | Pattern.MULTILINE);
         Matcher groupMatcher = groupPattern.matcher(tests);
         ArrayList<TestGroup> testGroups = new ArrayList<>();
 
