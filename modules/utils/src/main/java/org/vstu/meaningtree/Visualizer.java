@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.utils;
+package org.vstu.meaningtree;
 
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
@@ -8,8 +8,6 @@ import org.vstu.meaningtree.MeaningTree;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.io.IOException;
 
