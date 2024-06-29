@@ -1,18 +1,14 @@
 package org.vstu.meaningtree;
 
-import org.vstu.meaningtree.languages.Translator;
-
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CodeMatcher {
-    protected final Translator _translator;
     protected final boolean _indentSensitive;
     protected final int TAB_SIZE = 4;
 
-    public CodeMatcher(Translator translator, boolean indentSensitive) {
-        _translator = translator;
+    public CodeMatcher(boolean indentSensitive) {
         _indentSensitive = indentSensitive;
     }
 
