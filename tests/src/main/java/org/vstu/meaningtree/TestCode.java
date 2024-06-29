@@ -1,7 +1,10 @@
 package org.vstu.meaningtree;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class TestCode {
     private final String _code;
@@ -23,7 +26,19 @@ public class TestCode {
     }
 
     private String parseCode(String testCode) {
-        return "";  // TODO
+        // Удалить пустые строки
+        List<String> lines = Arrays.stream(testCode.split("\\R"))
+                                        .filter(String::isBlank)
+                                        .collect(Collectors.toList());
+        // Удалить строку с названием языка (надеюсь что она первая)
+        lines.removeFirst();
+
+        // Удалить комментарии с конца
+        while (lines.getLast().strip().startsWith("#")) {
+            lines.removeLast();
+        }
+
+        return lines.stream().collect(Collectors.joining(System.lineSeparator()));
     }
 
     public String getLanguage() { return _language; }
