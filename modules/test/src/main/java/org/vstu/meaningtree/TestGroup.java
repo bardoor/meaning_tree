@@ -14,21 +14,21 @@ public class TestGroup {
     }
 
     private String parseName(String testGroup) {
-        Pattern namePattern = Pattern.compile("group:\\s+(\\w*)$");
+        Pattern namePattern = Pattern.compile("group:\\s+(\\w*)");
         Matcher nameMatcher = namePattern.matcher(testGroup);
 
         if (!nameMatcher.find()) {
             throw new IllegalArgumentException("Имя группы тестов не найдено!");
         }
-        return nameMatcher.group();
+        return nameMatcher.group(1);
     }
 
     private ArrayList<TestCase> parseCases(String testGroup) {
-        Pattern casePattern = Pattern.compile("group:\\s+\\w+\\s+(?:(?!^\\s*group:).)*", Pattern.DOTALL);
+        Pattern casePattern = Pattern.compile("case:\\s+\\w+\\s+(?:(?!\\s*case:).)*",Pattern.DOTALL | Pattern.MULTILINE);
         Matcher caseMatcher = casePattern.matcher(testGroup);
 
         ArrayList<TestCase> cases = new ArrayList<>();
-        while (caseMatcher.find()) {
+        while(caseMatcher.find()) {
             cases.add(new TestCase(caseMatcher.group()));
         }
         return cases;
