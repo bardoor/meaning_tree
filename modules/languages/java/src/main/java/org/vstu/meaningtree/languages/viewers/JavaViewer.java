@@ -310,7 +310,7 @@ public class JavaViewer extends Viewer {
 
         if (varDecl.hasInitialization()) {
             varDecl.getRValue().ifPresent(init ->
-                    builder.append(" = ").append(init)
+                    builder.append(" = ").append(toString(init))
             );
         }
 
