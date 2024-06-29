@@ -4,12 +4,16 @@ import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class CodeMatcher {
+public class CodeFormatter {
     protected final boolean _indentSensitive;
     protected final int TAB_SIZE = 4;
 
-    public CodeMatcher(boolean indentSensitive) {
+    public CodeFormatter(boolean indentSensitive) {
         _indentSensitive = indentSensitive;
+    }
+
+    public String format(String code) {
+        return removeMeaninglessIndents(code);
     }
 
     public boolean equals(String codeA, String codeB) {
