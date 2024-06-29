@@ -38,6 +38,13 @@ public class TestCase {
 
     public String getName() { return _name; }
 
+    public TestCode getCode(String language) {
+        return _codes.stream()
+                        .filter(code -> code.getLanguage().equals(language))
+                        .findFirst()
+                        .orElse(null);
+    }
+
     public TestCode[] getCodes() { return _codes.toArray(TestCode[]::new); }
 
     public String[] getLanguages() { return _codes.stream().map(TestCode::getLanguage).toArray(String[]::new); }
