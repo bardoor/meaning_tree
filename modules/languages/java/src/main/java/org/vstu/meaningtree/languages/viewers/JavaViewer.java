@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages.viewers;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -21,6 +22,7 @@ import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
 
@@ -40,6 +42,7 @@ public class JavaViewer extends Viewer {
 
     @Override
     public String toString(Node node) {
+        Objects.requireNonNull(node);
         return switch (node) {
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
@@ -86,8 +89,55 @@ public class JavaViewer extends Viewer {
             case Comment comment -> toString(comment);
             case BreakStatement stmt -> toString(stmt);
             case ContinueStatement stmt -> toString(stmt);
-            case null, default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
+            case MethodDefinition methodDefinition -> toString(methodDefinition);
+            default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(DeclarationArgument parameter) {
+        String type = toString(parameter.getType());
+        String name = toString(parameter.getName());
+        return "%s %s".formatted(type, name);
+    }
+
+    // В отличие от всех остальных методов, данный называется так,
+    // чтобы избежать конфликтов с другими методами:
+    // toStringParameters(List<Modifier> modifiers)
+    // и toStringParameters(List<DeclarationArgument> parameters)
+    // с точки зрения Java один и тот же тип...
+    private String toStringParameters(List<DeclarationArgument> parameters) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+
+        int i;
+        for (i = 0; i < parameters.size(); i++) {
+            DeclarationArgument parameter = parameters.get(i);
+            builder.append("%s, ".formatted(toString(parameter)));
+        }
+
+        // Удаляем последний пробел и запятую, если был хотя бы один параметр
+        if (i > 1) {
+            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        builder.append(")");
+        return builder.toString();
+    }
+
+    private String toString(MethodDeclaration methodDeclaration) {
+        String modifiersList = toString(methodDeclaration.getModifiers());
+        String returnType = toString(methodDeclaration.getReturnType());
+        String name = toString(methodDeclaration.getName());
+        String parameters = toStringParameters(methodDeclaration.getArguments());
+        return "%s %s %s%s".formatted(modifiersList, returnType, name, parameters);
+    }
+
+    private String toString(MethodDefinition methodDefinition) {
+        // Преобразование типа нужно, чтобы избежать вызова toString(Node node)
+        String methodDeclaration = toString((MethodDeclaration) methodDefinition.getDeclaration());
+        String body = toString(methodDefinition.getBody());
+        return "%s %s".formatted(methodDeclaration, body);
     }
 
     private String toString(ContinueStatement stmt) {
