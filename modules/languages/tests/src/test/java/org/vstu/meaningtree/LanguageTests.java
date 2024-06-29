@@ -1,17 +1,15 @@
 package org.vstu.meaningtree;
 
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.function.Executable;
 import org.vstu.meaningtree.languages.JavaTranslator;
 import org.vstu.meaningtree.languages.PythonTranslator;
-import org.vstu.meaningtree.languages.Translator;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,28 +41,50 @@ class LanguageTests {
 
     @TestFactory
     Stream<DynamicContainer> testAllLanguages() {
-        // Тут можно посмеяться и поплакать, я называю это "бур"
-        return Arrays.stream(_tests)
-                .map(group -> DynamicContainer.dynamicContainer(
-                        group.getName(),
-                        Arrays.stream(group.getCases())
-                                .map(testCase -> DynamicTest.dynamicTest(
-                                        testCase.getName(),
-                                        () -> Assertions.assertAll(
-                                                Combinator.getPermutations(testCase.getCodes()).stream().map(pair ->
-                                                         () -> assertTrue(new CodeMatcher(
-                                                                _config.getByName(pair.left.language).indentSensitive()).equals(
-                                                                    pair.left.code,
-                                                                    _config.getByName(pair.left.language).translator().getCode(
-                                                                            _config.getByName(pair.right.language)
-                                                                                    .translator().getMeaningTree(pair.right.code)
-                                                                    )
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                ))
-                        )
-                );
+        List<ImmutablePair<TestCode, TestCode>> codePermutations;
+        List<DynamicContainer> container = new ArrayList<>();
+
+        for (TestGroup group : _tests) {
+            List<DynamicTest> dynamicTests = new ArrayList<>();
+            for (TestCase testCase : group.getCases()) {
+                codePermutations = Combinator.getPermutations(testCase.getCodes());
+                for (ImmutablePair<TestCode, TestCode> codePair : codePermutations) {
+                    TestCode source = codePair.left;
+                    TestCode translated = codePair.right;
+
+                    // Взять трансляторы из конфига по названию языков
+                    TestLanguageConfig sourceLangConfig = _config.getByName(source.language);
+                    TestLanguageConfig translatedLangConfig = _config.getByName(translated.language);
+                    if (sourceLangConfig == null || translatedLangConfig == null) {
+                        continue;
+                    }
+
+                    // Перегнать код на втором языке в MT, затем превратить в код на первом языке
+                    String translatedCode = sourceLangConfig.translator().getCode(
+                            translatedLangConfig.translator().getMeaningTree(translated.code)
+                    );
+
+                    // Отформатировать код с учётом чувствительности к индетации
+                    CodeFormatter codeFormatter = new CodeFormatter(_config.getByName(source.language).indentSensitive());
+                    String formatedSourceCode = codeFormatter.format(source.code);
+                    String translatedSourceCode = codeFormatter.format(translatedCode);
+
+                    // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
+                    dynamicTests.add(DynamicTest.dynamicTest(
+                            testCase.getName(),
+                            () -> assertTrue(
+                                    codeFormatter.equals(formatedSourceCode, translatedSourceCode),
+                                    String.format("\nИсходный код:\n%s\nПереведённый код:\n%s", formatedSourceCode, translatedSourceCode)))
+                    );
+                }
+            }
+            container.add(DynamicContainer.dynamicContainer(
+                    group.getName(),
+                    dynamicTests
+            ));
+        }
+
+        return container.stream();
+
     }
 }
