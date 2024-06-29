@@ -1,8 +1,6 @@
 package org.vstu.meaningtree;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,17 +14,17 @@ public class TestCase {
     }
 
     private String parseName(String testCase) {
-        Pattern namePattern = Pattern.compile("case:\\s+(\\w*)$");
+        Pattern namePattern = Pattern.compile("case:\\s+(\\w*)");
         Matcher nameMatcher = namePattern.matcher(testCase);
 
         if (!nameMatcher.find()) {
             throw new IllegalArgumentException("Имя тест-кейса не найдено!");
         }
-        return nameMatcher.group();
+        return nameMatcher.group(1);
     }
 
     private ArrayList<TestCode> parseCodes(String testCase) {
-        Pattern codePattern = Pattern.compile("\\s+\\w+:\\s+\\w+\\s+(?:(?!^\\s*\\w+:).)*", Pattern.DOTALL);
+        Pattern codePattern = Pattern.compile("^\\s+\\w+:\\s+\\w+\\s+(?:(?!^\\s*\\w+:).)*", Pattern.DOTALL | Pattern.MULTILINE);
         Matcher codeMatcher = codePattern.matcher(testCase);
 
         ArrayList<TestCode> codes = new ArrayList<>();
