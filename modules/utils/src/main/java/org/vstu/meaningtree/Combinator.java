@@ -3,6 +3,7 @@ package org.vstu.meaningtree;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.List;
+import java.util.Arrays;
 import java.util.function.Predicate;
 
 public class Combinator<T> {
@@ -23,6 +24,15 @@ public class Combinator<T> {
                             .filter(Predicate.not(element::equals))
                             .map(otherElement -> new ImmutablePair<>(element, otherElement)))
                     .toList();
+    }
+
+    @SafeVarargs
+    public static <U> List<ImmutablePair<U, U>> getPermutations(U ... elements) {
+        return Arrays.stream(elements)
+                .flatMap(element -> Arrays.stream(elements)
+                        .filter(Predicate.not(element::equals))
+                        .map(otherElement -> new ImmutablePair<>(element, otherElement)))
+                .toList();
     }
 
 }
