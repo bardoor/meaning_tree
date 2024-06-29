@@ -10,8 +10,24 @@ public class MethodDeclaration extends FunctionDeclaration {
     private final UserType _owner;
     private final List<Modifier> _modifiers;
 
-    public MethodDeclaration(UserType owner, Identifier name, Type returnType, List<Annotation> annotation, List<Modifier> modifiers, DeclarationArgument... arguments) {
-        super(name, returnType, annotation, arguments);
+    public MethodDeclaration(UserType owner,
+                             Identifier name,
+                             Type returnType,
+                             List<Annotation> annotations,
+                             List<Modifier> modifiers,
+                             DeclarationArgument... arguments
+    ) {
+        this(owner, name, returnType, annotations, modifiers, List.of(arguments));
+    }
+
+    public MethodDeclaration(UserType owner,
+                             Identifier name,
+                             Type returnType,
+                             List<Annotation> annotations,
+                             List<Modifier> modifiers,
+                             List<DeclarationArgument> arguments
+    ) {
+        super(name, returnType, annotations, arguments);
         _owner = owner;
         _modifiers = List.copyOf(modifiers);
     }

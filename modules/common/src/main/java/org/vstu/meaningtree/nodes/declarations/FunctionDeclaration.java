@@ -14,13 +14,17 @@ public class FunctionDeclaration extends Declaration {
     private final List<DeclarationArgument> _arguments;
     private final Identifier _name;
     private final Type _returnType;
-    private final List<Annotation> annotations;
+    private final List<Annotation> _annotations;
 
     public FunctionDeclaration(Identifier name, Type returnType, List<Annotation> annotations, DeclarationArgument... arguments) {
+        this(name, returnType, annotations, List.of(arguments));
+    }
+
+    public FunctionDeclaration(Identifier name, Type returnType, List<Annotation> annotations, List<DeclarationArgument> arguments) {
         _name = name;
-        this.annotations = new ArrayList<>(annotations);
-        this._arguments = List.of(arguments);
-        this._returnType = returnType;
+        _annotations = new ArrayList<>(annotations);
+        _arguments = List.copyOf(arguments);
+        _returnType = returnType;
     }
 
     public Identifier getQualifiedName() {
@@ -50,10 +54,10 @@ public class FunctionDeclaration extends Declaration {
     }
 
     public List<Annotation> getAnnotations() {
-        return new ArrayList<>(annotations);
+        return new ArrayList<>(_annotations);
     }
 
     public boolean hasAnnotations() {
-        return !annotations.isEmpty();
+        return !_annotations.isEmpty();
     }
 }

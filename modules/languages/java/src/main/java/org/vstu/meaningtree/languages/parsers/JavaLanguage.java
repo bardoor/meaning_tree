@@ -6,6 +6,7 @@ import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
@@ -87,7 +88,54 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromMethodDeclarationTSNode(TSNode node) {
-        return null;
+        List<Modifier> modifiers = new ArrayList<>();
+        if (node.getChild(0).getType().equals("modifiers")) {
+            modifiers.addAll(fromModifiers(node.getChild(0)));
+        }
+
+        Type returnType = (Type) fromTypeTSNode(node.getChildByFieldName("type"));
+        Identifier identifier = (Identifier) fromScopedIdentifierTSNode(node.getChildByFieldName("name"));
+        List<DeclarationArgument> parameters = fromMethodParameters(node.getChildByFieldName("parameters"));
+
+        // Пока не реализован механизм нахождения класса, к которому принадлежит метод,
+        // и определение аннотаций
+        MethodDeclaration declaration = new MethodDeclaration(null,
+                identifier,
+                returnType,
+                List.of(),
+                modifiers,
+                parameters
+        );
+
+        CompoundStatement body = (CompoundStatement) fromBlockTSNode(node.getChildByFieldName("body"));
+
+        return new MethodDefinition(declaration, body);
+    }
+
+    private List<DeclarationArgument> fromMethodParameters(TSNode node) {
+        List<DeclarationArgument> parameters = new ArrayList<>();
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            // TODO: может быть можно как-то более эффективно извлекать извлечь параметры...
+            // Такие сложности из-за того, что в детях также будет скобки, запятые и другие
+            // синтаксические артефакты.
+            TSNode child = node.getChild(i);
+            if (!child.getType().equals("formal_parameter")) {
+                continue;
+            }
+
+            DeclarationArgument parameter = fromFormalParameter(child);
+            parameters.add(parameter);
+        }
+
+        return parameters;
+    }
+
+    private DeclarationArgument fromFormalParameter(TSNode node) {
+        Type type = (Type) fromTypeTSNode(node.getChildByFieldName("type"));
+        SimpleIdentifier name = (SimpleIdentifier) fromIdentifierTSNode(node.getChildByFieldName("name"));
+        // Не поддерживается распаковка списков (как в Python) и значения по умолчанию
+        return new DeclarationArgument(type, false, name, null);
     }
 
     private Node fromStringLiteralTSNode(TSNode node) {
