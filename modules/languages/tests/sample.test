@@ -1,0 +1,12 @@
+group: AssignmentTests
+	case: IntegerVariableAssignmentWithoutDeclaration
+	    # Можем перегонять язык в этот же язык в принципе...
+		java:
+		    {
+			a = 5;
+			}
+
+		java:
+		    {
+		        a = 5;
+            }
