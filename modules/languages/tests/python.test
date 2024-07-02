@@ -1,0 +1,1483 @@
+group: LiteralsTest
+	case: Identifier
+		python:
+		    simple_ident
+		python:
+		    simple_ident
+		java:
+			simple_ident;
+		c++:
+			simple_ident;
+	case: FloatLiteral
+		python:
+		    3.45
+		python:
+		    3.45
+		java:
+			3.45;
+		c++:
+			3.45;
+	case: FloatLiteralWithF
+		python:
+		    3.45f
+		python:
+		    3.45f
+		java:
+			3.45f;
+		c++:
+			3.45f;
+	case: LongLiteral
+		python:
+		    345L
+		python:
+		    345L
+		java:
+			345L;
+		c++:
+			345L;
+	case: NullLiteral
+		python:
+		    None
+		python:
+		    None
+		java:
+			null;
+		c++:
+			NULL;
+	case: TrueLiteral
+		python:
+		    True
+		python:
+		    True
+		java:
+			true;
+		c++:
+			true;
+	case: FalseLiteral
+		python:
+		    False
+		python:
+		    False
+		java:
+			false;
+		c++:
+			false;
+	case: IntegerDecimalLiteral
+		python:
+		    345
+		python:
+		    345
+		java:
+			345;
+		c++:
+			345;
+	case: IntegerBinaryLiteral
+		python:
+		    0b01010
+		python:
+		    0b01010
+		java:
+			0b01010;
+		c++:
+			0b01010;
+	case: IntegerHexLiteral
+		python:
+		    0xABC
+		python:
+		    0xABC
+		java:
+			0xABC;
+		c++:
+			0xABC;
+	case: StringLiteral
+		python:
+		    "abc"
+		python:
+		    "abc"
+		java:
+			"abc";
+		c++:
+			"abc";
+	case: StringRawLiteral
+		python:
+		    r"abc\t"
+		python:
+		    r"abc\t"
+		java:
+			"abc\\t";
+		c++:
+			"abc\\t";
+	case: StringFormatLiteral
+		python:
+		    f"abc {abc} \t"
+		python:
+		    f"abc {abc} \t"
+		java:
+			"abc {abc} \t";
+		c++:
+			"abc {abc} \t";
+	# Нужно обсуждение
+	case: ListLiteral
+		python:
+		    [1, 2, 3, a, b]
+		python:
+		    [1, 2, 4, a, b]
+		java:
+			new Object[] {1, 2, 4, a, b};
+		c++:
+			{1, 2, 4, a, b};
+	case: TupleLiteral
+		python:
+		    (a, b, 10.3)
+		python:
+		    (a, b, 10.3)
+		java:
+			new Object[] {a, b, 10.3};
+		c++:
+			{a, b, 10.3};
+	case: DictLiteral
+		python:
+		    {"a": b, "x": y}
+		python:
+		    {"a": b, "x": y}
+		java:
+			TreeMap<String, Object> product = new TreeMap<>() {{put("a", b); put("x", y);}};
+		c++:
+			std::map<std::string, void*> products {{"a", b}, {"x", y}};
+group: SimpleExpressionsTest
+	case: PlusOp
+		python:
+		    a + 5
+		python:
+		    a + 5
+		java:
+			a + 5;
+		c++:
+			a + 5;
+	case: SubOp
+		python:
+		    x - y
+		python:
+		    x - y
+		java:
+			x - y;
+		c++:
+			x - y;
+	case: MulOp
+		python:
+		    x * y
+		python:
+		    x * y
+		java:
+			x * y;
+		c++:
+			x * y;
+	case: DivOp
+		python:
+		    x / y
+		python:
+		    x / y
+		java:
+			x / y;
+		c++:
+			x / y;
+	case: FloorDivOp
+		python:
+		    x // y
+		python:
+		    x // y
+		java:
+			(int)(x / y);
+		c++:
+			(int)(x / y);
+	case: IncrementOp
+		python:
+		    x += 1
+		python:
+		    x += 1
+		java:
+			x++;
+		c++:
+			x++;
+	case: DecrementOp
+		python:
+		    x -= 1
+		python:
+		    x -= 1
+		java:
+			x--;
+		c++:
+			x--;
+	case: UnaryMinusOp
+		python:
+		    -x
+		python:
+		    -x
+		java:
+			-x;
+		c++:
+			-x;
+	case: UnaryPlusOp
+		python:
+		    +x
+		python:
+		    +x
+		java:
+			+x;
+		c++:
+			+x;
+	case: ModOp
+		python:
+		    x % y
+		python:
+		    x % y
+		java:
+			x % y;
+		c++:
+			x % y;
+	case: PowOp
+		python:
+		    x ** y
+		python:
+		    x ** y
+		java:
+			Math.pow(x, y);
+		c++:
+			std::pow(x, y);
+	case: AndOp
+		python:
+		    x and y
+		python:
+		    x and y
+		java:
+			x && y;
+		c++:
+			x && y;
+	case: OrOp
+		python:
+		    x or y
+		python:
+		    x or y
+		java:
+			x || y;
+		c++:
+			x || y;
+	case: BitwiseAndOp
+		python:
+		    x & y
+		python:
+		    x & y
+		java:
+			x & y;
+		c++:
+			x & y;
+	case: BitwiseOrOp
+		python:
+		    x | y
+		python:
+		    x | y
+		java:
+			x | y;
+		c++:
+			x | y;
+	case: BitwiseNotOp
+		python:
+		    ~x
+		python:
+		    ~x
+		java:
+			~x;
+		c++:
+			~x;
+	case: BitwiseXorOp
+		python:
+		    x ^ y
+		python:
+		    x ^ y
+		java:
+			x ^ y;
+		c++:
+			x ^ y;
+	case: NotOp
+		python:
+		    not x
+		python:
+		    not x
+		java:
+			!x;
+		c++:
+			!x;
+	case: BitwiseLeftShiftOp
+		python:
+		    x << y
+		python:
+		    x << y
+		java:
+			x << y;
+		c++:
+			x << y;
+	case: BitwiseRightShiftOp
+		python:
+		    x >> y
+		python:
+		    x >> y
+		java:
+			x >> y;
+		c++:
+			x >> y;
+	case: TernaryOp
+		python:
+		    x if a else y
+		python:
+		    x if a else y
+		java:
+			a ? x : y;
+		c++:
+			a ? x : y;
+	case: AssignmentExpr
+		python:
+		    x := b
+		python:
+		    x := b
+		java:
+			x = b;
+		c++:
+			x = b;
+	case: MemberAccess
+		python:
+			x.a.b.c
+		python:
+			x.a.b.c
+		java:
+			x.a.b.c;
+		с++:
+			x.a.b.c;
+	case: FunctionCallWithoutArguments
+		python:
+			hello()
+		python:
+			hello()
+		java:
+			hello();
+		c++:
+			hello();
+	case: FunctionCallWithArguments
+		python:
+			hello(a, b, 10.3, "abc")
+		python:
+			hello(a, b, 10.3, "abc")
+		java:
+			hello(a, b, 10.3, "abc");
+		c++:
+			hello(a, b, 10.3, "abc");
+	case: Indexing
+		python:
+			x[10]
+		python:
+			x[10]
+		c++:
+			x[10];
+		java:
+			x[10];
+	case: ManyIndexes
+		python:
+			x[10][y]
+		python:
+			x[10][y]
+		c++:
+			x[10][y];
+		java:
+			x[10][y];
+	case: CommaSeparatedIndex
+		python:
+			x[10, y]
+		python:
+			x[10, y]
+		c++:
+			x[10, y];
+		java:
+			x[10, y];
+group: ComparisonsTest
+	case: LessOp
+		python:
+		    a < b 
+		python:
+		    a < b
+		java:
+			a < b;
+		c++:
+			a < b;
+	case: LessEqualOp
+		python:
+		    a <= b 
+		python:
+		    a <= b
+		java:
+			a <= b;
+		c++:
+			a <= b;
+	case: GreaterEqualOp
+		python:
+		    a >= b 
+		python:
+		    a >= b
+		java:
+			a >= b;
+		c++:
+			a >= b;
+	case: GreaterOp
+		python:
+		    a > b 
+		python:
+		    a > b
+		java:
+			a > b;
+		c++:
+			a > b;
+	case: EqOp
+		python:
+		    a == b 
+		python:
+		    a == b
+		java:
+			a == b;
+		c++:
+			a == b;
+	case: NotEqOp
+		python:
+		    a != b 
+		python:
+		    a != b
+		java:
+			a != b;
+		c++:
+			a != b;
+	case: CompoundComparisonConvertationCase1
+		python:
+		    a <= b and c <= k and b >= c
+		python:
+		    a <= c <= k <= b
+	case: CompoundComparisonConvertationCase2
+		python:
+		    a < b and b < c and m >= k
+		python:
+		    a <	b < c and m >= k
+	case: CompoundComparisonConvertationCase3
+		python:
+		    a < b and m >= k and x >= y
+		python:
+		    a < b and m >= k and x >= y
+	case: CompoundComparisonConvertationCase4
+		python:
+		    a < b and b < c and m >= k
+		python:
+		    a <	b < c and m >= k
+	case: CompoundComparisonConvertationCase5
+		python:
+		    a < b and m >= k and b < c
+		python:
+		    a <	b < c and m >= k
+	case: CompoundComparisonConvertationCase6
+		python:
+		    a < b and a == b and b >= c
+		python:
+		    a < c <= b and a == b
+	case: CompoundComparisonConvertationBetweenLanguages
+		python:
+		    a < b < c and m >= k
+		java:
+		    a < b && b < c && m >= k
+		c++:
+		    a < b && b < c && m >= k
+group: SimpleStatements
+	case: VariableDeclaration
+		python:
+		    a: int = 456
+		java:
+		    int a = 456;
+		c++:
+		    int a = 456;
+	case: AugmentedAssignmentStmt
+		python:
+		    a: int = 456
+			a += 3
+			a -= 3
+			a *= b
+			a >>= b
+			a <<= b
+			a /= 5
+			a //= 6
+			a %= t
+			a &= b
+			c |= t
+			v ^= m
+		python:
+		    a: int = 456
+			a += 3
+			a -= 3
+			a *= b
+			a >>= b
+			a <<= b
+			a /= 5
+			a //= 6
+			a %= t
+			a &= b
+			c |= t
+			v ^= m
+		java:
+		    int a = 456;
+			a = 3;
+			a += 3;
+			a -= 3;
+			a *= b;
+			a >>= b;
+			a <<= b;
+			a /= 5;
+			a //= 6;
+			a %= t;
+			a &= b;
+			c |= t;
+			v ^= m;
+		c++:
+		    int a = 456;
+			a = 3;
+			a += 3;
+			a -= 3;
+			a *= b;
+			a >>= b;
+			a <<= b;
+			a /= 5;
+			a //= 6;
+			a %= t;
+			a &= b;
+			c |= t;
+			v ^= m;
+	case: AssignmentStmt
+		python:
+		    a: int = 456
+			a = 3
+		python:
+		    a: int = 456
+			a = 3
+		java:
+		    int a = 456;
+			a = 3;
+		c++:
+		    int a = 456;
+			a = 3
+	case: PassStatement
+		python:
+			if a:
+				pass
+		python:
+			if a:
+				pass
+		java:
+			if (a) {
+			}
+		c++:
+			if (a) {
+			}
+	# TODO: Продумать как выполнять преобразование
+	case: MultipleAssignment
+		python:
+			a, b = 3, 45
+		python:
+			a, b = 3, 45
+		java:
+			a = 3;
+			b = 45;
+		c++:
+			a = 3;
+			b = 45;
+	case: VariableSwapping
+		python:
+			a, b = b, a
+		python:
+			a, b = b, a
+		java:
+			Object _temp_a_b_ = a;
+			a = b;
+			b = t;
+		c++:
+			std::swap(a, b);
+group: Conditions
+	case: IfElseCompound
+		python:
+		    if a > 0:
+				a += 1
+				k = x + 1
+		python:
+		    if a > 0:
+				a += 1
+				k = x + 1
+		java:
+		    if (a > 0) {
+				a++;
+				k = x + 1;
+			}
+		c++:
+		    if (a > 0) {
+				a++;
+				k = x + 1;
+			}
+	case: OnlyIf
+		python:
+			if a >= 0:
+				t()
+				x()
+		python:
+			if a >= 0:
+				t()
+				x()
+		java:
+			if (a >= 0) {
+				t();
+				x();
+			}
+		c++:
+			if (a >= 0) {
+				t();
+				x();
+			}
+	case: NestedOnlyIfCompound
+		python:
+			if a > 0:
+				if k:
+					print("a")
+					print("b")
+		python:
+			if a > 0:
+				if k:
+					print("a")
+					print("b")
+		java:
+			if (a > 0) {
+				if (k) {
+					print("a")
+					print("b")
+				}
+			}
+		c++:
+			if (a > 0) {
+				if (k) {
+					print("a")
+					print("b")
+				}
+			}
+	case: OneAlternative
+		python:
+			if a:
+				pass
+			elif b:
+				pass
+		python:
+			if a:
+				pass
+			elif b:
+				pass
+		c++:
+			if (a) {
+			} else if (b) {
+			}
+		java:
+			if (a) {
+			} else if (b) {
+			}
+	case: OneAlternativeWithElse
+		python:
+			if a:
+				pass
+			elif b:
+				pass
+			else:
+				c = k * 3
+		python:
+			if a:
+				pass
+			elif b:
+				pass
+			else:
+				c = k * 3
+		c++:
+			if (a) {
+			} else if (b) {
+			} else {
+				c = k * 3;
+			}
+		java:
+			if (a) {
+			} else if (b) {
+			} else {
+				c = k * 3;
+			}
+	case: TwoAlternativesWithElseCompound
+		python:
+			if a:
+				b = a * 3
+				x += 1
+			elif b:
+				b = m * 3
+				x += 1
+			elif c:
+				k = l * 3
+				x += 1
+			else:
+				d *= 5
+				x += 1
+		python:
+			if a:
+				b = a * 3
+				x += 1
+			elif b:
+				b = m * 3
+				x += 1
+			elif c:
+				k = l * 3
+				x += 1
+			else:
+				d *= 5
+				x += 1
+		c++:
+			if (a) {
+				b = a * 3;
+				x++;
+			}
+			else if (b) {
+				b = m * 3;
+				x++;
+			}
+			else if (c) {
+				k = l * 3;
+				x++;
+			}
+			else {
+				d *= 5;
+				x++;
+			}
+		java:
+			if (a) {
+				b = a * 3;
+				x++;
+			}
+			else if (b) {
+				b = m * 3;
+				x++;
+			}
+			else if (c) {
+				k = l * 3;
+				x++;
+			}
+			else {
+				d *= 5;
+				x++;
+			}
+	case: NestedAlternativesCompound
+		python:
+			if a > b:
+				z += 1
+				if x and y:
+					if x == 7:
+						x += 1
+					c += 1
+				c += 1
+			elif a < b:
+				x += 1
+				if x > 5:
+					if x != 7:
+						print("alarm")
+					else:
+						k += 1
+					c += 1
+				y -= 1
+		python:
+			if a > b:
+				z += 1
+				if x and y:
+					if x == 7:
+						x += 1
+					c += 1
+				c += 1
+			elif a < b:
+				x += 1
+				if x > 5:
+					if x != 7:
+						print("alarm");
+					else:
+						k += 1
+					c += 1
+				y -= 1
+		java:
+			if (a > b) {
+				z += 1;
+				if (x and y) {
+					if (x == 7) {
+						x += 1;
+					}
+					c += 1;
+				}
+				c += 1;
+			}
+			elif a < b:
+				x += 1;
+				if x > 5;
+					if (x != 7) {
+						print("alarm");
+					} else {
+						k += 1;
+					}
+					c += 1;
+				y -= 1;
+		c++:
+			if (a > b) {
+				z += 1;
+				if (x and y) {
+					if (x == 7) {
+						x += 1;
+					}
+					c += 1;
+				}
+				c += 1;
+			}
+			elif a < b:
+				x += 1;
+				if x > 5;
+					if (x != 7) {
+						print("alarm");
+					} else {
+						k += 1;
+					}
+					c += 1;
+				y -= 1;
+group: ForLoop
+	case: RangeForLoop
+		python:
+			for i in range(1, 10, c):
+				func(a)
+		python:
+			for i in range(1, 10, c):
+				func(a)
+		java:
+			for (int i = 0; i < 10; i += c) {
+				func(a)
+			}
+		c++:
+			for (int i = 0; i < 10; i += c) {
+				func(a)
+			}
+	case: RangeForLoopWithExpressions
+		python:
+			for var in range(a * b * c, dx - 1, 1):
+				func(a)
+		python:
+			for var in range(a * b * c, dx - 1, 1):
+				func(a)
+		java:
+			for (int var = a * b * c; var < dx - 1; var++) {
+				func(a)
+			}
+		c++:
+			for (int var = a * b * c; var < dx - 1; var++) {
+				func(a)
+			}
+	case: ForEachLoop
+		python:
+			for a in b:
+				x += 4
+		python:
+			for a in b:
+				x += 4
+		java:
+			for (var a : b) {
+				x += 4;
+			}
+		c++:
+			for (auto a : b) {
+				x += 4;
+			}
+	case: GeneralForTransformationTest
+		java:
+			for (int a = x; a != m; m = g()) {
+				func(a, b);
+			}
+		python:
+			a: int = x
+			while a != m:
+				func(a, b)
+				m = g()
+			del a
+	case: GeneralForWithMissingInitialization
+		java:
+			for (; a != m; m = g()) {
+				func(a, b);
+			}
+		python:
+			while a != m:
+				func(a, b)
+				m = g()
+	case: GeneralForWithMissingCondition
+		java:
+			for (int a = x; ; m = g()) {
+				func(a, b);
+			}
+		python:
+			a: int = x
+			while True:
+				func(a, b)
+				m = g()
+			del a
+	case: GeneralForWithMissingUpdate
+		java:
+			for (int a = x; a != m;) {
+				func(a, b);
+			}
+		python:
+			a: int = x
+			while a != m:
+				func(a, b)
+			del a
+	case: GeneralForWithMissingUpdateWithContinue
+		java:
+			for (int a = x; a != m;) {
+				func(a, b);
+				if (a == k) {
+					continue
+				}
+			}
+		python:
+			a: int = x
+			while a != m:
+				func(a, b)
+				if a == k:
+					continue
+			del a
+	case: GeneralForEmptyLoop
+		java:
+			for (;;) {
+			}
+		python:
+			while True:
+				pass
+	case: GeneralForWithContinueTransformationTest
+		java:
+			for (int a = x; a != m; m = g()) {
+				func(a, b);
+				if (a == m + 1) {
+					x++;
+					continue;
+				}
+			}
+		python:
+			a = x
+			while a != m:
+				func(a, b)
+				if a == m + 1:
+					x += 1
+					m = g()
+					continue
+				m = g()
+			del a
+group: WhileLoop
+	case: SimpleWhileLoop
+		python:
+			while x != m:
+				g()
+				f()
+		python:
+			while x != m:
+				g()
+				f()
+		java:
+			while (x != m) {
+				g();
+				f();
+			}
+		c++:
+			while (x != m) {
+				g();
+				f();
+			}
+	case: WhileLoopWithBreak
+		python:
+			while started():
+				do_work()
+				if has_errors():
+					break
+		python:
+			while started():
+				do_work()
+				if has_errors():
+					break
+		java:
+			while (started()) {
+				do_work();
+				if (has_errors()) {
+					break;
+				}
+			}
+		c++:
+			while (started()) {
+				do_work();
+				if (has_errors()) {
+					break;
+				}
+			}
+	case: WhileLoopWithEmptyBody
+		python:
+			while True:
+				pass
+		python:
+			while True:
+				pass
+		java:
+			while (true) {
+				
+			}
+		c++:
+			while (true) {
+				
+			}
+	case: DoWhileLoopTransformation
+		java:
+			do {
+				a += 1;
+			} while (a != m);
+		python:
+			while True:
+				a += 1
+				if a == m:
+					break
+	case: DoWhileLoopTransformationWithComplexExpression
+		java:
+			do {
+				a += 1;
+			} while (!has_errors() && a < 35 && flag);
+		python:
+			while True:
+				a += 1
+				if not (not has_errors() and a < 35 and flag):
+					break
+	case: EmptyDoWhileLoopTransformation
+		java:
+			do {} while (true);
+		python:
+			while True:
+				if not True:
+					break
+group: SwitchStatement
+	case: SimpleMatch
+		python:
+			match a:
+				case t:
+					test += 1
+				case a:
+					test += 3
+				case k:
+					test += 4
+				case m:
+					test += 5
+				case _:
+					test = 0
+		java:
+			switch (a) {
+				case t:
+					test += 1;
+					break;
+				case a:
+					test += 3;
+					break;
+				case k:
+					test += 4
+					break;
+				case m:
+					test += 5
+					break;
+				case _:
+					test = 0;
+					break;
+			}
+		c++:
+			switch (a) {
+				case t:
+					test += 1;
+					break;
+				case a:
+					test += 3;
+					break;
+				case k:
+					test += 4
+					break;
+				case m:
+					test += 5
+					break;
+				case _:
+					test = 0;
+					break;
+			}
+	case: MatchWithAsExpression
+		python:
+			match a:
+				case t:
+					test += 1
+				case 345 as a:
+					test += a
+				case _:
+					test = 0
+		java:
+			switch (a) {
+				case t:
+					test += 1;
+					break;
+				case 345:
+					int a = 345;
+					test += a;
+					break;
+				case _:
+					test = 0;
+					break;
+			}
+		c++:
+			switch (a) {
+				case t:
+					test += 1;
+					break;
+				case 345:
+					int a = 345;
+					test += a;
+					break;
+				case _:
+					test = 0;
+					break;
+			}
+group: Functions
+	case: SimplePythonFunction
+		python:
+			def f(a, b):
+				return a + b
+		java:
+			Object f(Object a, Object b) {
+				return a + b
+			}
+		c++:
+			auto f(auto a, auto b) {
+				return a + b;
+			}
+	case: FullInformationPythonFunction
+		python:
+			def concat(a: str, b: str) -> str:
+				return a + b
+		java:
+			String concat(String a, String b) {
+				return a + b;
+			}
+		c++:
+			std::string concat(std::string a, std::string b) {
+				return a + b;
+			}
+	case: DecoratedFunction
+		python:
+			@decorator
+			@next_decorator
+			def concat(a: str, b: str) -> str:
+				return a + b
+		java:
+			@decorator
+			@next_decorator
+			String concat(String a, String b) {
+				return a + b;
+			}
+		c++:
+			std::string concat(std::string a, std::string b) {
+				return a + b;
+			}
+	case: FunctionWithCustomTypes
+		python:
+			def join_data(a: Data, b: Data) -> DataUnion:
+				return a + b
+		java:
+			DataUnion concat(Data a, Data b) {
+				return a + b;
+			}
+		c++:
+			DataUnion concat(Data a, Data b) {
+				return a + b;
+			}
+group: StructuresOOP
+	case: ClassDefinitionWithOnlyFields
+		python:
+			class A:
+				a: int = k
+				b = GLOBAL()
+				_c = 123
+		c++:
+			class A {
+				public:
+					int a = k;
+					auto b = GLOBAL();
+			}
+		java:
+			class A {
+				public int a = k;
+				public var b = GLOBAL();
+			}
+	case: ClassDefinitionWithOnlyMethods
+		python:
+			class A:
+				def a(self):
+					return k()
+				
+				def b(self):
+					return r + m
+		java:
+			class A {
+				public Object a() {
+					return k();
+				}
+				
+				public Object b() {
+					return r + m;
+				}
+			}
+		c++:
+			class A {
+				public:
+					Object a() {
+						return k();
+					}
+					
+					Object b() {
+						return r + m;
+					}
+			}
+	case: ClassDefinition
+		python:
+			class A:
+				k: int = 32
+				m = 34
+				
+				def a(self):
+					return k()
+				
+				def b(self):
+					return r + m
+		java:
+			class A {
+				public int k = 32;
+				public Object m = 34;
+			
+				public Object a() {
+					return k();
+				}
+				
+				public Object b() {
+					return r + m;
+				}
+			}
+		c++:
+			class A {
+				public:
+					int k = 32;
+					Object m = 34;
+
+					Object a() {
+						return k();
+					}
+					
+					Object b() {
+						return r + m;
+					}
+			}
+	case: StaticMethodDetection
+		python:
+			class A:
+				@staticmethod
+				def join_data(a: Data, b: Data) -> DataUnion:
+					return a + b
+		java:
+			class A {
+				static DataUnion concat(Data a, Data b) {
+					return a + b;
+				}
+			}
+		c++:
+			class A {
+				static DataUnion concat(Data a, Data b) {
+					return a + b;
+				}
+			}
+group: Other
+	case: Import
+		python:
+			import a.b.c
+		python:
+			import a.b.c
+		java:
+			import a.b.c;
+		c++
+			#include "a.b.c"
+	case: ImportFrom
+		python:
+			from a.b import c
+		python:
+			from a.b import c
+		java:
+			import a.b.c;
+		c++
+			#include "a.b.c"
+	case: ImportFromAs
+		python:
+			from a.b import c as t
+		python:
+			from a.b import c as t
+		java:
+			import a.b.c;
+		c++
+			#include "a.b.c"
+	case: Range
+		python:
+			a[x:y:z]
+		c++:
+			a[x:y:z];
+		java:
+			a[x:y:z];
+	case: MultilineComment
+		python:
+			"""
+			abc\t
+			def
+			"""
+		python:
+			"""
+			abc\t
+			def
+			"""
+		c++:
+			/*
+			abc\t
+			def
+			*/
+		java:
+			/*
+			abc\t
+			def
+			*/
+	case: SinglelineComment
+		python:
+			# abc
+		python:
+			# abc
+		c++:
+			// abc
+		java:
+			// abc
+	case: ParenthesizedExpression
+		python:
+			(a + b * c) + 6 * (a := 3)
+		python:
+			(a + b * c) + 6 * (a := 3)
+		c++:
+			(a + b * c) + 6 * (a = 3)
+		java:
+			(a + b * c) + 6 * (a = 3)
+	case: NewArray
+		java:
+			int[] a = new int[3];
+		c++:
+			int * a = new int[3];
+		python:
+			a: list[int] = [0 for i in range(3)]
+	case: NewArrayInit
+		java:
+			int[] a = new int[3] {1, 2, 3};
+		c++:
+			int * a = new int[3];
+			a[0] = 1;
+			a[1] = 2;
+			a[2] = 3;
+		python:
+			a: list[int] = [0 for i in range(3)]
+			a[0] = 1
+			a[1] = 2
+			a[2] = 3
+	case: EntryPointConflictingWithC++
+		python:
+			a = 3
+			f()
+			
+			def main():
+				return 0
+			
+			if __name == "__main__":
+				main()
+		c++:
+			int a = 3;
+			f();
+			
+			int main() {
+				return 0;
+			}
+			
+			int main() {
+				main();
+				return 0;
+			}
+		java:
+			class Main {
+				public static int a = 3;
+				
+				public static int main() {
+					return 0;
+				}
+			
+				public static void main(String[] args) {
+					f();
+					main();
+				}
+			}
+	case: StandardEntryPoint
+		python:
+			from funcs import func
+			a: int = 1
+			
+			def run():
+				func(a)
+				return 0
+			
+			if __name == "__main__":
+				main()
+		c++:
+			#include "funcs.func"
+			int a = 1;
+			
+			int run() {
+				func(a);
+				return 0;
+			}
+			
+			int main() {
+				run();
+				return 0;
+			}
+		java:
+			class Main {
+				public static int a = 1;
+				
+				public static int run() {
+					func(a);
+					return 0;
+				}
+			
+				public static void main(String[] args) {
+					run();
+					main();
+				}
+		}
+# TODO: Доработать
+group: ComplexTests
+	case: ComplexTest1
+		python:
+			
+		java:
+			
+		c++:
+			
