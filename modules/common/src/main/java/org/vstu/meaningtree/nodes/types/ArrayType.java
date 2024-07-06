@@ -3,29 +3,37 @@ package org.vstu.meaningtree.nodes.types;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 
+import java.util.List;
 import java.util.Optional;
 
 public class ArrayType extends PlainCollectionType {
-    private final Optional<Expression> _size;
+    private final Shape _shape;
+
+    public ArrayType(Type itemType, int dimensionCount) {
+        super(itemType);
+        _shape = new Shape(dimensionCount);
+    }
 
     public ArrayType(Type itemType, Expression size) {
         super(itemType);
-        _size = Optional.ofNullable(size);
+        _shape = new Shape(1, size);
     }
 
-    public ArrayType(Type itemType) {
-        this(itemType, null);
+    public ArrayType(Type itemType, int dimensionCount, Expression... dimensions) {
+        this(itemType, dimensionCount, List.of(dimensions));
     }
 
-    public boolean hasSize() {
-        return _size.isPresent();
+    public ArrayType(Type itemType, int dimensionCount, List<Expression> dimensions) {
+        super(itemType);
+        _shape = new Shape(dimensionCount, dimensions);
     }
 
-    public Expression getSize() {
-        if (!hasSize()) {
-            throw new RuntimeException("Size of array isn't present");
-        }
-        return _size.get();
+    public Shape getShape() {
+        return _shape;
+    }
+
+    public int getDimensionsCount() {
+        return _shape.getDimensionCount();
     }
 
     @Override

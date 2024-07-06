@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class JavaLanguage extends Language {
     TSLanguage _language;
@@ -301,17 +302,54 @@ public class JavaLanguage extends Language {
         }
     }
 
-    private Node fromTypeTSNode(TSNode node) {
-        String typeName = getCodePiece(node);
+    private int countArrayDimensions(TSNode dimensionsNode) {
+        String dimensions = getCodePiece(dimensionsNode);
+        return dimensions.split("\\u005b\\u005d", -1).length - 1;
+    }
 
-        return switch (typeName) {
-            case "int", "short", "long", "byte", "char" -> new IntType();
-            case "float", "double" -> new FloatType();
-            case "boolean" -> new BooleanType();
-            case "void" -> new VoidType();
-            case "String" -> new StringType();
-            default -> throw new IllegalStateException("Unexpected value: " + typeName);
-        };
+    private Type fromTypeTSNode(TSNode node) {
+        String type = node.getType();
+        String typeName = getCodePiece(node);
+        Type parsedType = null;
+
+        switch (type) {
+            case "integral_type":
+                parsedType = switch(typeName) {
+                    case "int", "short", "long", "byte", "char" -> new IntType();
+                    default -> throw new IllegalStateException("Unexpected value: " + typeName);
+                };
+                break;
+            case "floating_point_type":
+                parsedType = new FloatType();
+                break;
+            case "boolean_type":
+                parsedType = new BooleanType();
+                break;
+            case "array_type":
+                Type baseType = fromTypeTSNode(node.getChildByFieldName("element"));
+                TSNode dimensions = node.getChildByFieldName("dimensions");
+                int dimensionsCount = countArrayDimensions(dimensions);
+                parsedType = new ArrayType(baseType, dimensionsCount);
+                break;
+            case "void_type":
+                parsedType = new VoidType();
+                break;
+            case "type_identifier":
+                if (typeName.equals("String")) {
+                    parsedType = new StringType();
+                }
+                else if (typeName.equals("Object")) {
+                    parsedType = new UnknownType();
+                }
+                else {
+                    throw new IllegalStateException("Unexpected type: " + typeName);
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unexpected type: " + typeName);
+        }
+
+        return parsedType;
     }
 
     private Node fromVariableDeclarationTSNode(TSNode node) {
@@ -323,7 +361,7 @@ public class JavaLanguage extends Language {
 
         Type type = (Type) fromTypeTSNode(node.getChildByFieldName("type"));
 
-        List<VariableDeclarator> decls = new ArrayList<>();
+        List<VariableDeclarator> declarators = new ArrayList<>();
 
         TSQuery all_declarators = new TSQuery(_language, "(variable_declarator) @decls");
         TSQueryCursor cursor = new TSQueryCursor();
@@ -332,14 +370,11 @@ public class JavaLanguage extends Language {
         while (cursor.nextMatch(match)) {
             TSQueryCapture capture = match.getCaptures()[0];
             VariableDeclarator decl = fromVariableDeclarator(capture.getNode());
-            decls.add(decl);
+            declarators.add(decl);
         }
         //while (cursor.nextMatch(match)) {
         //    System.out.println(match.getCaptures());
         //}
-
-        VariableDeclarator[] declarators = new VariableDeclarator[decls.size()];
-        decls.toArray(declarators);
 
         if (!modifiers.isEmpty()) {
             return new FieldDeclaration(type, modifiers, declarators);

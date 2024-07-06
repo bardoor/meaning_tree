@@ -23,6 +23,7 @@ import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
 
@@ -328,6 +329,8 @@ public class JavaViewer extends Viewer {
             case BooleanType booleanType -> toString(booleanType);
             case StringType stringType -> toString(stringType);
             case VoidType voidType -> toString(voidType);
+            case UnknownType unknownType -> toString(unknownType);
+            case ArrayType arrayType -> toString(arrayType);
             default -> throw new IllegalStateException("Unexpected value: " + t.getClass());
         };
     }
@@ -350,6 +353,29 @@ public class JavaViewer extends Viewer {
 
     private String toString(VoidType type) {
         return "void";
+    }
+
+    private String toString(UnknownType type) {
+        return "Object";
+    }
+
+    private String toString(ArrayType type) {
+        StringBuilder builder = new StringBuilder();
+
+        String baseType = toString(type.getItemType());
+        builder.append(baseType);
+
+        Shape shape = type.getShape();
+        for (int i = 0; i < shape.getDimensionCount(); i++) {
+            builder.append("[");
+
+            Optional<Expression> dimension = shape.getDimension(i);
+            dimension.ifPresent(expression -> builder.append(toString(expression)));
+
+            builder.append("]");
+        }
+
+        return builder.toString();
     }
 
     private String toString(VariableDeclarator varDecl) {
