@@ -23,7 +23,11 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
     }
 
     public VariableDeclaration(Type type, VariableDeclarator... variableDeclarators) {
-        variableDeclaratorList = List.of(variableDeclarators);
+        this(type, List.of(variableDeclarators));
+    }
+
+    public VariableDeclaration(Type type, List<VariableDeclarator> variableDeclarators) {
+        variableDeclaratorList = List.copyOf(variableDeclarators);
         _type = type;
     }
 

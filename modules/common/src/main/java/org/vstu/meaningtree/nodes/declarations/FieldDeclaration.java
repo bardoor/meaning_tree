@@ -20,8 +20,12 @@ public class FieldDeclaration extends VariableDeclaration {
     }
 
 
-    public FieldDeclaration(Type type, List<Modifier> modifiers, VariableDeclarator... fields) {
-        super(type, fields);
+    public FieldDeclaration(Type type, List<Modifier> modifiers, VariableDeclarator... declarators) {
+        this(type, modifiers, List.of(declarators));
+    }
+
+    public FieldDeclaration(Type type, List<Modifier> modifiers, List<VariableDeclarator> declarators) {
+        super(type, declarators);
         _modifiers = List.copyOf(modifiers);
     }
 
