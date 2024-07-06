@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class JavaLanguage extends Language {
     TSLanguage _language;
@@ -384,11 +385,20 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromProgramTSNode(TSNode node) {
-        List<Node> nodes = new ArrayList<>();
-        for (int i = 0; i < node.getChildCount(); i++) {
-            nodes.add(fromTSNode(node.getChild(i)));
+        if (node.getChildCount() == 0) {
+            throw new IllegalArgumentException();
         }
-        return new CompoundStatement(nodes);
+
+        PackageDeclaration packageDeclaration =
+                (PackageDeclaration) fromPackageDeclarationTSNode(node.getChild(0));
+
+        ClassDefinition classDefinition =
+                (ClassDefinition) fromClassDeclarationTSNode(node.getChild(1));
+
+        List<Node> body = List.of(packageDeclaration, classDefinition);
+
+        Optional<MethodDefinition> mainMethod = classDefinition.findMethod("main");
+        return mainMethod.map(methodDefinition -> new ProgramEntryPoint(body, classDefinition, methodDefinition)).orElseGet(() -> new ProgramEntryPoint(body, classDefinition));
     }
 
     private WhileLoop fromWhileTSNode(TSNode node) {

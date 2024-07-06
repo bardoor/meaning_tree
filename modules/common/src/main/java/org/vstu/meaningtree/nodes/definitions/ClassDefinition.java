@@ -8,6 +8,7 @@ import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ClassDefinition extends Definition {
@@ -48,5 +49,20 @@ public class ClassDefinition extends Definition {
         Node[] nodes = new Node[_body.size()];
         _body.toArray(nodes);
         return new CompoundStatement(nodes);
+    }
+
+    public Optional<MethodDefinition> findMethod(String methodName) {
+        for (Node node : _body) {
+            if (!(node instanceof MethodDefinition methodDefinition)) {
+                continue;
+            }
+
+            String name = methodDefinition.getName().getName();
+            if (name.equals(methodName)) {
+                return Optional.of(methodDefinition);
+            }
+        }
+
+        return Optional.empty();
     }
 }

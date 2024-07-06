@@ -117,7 +117,7 @@ public class JavaViewer extends Viewer {
         }
 
         // Удаляем последний пробел и запятую, если был хотя бы один параметр
-        if (i > 1) {
+        if (i > 0) {
             builder.deleteCharAt(builder.length() - 1);
             builder.deleteCharAt(builder.length() - 1);
         }

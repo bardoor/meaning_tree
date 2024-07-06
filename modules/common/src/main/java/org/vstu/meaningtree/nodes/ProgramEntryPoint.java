@@ -8,8 +8,8 @@ import java.util.Optional;
 
 public class ProgramEntryPoint extends Node {
     /**
-     * Body не содержит entryPointNode, если только точка входа - не метод главного класса.
-     * Однако entryPointNode может отсутствовать, тогда точка входа - body
+     * _body не содержит _entryPointNode, если только точка входа - не метод главного класса.
+     * Однако _entryPointNode может отсутствовать, тогда точка входа - _body
      * Viewer должен сам подстроиться под эту ситуацию и адаптировать под особенности своего языка
      */
     private final List<Node> _body;
