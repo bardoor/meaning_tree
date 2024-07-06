@@ -425,7 +425,9 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromIfStatementTSNode(TSNode node) {
-        Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
+        // Берем ребенка под индексом 1, чтобы избежать захвата скобок, а значит
+        // неправильного парсинга (получаем выражение в скобках в качестве условия, а не просто выражение)
+        Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition").getChild(1));
         Statement consequence = (Statement) fromTSNode(node.getChildByFieldName("consequence"));
         Statement alternative = (Statement) fromTSNode(node.getChildByFieldName("alternative"));
         return new IfStatement(condition, consequence, alternative);
