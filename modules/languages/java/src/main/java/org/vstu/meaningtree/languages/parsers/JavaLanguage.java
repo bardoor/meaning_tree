@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public class JavaLanguage extends Language {
@@ -89,14 +88,14 @@ public class JavaLanguage extends Language {
         };
     }
 
-    private Node fromMethodDeclarationTSNode(TSNode node) {
+    private MethodDefinition fromMethodDeclarationTSNode(TSNode node) {
         List<Modifier> modifiers = new ArrayList<>();
         if (node.getChild(0).getType().equals("modifiers")) {
             modifiers.addAll(fromModifiers(node.getChild(0)));
         }
 
-        Type returnType = (Type) fromTypeTSNode(node.getChildByFieldName("type"));
-        Identifier identifier = (Identifier) fromScopedIdentifierTSNode(node.getChildByFieldName("name"));
+        Type returnType = fromTypeTSNode(node.getChildByFieldName("type"));
+        Identifier identifier = fromScopedIdentifierTSNode(node.getChildByFieldName("name"));
         List<DeclarationArgument> parameters = fromMethodParameters(node.getChildByFieldName("parameters"));
 
         // Пока не реализован механизм нахождения класса, к которому принадлежит метод,
@@ -109,7 +108,7 @@ public class JavaLanguage extends Language {
                 parameters
         );
 
-        CompoundStatement body = (CompoundStatement) fromBlockTSNode(node.getChildByFieldName("body"));
+        CompoundStatement body = fromBlockTSNode(node.getChildByFieldName("body"));
 
         return new MethodDefinition(declaration, body);
     }
@@ -134,13 +133,13 @@ public class JavaLanguage extends Language {
     }
 
     private DeclarationArgument fromFormalParameter(TSNode node) {
-        Type type = (Type) fromTypeTSNode(node.getChildByFieldName("type"));
+        Type type = fromTypeTSNode(node.getChildByFieldName("type"));
         SimpleIdentifier name = (SimpleIdentifier) fromIdentifierTSNode(node.getChildByFieldName("name"));
         // Не поддерживается распаковка списков (как в Python) и значения по умолчанию
         return new DeclarationArgument(type, false, name, null);
     }
 
-    private Node fromStringLiteralTSNode(TSNode node) {
+    private StringLiteral fromStringLiteralTSNode(TSNode node) {
         StringBuilder builder = new StringBuilder();
 
         // Первый и последний ребенок - кавычки, их пропускаем.
@@ -153,7 +152,7 @@ public class JavaLanguage extends Language {
         return StringLiteral.fromEscaped(builder.toString(), StringLiteral.Type.NONE);
     }
 
-    private Node fromFieldDeclarationTSNode(TSNode node) {
+    private FieldDeclaration fromFieldDeclarationTSNode(TSNode node) {
         int currentChildIndex = 0;
 
         List<Modifier> modifiers = new ArrayList<>();
@@ -161,7 +160,7 @@ public class JavaLanguage extends Language {
             modifiers.addAll(fromModifiers(node.getChild(currentChildIndex)));
         }
 
-        VariableDeclaration declaration = (VariableDeclaration) fromVariableDeclarationTSNode(node);
+        VariableDeclaration declaration = fromVariableDeclarationTSNode(node);
         return new FieldDeclaration(declaration.getType(), modifiers, declaration.getDeclarators());
     }
 
@@ -188,7 +187,7 @@ public class JavaLanguage extends Language {
         return modifiers;
     }
 
-    private Node fromClassDeclarationTSNode(TSNode node) {
+    private ClassDefinition fromClassDeclarationTSNode(TSNode node) {
         int currentChildIndex = 0;
 
         List<Modifier> modifiers = new ArrayList<>();
@@ -200,11 +199,11 @@ public class JavaLanguage extends Language {
         // Скипаем слово "class"
         currentChildIndex++;
 
-        Identifier className = (Identifier) fromIdentifierTSNode(node.getChild(currentChildIndex));
+        Identifier className = fromIdentifierTSNode(node.getChild(currentChildIndex));
         currentChildIndex++;
 
         // Парсим тело класса как блочное выражение... Правильно ли? Кто знает...
-        CompoundStatement classBody = (CompoundStatement) fromBlockTSNode(node.getChild(currentChildIndex));
+        CompoundStatement classBody = fromBlockTSNode(node.getChild(currentChildIndex));
         currentChildIndex++;
 
         ClassDeclaration decl = new ClassDeclaration(modifiers, className);
@@ -212,7 +211,7 @@ public class JavaLanguage extends Language {
         return new ClassDefinition(decl, classBody);
     }
 
-    private Node fromScopedIdentifierTSNode(TSNode node) {
+    private ScopedIdentifier fromScopedIdentifierTSNode(TSNode node) {
         TSNode scope = node;
 
         List<SimpleIdentifier> scopes = new ArrayList<>();
@@ -225,9 +224,9 @@ public class JavaLanguage extends Language {
         return new ScopedIdentifier(scopes.reversed());
     }
 
-    private Node fromPackageDeclarationTSNode(TSNode node) {
+    private PackageDeclaration fromPackageDeclarationTSNode(TSNode node) {
         TSNode packageName = node.getChild(1);
-        return new PackageDeclaration((Identifier) fromIdentifierTSNode(packageName));
+        return new PackageDeclaration(fromIdentifierTSNode(packageName));
     }
 
     private Node fromUpdateExpressionTSNode(TSNode node) {
@@ -253,7 +252,7 @@ public class JavaLanguage extends Language {
         throw new IllegalArgumentException();
     }
 
-    private Node fromIdentifierTSNode(TSNode node) {
+    private Identifier fromIdentifierTSNode(TSNode node) {
         if (node.getType().equals("scoped_identifier")) {
             return fromScopedIdentifierTSNode(node);
         }
@@ -261,14 +260,14 @@ public class JavaLanguage extends Language {
         return new SimpleIdentifier(variableName);
     }
 
-    private Node fromAssignmentExpressionTSNode(TSNode node) {
+    private AssignmentExpression fromAssignmentExpressionTSNode(TSNode node) {
         String variableName = getCodePiece(node.getChildByFieldName("left"));
         SimpleIdentifier identifier = new SimpleIdentifier(variableName);
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
         return new AssignmentExpression(identifier, right);
     }
 
-    private Node fromForStatementTSNode(TSNode node) {
+    private GeneralForLoop fromForStatementTSNode(TSNode node) {
         HasInitialization init = null;
         Expression condition = null;
         Expression update = null;
@@ -311,7 +310,7 @@ public class JavaLanguage extends Language {
     private Type fromTypeTSNode(TSNode node) {
         String type = node.getType();
         String typeName = getCodePiece(node);
-        Type parsedType = null;
+        Type parsedType;
 
         switch (type) {
             case "integral_type":
@@ -353,14 +352,14 @@ public class JavaLanguage extends Language {
         return parsedType;
     }
 
-    private Node fromVariableDeclarationTSNode(TSNode node) {
+    private VariableDeclaration fromVariableDeclarationTSNode(TSNode node) {
         List<Modifier> modifiers = new ArrayList<>();
         TSNode possibleModifiers = node.getChild(0);
         if (possibleModifiers.getType().equals("modifiers")) {
             modifiers.addAll(fromModifiers(possibleModifiers));
         }
 
-        Type type = (Type) fromTypeTSNode(node.getChildByFieldName("type"));
+        Type type = fromTypeTSNode(node.getChildByFieldName("type"));
 
         List<VariableDeclarator> declarators = new ArrayList<>();
 
@@ -384,16 +383,14 @@ public class JavaLanguage extends Language {
         return new VariableDeclaration(type, declarators);
     }
 
-    private Node fromProgramTSNode(TSNode node) {
+    private ProgramEntryPoint fromProgramTSNode(TSNode node) {
         if (node.getChildCount() == 0) {
             throw new IllegalArgumentException();
         }
 
-        PackageDeclaration packageDeclaration =
-                (PackageDeclaration) fromPackageDeclarationTSNode(node.getChild(0));
+        PackageDeclaration packageDeclaration = fromPackageDeclarationTSNode(node.getChild(0));
 
-        ClassDefinition classDefinition =
-                (ClassDefinition) fromClassDeclarationTSNode(node.getChild(1));
+        ClassDefinition classDefinition = fromClassDeclarationTSNode(node.getChild(1));
 
         List<Node> body = List.of(packageDeclaration, classDefinition);
 
@@ -411,7 +408,7 @@ public class JavaLanguage extends Language {
         return new WhileLoop(mtCond, mtBody);
     }
 
-    private Node fromBlockTSNode(TSNode node) {
+    private CompoundStatement fromBlockTSNode(TSNode node) {
         CompoundStatement compoundStatement = new CompoundStatement();
         for (int i = 1; i < node.getChildCount() - 1; i++) {
             Node child = fromTSNode(node.getChild(i));
@@ -424,7 +421,7 @@ public class JavaLanguage extends Language {
         return fromTSNode(node.getChild(0));
     }
 
-    private Node fromIfStatementTSNode(TSNode node) {
+    private IfStatement fromIfStatementTSNode(TSNode node) {
         // Берем ребенка под индексом 1, чтобы избежать захвата скобок, а значит
         // неправильного парсинга (получаем выражение в скобках в качестве условия, а не просто выражение)
         Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition").getChild(1));
@@ -440,27 +437,27 @@ public class JavaLanguage extends Language {
         return fromTSNode(node.getChild(1));
     }
 
-    private Node fromExpressionStatementTSNode(TSNode node) {
+    private ExpressionStatement fromExpressionStatementTSNode(TSNode node) {
         Expression expr = (Expression) fromTSNode(node.getChild(0));
         return new ExpressionStatement(expr);
     }
 
-    private Node fromParenthesizedExpressionTSNode(TSNode node) {
+    private ParenthesizedExpression fromParenthesizedExpressionTSNode(TSNode node) {
         Expression expr = (Expression) fromTSNode(node.getChild(1));
         return new ParenthesizedExpression(expr);
     }
 
-    private Node fromIntegerLiteralTSNode(TSNode node) {
+    private IntegerLiteral fromIntegerLiteralTSNode(TSNode node) {
         String value = getCodePiece(node);
         return new IntegerLiteral(value);
     }
 
-    private Node fromFloatLiteralTSNode(TSNode node) {
+    private FloatLiteral fromFloatLiteralTSNode(TSNode node) {
         String value = getCodePiece(node);
         return new FloatLiteral(value);
     }
 
-    private Node fromUnaryExpressionTSNode(TSNode node) {
+    private UnaryExpression fromUnaryExpressionTSNode(TSNode node) {
         Expression argument = (Expression) fromTSNode(node.getChildByFieldName("operand"));
         TSNode operation = node.getChildByFieldName("operator");
         return switch (getCodePiece(operation)) {
@@ -469,7 +466,7 @@ public class JavaLanguage extends Language {
         };
     }
 
-    private Node fromBinaryExpressionTSNode(TSNode node) {
+    private BinaryExpression fromBinaryExpressionTSNode(TSNode node) {
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
         TSNode operator = node.getChildByFieldName("operator");
