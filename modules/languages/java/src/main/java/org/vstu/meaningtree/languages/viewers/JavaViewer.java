@@ -9,6 +9,7 @@ import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
+import org.vstu.meaningtree.nodes.literals.NullLiteral;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
@@ -92,8 +93,13 @@ public class JavaViewer extends Viewer {
             case ContinueStatement stmt -> toString(stmt);
             case MethodDefinition methodDefinition -> toString(methodDefinition);
             case SwitchStatement switchStatement -> toString(switchStatement);
+            case NullLiteral nullLiteral -> toString(nullLiteral);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(NullLiteral nullLiteral) {
+        return "null";
     }
 
     private String toStringCaseBlock(Statement caseBlock) {

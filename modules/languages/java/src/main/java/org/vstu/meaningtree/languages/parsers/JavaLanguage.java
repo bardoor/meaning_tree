@@ -11,6 +11,7 @@ import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.literals.NullLiteral;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
@@ -91,8 +92,13 @@ public class JavaLanguage extends Language {
             case "switch_expression" -> fromSwitchExpressionTSNode(node);
             case "break_statement" -> fromBreakStatementTSNode(node);
             case "continue_statement" -> fromContinueStatementTSNode(node);
+            case "null_literal" -> fromNullLiteralTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromNullLiteralTSNode(TSNode nullLiteral) {
+        return new NullLiteral();
     }
 
     private Node fromContinueStatementTSNode(TSNode continueNode) {
