@@ -4,12 +4,16 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.bitwise.BitwiseAndOp;
+import org.vstu.meaningtree.nodes.bitwise.BitwiseOrOp;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -84,8 +88,62 @@ public class JavaLanguage extends Language {
             case "field_declaration" -> fromFieldDeclarationTSNode(node);
             case "string_literal" -> fromStringLiteralTSNode(node);
             case "method_declaration" -> fromMethodDeclarationTSNode(node);
+            case "switch_expression" -> fromSwitchExpressionTSNode(node);
+            case "break_statement" -> fromBreakStatementTSNode(node);
+            case "continue_statement" -> fromContinueStatementTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromContinueStatementTSNode(TSNode continueNode) {
+        return new ContinueStatement();
+    }
+
+    private Node fromBreakStatementTSNode(TSNode breakNode) {
+        return new BreakStatement();
+    }
+
+    private ConditionBranch fromSwitchGroupTSNode(TSNode switchGroup) {
+        Expression condition =
+                (Expression) fromTSNode(switchGroup.getNamedChild(0).getNamedChild(0));
+
+        List<Node> statements = new ArrayList<>();
+        for (int i = 1; i < switchGroup.getNamedChildCount(); i++) {
+            statements.add(fromTSNode(switchGroup.getNamedChild(i)));
+        }
+
+        CompoundStatement body = new CompoundStatement(statements);
+        return new ConditionBranch(condition, body);
+    }
+
+    private Node fromSwitchExpressionTSNode(TSNode switchNode) {
+        Expression condition =
+                (Expression) fromTSNode(switchNode.getChildByFieldName("condition").getNamedChild(0));
+
+        Statement defaultCase = null;
+        List<ConditionBranch> cases = new ArrayList<>();
+
+        TSNode switchBlock = switchNode.getChildByFieldName("body");
+        for (int i = 0; i < switchBlock.getNamedChildCount(); i++) {
+            TSNode switchGroup = switchBlock.getNamedChild(i);
+
+            String labelName = getCodePiece(switchGroup.getNamedChild(0));
+            if (labelName.equals("default")) {
+                List<Node> statements = new ArrayList<>();
+
+                for (int j = 1; j < switchGroup.getNamedChildCount(); j++) {
+                    statements.add(fromTSNode(switchGroup.getNamedChild(j)));
+                }
+
+                defaultCase = new CompoundStatement(statements);
+            }
+            else {
+                ConditionBranch caseBlock = fromSwitchGroupTSNode(switchGroup);
+                cases.add(caseBlock);
+            }
+        }
+
+        return new SwitchStatement(condition, cases, defaultCase);
     }
 
     private MethodDefinition fromMethodDeclarationTSNode(TSNode node) {
@@ -383,7 +441,7 @@ public class JavaLanguage extends Language {
         return new VariableDeclaration(type, declarators);
     }
 
-    private ProgramEntryPoint fromProgramTSNode(TSNode node) {
+    private ProgramEntryPoint _fromProgramTSNode(TSNode node) {
         if (node.getChildCount() == 0) {
             throw new IllegalArgumentException();
         }
@@ -396,6 +454,15 @@ public class JavaLanguage extends Language {
 
         Optional<MethodDefinition> mainMethod = classDefinition.findMethod("main");
         return mainMethod.map(methodDefinition -> new ProgramEntryPoint(body, classDefinition, methodDefinition)).orElseGet(() -> new ProgramEntryPoint(body, classDefinition));
+    }
+
+    private Node fromProgramTSNode(TSNode node) {
+        List<Node> nodes = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            System.out.printf("PROGRAM: %s%n", node.getNamedChild(i).getType());
+            nodes.add(fromTSNode(node.getNamedChild(i)));
+        }
+        return new CompoundStatement(nodes);
     }
 
     private WhileLoop fromWhileTSNode(TSNode node) {
@@ -482,6 +549,10 @@ public class JavaLanguage extends Language {
             case "!=" -> new NotEqOp(left, right);
             case ">=" -> new GeOp(left, right);
             case "<=" -> new LeOp(left, right);
+            case "&&" -> new ShortCircuitAndOp(left, right);
+            case "||" -> new ShortCircuitOrOp(left, right);
+            case "&" -> new BitwiseAndOp(left, right);
+            case "|" -> new BitwiseOrOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }

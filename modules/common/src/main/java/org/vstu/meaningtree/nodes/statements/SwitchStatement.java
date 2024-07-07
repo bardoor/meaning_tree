@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.Optional;
 
 public class SwitchStatement extends Statement {
-    private final Expression targetExpression;
-    private final List<ConditionBranch> cases;
-    private Optional<Statement> defaultCase;
+    private final Expression _targetExpression;
+    private final List<ConditionBranch> _cases;
+    private Statement _defaultCase;
 
     public SwitchStatement(Expression targetExpression, List<ConditionBranch> cases, Statement defaultCase) {
-        this.targetExpression = targetExpression;
-        this.cases = new ArrayList<>(cases);
-        this.defaultCase = Optional.ofNullable(defaultCase);
+        _targetExpression = targetExpression;
+        _cases = new ArrayList<>(cases);
+        _defaultCase = defaultCase;
     }
 
     public SwitchStatement(Expression targetExpression, List<ConditionBranch> cases) {
@@ -28,31 +28,31 @@ public class SwitchStatement extends Statement {
     }
 
     public Expression getTargetExpression() {
-        return targetExpression;
+        return _targetExpression;
     }
 
     public List<ConditionBranch> getCases() {
-        return new ArrayList<>(cases);
+        return new ArrayList<>(_cases);
     }
 
     public Statement getDefaultCase() {
         if (!hasDefaultCase()) {
             throw new RuntimeException("Switch has not default case");
         }
-        return defaultCase.get();
+        return _defaultCase;
     }
 
     public boolean hasDefaultCase() {
-        return defaultCase.isPresent();
+        return _defaultCase != null;
     }
 
     public void makeBodyCompound() {
         if (hasDefaultCase()) {
             if (!(getDefaultCase() instanceof CompoundStatement)) {
-                defaultCase = Optional.of(new CompoundStatement(getDefaultCase()));
+                _defaultCase = new CompoundStatement(getDefaultCase());
             }
         }
-        for (ConditionBranch branch : cases) {
+        for (ConditionBranch branch : _cases) {
             branch.makeBodyCompound();
         }
     }

@@ -21,9 +21,7 @@ import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
 
@@ -32,14 +30,16 @@ public class JavaViewer extends Viewer {
     private final String _indentation;
     private int _indentLevel;
     private final boolean _openBracketOnSameLine;
+    private final boolean _bracketsAroundCaseBranches;
 
-    public JavaViewer(int indentSpaceCount, boolean openBracketOnSameLine) {
+    public JavaViewer(int indentSpaceCount, boolean openBracketOnSameLine, boolean bracketsAroundCaseBranches) {
         _indentation = " ".repeat(indentSpaceCount);
         _indentLevel = 0;
         _openBracketOnSameLine = openBracketOnSameLine;
+        _bracketsAroundCaseBranches = bracketsAroundCaseBranches;
     }
 
-    public JavaViewer() { this(4, true); }
+    public JavaViewer() { this(4, true, false); }
 
     @Override
     public String toString(Node node) {
@@ -91,8 +91,94 @@ public class JavaViewer extends Viewer {
             case BreakStatement stmt -> toString(stmt);
             case ContinueStatement stmt -> toString(stmt);
             case MethodDefinition methodDefinition -> toString(methodDefinition);
+            case SwitchStatement switchStatement -> toString(switchStatement);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toStringCaseBlock(Statement caseBlock) {
+        StringBuilder builder = new StringBuilder();
+
+        Statement caseBlockBody;
+        if (caseBlock instanceof ConditionBranch conditionBranch) {
+            builder.append("case ");
+            builder.append(toString(conditionBranch.getCondition()));
+            builder.append(":");
+            caseBlockBody = conditionBranch.getBody();
+        }
+        else {
+            builder.append("default:");
+            caseBlockBody = caseBlock;
+        }
+
+        List<Node> nodesList;
+        if (caseBlockBody instanceof CompoundStatement compoundStatement) {
+            nodesList = Arrays.asList(compoundStatement.getNodes());
+        }
+        else {
+            nodesList = List.of(caseBlockBody);
+        }
+
+        if (_bracketsAroundCaseBranches) {
+            if (_openBracketOnSameLine) {
+                builder.append(" {\n");
+            }
+            else {
+
+                builder.append("\n").append(indent("{\n"));
+            }
+        }
+        else {
+            builder.append("\n");
+        }
+
+        increaseIndentLevel();
+        for (Node node : nodesList) {
+            builder
+                    .append(indent(toString(node)))
+                    .append("\n");
+        }
+        builder.deleteCharAt(builder.length() - 1);
+        decreaseIndentLevel();
+
+        if (_bracketsAroundCaseBranches) {
+            builder
+                    .append("\n")
+                    .append(indent("}"));
+        }
+
+        return builder.toString();
+    }
+
+    private String toString(SwitchStatement switchStatement) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("switch (");
+        builder.append(toString(switchStatement.getTargetExpression()));
+        builder.append(") ");
+
+        if (_openBracketOnSameLine) {
+            builder.append("{\n");
+        }
+        else {
+            builder.append("\n").append(indent("{\n"));
+        }
+
+        increaseIndentLevel();
+        for (ConditionBranch caseBlock : switchStatement.getCases()) {
+            builder
+                    .append(indent(toStringCaseBlock(caseBlock)))
+                    .append("\n");
+        }
+        if (switchStatement.hasDefaultCase()) {
+            builder
+                    .append(indent(toStringCaseBlock(switchStatement.getDefaultCase())))
+                    .append("\n");
+        }
+        decreaseIndentLevel();
+
+        builder.append(indent("}"));
+        return builder.toString();
     }
 
     private String toString(DeclarationArgument parameter) {
@@ -142,11 +228,11 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(ContinueStatement stmt) {
-        return "continue";
+        return "continue;";
     }
 
     private String toString(BreakStatement stmt) {
-        return "break";
+        return "break;";
     }
 
     private String toString(Comment comment) {

@@ -4,7 +4,7 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class ConditionBranch extends Node implements HasBodyStatement {
+public class ConditionBranch extends Statement implements HasBodyStatement {
     protected final Expression _condition;
     protected Statement _body;
 
