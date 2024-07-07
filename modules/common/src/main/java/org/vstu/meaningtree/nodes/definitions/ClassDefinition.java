@@ -4,6 +4,7 @@ import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
+import org.vstu.meaningtree.nodes.declarations.Modifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 
 import java.util.ArrayList;
@@ -64,5 +65,9 @@ public class ClassDefinition extends Definition {
         }
 
         return Optional.empty();
+    }
+
+    public List<Modifier> getModifiers() {
+        return ((ClassDeclaration) getDeclaration()).getModifiers();
     }
 }

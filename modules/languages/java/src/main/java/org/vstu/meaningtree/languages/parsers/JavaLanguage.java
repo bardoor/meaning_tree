@@ -456,13 +456,29 @@ public class JavaLanguage extends Language {
         return mainMethod.map(methodDefinition -> new ProgramEntryPoint(body, classDefinition, methodDefinition)).orElseGet(() -> new ProgramEntryPoint(body, classDefinition));
     }
 
-    private Node fromProgramTSNode(TSNode node) {
+    private ProgramEntryPoint fromProgramTSNode(TSNode node) {
         List<Node> nodes = new ArrayList<>();
         for (int i = 0; i < node.getNamedChildCount(); i++) {
-            System.out.printf("PROGRAM: %s%n", node.getNamedChild(i).getType());
             nodes.add(fromTSNode(node.getNamedChild(i)));
         }
-        return new CompoundStatement(nodes);
+
+        ClassDefinition mainClass = null;
+        MethodDefinition mainMethod = null;
+        for (Node n : nodes) {
+            // Только один класс в файле может иметь модификатор public,
+            // поэтому он и является главным классом
+            if (n instanceof ClassDefinition classDefinition
+                    && classDefinition.getModifiers().contains(Modifier.PUBLIC)) {
+                mainClass = classDefinition;
+
+                Optional<MethodDefinition> m = mainClass.findMethod("main");
+                if (m.isPresent()) {
+                    mainMethod = m.get();
+                }
+            }
+        }
+
+        return new ProgramEntryPoint(nodes, mainClass, mainMethod);
     }
 
     private WhileLoop fromWhileTSNode(TSNode node) {
