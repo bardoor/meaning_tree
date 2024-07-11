@@ -41,6 +41,11 @@ public class PythonLanguage extends Language {
         parser.setLanguage(pyLanguage);
 
         TSTree tree = parser.parseString(null, code);
+
+        if (tree.getRootNode().hasError()) {
+            throw new RuntimeException("Code contains syntax errors");
+        }
+
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
@@ -90,7 +95,7 @@ public class PythonLanguage extends Language {
             case "import_statement", "import_from_statement" -> fromImportNodes(node);
             case "attribute"-> fromAttributeTSNode(node);
             case "return_statement" -> fromReturnTSNode(node);
-            case "conditional_expresstion"-> fromTernaryOperatorTSNode(node);
+            case "conditional_expression"-> fromTernaryOperatorTSNode(node);
             case "assignment", "named_expression", "augmented_assignment" -> fromAssignmentTSNode(node);
             case "function_definition" -> fromFunctionTSNode(node);
             case "decorated_definition" -> detectAnnotated(node);
@@ -147,14 +152,22 @@ public class PythonLanguage extends Language {
         Identifier scope = null;
         if (!node.getChildByFieldName("module_name").isNull()) {
             scope = (Identifier) fromTSNode(node.getChildByFieldName("module_name"));
+        } else {
+            scope = (Identifier) fromTSNode(node.getChildByFieldName("name"));
         }
         TSNode moduleNode = node.getChildByFieldName("name");
+        if (moduleNode.isNull()) {
+            moduleNode = node.getNamedChild(1);
+        }
         Identifier alias = null, member = null;
         if (moduleNode.getType().equals("aliased_import")) {
             alias = (Identifier) fromTSNode(moduleNode.getChildByFieldName("alias"));
             member = (Identifier) fromTSNode(moduleNode.getChildByFieldName("name"));
         } else {
             member = (Identifier) fromTSNode(moduleNode);
+            if (member != null && member.equals(scope)) {
+                member = null;
+            }
         }
         return new Import(Import.ImportType.LIBRARY, scope, alias, member);
     }
@@ -167,13 +180,7 @@ public class PythonLanguage extends Language {
         List<Expression> exprs = new ArrayList<>();
         TSNode arguments = node.getChildByFieldName("arguments");
         for (int i = 0; i < arguments.getChildCount(); i++) {
-            /*
-                TODO:
-                Нельзя использовать arguments.getNamedChildCount() и вообще любой "getNamed...",
-                т.к. был зафиксирован баг: при запросе getNamedChild(index) выяснилось, что index
-                ни на что не влияет и может принимать любые значения, всегда возвращается только первый ребенок!
-             */
-            String tsNodeChildType = arguments.getChild(i).getType();
+            String tsNodeChildType = arguments.getNamedChild(i).getType();
             if (tsNodeChildType.equals("(") || tsNodeChildType.equals(")") || tsNodeChildType.equals(",")) {
                 continue;
             }
@@ -421,12 +428,15 @@ public class PythonLanguage extends Language {
     }
 
     private Type determineType(TSNode typeNode) {
+        if (typeNode.isNull()) {
+            return new UnknownType();
+        }
         if (typeNode.getNamedChildCount() > 0 && typeNode.getNamedChild(0).getType().equals("generic_type")) {
             TSNode genericTypeNode = typeNode.getNamedChild(0);
             List<Type> genericTypes = new ArrayList<>();
-            String typeName = getCodePiece(typeNode.getNamedChild(0));
-            for (int i = 0; i < genericTypeNode.getNamedChildCount(); i++) {
-                genericTypes.add(determineType(genericTypeNode.getNamedChild(i)));
+            String typeName = getCodePiece(typeNode.getNamedChild(0).getNamedChild(0));
+            for (int i = 0; i < genericTypeNode.getNamedChild(1).getNamedChildCount(); i++) {
+                genericTypes.add(determineType(genericTypeNode.getNamedChild(1).getNamedChild(i)));
             }
             switch (typeName) {
                 case "list":
@@ -506,7 +516,6 @@ public class PythonLanguage extends Language {
         if (node.getChildByFieldName("left").getType().equals("pattern_list")) {
             List<Identifier> idents = new ArrayList<>();
             for (int i = 0; i < node.getChildByFieldName("left").getNamedChildCount(); i++) {
-                //TODO: will be available in new version of tree-sitter backend
                 idents.add(fromIdentifier(node.getChildByFieldName("left").getNamedChild(i)));
             }
 
@@ -552,7 +561,7 @@ public class PythonLanguage extends Language {
     private Node fromList(TSNode node, String type) {
         List<Expression> exprs = new ArrayList<>();
         for (int i = 0; i < node.getNamedChildCount(); i++) {
-            Expression expr = (Expression) fromTSNode(node.getChild(i));
+            Expression expr = (Expression) fromTSNode(node.getNamedChild(i));
             exprs.add(expr);
         }
         return switch (type) {
@@ -617,7 +626,7 @@ public class PythonLanguage extends Language {
     private Node fromExpressionStatementTSNode(TSNode node) {
         if (node.getNamedChildCount() == 1) {
             Node n = fromTSNode(node.getChild(0));
-            if (n instanceof Statement) {
+            if (n instanceof Statement || n instanceof Declaration) {
                 return n;
             }
             return new ExpressionStatement((Expression) n);

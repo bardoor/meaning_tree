@@ -60,7 +60,7 @@ public class PythonViewer extends Viewer {
             case Identifier identifier -> identifierToString(identifier);
             case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
             case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
-            case TernaryOperator ternary -> String.format("%s ? %s : %s", toString(ternary.getCondition()), toString(ternary.getThenExpr()), toString(ternary.getElseExpr()));
+            case TernaryOperator ternary -> String.format("%s if %s else %s", toString(ternary.getThenExpr()), toString(ternary.getCondition()), toString(ternary.getElseExpr()));
             case ParenthesizedExpression paren -> String.format("(%s)", toString(paren.getExpression()));
             case ObjectNewExpression newExpr -> callsToString(newExpr);
             case ArrayNewExpression newExpr -> callsToString(newExpr);
@@ -85,6 +85,7 @@ public class PythonViewer extends Viewer {
             case FunctionDeclaration funcDecl -> functionDeclarationToString(funcDecl, tab);
             case Import importStmt -> importToString(importStmt);
             case ExpressionStatement exprStmt -> toString(exprStmt.getExpression());
+            case ReturnStatement returnStmt -> returnToString(returnStmt);
             case StatementSequence stmtSequence -> {
                 if (stmtSequence.isOnlyAssignments()) {
                     yield assignmentToString(stmtSequence);
@@ -94,6 +95,15 @@ public class PythonViewer extends Viewer {
             }
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
+    }
+
+    private String returnToString(ReturnStatement returnStmt) {
+        StringBuilder sb = new StringBuilder("return");
+        if (returnStmt.hasExpression()) {
+            sb.append(' ');
+            sb.append(toString(returnStmt.getExpression()));
+        }
+        return sb.toString();
     }
 
     private String identifierToString(Identifier identifier) {
@@ -149,7 +159,7 @@ public class PythonViewer extends Viewer {
         StringBuilder function = new StringBuilder();
         FunctionDeclaration decl = (FunctionDeclaration) func.getDeclaration();
         for (Annotation anno : decl.getAnnotations()) {
-            if (anno.getArguments().length == 0) {
+            if (anno.getArguments().length != 0) {
                 function.append(String.format("@%s(%s)\n", toString(anno.getName()), argumentsToString(Arrays.asList(anno.getArguments()))));
             } else {
                 function.append(String.format("@%s\n", toString(anno.getName())));
@@ -168,18 +178,20 @@ public class PythonViewer extends Viewer {
             } else if (i == 0 && decl instanceof MethodDeclaration method) {
                 function.append(String.format(": %s", typeToString(method.getOwner())));
             }
-            function.append(", ");
+            if (i != declArgs.size() - 1) {
+                function.append(", ");
+            }
         }
         function.append(")");
         if (decl.getReturnType() != null && !(decl.getReturnType() instanceof UnknownType)) {
-            function.append("->");
+            function.append(" -> ");
             function.append(typeToString(decl.getReturnType()));
         }
         function.append(":\n");
         if (func instanceof MethodDefinition methodDef) {
-            function.append(toString(methodDef.getBody(), tab.up()));
+            function.append(toString(methodDef.getBody(), tab));
         } else if (func instanceof FunctionDefinition funcDef) {
-            function.append(toString(funcDef.getBody(), tab.up()));
+            function.append(toString(funcDef.getBody(), tab));
         }
         return function.toString();
     }
@@ -283,9 +295,9 @@ public class PythonViewer extends Viewer {
             builder.append(toString(forEachLoop.getBody(), tab));
         } else if (stmt instanceof SwitchStatement switchStmt) {
             tab = tab.up();
-            builder.append(String.format("match %s:\n", switchStmt.getTargetExpression()));
+            builder.append(String.format("match %s:\n", toString(switchStmt.getTargetExpression())));
             for (ConditionBranch caseBranch : switchStmt.getCases()) {
-                builder.append(String.format("%scase %s:\n%s\n\n", tab, toString(caseBranch.getCondition()), toString(caseBranch.getBody(), tab)));
+                builder.append(String.format("%scase %s:\n%s\n", tab, toString(caseBranch.getCondition()), toString(caseBranch.getBody(), tab)));
             }
             if (switchStmt.hasDefaultCase()) {
                 builder.append(String.format("%scase _:\n%s\n", tab, toString(switchStmt.getDefaultCase(), tab)));
@@ -305,7 +317,9 @@ public class PythonViewer extends Viewer {
                 lValues.append(String.format(": %s", typeToString(varDecl.getType())));
             }
             if (decls[i].hasInitialization()) {
-                decls[i].getRValue().ifPresent(rValues::append);
+                if (decls[i].getRValue().isPresent()) {
+                    rValues.append(toString(decls[i].getRValue().get()));
+                }
             } else {
                 rValues.append("None");
             }
@@ -353,7 +367,7 @@ public class PythonViewer extends Viewer {
             }
             return "tuple";
         } else if (type instanceof GenericUserType generic) {
-            return String.format("%s[%s]", generic.getName().toString(), String.join(",", Arrays.stream(generic.getTypeParameters()).map(this::typeToString).toList().toArray(new String[0])));
+            return String.format("%s[%s]", generic.getName().toString(), String.join(", ", Arrays.stream(generic.getTypeParameters()).map(this::typeToString).toList().toArray(new String[0])));
         } else if (type instanceof UserType userType) {
             return userType.getName().toString();
         }
@@ -511,14 +525,16 @@ public class PythonViewer extends Viewer {
     private String conditionToString(IfStatement node, Tab tab) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < node.getBranches().size(); i++) {
-            String pattern = "elif %s:\n%s\n";
+            String pattern = "elif %s:\n%s";
             if (i == 0) {
-                pattern = "if %s:\n%s\n";
+                pattern = "if %s:\n%s";
             }
             ConditionBranch branch = node.getBranches().get(i);
-            sb.append(String.format(pattern, branch.getCondition(), toString(branch.getBody(), tab)));
+            sb.append(String.format(pattern, toString(branch.getCondition()), toString(branch.getBody(), tab)));
         }
-        sb.append(String.format("else:%s\n", toString(node.getElseBranch(), tab)));
+        if (node.hasElseBranch()) {
+            sb.append(String.format("else:\n%s\n", toString(node.getElseBranch(), tab)));
+        }
         return sb.toString();
     }
 
@@ -544,11 +560,11 @@ public class PythonViewer extends Viewer {
         StringBuilder builder = new StringBuilder();
         tab = tab.up();
         if (node.getNodes().length == 0) {
-            return "pass";
+            return tab.toString().concat("pass");
         }
         for (Node child : node) {
             builder.append(tab);
-            builder.append(toString(node, tab));
+            builder.append(toString(child, tab));
             builder.append('\n');
         }
         return builder.toString();
