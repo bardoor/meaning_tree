@@ -87,7 +87,7 @@ public class PythonViewer extends Viewer {
             case ExpressionStatement exprStmt -> toString(exprStmt.getExpression());
             case ReturnStatement returnStmt -> returnToString(returnStmt);
             case ExpressionSequence exprSeq -> String.join(", ", exprSeq.getExpressions().stream().map((Expression nd) -> toString(nd, tab)).toList().toArray(new String[0]));
-            case MultipleAssignmentStatement stmtSequence -> String.join(", ", stmtSequence.getStatements().stream().map((Statement nd) -> toString(nd, tab)).toList().toArray(new String[0]));
+            case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
     }
@@ -192,44 +192,40 @@ public class PythonViewer extends Viewer {
     }
 
     private String assignmentToString(MultipleAssignmentStatement stmtSequence) {
-        if (stmtSequence.isOnlyAssignments()) {
-            AugmentedAssignmentOperator augOp = ((AssignmentStatement) stmtSequence.getStatements().getFirst()).getAugmentedOperator();
-            String operator = switch (augOp) {
-                case ADD -> "+=";
-                case SUB -> "-=";
-                case MUL -> "*=";
-                case DIV -> "/=";
-                case FLOOR_DIV -> "//=";
-                case BITWISE_AND -> "&=";
-                case BITWISE_OR -> "|=";
-                case BITWISE_XOR -> "^=";
-                case BITWISE_SHIFT_LEFT -> "<<=";
-                case BITWISE_SHIFT_RIGHT -> ">>=";
-                case MOD -> "%=";
-                case POW -> "**=";
-                default -> "=";
-            };
-            List<Expression> lvalues = new ArrayList<>();
-            List<Expression> rvalues = new ArrayList<>();
-            for (Statement stmt : stmtSequence.getStatements()) {
-                AssignmentStatement assignment = (AssignmentStatement) stmt;
-                lvalues.add(assignment.getLValue());
-                rvalues.add(assignment.getRValue());
-            }
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < lvalues.size(); i++) {
-                builder.append(toString(lvalues.get(i)));
-            }
-            builder.append(' ');
-            builder.append(operator);
-            builder.append(' ');
-            for (int i = 0; i < lvalues.size(); i++) {
-                builder.append(toString(lvalues.get(i)));
-            }
-            return builder.toString();
-        } else {
-            throw new RuntimeException("Invalid usage of assignmentToString method");
+        AugmentedAssignmentOperator augOp = ((AssignmentStatement) stmtSequence.getStatements().getFirst()).getAugmentedOperator();
+        String operator = switch (augOp) {
+            case ADD -> "+=";
+            case SUB -> "-=";
+            case MUL -> "*=";
+            case DIV -> "/=";
+            case FLOOR_DIV -> "//=";
+            case BITWISE_AND -> "&=";
+            case BITWISE_OR -> "|=";
+            case BITWISE_XOR -> "^=";
+            case BITWISE_SHIFT_LEFT -> "<<=";
+            case BITWISE_SHIFT_RIGHT -> ">>=";
+            case MOD -> "%=";
+            case POW -> "**=";
+            default -> "=";
+        };
+        List<Expression> lvalues = new ArrayList<>();
+        List<Expression> rvalues = new ArrayList<>();
+        for (Statement stmt : stmtSequence.getStatements()) {
+            AssignmentStatement assignment = (AssignmentStatement) stmt;
+            lvalues.add(assignment.getLValue());
+            rvalues.add(assignment.getRValue());
         }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < lvalues.size(); i++) {
+            builder.append(toString(lvalues.get(i)));
+        }
+        builder.append(' ');
+        builder.append(operator);
+        builder.append(' ');
+        for (int i = 0; i < lvalues.size(); i++) {
+            builder.append(toString(lvalues.get(i)));
+        }
+        return builder.toString();
     }
 
     private String entryPointToString(ProgramEntryPoint programEntryPoint, Tab tab) {
