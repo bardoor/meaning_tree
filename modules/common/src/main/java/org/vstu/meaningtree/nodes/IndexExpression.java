@@ -4,6 +4,7 @@ import java.util.Objects;
 
 public class IndexExpression extends Expression {
     private final Expression _expr;
+    // index может содержать ExpressionSequence
     private final Expression _index;
 
     public IndexExpression(Expression expr, Expression index) {

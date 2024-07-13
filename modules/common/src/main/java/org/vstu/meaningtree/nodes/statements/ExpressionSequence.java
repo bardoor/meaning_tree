@@ -1,0 +1,18 @@
+package org.vstu.meaningtree.nodes.statements;
+
+import org.vstu.meaningtree.nodes.Expression;
+
+import java.util.List;
+
+public class ExpressionSequence extends Expression  {
+    // Применяется в случаях Python в `return a, b`, простых перечислениях выражений, а также для оператора запятая C++
+    private List<Expression> _expressions;
+
+    public ExpressionSequence(Expression ... expressions) {
+        _expressions = List.of(expressions);
+    }
+
+    public List<Expression> getExpressions() {
+        return _expressions;
+    }
+}

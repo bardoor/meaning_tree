@@ -86,13 +86,8 @@ public class PythonViewer extends Viewer {
             case Import importStmt -> importToString(importStmt);
             case ExpressionStatement exprStmt -> toString(exprStmt.getExpression());
             case ReturnStatement returnStmt -> returnToString(returnStmt);
-            case StatementSequence stmtSequence -> {
-                if (stmtSequence.isOnlyAssignments()) {
-                    yield assignmentToString(stmtSequence);
-                } else {
-                    yield String.join(", ", stmtSequence.getStatements().stream().map((Statement nd) -> toString(nd, tab)).toList().toArray(new String[0]));
-                }
-            }
+            case ExpressionSequence exprSeq -> String.join(", ", exprSeq.getExpressions().stream().map((Expression nd) -> toString(nd, tab)).toList().toArray(new String[0]));
+            case MultipleAssignmentStatement stmtSequence -> String.join(", ", stmtSequence.getStatements().stream().map((Statement nd) -> toString(nd, tab)).toList().toArray(new String[0]));
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
     }
@@ -196,7 +191,7 @@ public class PythonViewer extends Viewer {
         return function.toString();
     }
 
-    private String assignmentToString(StatementSequence stmtSequence) {
+    private String assignmentToString(MultipleAssignmentStatement stmtSequence) {
         if (stmtSequence.isOnlyAssignments()) {
             AugmentedAssignmentOperator augOp = ((AssignmentStatement) stmtSequence.getStatements().getFirst()).getAugmentedOperator();
             String operator = switch (augOp) {

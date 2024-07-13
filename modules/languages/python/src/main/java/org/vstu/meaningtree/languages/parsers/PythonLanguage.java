@@ -62,7 +62,7 @@ public class PythonLanguage extends Language {
             case "module" -> createEntryPoint(node);
             case "block" -> fromCompoundTSNode(node);
             case "if_statement" -> fromIfStatementTSNode(node);
-            case "expression_statement" -> fromExpressionStatementTSNode(node);
+            case "expression_statement", "expression_list", "tuple_pattern" -> fromExpressionSequencesTSNode(node);
             case "parenthesized_expression" -> fromParenthesizedExpressionTSNode(node);
             case "binary_operator" -> fromBinaryExpressionTSNode(node);
             case "unary_expression" -> fromUnaryExpressionTSNode(node);
@@ -538,7 +538,7 @@ public class PythonLanguage extends Language {
             for (int i = 0; i < idents.size(); i++) {
                 stmts.add(new AssignmentStatement(idents.get(i), exprs.get(i), augOp));
             }
-            return new StatementSequence(stmts.toArray(new AssignmentStatement[0]));
+            return new MultipleAssignmentStatement(stmts.toArray(new AssignmentStatement[0]));
         }
 
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
@@ -623,24 +623,24 @@ public class PythonLanguage extends Language {
     }
 
 
-    private Node fromExpressionStatementTSNode(TSNode node) {
-        if (node.getNamedChildCount() == 1) {
+    private Node fromExpressionSequencesTSNode(TSNode node) {
+        if (node.getNamedChildCount() == 1 && node.getType().equals("expression_statement")) {
             Node n = fromTSNode(node.getChild(0));
             if (n instanceof Statement || n instanceof Declaration) {
                 return n;
             }
             return new ExpressionStatement((Expression) n);
         } else {
-            Statement[] statements = new Statement[node.getNamedChildCount()];
-            for (int i = 0; i < statements.length; i++) {
+            Expression[] exprs = new Expression[node.getNamedChildCount()];
+            for (int i = 0; i < exprs.length; i++) {
                 Node n = fromTSNode(node.getNamedChild(i));
-                if (n instanceof Statement stmt) {
-                    statements[i] = stmt;
+                if (n instanceof Expression expr) {
+                    exprs[i] = expr;
                 } else {
-                    statements[i] = new ExpressionStatement((Expression) n);
+                    throw new RuntimeException("Invalid type in expression statement, not expression");
                 }
             }
-            return new StatementSequence(statements);
+            return new ExpressionSequence(exprs);
         }
     }
 
