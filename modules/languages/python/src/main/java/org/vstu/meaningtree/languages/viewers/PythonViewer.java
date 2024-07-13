@@ -312,12 +312,17 @@ public class PythonViewer extends Viewer {
                     rValues.append(toString(decls[i].getRValue().get()));
                 }
             } else {
-                rValues.append("None");
+                if (decls.length > 1) {
+                    rValues.append("None");
+                }
             }
             if (i != decls.length - 1) {
                 lValues.append(", ");
                 rValues.append(", ");
             }
+        }
+        if (decls.length == 1) {
+            return lValues.toString();
         }
         return String.format("%s = %s", lValues, rValues);
     }
