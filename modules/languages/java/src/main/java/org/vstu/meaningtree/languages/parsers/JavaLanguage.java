@@ -15,6 +15,7 @@ import org.vstu.meaningtree.nodes.literals.NullLiteral;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
+import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -93,8 +94,52 @@ public class JavaLanguage extends Language {
             case "break_statement" -> fromBreakStatementTSNode(node);
             case "continue_statement" -> fromContinueStatementTSNode(node);
             case "null_literal" -> fromNullLiteralTSNode(node);
+            case "import_declaration" -> fromImportDeclarationTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private boolean isStaticImport(TSNode importDeclaration) {
+        for (int i = 0; i < importDeclaration.getChildCount(); i++) {
+            if (importDeclaration.getChild(i).getType().equals("static")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isWildcardImport(TSNode importDeclaration) {
+        for (int i = 0; i < importDeclaration.getChildCount(); i++) {
+            if (importDeclaration.getChild(i).getType().equals("asterisk")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Node fromImportDeclarationTSNode(TSNode importDeclaration) {
+        TSNode scopeNode = importDeclaration.getNamedChild(0);
+
+        if (isStaticImport(importDeclaration)) {
+            if (isWildcardImport(importDeclaration)) {
+                Identifier scope = fromIdentifierTSNode(scopeNode);
+                return new StaticImportAll(scope);
+            }
+            else {
+                Identifier scope = fromIdentifierTSNode(scopeNode.getChildByFieldName("scope"));
+                Identifier member = fromIdentifierTSNode(scopeNode.getChildByFieldName("name"));
+                return new StaticImportMembers(scope, member);
+            }
+        }
+        else if (isWildcardImport(importDeclaration)) {
+            Identifier scope = fromIdentifierTSNode(scopeNode);
+            return new ImportAll(scope);
+        }
+        else {
+            Identifier scope = fromIdentifierTSNode(scopeNode.getChildByFieldName("scope"));
+            Identifier member = fromIdentifierTSNode(scopeNode.getChildByFieldName("name"));
+            return new ImportMembers(scope, member);
+        }
     }
 
     private Node fromNullLiteralTSNode(TSNode nullLiteral) {

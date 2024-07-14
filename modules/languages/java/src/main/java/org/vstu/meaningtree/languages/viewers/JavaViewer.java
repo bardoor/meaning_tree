@@ -15,6 +15,7 @@ import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
+import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
@@ -94,8 +95,66 @@ public class JavaViewer extends Viewer {
             case MethodDefinition methodDefinition -> toString(methodDefinition);
             case SwitchStatement switchStatement -> toString(switchStatement);
             case NullLiteral nullLiteral -> toString(nullLiteral);
+            case StaticImportAll staticImportAll -> toString(staticImportAll);
+            case StaticImportMembers staticImportMembers -> toString(staticImportMembers);
+            case ImportAll importAll -> toString(importAll);
+            case ImportMembers importMembers -> toString(importMembers);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(StaticImportAll staticImportAll) {
+        String importTemplate = "import static %s.*;";
+        return importTemplate.formatted(toString(staticImportAll.getScope()));
+    }
+
+    private String toString(StaticImportMembers staticImportMembers) {
+        StringBuilder builder = new StringBuilder();
+
+        String importTemplate = "import static %s.%s;";
+        for (Identifier member : staticImportMembers.getMembers()) {
+            builder
+                    .append(
+                            importTemplate.formatted(
+                                    toString(staticImportMembers.getScope()),
+                                    toString(member)
+                            )
+                    )
+                    .append("\n");
+            ;
+        }
+
+        // Удаляем последний символ перевода строки
+        builder.deleteCharAt(builder.length() - 1);
+
+        return builder.toString();
+    }
+
+    private String toString(ImportAll importAll) {
+        String importTemplate = "import %s.*;";
+        return importTemplate.formatted(toString(importAll.getScope()));
+    }
+
+    private String toString(ImportMembers importMembers) {
+        StringBuilder builder = new StringBuilder();
+
+        String importTemplate = "import %s.%s;";
+        for (Identifier member : importMembers.getMembers()) {
+            builder
+                    .append(
+                        importTemplate.formatted(
+                            toString(importMembers.getScope()),
+                            toString(member)
+                        )
+                    )
+                    .append("\n");
+            ;
+        }
+
+        // Удаляем последний символ перевода строки
+        builder.deleteCharAt(builder.length() - 1);
+
+        return builder.toString();
     }
 
     private String toString(NullLiteral nullLiteral) {
