@@ -21,6 +21,9 @@ import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
+import org.vstu.meaningtree.nodes.modules.Alias;
+import org.vstu.meaningtree.nodes.modules.Import;
+import org.vstu.meaningtree.nodes.modules.ImportMembers;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.UnaryMinusOp;
@@ -169,7 +172,7 @@ public class PythonLanguage extends Language {
                 member = null;
             }
         }
-        return new Import(Import.ImportType.LIBRARY, scope, alias, member);
+        return new ImportMembers(scope);
     }
 
     private FunctionCall fromFunctionCall(TSNode node) {
