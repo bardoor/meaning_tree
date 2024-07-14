@@ -15,7 +15,7 @@ public class PlainCollectionLiteral extends Literal {
     }
 
     public List<Expression> getList() {
-        return new ArrayList<>(_content);
+        return List.copyOf(_content);
     }
 
     @Override
