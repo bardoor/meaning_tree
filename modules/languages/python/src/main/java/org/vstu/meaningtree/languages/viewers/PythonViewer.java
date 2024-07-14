@@ -18,6 +18,8 @@ import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
+import org.vstu.meaningtree.nodes.modules.Import;
+import org.vstu.meaningtree.nodes.modules.ImportMembers;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
@@ -116,14 +118,22 @@ public class PythonViewer extends Viewer {
 
     private String importToString(Import importStmt) {
         StringBuilder builder = new StringBuilder();
-        if (importStmt.hasMember()) {
-            builder.append(String.format("from %s import %s", toString(importStmt.getScope()), toString(importStmt.getMember())));
-        } else {
-            builder.append(String.format("import %s", toString(importStmt.getScope())));
+        if (importStmt instanceof ImportMembers importMembers) {
+            builder.append(
+                    String.format("from %s import %s",
+                            toString(importStmt.getScope()),
+                            toString(importMembers.getMembers().get(0))
+                    )
+            );
         }
-        if (importStmt.hasAlias()) {
-            builder.append(String.format(" as %s", toString(importStmt.getAlias())));
-        }
+        //if (importStmt.hasMember()) {
+        //    builder.append(String.format("from %s import %s", toString(importStmt.getScope()), toString(importStmt.getMember())));
+        //} else {
+        //    builder.append(String.format("import %s", toString(importStmt.getScope())));
+        //}
+        //if (importStmt.hasAlias()) {
+        //    builder.append(String.format(" as %s", toString(importStmt.getAlias())));
+        //}
         return builder.toString();
     }
 
