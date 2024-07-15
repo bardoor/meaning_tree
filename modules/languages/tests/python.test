@@ -657,14 +657,14 @@ group: ComparisonsTest
 		    a <= b and c <= k and b >= c
 
 		python:
-		    a <= c <= k <= b
+		    c <= b and a <= b and c < k
 	case: CompoundComparisonConvertationCase2
 
 		python:
-		    a < b and b < c and m >= k
+		    a < c and a < b and d > k and b > m and c > b and a > m
 
 		python:
-		    a <	b < c and m >= k
+		    m < a < b < c and k < d
 	case: CompoundComparisonConvertationCase3
 
 		python:
@@ -685,14 +685,21 @@ group: ComparisonsTest
 		    a < b and m >= k and b < c
 
 		python:
-		    a <	b < c and m >= k
+		    a < b < c and k <= m
 	case: CompoundComparisonConvertationCase6
 
 		python:
 		    a < b and a == b and b >= c
 
 		python:
-		    a < c <= b and a == b
+		    c <= b and a < b and a == b
+	case: CompoundComparisonConvertationCase7
+
+		python:
+		    a < b and a < c
+
+		python:
+		    a < b and a < c
 	case: CompoundComparisonConvertationBetweenLanguages
 
 		python:

@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages;
 
+import org.vstu.meaningtree.languages.utils.ExpressionDAG;
 import org.vstu.meaningtree.languages.viewers.PythonViewer;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -10,9 +11,7 @@ import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.statements.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class PythonSpecialTreeTransformations {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
@@ -114,183 +113,79 @@ public class PythonSpecialTreeTransformations {
     //TODO: very unstable code, needed more tests
     public static Node detectCompoundComparison(Node expressionNode) {
         if (expressionNode instanceof ShortCircuitAndOp op) {
+
             // Список выражений, которые не будут участвовать в составном сравнении.
             // Например: a == b, a != b или выражения отличные от сравнения
             ArrayList<Expression> secondary = new ArrayList<>();
-            // Список сравнений, который непосредственно будет сгруппирован
-            // в одно составное сравнение
+
+            // Список сравнений, который может быть сгруппирован в составные сравнения
             ArrayList<BinaryComparison> primary = new ArrayList<>();
+
             // Разбираем выражение AND на нужные для составного сравнения и ненужные
             // Те, что secondary будут просто присоединены к итоговому выражению с помощью AND
             _collectCompoundStatementElements(op, primary, secondary);
-            ArrayList<BinaryComparison> primaryCopy = new ArrayList<>(primary);
-            /*
-            Разбираем все сравнения на операнды. Операнды заносим в специальный массив
-            Индекс массива считается весом операнда
-            Веса увеличиваются так, чтобы итоговые операнды можно было соединить знаком < или <=
 
-            После разбора операнды становятся группами так, что между ними есть свободная клетка
-            Например: a <= b and b >= c and k <= m
-            Массив с весами: abc km
-
-            Или другой пример: a <= b and k <= m and b >= c
-            Массив с весами: ab km c
-
-            Элементы массивы - не выражения, а обертки, которые представляют информацию о знаке сравнения.
-            Каждый элемент представляет информацию о знаке, который будет стоять ПЕРЕД ним (< или <=)
-             */
-            TaggedBinaryComparisonOperand[] expressions = new TaggedBinaryComparisonOperand[3 * primary.size()];
-            for (int i = 1; i < expressions.length && !primary.isEmpty(); i+=3) {
-                BinaryComparison expr = primary.removeFirst();
-                Expression leftOperand = expr.getLeft();
-                Expression rightOperand = expr.getRight();
-                // Ищем, если элемент уже имеет вес
-                int leftOperandFoundWeight = _findSameExpression(leftOperand, expressions);
-                int rightOperandFoundWeight = _findSameExpression(rightOperand, expressions);
-
-                int leftWeight, rightWeight;
-                if (expr instanceof LtOp || expr instanceof LeOp) {
-                    leftWeight = leftOperandFoundWeight != -1 ? leftOperandFoundWeight : i;
-                    rightWeight = rightOperandFoundWeight != -1 ? rightOperandFoundWeight : i + 1;
-                } else {
-                    leftWeight = leftOperandFoundWeight != -1 ? leftOperandFoundWeight : i + 1;
-                    rightWeight = rightOperandFoundWeight != -1 ? rightOperandFoundWeight : i;
+            // Построим орграф из выражений и создадим связи на основе сравнений. Стрелка указывает на больший элемент
+            Set<Expression> vertices = new HashSet<>();
+            for (BinaryComparison cmp : primary) {
+                vertices.add(cmp.getLeft());
+                vertices.add(cmp.getRight());
+            }
+            ExpressionDAG graph = new ExpressionDAG(vertices.toArray(new Expression[0]));
+            for (BinaryComparison cmp : primary) {
+                if (cmp instanceof LtOp) {
+                    graph.addEdge(cmp.getLeft(), cmp.getRight());
+                } else if (cmp instanceof LeOp) {
+                    graph.addTaggedEdge(cmp.getLeft(), cmp.getRight());
+                } else if (cmp instanceof GtOp) {
+                    graph.addEdge(cmp.getRight(), cmp.getLeft());
+                } else if (cmp instanceof GeOp) {
+                    graph.addTaggedEdge(cmp.getRight(), cmp.getLeft());
                 }
+            }
 
-                // Корректируем положение операнда => вес в массиве, исходя из данных сравнения
-                if (expr instanceof LtOp || expr instanceof LeOp) {
-                    if (leftWeight < rightWeight) {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(leftOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(rightOperand, expr instanceof LeOp);
+            // Итоговый результат обработки
+            ArrayList<Expression> result = new ArrayList<>();
+
+            // Для каждого слабосвязанного компонента графа
+            for (ExpressionDAG dag : graph.weaklyConnectedComponents()) {
+                Set<Expression> visited = new HashSet<>();
+                int initialLength =  dag.getVertices().length;
+
+                // Пока не обработаем все вершины графа
+                while (visited.size() < initialLength) {
+                    // Ищем самый длинный путь в графе
+                    List<Expression> longestPath = dag.findLongestPath();
+                    ArrayList<BinaryComparison> compound = new ArrayList<>();
+                    // Строим по этому пути новое составное сравнение, попутно удаляя обработанные связи
+                    for (int i = 0; i < longestPath.size() - 1; i++) {
+                        Expression u = longestPath.get(i);
+                        Expression v = longestPath.get(i + 1);
+                        if (dag.isTagged(u, v)) {
+                            compound.add(new LeOp(u, v));
+                        } else {
+                            compound.add(new LtOp(u, v));
+                        }
+                        visited.add(u);
+                        visited.add(v);
+                        // Удаляем связь, которую обработали
+                        dag.removeEdge(u, v);
+                    }
+                    if (!compound.isEmpty()) {
+                        if (compound.size() == 1) {
+                            result.add(compound.getFirst());
+                        } else {
+                            result.add(new CompoundComparison(compound.toArray(new BinaryComparison[0])));
+                        }
                     } else {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(rightOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(leftOperand, expr instanceof LeOp);
+                        throw new RuntimeException("Something bad in DAG longest path");
                     }
-                } else if (expr instanceof GeOp || expr instanceof GtOp) {
-                    if (leftWeight > rightWeight) {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(leftOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(rightOperand, expr instanceof GeOp);
-                    } else {
-                        expressions[leftWeight] = new TaggedBinaryComparisonOperand(rightOperand, false);
-                        expressions[rightWeight] = new TaggedBinaryComparisonOperand(leftOperand, expr instanceof GeOp);
-                    }
+                    // Убираем ненужные вершины, которые ни с чем не связаны
+                    dag.removeOrphanedVertices();
                 }
             }
-
-            /*
-            Теперь необходимо, исходя из сравнений, пересчитать веса операндов так,
-            чтобы они сгруппировались в составные сравнения
-
-            Вероятно, не получится сгруппировать операнды так, чтобы они образовали единое составное сравнение
-            Тогда, пустая клетка (со значением null) будет разделителем составных присваиваний
-
-            Краткий алгоритм:
-
-            Для каждой пары операндов сравнения:
-            1. Выделим левую группу и ее интервал [leftA, leftB], содержащий один операнд (левый или правый) текущей пары операндов
-            2. Выделим правую группу и ее интервал [rightA, rightB], содержащий один операнд (левый или правый) текущей пары операндов
-            3. Попробуем расположить группы рядом, объединив их в интервал [leftA, rightB]
-            4. Для этого поэтапно переносим элементы из группы right в конец группы left.
-            */
-            for (BinaryComparison cmp : primaryCopy) {
-                Expression leftOperand = cmp.getLeft();
-                Expression rightOperand = cmp.getRight();
-
-                int leftWeight = _findSameExpression(leftOperand, expressions);
-                int rightWeight = _findSameExpression(rightOperand, expressions);
-
-                if (Math.abs(leftWeight - rightWeight) == 1) {
-                    continue;
-                }
-
-                if (leftWeight > rightWeight) {
-                    int tmp = leftWeight;
-                    leftWeight = rightWeight;
-                    rightWeight = tmp;
-                }
-
-                int leftA, leftB, rightA, rightB;
-                for (leftA = leftWeight; leftA > 0 && expressions[leftA] != null; leftA--);
-                for (leftB = leftWeight; leftB < expressions.length && expressions[leftB] != null; leftB++);
-
-                for (rightA = rightWeight; rightA > 0 && expressions[rightA] != null; rightA--);
-                for (rightB = rightWeight; rightB < expressions.length && expressions[rightB] != null; rightB++);
-
-                rightA++;
-                rightB--;
-                leftA++;
-                leftB--;
-
-                if (rightA >= leftA && rightA <= leftB) {
-                    continue;
-                }
-
-                for (int i = leftB + 1; i <= leftB + (rightB - rightA + 1); i++) {
-                    expressions[i] = expressions[rightA];
-                    expressions[rightA] = null;
-                    TaggedBinaryComparisonOperand tmp, prev;
-                    prev = expressions[i + 1];
-                    for (int j = i + 1; j < rightA; j++) {
-                        tmp = expressions[j + 1];
-                        expressions[j + 1] = prev;
-                        prev = tmp;
-                    }
-                    expressions[i + 1] = null;
-                    rightA++;
-                }
-
-            }
-            /*
-            Будущие составные сравнения сформированы визуально, осталось собрать их в узел дерева
-            Также добавятся к составным сравнениям и отброшенные ранее secondary узлы
-
-            Соберем составные сравнения в узел,
-            учитывая что группу операндов одного составного сравнения
-            отделяет любое количество пустых клеток с null
-             */
-            List<BinaryComparison> tempComparisons = new ArrayList<>();
-            List<CompoundComparison> compounds = new ArrayList<>();
-            for (int i = 1; i < expressions.length - 1; i++) {
-                if (expressions[i] != null && expressions[i + 1] != null){
-                    if (expressions[i + 1].hasEqual) {
-                        tempComparisons.add(new LeOp(expressions[i].wrapped, expressions[i + 1].wrapped));
-                    } else {
-                        tempComparisons.add(new LtOp(expressions[i].wrapped, expressions[i + 1].wrapped));
-                    }
-                }
-
-                if ((expressions[i] == null || expressions[i + 1] == null) && !tempComparisons.isEmpty()) {
-                    if (tempComparisons.size() == 1) {
-                        secondary.addAll(tempComparisons);
-                    } else {
-                        compounds.add(new CompoundComparison(tempComparisons.toArray(new BinaryComparison[0])));
-                    }
-                    tempComparisons.clear();
-                }
-            }
-            if (!tempComparisons.isEmpty()) {
-                if (tempComparisons.size() == 1) {
-                    secondary.addAll(tempComparisons);
-                } else {
-                    compounds.add(new CompoundComparison(tempComparisons.toArray(new BinaryComparison[0])));
-                }
-                tempComparisons.clear();
-            }
-
-            if (compounds.size() == 1 && secondary.isEmpty()) {
-                return compounds.getFirst();
-            }
-            Expression primaryAndOp = null, secondaryAndOp = null;
-            if (!compounds.isEmpty()) {
-                primaryAndOp = BinaryExpression.fromManyOperands(compounds.toArray(new Expression[0]), 0, ShortCircuitAndOp.class);
-            }
-            if (!secondary.isEmpty()) {
-                secondaryAndOp = BinaryExpression.fromManyOperands(secondary.toArray(new Expression[0]), 0, ShortCircuitAndOp.class);
-            }
-            if (secondaryAndOp != null && primaryAndOp != null) {
-                return new ShortCircuitAndOp(primaryAndOp, secondaryAndOp);
-            }
-            return secondaryAndOp == null ? primaryAndOp : secondaryAndOp;
+            result.addAll(secondary);
+            return BinaryExpression.fromManyOperands(result.toArray(new Expression[0]), 0, ShortCircuitAndOp.class);
         }
         return expressionNode;
     }
