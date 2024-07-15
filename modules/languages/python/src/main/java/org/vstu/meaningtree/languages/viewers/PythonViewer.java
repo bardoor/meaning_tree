@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.languages.viewers;
 
-import org.vstu.meaningtree.languages.PythonSpecialTreeTransformations;
+import org.vstu.meaningtree.languages.PythonSpecialNodeTransformations;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
@@ -281,9 +281,9 @@ public class PythonViewer extends Viewer {
             ));
             builder.append(toString(rangeFor.getBody(), tab));
         } else if (stmt instanceof GeneralForLoop generalFor) {
-            return toString(PythonSpecialTreeTransformations.representGeneralFor(generalFor));
+            return toString(PythonSpecialNodeTransformations.representGeneralFor(generalFor));
         } else if (stmt instanceof DoWhileLoop doWhile) {
-            return toString(PythonSpecialTreeTransformations.representDoWhile(doWhile));
+            return toString(PythonSpecialNodeTransformations.representDoWhile(doWhile));
         } else if (stmt instanceof WhileLoop whileLoop) {
             builder.append(String.format("while %s:\n", toString(whileLoop.getCondition())));
             builder.append(toString(whileLoop.getBody(), tab));
@@ -492,7 +492,7 @@ public class PythonViewer extends Viewer {
         } else if (node instanceof XorOp) {
             pattern = "%s ^ %s";
         } else if (node instanceof ShortCircuitAndOp) {
-            Node result = PythonSpecialTreeTransformations.detectCompoundComparison(node);
+            Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
             if (result instanceof CompoundComparison) {
                 return compoundComparisonToString((CompoundComparison) result);
             } else if (result instanceof ShortCircuitAndOp resultOp) {

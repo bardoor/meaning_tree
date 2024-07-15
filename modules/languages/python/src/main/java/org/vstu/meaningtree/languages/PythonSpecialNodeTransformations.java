@@ -1,7 +1,6 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.languages.utils.ExpressionDAG;
-import org.vstu.meaningtree.languages.viewers.PythonViewer;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
@@ -13,7 +12,7 @@ import org.vstu.meaningtree.nodes.statements.*;
 
 import java.util.*;
 
-public class PythonSpecialTreeTransformations {
+public class PythonSpecialNodeTransformations {
     private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
 
     public static Node[] representGeneralFor(GeneralForLoop generalFor) {
