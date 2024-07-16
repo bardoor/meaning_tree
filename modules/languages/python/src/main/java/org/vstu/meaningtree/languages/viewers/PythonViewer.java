@@ -307,27 +307,28 @@ public class PythonViewer extends Viewer {
         StringBuilder lValues = new StringBuilder();
         StringBuilder rValues = new StringBuilder();
         VariableDeclarator[] decls = varDecl.getDeclarators();
+
+        long rValuesCount = Arrays.stream(decls).filter((VariableDeclarator decl) -> decl.hasInitialization() && decl.getRValue().isPresent()).count();
+
         for (int i = 0; i < decls.length; i++) {
             lValues.append(toString(decls[i].getIdentifier()));
             //NEED DISCUSSION, see typeToString notes
             if (!(varDecl.getType() instanceof UnknownType) && varDecl.getType() != null) {
                 lValues.append(String.format(": %s", typeToString(varDecl.getType())));
             }
-            if (decls[i].hasInitialization()) {
-                if (decls[i].getRValue().isPresent()) {
-                    rValues.append(toString(decls[i].getRValue().get()));
-                }
-            } else {
-                if (decls.length > 1) {
-                    rValues.append("None");
-                }
+            if (decls[i].hasInitialization() && decls[i].getRValue().isPresent()) {
+                rValues.append(toString(decls[i].getRValue().get()));
+            } else if (rValuesCount > 0) {
+                rValues.append("None");
             }
             if (i != decls.length - 1) {
                 lValues.append(", ");
-                rValues.append(", ");
+                if (rValuesCount > 0) {
+                    rValues.append(", ");
+                }
             }
         }
-        if (decls.length == 1) {
+        if (rValuesCount == 0) {
             return lValues.toString();
         }
         return String.format("%s = %s", lValues, rValues);
