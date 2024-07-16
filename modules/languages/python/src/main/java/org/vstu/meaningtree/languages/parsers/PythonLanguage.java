@@ -92,7 +92,6 @@ public class PythonLanguage extends Language {
             case "true" -> new BoolLiteral(true);
             case "false" -> new BoolLiteral(false);
             case "call" -> fromFunctionCall(node);
-            case "wildcard_import" -> ScopedIdentifier.ALL;
             case "break_statement" -> new BreakStatement();
             case "continue_statement" -> new ContinueStatement();
             case "subscript" -> fromIndexTSNode(node);

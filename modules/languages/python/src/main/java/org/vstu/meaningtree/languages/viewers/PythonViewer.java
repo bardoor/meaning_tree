@@ -22,7 +22,6 @@ import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
-import org.vstu.meaningtree.nodes.utils.WildcardImport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
