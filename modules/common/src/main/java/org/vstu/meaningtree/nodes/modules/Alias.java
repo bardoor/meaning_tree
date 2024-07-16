@@ -4,15 +4,15 @@ import org.vstu.meaningtree.nodes.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
 public class Alias extends Identifier {
-    private final SimpleIdentifier _realName;
+    private final Identifier _realName;
     private final SimpleIdentifier _alias;
 
-    public Alias(SimpleIdentifier realName, SimpleIdentifier alias) {
+    public Alias(Identifier realName, SimpleIdentifier alias) {
         _realName = realName;
         _alias = alias;
     }
 
-    public SimpleIdentifier getRealName() {
+    public Identifier getRealName() {
         return _realName;
     }
 
