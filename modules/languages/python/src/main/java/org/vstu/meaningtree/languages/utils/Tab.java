@@ -29,6 +29,9 @@ public class Tab {
 
     @Override
     public String toString() {
+        if (level <= 0) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < level; i++) {
             for (int j = 0; j < whitespaceCount; j++) {

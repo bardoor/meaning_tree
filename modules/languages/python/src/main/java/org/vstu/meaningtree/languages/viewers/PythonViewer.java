@@ -574,7 +574,12 @@ public class PythonViewer extends Viewer {
         }
         for (Node child : node) {
             builder.append(tab);
-            builder.append(toString(child, tab));
+            if (child instanceof CompoundStatement) {
+                // Схлопываем лишний таб, так как блоки как самостоятельная сущность в Python не поддерживаются
+                builder.append(toString(child, tab.down().down()));
+            } else {
+                builder.append(toString(child, tab));
+            }
             builder.append('\n');
         }
         return builder.toString();
@@ -587,7 +592,12 @@ public class PythonViewer extends Viewer {
         }
         for (Node child : nodes) {
             builder.append(tab);
-            builder.append(toString(child, tab));
+            if (child instanceof CompoundStatement) {
+                // Схлопываем лишний таб, так как блоки как самостоятельная сущность в Python не поддерживаются
+                builder.append(toString(child, tab.down().down()));
+            } else {
+                builder.append(toString(child, tab));
+            }
             builder.append('\n');
         }
         return builder.toString();
