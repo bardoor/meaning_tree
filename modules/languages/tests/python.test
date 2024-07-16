@@ -700,6 +700,13 @@ group: ComparisonsTest
 
 		python:
 		    a < b and a < c
+	case: CompoundComparisonConvertationCase7
+
+		python:
+		    a < b and b < c and c < a
+
+		python:
+		    a < b and b < c and c < a
 	case: CompoundComparisonConvertationBetweenLanguages
 
 		python:

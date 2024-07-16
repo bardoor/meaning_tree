@@ -11,10 +11,9 @@ import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.statements.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PythonSpecialNodeTransformations {
-    private record TaggedBinaryComparisonOperand(Expression wrapped, boolean hasEqual) { }
-
     public static Node[] representGeneralFor(GeneralForLoop generalFor) {
         boolean needDeleting = false;
         HasInitialization initializer = null;
@@ -109,7 +108,6 @@ public class PythonSpecialNodeTransformations {
         return new WhileLoop(new BoolLiteral(true), new CompoundStatement(body));
     }
 
-    //TODO: very unstable code, needed more tests
     public static Node detectCompoundComparison(Node expressionNode) {
         if (expressionNode instanceof ShortCircuitAndOp op) {
 
@@ -155,15 +153,26 @@ public class PythonSpecialNodeTransformations {
                 while (visited.size() < initialLength) {
                     // Ищем самый длинный путь в графе
                     List<Expression> longestPath = dag.findLongestPath();
+                    boolean cyclic = new HashSet<>(longestPath).size() == longestPath.size() - 1;
+
                     ArrayList<BinaryComparison> compound = new ArrayList<>();
                     // Строим по этому пути новое составное сравнение, попутно удаляя обработанные связи
                     for (int i = 0; i < longestPath.size() - 1; i++) {
                         Expression u = longestPath.get(i);
                         Expression v = longestPath.get(i + 1);
-                        if (dag.isTagged(u, v)) {
-                            compound.add(new LeOp(u, v));
+                        if (!cyclic) {
+                            if (dag.isTagged(u, v)) {
+                                compound.add(new LeOp(u, v));
+                            } else {
+                                compound.add(new LtOp(u, v));
+                            }
                         } else {
-                            compound.add(new LtOp(u, v));
+                            // Путь цикличен, значит не производим составление составного сравнения
+                            if (dag.isTagged(u, v)) {
+                                result.add(new LeOp(u, v));
+                            } else {
+                                result.add(new LtOp(u, v));
+                            }
                         }
                         visited.add(u);
                         visited.add(v);
@@ -176,7 +185,7 @@ public class PythonSpecialNodeTransformations {
                         } else {
                             result.add(new CompoundComparison(compound.toArray(new BinaryComparison[0])));
                         }
-                    } else {
+                    } else if (!cyclic) {
                         throw new RuntimeException("Something bad in DAG longest path");
                     }
                     // Убираем ненужные вершины, которые ни с чем не связаны
@@ -189,19 +198,10 @@ public class PythonSpecialNodeTransformations {
         return expressionNode;
     }
 
-    private static int _findSameExpression(Expression expr, TaggedBinaryComparisonOperand[] weighted) {
-        for (int i = 0; i < weighted.length; i++) {
-            if (weighted[i] != null && expr.equals(weighted[i].wrapped)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     private static void _collectCompoundStatementElements(Expression node, List<BinaryComparison> primary, List<Expression> secondary) {
         // Точка входа в эту функцию всегда ShortCircuitOp, именно с нее начинается сбор всех частей составного сравнения
         if (node instanceof BinaryComparison op) {
-            if (op instanceof NotEqOp || op instanceof EqOp) {
+            if (op instanceof NotEqOp || op instanceof EqOp || op.getLeft().equals(op.getRight())) {
                 secondary.add(op);
             } else {
                 primary.add(op);

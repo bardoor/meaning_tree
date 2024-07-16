@@ -495,13 +495,21 @@ public class PythonViewer extends Viewer {
             Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
             if (result instanceof CompoundComparison) {
                 return compoundComparisonToString((CompoundComparison) result);
-            } else if (result instanceof ShortCircuitAndOp resultOp) {
-                return String.format("%s and %s", toString(resultOp.getLeft()), toString(resultOp.getRight()));
+            } else {
+                return preferExplicitAndOpToString(result);
             }
         } else if (node instanceof ShortCircuitOrOp) {
             pattern = "%s or %s";
         }
         return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
+    }
+
+    private String preferExplicitAndOpToString(Node node) {
+        if (node instanceof ShortCircuitAndOp op) {
+            return String.format("%s and %s", preferExplicitAndOpToString(op.getLeft()), preferExplicitAndOpToString(op.getRight()));
+        } else {
+            return toString(node);
+        }
     }
 
     private String callsToString(Node node) {

@@ -136,8 +136,16 @@ public class ExpressionDAG {
         }
 
         List<Expression> longestPath = new ArrayList<>();
+        boolean hasCycle = false;
         for (Expression at = maxDistanceVertex; at != null; at = predecessors.get(at)) {
+            if (longestPath.contains(at)) {
+                // Найден цикл, DAG не acyclic
+                hasCycle = true;
+            }
             longestPath.add(at);
+            if (hasCycle) {
+                break;
+            }
         }
         Collections.reverse(longestPath);
         return longestPath;
@@ -235,6 +243,8 @@ public class ExpressionDAG {
         }
         return maxVertex;
     }
+
+
 
     public void removeEdge(Expression u, Expression v) {
         edges.get(u).remove(v);
