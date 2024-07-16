@@ -18,8 +18,7 @@ import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
-import org.vstu.meaningtree.nodes.modules.Import;
-import org.vstu.meaningtree.nodes.modules.ImportMembers;
+import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
+import java.util.stream.Collectors;
 
 
 public class PythonViewer extends Viewer {
@@ -88,6 +88,8 @@ public class PythonViewer extends Viewer {
             case Import importStmt -> importToString(importStmt);
             case ExpressionStatement exprStmt -> toString(exprStmt.getExpression());
             case ReturnStatement returnStmt -> returnToString(returnStmt);
+            case Include incl -> String.format("import %s", toString(incl.getFileName()));
+            case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
             case ExpressionSequence exprSeq -> String.join(", ", exprSeq.getExpressions().stream().map((Expression nd) -> toString(nd, tab)).toList().toArray(new String[0]));
             case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
             case null, default -> throw new RuntimeException("Unsupported tree element");
@@ -104,8 +106,8 @@ public class PythonViewer extends Viewer {
     }
 
     private String identifierToString(Identifier identifier) {
-        if (identifier instanceof WildcardImport) {
-            return "*";
+        if (identifier instanceof Alias alias) {
+            return String.format("%s as %s", toString(alias.getRealName()), toString(alias.getAlias()));
         } else if (identifier instanceof SimpleIdentifier ident) {
             return ident.getName();
         } else if (identifier instanceof ScopedIdentifier scopedIdent) {
@@ -117,24 +119,18 @@ public class PythonViewer extends Viewer {
     }
 
     private String importToString(Import importStmt) {
-        StringBuilder builder = new StringBuilder();
         if (importStmt instanceof ImportMembers importMembers) {
-            builder.append(
-                    String.format("from %s import %s",
-                            toString(importStmt.getScope()),
-                            toString(importMembers.getMembers().get(0))
-                    )
-            );
+            if (importMembers.getMembers().isEmpty()) {
+                return String.format("import %s", toString(importStmt.getScope()));
+            } else {
+                return String.format("from %s import %s", toString(importMembers.getScope()),
+                        importMembers.getMembers().stream().map(this::toString).collect(Collectors.joining(", ")));
+            }
+        } else if (importStmt instanceof ImportAll) {
+            return String.format("from %s import *", toString(importStmt.getScope()));
+        } else {
+            return String.format("import %s", toString(importStmt.getScope()));
         }
-        //if (importStmt.hasMember()) {
-        //    builder.append(String.format("from %s import %s", toString(importStmt.getScope()), toString(importStmt.getMember())));
-        //} else {
-        //    builder.append(String.format("import %s", toString(importStmt.getScope())));
-        //}
-        //if (importStmt.hasAlias()) {
-        //    builder.append(String.format(" as %s", toString(importStmt.getAlias())));
-        //}
-        return builder.toString();
     }
 
     private String functionDeclarationToString(FunctionDeclaration decl, Tab tab) {

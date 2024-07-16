@@ -7,6 +7,7 @@ import org.treesitter.TSTree;
 import org.treesitter.TSParser;
 
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -23,6 +24,7 @@ import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.modules.Alias;
 import org.vstu.meaningtree.nodes.modules.Import;
+import org.vstu.meaningtree.nodes.modules.ImportAll;
 import org.vstu.meaningtree.nodes.modules.ImportMembers;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
@@ -95,6 +97,7 @@ public class PythonLanguage extends Language {
             case "continue_statement" -> new ContinueStatement();
             case "subscript" -> fromIndexTSNode(node);
             case "dotted_name" -> fromDottedNameTSNode(node);
+            case "aliased_import" -> new Alias((Identifier)fromTSNode(node.getChildByFieldName("name")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("alias")));
             case "import_statement", "import_from_statement" -> fromImportNodes(node);
             case "attribute"-> fromAttributeTSNode(node);
             case "return_statement" -> fromReturnTSNode(node);
@@ -151,28 +154,38 @@ public class PythonLanguage extends Language {
         return new DefinitionArgument(ident, expr);
     }
 
-    private Import fromImportNodes(TSNode node) {
-        Identifier scope = null;
-        if (!node.getChildByFieldName("module_name").isNull()) {
-            scope = (Identifier) fromTSNode(node.getChildByFieldName("module_name"));
-        } else {
-            scope = (Identifier) fromTSNode(node.getChildByFieldName("name"));
-        }
-        TSNode moduleNode = node.getChildByFieldName("name");
-        if (moduleNode.isNull()) {
-            moduleNode = node.getNamedChild(1);
-        }
-        Identifier alias = null, member = null;
-        if (moduleNode.getType().equals("aliased_import")) {
-            alias = (Identifier) fromTSNode(moduleNode.getChildByFieldName("alias"));
-            member = (Identifier) fromTSNode(moduleNode.getChildByFieldName("name"));
-        } else {
-            member = (Identifier) fromTSNode(moduleNode);
-            if (member != null && member.equals(scope)) {
-                member = null;
+    private Node fromImportNodes(TSNode node) {
+        if (node.getType().equals("import_statement")) {
+            List<Identifier> scopes = new ArrayList<>();
+            List<Import> imports = new ArrayList<>();
+            TSNode currentChild = node.getChildByFieldName("name");
+            while (currentChild != null && !currentChild.isNull()) {
+                scopes.add((Identifier) fromTSNode(currentChild));
+                currentChild = currentChild.getNextNamedSibling();
             }
+            for (Identifier scope : scopes) {
+                imports.add(new ImportMembers(scope));
+            }
+            if (imports.size() == 1) {
+                return imports.getFirst();
+            } else {
+                return new PseudoCompoundStatement(imports.toArray(new Node[0]));
+            }
+        } else if (node.getType().equals("import_from_statement")) {
+            Identifier scope = (Identifier) fromTSNode(node.getChildByFieldName("module_name"));
+            if (node.getNamedChild(1).getType().equals("wildcard_import")) {
+                return new ImportAll(scope);
+            }
+            List<Identifier> members = new ArrayList<>();
+            TSNode currentChild = node.getChildByFieldName("name");
+            while (currentChild != null && !currentChild.isNull()) {
+                members.add((Identifier) fromTSNode(currentChild));
+                currentChild = currentChild.getNextNamedSibling();
+            }
+            return new ImportMembers(scope, members);
+        } else {
+            return fromTSNode(node);
         }
-        return new ImportMembers(scope);
     }
 
     private FunctionCall fromFunctionCall(TSNode node) {
@@ -345,10 +358,13 @@ public class PythonLanguage extends Language {
         return new TernaryOperator(ifCond, thenExpr, elseExpr);
     }
 
-    private ScopedIdentifier fromDottedNameTSNode(TSNode node) {
+    private Identifier fromDottedNameTSNode(TSNode node) {
         List<SimpleIdentifier> members = new ArrayList<>();
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             members.add((SimpleIdentifier) fromTSNode(node.getNamedChild(i)));
+        }
+        if (members.size() == 1) {
+            return members.getFirst();
         }
         return new ScopedIdentifier(members.toArray(new SimpleIdentifier[0]));
     }
@@ -579,7 +595,11 @@ public class PythonLanguage extends Language {
         ArrayList<Node> nodes = new ArrayList<>();
         for (int i = 0; i < node.getChildCount(); i++) {
             Node treeNode = fromTSNode(node.getChild(i));
-            if (treeNode != null) {
+            if (treeNode instanceof PseudoCompoundStatement pcs) {
+                for (Node subnode : pcs) {
+                    nodes.add(subnode);
+                }
+            } else if (treeNode != null) {
                 nodes.add(treeNode);
             }
         }
