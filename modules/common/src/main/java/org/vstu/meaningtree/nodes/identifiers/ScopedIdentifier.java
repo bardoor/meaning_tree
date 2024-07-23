@@ -1,7 +1,5 @@
 package org.vstu.meaningtree.nodes.identifiers;
 
-import org.vstu.meaningtree.nodes.Identifier;
-
 import java.util.List;
 import java.util.Objects;
 

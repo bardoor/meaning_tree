@@ -9,6 +9,7 @@ import org.vstu.meaningtree.nodes.bitwise.BitwiseOrOp;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.NullLiteral;
@@ -34,18 +35,18 @@ import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class JavaLanguage extends Language {
-    TSLanguage _language;
-    TSParser _parser;
+    private final TSLanguage _language;
+    private final TSParser _parser;
+    private final Map<String, UserType> _userTypes;
 
     public JavaLanguage() {
         _language = new TreeSitterJava();
         _parser = new TSParser();
         _parser.setLanguage(_language);
+        _userTypes = new HashMap<>();
     }
 
     public MeaningTree getMeaningTree(String code) {
@@ -419,7 +420,7 @@ public class JavaLanguage extends Language {
     private Type fromTypeTSNode(TSNode node) {
         String type = node.getType();
         String typeName = getCodePiece(node);
-        Type parsedType;
+        Type parsedType = null;
 
         switch (type) {
             case "integral_type":
@@ -444,16 +445,19 @@ public class JavaLanguage extends Language {
                 parsedType = new VoidType();
                 break;
             case "type_identifier":
-                if (typeName.equals("String")) {
-                    parsedType = new StringType();
-                }
-                else if (typeName.equals("Object")) {
-                    parsedType = new UnknownType();
-                }
-                else {
-                    throw new IllegalStateException("Unexpected type: " + typeName);
+                switch (typeName) {
+                    case "String" -> parsedType = new StringType();
+                    case "Object" -> parsedType = new UnknownType();
+                    default -> {
+                        if (!_userTypes.containsKey(typeName)) {
+                            _userTypes.put(typeName, new UserType(new SimpleIdentifier(typeName)));
+                        }
+                        parsedType = _userTypes.get(typeName);
+                    }
                 }
                 break;
+            case "scoped_type_identifier":
+                throw new IllegalStateException("Scoped type identifiers are not supported yet");
             default:
                 throw new IllegalStateException("Unexpected type: " + typeName);
         }

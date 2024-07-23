@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.Type;
 
 import java.util.List;

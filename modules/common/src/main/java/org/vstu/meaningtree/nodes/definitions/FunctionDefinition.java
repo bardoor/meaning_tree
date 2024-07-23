@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes.definitions;
 
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.declarations.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;

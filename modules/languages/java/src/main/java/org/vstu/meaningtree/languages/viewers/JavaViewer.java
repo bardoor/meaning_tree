@@ -4,6 +4,7 @@ import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -99,8 +100,13 @@ public class JavaViewer extends Viewer {
             case StaticImportMembers staticImportMembers -> toString(staticImportMembers);
             case ImportAll importAll -> toString(importAll);
             case ImportMembers importMembers -> toString(importMembers);
+            case UserType userType -> toString(userType);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(UserType userType) {
+        return toString(userType.getName());
     }
 
     private String toString(StaticImportAll staticImportAll) {
@@ -482,6 +488,7 @@ public class JavaViewer extends Viewer {
             case VoidType voidType -> toString(voidType);
             case UnknownType unknownType -> toString(unknownType);
             case ArrayType arrayType -> toString(arrayType);
+            case UserType userType -> toString(userType);
             default -> throw new IllegalStateException("Unexpected value: " + t.getClass());
         };
     }

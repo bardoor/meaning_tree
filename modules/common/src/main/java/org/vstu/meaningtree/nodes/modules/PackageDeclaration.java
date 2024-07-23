@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes.modules;
 
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.declarations.Declaration;
 
 public class PackageDeclaration extends Declaration {

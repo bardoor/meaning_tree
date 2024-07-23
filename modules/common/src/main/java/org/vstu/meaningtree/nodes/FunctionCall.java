@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes;
 
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;

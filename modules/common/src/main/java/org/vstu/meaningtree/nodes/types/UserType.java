@@ -1,12 +1,10 @@
 package org.vstu.meaningtree.nodes.types;
 
-import org.vstu.meaningtree.nodes.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-
-import java.util.Optional;
 
 public class UserType extends Type {
     private final Identifier _name;
@@ -25,9 +23,16 @@ public class UserType extends Type {
         return _name;
     }
 
-
     public UserType(Identifier name) {
         _name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
+        UserType other = (UserType) o;
+        return getName().equals(other.getName());
     }
 
     @Override
