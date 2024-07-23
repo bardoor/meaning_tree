@@ -185,8 +185,7 @@ public class JavaLanguage extends Language {
         return new ObjectNewExpression(type, arguments);
     }
 
-    private MethodCall fromMethodInvocation(TSNode methodInvocation) {
-        Expression object = (Expression) fromTSNode(methodInvocation.getChildByFieldName("object"));
+    private FunctionCall fromMethodInvocation(TSNode methodInvocation) {
         Identifier methodName = fromIdentifierTSNode(methodInvocation.getChildByFieldName("name"));
 
         List<Expression> arguments = new ArrayList<>();
@@ -197,6 +196,11 @@ public class JavaLanguage extends Language {
             arguments.add(argument);
         }
 
+        if (methodInvocation.getChildByFieldName("object").isNull()) {
+            return new FunctionCall(methodName, arguments);
+        }
+
+        Expression object = (Expression) fromTSNode(methodInvocation.getChildByFieldName("object"));
         return new MethodCall(object, methodName, arguments);
     }
 
