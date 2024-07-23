@@ -12,16 +12,13 @@ import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.literals.NullLiteral;
-import org.vstu.meaningtree.nodes.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.literals.FloatLiteral;
-import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.math.AddOp;
 import org.vstu.meaningtree.nodes.math.DivOp;
@@ -94,8 +91,33 @@ public class JavaLanguage extends Language {
             case "null_literal" -> fromNullLiteralTSNode(node);
             case "import_declaration" -> fromImportDeclarationTSNode(node);
             case "method_invocation" -> fromMethodInvocation(node);
+            case "object_creation_expression" -> fromObjectCreationExpressionTSNode(node);
+            case "true", "false" -> fromBooleanValueTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromBooleanValueTSNode(TSNode node) {
+        String value = getCodePiece(node);
+        return switch (value) {
+            case "true" -> new BoolLiteral(true);
+            case "false" -> new BoolLiteral(false);
+            default -> throw new IllegalStateException("Unexpected value " + value);
+        };
+    }
+
+    private Node fromObjectCreationExpressionTSNode(TSNode objectCreationNode) {
+        Type type = fromTypeTSNode(objectCreationNode.getChildByFieldName("type"));
+
+        List<Expression> arguments = new ArrayList<>();
+        TSNode tsArguments = objectCreationNode.getChildByFieldName("arguments");
+        for (int i = 0; i < tsArguments.getNamedChildCount(); i++) {
+            TSNode tsArgument = tsArguments.getNamedChild(i);
+            Expression argument = (Expression) fromTSNode(tsArgument);
+            arguments.add(argument);
+        }
+
+        return new ObjectNewExpression(type, arguments);
     }
 
     private MethodCall fromMethodInvocation(TSNode methodInvocation) {

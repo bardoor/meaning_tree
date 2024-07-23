@@ -8,10 +8,7 @@ import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.literals.FloatLiteral;
-import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
-import org.vstu.meaningtree.nodes.literals.NullLiteral;
-import org.vstu.meaningtree.nodes.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
@@ -104,8 +101,26 @@ public class JavaViewer extends Viewer {
             case ImportAll importAll -> toString(importAll);
             case ImportMembers importMembers -> toString(importMembers);
             case UserType userType -> toString(userType);
+            case ObjectNewExpression objectNewExpression -> toString(objectNewExpression);
+            case BoolLiteral boolLiteral -> toString(boolLiteral);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(BoolLiteral boolLiteral) {
+        return boolLiteral.getValue() ? "true" : "false";
+    }
+
+    private String toString(ObjectNewExpression objectNewExpression) {
+        String typeName = toString(objectNewExpression.getType());
+
+        String arguments = objectNewExpression
+                .getConstructorArguments()
+                .stream()
+                .map(this::toString)
+                .collect(Collectors.joining(", "));
+
+        return "new %s(%s)".formatted(typeName, arguments);
     }
 
     private String toString(MethodCall methodCall) {

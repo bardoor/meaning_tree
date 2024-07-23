@@ -11,8 +11,12 @@ public class ObjectNewExpression extends NewExpression {
     private final List<Expression> _constructorArguments;
 
     public ObjectNewExpression(Type type, Expression... constructorArguments) {
+        this(type, List.of(constructorArguments));
+    }
+
+    public ObjectNewExpression(Type type, List<Expression> constructorArguments) {
         super(type);
-        _constructorArguments = List.of(constructorArguments);
+        _constructorArguments = List.copyOf(constructorArguments);
     }
 
     public List<Expression> getConstructorArguments() {
