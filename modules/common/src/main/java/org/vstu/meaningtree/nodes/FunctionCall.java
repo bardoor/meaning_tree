@@ -7,25 +7,25 @@ import java.util.List;
 import java.util.Objects;
 
 public class FunctionCall extends Expression {
-    protected final Identifier functionName;
+    protected final Identifier _functionName;
 
     public Identifier getFunctionName() {
-        return functionName;
+        return _functionName;
     }
 
     public List<Expression> getArguments() {
-        return new ArrayList<>(arguments);
+        return List.copyOf(_arguments);
     }
 
-    protected final List<Expression> arguments;
+    protected final List<Expression> _arguments;
 
     public FunctionCall(Identifier functionName, Expression ... arguments) {
         this(functionName, List.of(arguments));
     }
 
     public FunctionCall(Identifier functionName, List<Expression> arguments) {
-        this.functionName = functionName;
-        this.arguments = arguments;
+        this._functionName = functionName;
+        this._arguments = arguments;
     }
 
     @Override
@@ -38,11 +38,11 @@ public class FunctionCall extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FunctionCall that = (FunctionCall) o;
-        return Objects.equals(functionName, that.functionName) && Objects.equals(arguments, that.arguments);
+        return Objects.equals(_functionName, that._functionName) && Objects.equals(_arguments, that._arguments);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(functionName, arguments);
+        return Objects.hash(_functionName, _arguments);
     }
 }

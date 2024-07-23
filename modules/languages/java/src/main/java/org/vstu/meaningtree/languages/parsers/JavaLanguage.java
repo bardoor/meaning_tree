@@ -61,12 +61,9 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromTSNode(TSNode node) {
-        String nodeType;
-        try {
-            nodeType = node.getType();
-        } catch (TSException e) {
-            return null;
-        }
+        Objects.requireNonNull(node);
+
+        String nodeType = node.getType();
         return switch (nodeType) {
             case "program" -> fromProgramTSNode(node);
             case "block" -> fromBlockTSNode(node);
@@ -96,8 +93,24 @@ public class JavaLanguage extends Language {
             case "continue_statement" -> fromContinueStatementTSNode(node);
             case "null_literal" -> fromNullLiteralTSNode(node);
             case "import_declaration" -> fromImportDeclarationTSNode(node);
+            case "method_invocation" -> fromMethodInvocation(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private MethodCall fromMethodInvocation(TSNode methodInvocation) {
+        Expression object = (Expression) fromTSNode(methodInvocation.getChildByFieldName("object"));
+        Identifier methodName = fromIdentifierTSNode(methodInvocation.getChildByFieldName("name"));
+
+        List<Expression> arguments = new ArrayList<>();
+        TSNode tsArguments = methodInvocation.getChildByFieldName("arguments");
+        for (int i = 0; i < tsArguments.getNamedChildCount(); i++) {
+            TSNode tsArgument = tsArguments.getNamedChild(i);
+            Expression argument = (Expression) fromTSNode(tsArgument);
+            arguments.add(argument);
+        }
+
+        return new MethodCall(object, methodName, arguments);
     }
 
     private boolean isStaticImport(TSNode importDeclaration) {
@@ -208,8 +221,7 @@ public class JavaLanguage extends Language {
         Identifier identifier = fromScopedIdentifierTSNode(node.getChildByFieldName("name"));
         List<DeclarationArgument> parameters = fromMethodParameters(node.getChildByFieldName("parameters"));
 
-        // Пока не реализован механизм нахождения класса, к которому принадлежит метод,
-        // и определение аннотаций
+        // TODO: Пока не реализован механизм нахождения класса, к которому принадлежит метод, и определение аннотаций
         MethodDeclaration declaration = new MethodDeclaration(null,
                 identifier,
                 returnType,

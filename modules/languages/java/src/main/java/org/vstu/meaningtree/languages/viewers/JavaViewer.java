@@ -25,6 +25,8 @@ import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
 
@@ -79,6 +81,7 @@ public class JavaViewer extends Viewer {
             case CompoundComparison cmp -> toString(cmp);
             case RangeForLoop rangeLoop -> toString(rangeLoop);
             case ProgramEntryPoint entryPoint -> toString(entryPoint);
+            case MethodCall methodCall -> toString(methodCall);
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
@@ -103,6 +106,19 @@ public class JavaViewer extends Viewer {
             case UserType userType -> toString(userType);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(MethodCall methodCall) {
+        String object = toString(methodCall.getObject());
+        String methodName = toString(methodCall.getFunctionName());
+
+        String arguments = methodCall
+                .getArguments()
+                .stream()
+                .map(this::toString)
+                .collect(Collectors.joining(", "));
+
+        return "%s.%s(%s)".formatted(object, methodName, arguments);
     }
 
     private String toString(UserType userType) {
