@@ -6,20 +6,20 @@ import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import java.util.*;
 
 public class MemberAccess extends Expression {
-    protected final Expression expr;
-    protected final SimpleIdentifier member;
+    protected final Expression _expr;
+    protected final SimpleIdentifier _member;
 
     public MemberAccess(Expression expr, SimpleIdentifier member) {
-        this.expr = expr;
-        this.member = member;
+        this._expr = expr;
+        this._member = member;
     }
 
     public Expression getExpression() {
-        return expr;
+        return _expr;
     }
 
     public SimpleIdentifier getMember() {
-        return member;
+        return _member;
     }
 
     @Override
@@ -29,8 +29,8 @@ public class MemberAccess extends Expression {
 
     public ScopedIdentifier toScopedIdentifier() {
         List<SimpleIdentifier> idents = new ArrayList<>();
-        idents.add(member);
-        _unwrapScoped(expr, idents);
+        idents.add(_member);
+        _unwrapScoped(_expr, idents);
         Collections.reverse(idents);
         return new ScopedIdentifier(idents.toArray(new SimpleIdentifier[0]));
     }
@@ -57,11 +57,11 @@ public class MemberAccess extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MemberAccess that = (MemberAccess) o;
-        return Objects.equals(expr, that.expr) && Objects.equals(member, that.member);
+        return Objects.equals(_expr, that._expr) && Objects.equals(_member, that._member);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(expr, member);
+        return Objects.hash(_expr, _member);
     }
 }

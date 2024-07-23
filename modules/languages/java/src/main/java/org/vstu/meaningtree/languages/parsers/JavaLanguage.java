@@ -93,8 +93,15 @@ public class JavaLanguage extends Language {
             case "method_invocation" -> fromMethodInvocation(node);
             case "object_creation_expression" -> fromObjectCreationExpressionTSNode(node);
             case "true", "false" -> fromBooleanValueTSNode(node);
+            case "field_access" -> fromFieldAccessTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromFieldAccessTSNode(TSNode fieldAccess) {
+        Expression object = (Expression) fromTSNode(fieldAccess.getChildByFieldName("object"));
+        SimpleIdentifier member = (SimpleIdentifier) fromIdentifierTSNode(fieldAccess.getChildByFieldName("field"));
+        return new MemberAccess(object, member);
     }
 
     private Node fromBooleanValueTSNode(TSNode node) {
@@ -289,11 +296,11 @@ public class JavaLanguage extends Language {
         // Первый и последний ребенок - кавычки, их пропускаем.
         // Дети string_literal это либо string_fragment, либо escape_sequence,
         // поэтому ничего экранировать не нужно, они уже представлены так как надо
-        for (int i = 1; i < node.getChildCount() - 1; i++) {
-            builder.append(getCodePiece(node.getChild(i)));
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            TSNode child = node.getNamedChild(i);
+            builder.append(getCodePiece(child));
         }
-
-        return StringLiteral.fromEscaped(builder.toString(), StringLiteral.Type.NONE);
+        return StringLiteral.fromUnescaped(builder.toString(), StringLiteral.Type.NONE);
     }
 
     private FieldDeclaration fromFieldDeclarationTSNode(TSNode node) {

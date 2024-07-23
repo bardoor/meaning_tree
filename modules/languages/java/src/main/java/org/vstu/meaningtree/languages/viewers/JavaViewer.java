@@ -103,8 +103,15 @@ public class JavaViewer extends Viewer {
             case UserType userType -> toString(userType);
             case ObjectNewExpression objectNewExpression -> toString(objectNewExpression);
             case BoolLiteral boolLiteral -> toString(boolLiteral);
+            case MemberAccess memberAccess -> toString(memberAccess);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(MemberAccess memberAccess) {
+        String object = toString(memberAccess.getExpression());
+        String member = toString(memberAccess.getMember());
+        return "%s.%s".formatted(object, member);
     }
 
     private String toString(BoolLiteral boolLiteral) {
@@ -400,7 +407,7 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(StringLiteral literal) {
-        return String.format("\"%s\"", literal.getEscapedValue());
+        return String.format("\"%s\"", literal.getUnescapedValue());
     }
 
     private String toString(BinaryExpression expr, String sign) {
