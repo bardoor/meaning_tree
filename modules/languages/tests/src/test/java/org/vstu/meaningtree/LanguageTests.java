@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LanguageTests {
     private static TestGroup[] _tests;
-    private static final String _testsFilePath = "sample.test";
+    private static final String _testsFilePath = "python.test";
     private static final TestConfig _config = new TestConfig();
 
     static String readTestsFile(String filePath) throws IOException {
