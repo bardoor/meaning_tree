@@ -28,10 +28,10 @@ group: LiteralsTest
 	case: FloatLiteralWithF
 
 		python:
-		    3.45f
+		    3.45
 
 		python:
-		    3.45f
+		    3.45
 
 		java:
 			3.45f;
@@ -576,7 +576,7 @@ group: ComparisonsTest
 	case: LessOp
 
 		python:
-		    a < b 
+		    a < b
 
 		python:
 		    a < b
@@ -589,7 +589,7 @@ group: ComparisonsTest
 	case: LessEqualOp
 
 		python:
-		    a <= b 
+		    a <= b
 
 		python:
 		    a <= b
@@ -602,7 +602,7 @@ group: ComparisonsTest
 	case: GreaterEqualOp
 
 		python:
-		    a >= b 
+		    a >= b
 
 		python:
 		    a >= b
@@ -615,7 +615,7 @@ group: ComparisonsTest
 	case: GreaterOp
 
 		python:
-		    a > b 
+		    a > b
 
 		python:
 		    a > b
@@ -628,7 +628,7 @@ group: ComparisonsTest
 	case: EqOp
 
 		python:
-		    a == b 
+		    a == b
 
 		python:
 		    a == b
@@ -641,7 +641,7 @@ group: ComparisonsTest
 	case: NotEqOp
 
 		python:
-		    a != b 
+		    a != b
 
 		python:
 		    a != b
@@ -1347,12 +1347,12 @@ group: WhileLoop
 
 		java:
 			while (true) {
-				
+
 			}
 
 		c++:
 			while (true) {
-				
+
 			}
 	case: DoWhileLoopTransformation
 
@@ -1570,7 +1570,7 @@ group: StructuresOOP
 			class A:
 				def a(self):
 					return k()
-				
+
 				def b(self):
 					return r + m
 
@@ -1579,7 +1579,7 @@ group: StructuresOOP
 				public Object a() {
 					return k();
 				}
-				
+
 				public Object b() {
 					return r + m;
 				}
@@ -1591,7 +1591,7 @@ group: StructuresOOP
 					Object a() {
 						return k();
 					}
-					
+
 					Object b() {
 						return r + m;
 					}
@@ -1602,10 +1602,10 @@ group: StructuresOOP
 			class A:
 				k: int = 32
 				m = 34
-				
+
 				def a(self):
 					return k()
-				
+
 				def b(self):
 					return r + m
 
@@ -1613,11 +1613,11 @@ group: StructuresOOP
 			class A {
 				public int k = 32;
 				public Object m = 34;
-			
+
 				public Object a() {
 					return k();
 				}
-				
+
 				public Object b() {
 					return r + m;
 				}
@@ -1632,7 +1632,7 @@ group: StructuresOOP
 					Object a() {
 						return k();
 					}
-					
+
 					Object b() {
 						return r + m;
 					}
@@ -1787,21 +1787,21 @@ group: Other
 		python:
 			a = 3
 			f()
-			
+
 			def main():
 				return 0
-			
+
 			if __name == "__main__":
 				main()
 
 		c++:
 			int a = 3;
 			f();
-			
+
 			int main() {
 				return 0;
 			}
-			
+
 			int main() {
 				main();
 				return 0;
@@ -1810,11 +1810,11 @@ group: Other
 		java:
 			class Main {
 				public static int a = 3;
-				
+
 				public static int main() {
 					return 0;
 				}
-			
+
 				public static void main(String[] args) {
 					f();
 					main();
@@ -1825,23 +1825,23 @@ group: Other
 		python:
 			from funcs import func
 			a: int = 1
-			
+
 			def run():
 				func(a)
 				return 0
-			
+
 			if __name == "__main__":
 				main()
 
 		c++:
 			#include "funcs.func"
 			int a = 1;
-			
+
 			int run() {
 				func(a);
 				return 0;
 			}
-			
+
 			int main() {
 				run();
 				return 0;
@@ -1850,24 +1850,15 @@ group: Other
 		java:
 			class Main {
 				public static int a = 1;
-				
+
 				public static int run() {
 					func(a);
 					return 0;
 				}
-			
+
 				public static void main(String[] args) {
 					run();
 					main();
 				}
 		}
-# TODO: Доработать
-group: ComplexTests
-	case: ComplexTest1
 
-		python:
-
-		java:
-
-		c++:
-			

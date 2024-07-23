@@ -48,11 +48,12 @@ public class CodeFormatter {
         }
 
         // Иначе считать индетацию первой строки - базовой
-        int baseIndent = Pattern.compile("^(\\s+)\\w").matcher(lines[0]).group().length();
         // Удалить индетацию, равную базовой у каждой строки
-        return Arrays.stream(lines)
-                        .map(line -> line.substring(baseIndent))
-                        .collect(Collectors.joining(System.lineSeparator()));
+            String baseIndent = lines[0].replace(lines[0].strip(), "");
+            return Arrays.stream(lines)
+                    .map(line -> line.replace(baseIndent, ""))
+                    .collect(Collectors.joining(System.lineSeparator()));
+
     }
 
 }

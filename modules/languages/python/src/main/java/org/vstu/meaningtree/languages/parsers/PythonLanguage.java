@@ -49,7 +49,7 @@ public class PythonLanguage extends Language {
         TSTree tree = parser.parseString(null, code);
 
         if (tree.getRootNode().hasError()) {
-            throw new RuntimeException("Code contains syntax errors");
+            throw new RuntimeException("Code contains syntax errors\n" + code);
         }
 
         try {

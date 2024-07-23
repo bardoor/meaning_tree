@@ -17,7 +17,7 @@ public class TestCode {
     }
 
     private String parseName(String testCode) {
-        Pattern langNamePattern = Pattern.compile("^\\s+(\\w+):\\s*", Pattern.DOTALL | Pattern.MULTILINE);
+        Pattern langNamePattern = Pattern.compile("^\\s+(.+):\\s*$", Pattern.MULTILINE);
         Matcher langNameMatcher = langNamePattern.matcher(testCode);
 
         if (!langNameMatcher.find()) {
@@ -31,11 +31,17 @@ public class TestCode {
         List<String> lines = Arrays.stream(testCode.split("\\R"))
                                         .filter(Predicate.not(String::isBlank))
                                         .collect(Collectors.toList());
+
         // Удалить строку с названием языка (надеюсь что она первая)
         lines.removeFirst();
+        String indent = lines.getFirst().replace(lines.getFirst().strip(), "");
+
+        if (lines.isEmpty()) {
+            throw new RuntimeException("Нет кода: " + testCode);
+        }
 
         // Удалить комментарии с конца
-        while (lines.getLast().strip().startsWith("#")) {
+        while (lines.getLast().strip().startsWith("#") && !lines.getLast().replace(lines.getLast().strip(), "").equals(indent)) {
             lines.removeLast();
         }
 

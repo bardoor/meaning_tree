@@ -27,26 +27,30 @@ public class TestCase {
     }
 
     private List<TestCode> parseCodes(String testCase) {
-        Pattern langNamePattern = Pattern.compile("^([ \\t\\f\\r]+)\\w+:\\s*$", Pattern.MULTILINE);
+        Pattern langNamePattern = Pattern.compile("^([ \\t\\f\\r]+).+:\\s*$", Pattern.MULTILINE);
         Matcher matcher = langNamePattern.matcher(testCase);
 
-        if (!matcher.find()) {
-            throw new RuntimeException("В следующем тест кейсе не найдены языки:\n" + testCase);
-        }
 
+        ArrayList<MatchResult> results = matcher.results().collect(Collectors.toCollection(ArrayList::new));
         // Найти строки с названиями языков
-        String langNameIndent = matcher.group();
-        ArrayList<Integer> codesStarts = matcher.results()
-                .filter(match -> match.group().equals(langNameIndent))
+        String langNameIndent = results.getFirst().group().replace(results.getFirst().group().strip(), "");
+        ArrayList<Integer> codesStarts = results.stream()
+                .filter(match -> match.group().replace(match.group().strip(), "").equals(langNameIndent))
                 .map(MatchResult::start)
                 .collect(Collectors.toCollection(ArrayList::new));
+
+        codesStarts.add(testCase.length() - 1);
 
         // Вычленить всё что начинается названием языка включительно
         // и кончается названием другого языка не включительно
         ArrayList<TestCode> codes = new ArrayList<>();
-        for (int i = 0; i < codesStarts.size() - 1; i++) {
-            String code = testCase.substring(codesStarts.get(i), codesStarts.get(i + 1));
-            codes.add(new TestCode(code));
+        try {
+            for (int i = 0; i < codesStarts.size() - 1; i++) {
+                String code = testCase.substring(codesStarts.get(i), codesStarts.get(i + 1));
+                codes.add(new TestCode(code));
+            }
+        } catch (RuntimeException e) {
+            throw new RuntimeException("В тест кейсе отсутствует код:\n" + testCase);
         }
 
         return codes;
