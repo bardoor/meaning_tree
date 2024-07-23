@@ -71,7 +71,7 @@ public class JavaLanguage extends Language {
             case "parenthesized_expression" -> fromParenthesizedExpressionTSNode(node);
             case "binary_expression" -> fromBinaryExpressionTSNode(node);
             case "unary_expression" -> fromUnaryExpressionTSNode(node);
-            case "decimal_integer_literal" -> fromIntegerLiteralTSNode(node);
+            case "decimal_integer_literal", "binary_integer_literal", "hex_integer_literal" -> fromIntegerLiteralTSNode(node);
             case "decimal_floating_point_literal" -> fromFloatLiteralTSNode(node);
             case "local_variable_declaration" -> fromVariableDeclarationTSNode(node);
             case "for_statement" -> fromForStatementTSNode(node);
@@ -96,7 +96,7 @@ public class JavaLanguage extends Language {
             case "field_access" -> fromFieldAccessTSNode(node);
             case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
             case "array_initializer" -> fromArrayInitializer(node);
-            case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
+            case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s in %s", node.getType(), getCodePiece(node)));
         };
     }
 
@@ -721,6 +721,5 @@ public class JavaLanguage extends Language {
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }
-
 
 }
