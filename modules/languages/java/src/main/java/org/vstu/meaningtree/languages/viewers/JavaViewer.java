@@ -104,8 +104,50 @@ public class JavaViewer extends Viewer {
             case ObjectNewExpression objectNewExpression -> toString(objectNewExpression);
             case BoolLiteral boolLiteral -> toString(boolLiteral);
             case MemberAccess memberAccess -> toString(memberAccess);
+            case ArrayNewExpression arrayNewExpression -> toString(arrayNewExpression);
+            case ArrayInitializer arrayInitializer -> toString(arrayInitializer);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(ArrayInitializer initializer) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{");
+
+        List<Expression> values = initializer.getValues();
+        for (Expression value : values) {
+            builder
+                    .append(toString(value))
+                    .append(", ");
+        }
+
+        if (builder.length() > 1) {
+            // Удаляем лишние пробел и запятую
+            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        builder.append("}");
+        return builder.toString();
+    }
+
+    private String toString(ArrayNewExpression arrayNewExpression) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("new ");
+
+        String type = toString(arrayNewExpression.getType());
+        builder.append(type);
+
+        String dimensions = toString(arrayNewExpression.getShape());
+        builder.append(dimensions);
+
+        Optional<ArrayInitializer> optionalInitializer = arrayNewExpression.getInitializer();
+        if (optionalInitializer.isPresent()) {
+            String initializer = toString(optionalInitializer.get());
+            builder.append(" ").append(initializer);
+        }
+
+        return builder.toString();
     }
 
     private String toString(MemberAccess memberAccess) {
@@ -555,13 +597,9 @@ public class JavaViewer extends Viewer {
         return "Object";
     }
 
-    private String toString(ArrayType type) {
+    private String toString(Shape shape) {
         StringBuilder builder = new StringBuilder();
 
-        String baseType = toString(type.getItemType());
-        builder.append(baseType);
-
-        Shape shape = type.getShape();
         for (int i = 0; i < shape.getDimensionCount(); i++) {
             builder.append("[");
 
@@ -570,6 +608,16 @@ public class JavaViewer extends Viewer {
 
             builder.append("]");
         }
+
+        return builder.toString();
+    }
+
+    private String toString(ArrayType type) {
+        StringBuilder builder = new StringBuilder();
+
+        String baseType = toString(type.getItemType());
+        builder.append(baseType);
+        builder.append(toString(type.getShape()));
 
         return builder.toString();
     }

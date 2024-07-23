@@ -1,39 +1,33 @@
 package org.vstu.meaningtree.nodes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import org.vstu.meaningtree.nodes.types.Shape;
+
+import java.util.*;
 
 public class ArrayNewExpression extends NewExpression {
-    private final Optional<Expression> _dimension;
-    private final List<Expression> _initialValues;
+    private final Shape _shape;
+    private final ArrayInitializer _initializer;
 
-    public ArrayNewExpression(Type type, List<Expression> initialValues) {
+    public ArrayNewExpression(Type type, Shape shape, ArrayInitializer initializer) {
         super(type);
-        this._dimension = Optional.empty();
-        this._initialValues = new ArrayList<>(initialValues);
+        _shape = shape;
+        _initializer = initializer;
     }
 
-    public ArrayNewExpression(Type type, Expression dimension) {
-        super(type);
-        this._dimension = Optional.of(dimension);
-        _initialValues = new ArrayList<>();
+    public ArrayNewExpression(Type type, Shape shape) {
+        this(type, shape, null);
     }
 
-    public boolean hasDimension() {
-        return _dimension.isPresent();
+    public Shape getShape() {
+       return _shape;
     }
 
-    public Expression getDimension() {
-        if (!hasDimension()) {
-            throw new RuntimeException("No dimension of array");
-        }
-        return _dimension.get();
+    public int getDimensionsCount() {
+        return _shape.getDimensionCount();
     }
 
-    public List<Expression> getInitialArray() {
-        return new ArrayList<>(_initialValues);
+    public Optional<ArrayInitializer> getInitializer() {
+        return Optional.ofNullable(_initializer);
     }
 
     @Override
@@ -47,11 +41,11 @@ public class ArrayNewExpression extends NewExpression {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ArrayNewExpression that = (ArrayNewExpression) o;
-        return Objects.equals(_dimension, that._dimension) && Objects.equals(_initialValues, that._initialValues);
+        return Objects.equals(_shape, that._shape) && Objects.equals(_initializer, that._initializer);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _dimension, _initialValues);
+        return Objects.hash(super.hashCode(), _shape, _initializer);
     }
 }

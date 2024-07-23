@@ -94,17 +94,75 @@ public class JavaLanguage extends Language {
             case "object_creation_expression" -> fromObjectCreationExpressionTSNode(node);
             case "true", "false" -> fromBooleanValueTSNode(node);
             case "field_access" -> fromFieldAccessTSNode(node);
+            case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
+            case "array_initializer" -> fromArrayInitializer(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
     }
 
-    private Node fromFieldAccessTSNode(TSNode fieldAccess) {
+    private int countArrayDimensions(TSNode dimensionsNode) {
+        String dimensions = getCodePiece(dimensionsNode);
+        return dimensions.split("\\u005b\\u005d", -1).length - 1;
+    }
+
+    private Shape getArrayShape(TSNode arrayCreationNode) {
+        int dimensionsCount = 0;
+        Map<Integer, Expression> dimensions = new HashMap<>();
+
+        // Начинаем с первого ребенка, т.к. нужно пропустить type-ребенка
+        LOOP: for (int i = 1; i < arrayCreationNode.getNamedChildCount(); i++) {
+            TSNode dimension = arrayCreationNode.getNamedChild(i);
+
+            switch (dimension.getType()) {
+                case "dimensions_expr" -> {
+                    Expression dimensionExpr = (Expression) fromTSNode(dimension.getNamedChild(0));
+                    dimensions.put(dimensionsCount, dimensionExpr);
+                    dimensionsCount += 1;
+                }
+                case "dimensions" -> {
+                    dimensionsCount += countArrayDimensions(dimension);
+                }
+                case "array_initializer" -> {
+                    break LOOP;
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + dimension.getType());
+            }
+        }
+
+        List<Expression> realDimensions = new ArrayList<>(dimensionsCount);
+        for (int i = 0; i < dimensionsCount; i++) {
+            realDimensions.add(i, dimensions.getOrDefault(i, null));
+        }
+
+        return new Shape(dimensionsCount, realDimensions);
+    }
+
+    private ArrayInitializer fromArrayInitializer(TSNode arrayInitializerNode) {
+        List<Expression> values = new ArrayList<>();
+        for (int i = 0; i < arrayInitializerNode.getNamedChildCount(); i++) {
+            Expression value = (Expression) fromTSNode(arrayInitializerNode.getNamedChild(i));
+            values.add(value);
+        }
+        return new ArrayInitializer(values);
+    }
+
+    private ArrayNewExpression fromArrayCreationExpressionTSNode(TSNode arrayCreationNode) {
+        Type arrayType = fromTypeTSNode(arrayCreationNode.getChildByFieldName("type"));
+        Shape arrayShape = getArrayShape(arrayCreationNode);
+        ArrayInitializer initializer = null;
+        if (!arrayCreationNode.getChildByFieldName("value").isNull()) {
+            initializer = fromArrayInitializer(arrayCreationNode.getChildByFieldName("value"));
+        }
+        return new ArrayNewExpression(arrayType, arrayShape, initializer);
+    }
+
+    private MemberAccess fromFieldAccessTSNode(TSNode fieldAccess) {
         Expression object = (Expression) fromTSNode(fieldAccess.getChildByFieldName("object"));
         SimpleIdentifier member = (SimpleIdentifier) fromIdentifierTSNode(fieldAccess.getChildByFieldName("field"));
         return new MemberAccess(object, member);
     }
 
-    private Node fromBooleanValueTSNode(TSNode node) {
+    private BoolLiteral fromBooleanValueTSNode(TSNode node) {
         String value = getCodePiece(node);
         return switch (value) {
             case "true" -> new BoolLiteral(true);
@@ -451,11 +509,6 @@ public class JavaLanguage extends Language {
         else {
             return new VariableDeclarator(ident);
         }
-    }
-
-    private int countArrayDimensions(TSNode dimensionsNode) {
-        String dimensions = getCodePiece(dimensionsNode);
-        return dimensions.split("\\u005b\\u005d", -1).length - 1;
     }
 
     private Type fromTypeTSNode(TSNode node) {

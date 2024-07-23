@@ -24,10 +24,7 @@ import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -511,10 +508,14 @@ public class PythonViewer extends Viewer {
 
     private String callsToString(Node node) {
         if (node instanceof ArrayNewExpression newExpr) {
-            if (!newExpr.getInitialArray().isEmpty()) {
-                return String.format("[%s]", argumentsToString(newExpr.getInitialArray()));
+            if (newExpr.getInitializer().isPresent()) {
+                ArrayInitializer initializer = newExpr.getInitializer().get();
+                return String.format("[%s]", argumentsToString(initializer.getValues()));
             } else {
-                return String.format("[%s for _ in range(%s)]", String.format("%s()", newExpr.getType()), toString(newExpr.getDimension()));
+                // TODO: добавить обработку многомерных массивов
+                Shape shape = newExpr.getShape();
+                Optional<Expression> dimension = shape.getDimension(0);
+                return String.format("[%s for _ in range(%s)]", String.format("%s()", newExpr.getType()), toString(dimension.get()));
             }
         } else if (node instanceof ObjectNewExpression newExpr) {
             return String.format("%s(%s)", newExpr.getType(), argumentsToString(newExpr.getConstructorArguments()));

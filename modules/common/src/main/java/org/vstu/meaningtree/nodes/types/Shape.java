@@ -27,7 +27,7 @@ public class Shape {
         }
 
         _dimensionCount = dimensionCount;
-        _dimensions = List.copyOf(dimensions);
+        _dimensions = new ArrayList<>(dimensions);
     }
 
     public int getDimensionCount() {
