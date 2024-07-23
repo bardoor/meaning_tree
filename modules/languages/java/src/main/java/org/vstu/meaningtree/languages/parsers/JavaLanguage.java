@@ -662,7 +662,13 @@ public class JavaLanguage extends Language {
         // неправильного парсинга (получаем выражение в скобках в качестве условия, а не просто выражение)
         Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition").getChild(1));
         Statement consequence = (Statement) fromTSNode(node.getChildByFieldName("consequence"));
-        Statement alternative = (Statement) fromTSNode(node.getChildByFieldName("alternative"));
+
+        TSNode alternativeNode = node.getChildByFieldName("alternative");
+        if (alternativeNode.isNull()) {
+            return new IfStatement(condition, consequence);
+        }
+
+        Statement alternative = (Statement) fromTSNode(alternativeNode);
         return new IfStatement(condition, consequence, alternative);
     }
 

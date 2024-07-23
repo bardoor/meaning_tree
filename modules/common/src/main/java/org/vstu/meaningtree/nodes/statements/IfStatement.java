@@ -11,18 +11,20 @@ public class IfStatement extends Statement {
     private final List<ConditionBranch> _branches;
     private Optional<Statement> _elseBranch;
 
-
     public IfStatement(Expression condition, Statement thenBranch, Statement elseBranch) {
-        super();
         _elseBranch = Optional.ofNullable(elseBranch);
         _branches = new ArrayList<>();
         _branches.add(new ConditionBranch(condition, thenBranch));
     }
 
     public IfStatement(List<ConditionBranch> branches, Statement elseBranch) {
-        super();
         _elseBranch = Optional.ofNullable(elseBranch);
         _branches = new ArrayList<>(branches);
+    }
+
+    public IfStatement(Expression condition, Statement thenBranch) {
+        _branches = new ArrayList<>();
+        _branches.add(new ConditionBranch(condition, thenBranch));
     }
 
     public List<ConditionBranch> getBranches() {
