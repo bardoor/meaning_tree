@@ -103,8 +103,12 @@ public class JavaLanguage extends Language {
     }
 
     private Comment fromCommentTSNode(TSNode node) {
-        String comment = getCodePiece(node).substring(2);
-        return Comment.fromUnescaped(comment);
+        String comment = getCodePiece(node);
+        return switch (node.getType()) {
+            case "line_comment" -> Comment.fromUnescaped(comment.substring(2));
+            case "block_comment" -> Comment.fromUnescaped(comment.substring(2, comment.length() - 2));
+            default -> throw new IllegalArgumentException();
+        };
     }
 
     private Node fromReturnStatementTSNode(TSNode node) {

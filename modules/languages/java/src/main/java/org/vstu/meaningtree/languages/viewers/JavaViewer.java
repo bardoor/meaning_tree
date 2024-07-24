@@ -393,6 +393,10 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(Comment comment) {
+        if (comment.isMultiline()) {
+            return "/*" + comment.getUnescapedContent() + "\n*/";
+        }
+
         return "//%s".formatted(comment.getEscapedContent());
     }
 
