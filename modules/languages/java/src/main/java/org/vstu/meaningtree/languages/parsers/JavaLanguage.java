@@ -98,7 +98,7 @@ public class JavaLanguage extends Language {
             case "array_initializer" -> fromArrayInitializer(node);
             case "return_statement" -> fromReturnStatementTSNode(node);
             case "line_comment", "block_comment" -> fromCommentTSNode(node);
-            default -> throw new UnsupportedOperationException(String.format("Can't parse %s in %s", node.getType(), getCodePiece(node)));
+            case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
     }
 

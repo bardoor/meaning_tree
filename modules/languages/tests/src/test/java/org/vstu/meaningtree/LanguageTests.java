@@ -42,12 +42,15 @@ class LanguageTests {
     @TestFactory
     Stream<DynamicContainer> testAllLanguages() {
         List<ImmutablePair<TestCode, TestCode>> codePermutations;
-        List<DynamicContainer> container = new ArrayList<>();
+        List<DynamicContainer> allTests = new ArrayList<>();
 
         for (TestGroup group : _tests) {
-            List<DynamicTest> dynamicTests = new ArrayList<>();
+            List<DynamicContainer> testGroup = new ArrayList<>();
+
             for (TestCase testCase : group.getCases()) {
                 codePermutations = Combinator.getPermutations(testCase.getCodes());
+                List<DynamicTest> dynamicTests = new ArrayList<>();
+
                 for (ImmutablePair<TestCode, TestCode> codePair : codePermutations) {
                     TestCode source = codePair.left;
                     TestCode translated = codePair.right;
@@ -59,32 +62,38 @@ class LanguageTests {
                         continue;
                     }
 
-                    // Перегнать код на втором языке в MT, затем превратить в код на первом языке
-                    String translatedCode = sourceLangConfig.translator().getCode(
-                            translatedLangConfig.translator().getMeaningTree(translated.code)
-                    );
-
-                    // Отформатировать код с учётом чувствительности к индетации
                     CodeFormatter codeFormatter = new CodeFormatter(_config.getByName(source.language).indentSensitive());
-                    String formatedSourceCode = codeFormatter.format(source.code);
-                    String translatedSourceCode = codeFormatter.format(translatedCode);
 
                     // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
                     dynamicTests.add(DynamicTest.dynamicTest(
-                            testCase.getName(),
-                            () -> assertTrue(
-                                    codeFormatter.equals(formatedSourceCode, translatedSourceCode),
-                                    String.format("\nИсходный код:\n%s\nПереведённый код:\n%s", formatedSourceCode, translatedSourceCode)))
-                    );
+                            String.format("%s from %s to %s", testCase.getName(), source.language, translated.language),
+                            () -> {
+                                // Перегнать код на втором языке в MT, затем превратить в код на первом языке
+                                String translatedCode = sourceLangConfig.translator().getCode(
+                                        translatedLangConfig.translator().getMeaningTree(translated.code)
+                                );
+
+                                // Отформатировать код с учётом чувствительности к индетации
+                                String formatedSourceCode = codeFormatter.format(source.code);
+                                String translatedSourceCode = codeFormatter.format(translatedCode);
+
+                                assertTrue(codeFormatter.equals(formatedSourceCode, translatedSourceCode),
+                                           String.format("\nИсходный код на %s:\n%s\nПереведённый код на %s:\n%s",
+                                                   source.language, formatedSourceCode, translated.language, translatedSourceCode));
+                            }
+                    ));
                 }
+                testGroup.add(DynamicContainer.dynamicContainer(
+                        testCase.getName(),
+                        dynamicTests
+                ));
             }
-            container.add(DynamicContainer.dynamicContainer(
+            allTests.add(DynamicContainer.dynamicContainer(
                     group.getName(),
-                    dynamicTests
+                    testGroup
             ));
         }
 
-        return container.stream();
-
+        return allTests.stream();
     }
 }
