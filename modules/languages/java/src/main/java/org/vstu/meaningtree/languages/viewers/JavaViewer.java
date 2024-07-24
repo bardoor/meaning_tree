@@ -562,6 +562,18 @@ public class JavaViewer extends Viewer {
             default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
         };
 
+        if (right instanceof IntegerLiteral integerLiteral
+                && (long) integerLiteral.getValue() == 1
+                && (o.equals("+=") || o.equals("-="))) {
+            o = switch (o) {
+                case "+=" -> "++";
+                case "-=" -> "--";
+                default -> throw new IllegalArgumentException();
+            };
+
+            return l + o;
+        }
+
         return "%s %s %s".formatted(l, o, r);
     }
 
