@@ -25,6 +25,7 @@ public class IfStatement extends Statement {
     public IfStatement(Expression condition, Statement thenBranch) {
         _branches = new ArrayList<>();
         _branches.add(new ConditionBranch(condition, thenBranch));
+        _elseBranch = Optional.empty();
     }
 
     public List<ConditionBranch> getBranches() {

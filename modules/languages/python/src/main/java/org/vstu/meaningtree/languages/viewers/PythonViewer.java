@@ -94,12 +94,8 @@ public class PythonViewer extends Viewer {
     }
 
     private String returnToString(ReturnStatement returnStmt) {
-        StringBuilder sb = new StringBuilder("return");
-        if (returnStmt.hasExpression()) {
-            sb.append(' ');
-            sb.append(toString(returnStmt.getExpression()));
-        }
-        return sb.toString();
+        Optional<Expression> expression = returnStmt.getExpression();
+        return expression.map(value -> "return " + toString(value)).orElse("return;");
     }
 
     private String identifierToString(Identifier identifier) {

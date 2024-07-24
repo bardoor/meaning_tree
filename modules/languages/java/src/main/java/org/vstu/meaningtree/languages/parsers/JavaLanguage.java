@@ -102,8 +102,12 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromReturnStatementTSNode(TSNode node) {
+        if (node.getNamedChildCount() == 0) {
+            return new ReturnStatement();
+        }
 
-        return null;
+        Expression expression = (Expression) fromTSNode(node.getNamedChild(0));
+        return new ReturnStatement(expression);
     }
 
     private int countArrayDimensions(TSNode dimensionsNode) {
