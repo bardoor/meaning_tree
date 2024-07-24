@@ -1,6 +1,5 @@
 group: LiteralsTest
 	case: Identifier
-
 		python:
 		    simple_ident
 
@@ -12,8 +11,9 @@ group: LiteralsTest
 
 		c++:
 			simple_ident;
+
+
 	case: FloatLiteral
-
 		python:
 		    3.45
 
@@ -25,8 +25,9 @@ group: LiteralsTest
 
 		c++:
 			3.45;
+
+
 	case: FloatLiteralWithF
-
 		python:
 		    3.45
 
@@ -38,8 +39,9 @@ group: LiteralsTest
 
 		c++:
 			3.45f;
-	case: LongLiteral
 
+
+	case: LongLiteral
 		python:
 		    345L
 
