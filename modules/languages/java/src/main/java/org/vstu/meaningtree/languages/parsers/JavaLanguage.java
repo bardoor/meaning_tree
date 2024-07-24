@@ -96,8 +96,14 @@ public class JavaLanguage extends Language {
             case "field_access" -> fromFieldAccessTSNode(node);
             case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
             case "array_initializer" -> fromArrayInitializer(node);
-            case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s in %s", node.getType(), getCodePiece(node)));
+            case "return_statement" -> fromReturnStatementTSNode(node);
+            default -> throw new UnsupportedOperationException(String.format("Can't parse %s in %s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Node fromReturnStatementTSNode(TSNode node) {
+
+        return null;
     }
 
     private int countArrayDimensions(TSNode dimensionsNode) {
