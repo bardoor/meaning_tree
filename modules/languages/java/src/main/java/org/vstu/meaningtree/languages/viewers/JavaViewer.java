@@ -393,7 +393,7 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(Comment comment) {
-        return "\\\\ %s".formatted(comment.getEscapedContent());
+        return "//%s".formatted(comment.getEscapedContent());
     }
 
     private String toString(FieldDeclaration decl) {
@@ -455,7 +455,11 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(StringLiteral literal) {
-        return String.format("\"%s\"", literal.getUnescapedValue());
+        if (literal.isMultiline()) {
+            return "\"\"\"%s\"\"\"".formatted(literal.getUnescapedValue());
+        }
+
+        return "\"%s\"".formatted(literal.getUnescapedValue());
     }
 
     private String toString(BinaryExpression expr, String sign) {

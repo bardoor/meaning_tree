@@ -97,8 +97,14 @@ public class JavaLanguage extends Language {
             case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
             case "array_initializer" -> fromArrayInitializer(node);
             case "return_statement" -> fromReturnStatementTSNode(node);
+            case "line_comment", "block_comment" -> fromCommentTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s in %s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Comment fromCommentTSNode(TSNode node) {
+        String comment = getCodePiece(node).substring(2);
+        return Comment.fromUnescaped(comment);
     }
 
     private Node fromReturnStatementTSNode(TSNode node) {
@@ -367,7 +373,8 @@ public class JavaLanguage extends Language {
 
         // Первый и последний ребенок - кавычки, их пропускаем.
         // Дети string_literal это либо string_fragment, либо escape_sequence,
-        // поэтому ничего экранировать не нужно, они уже представлены так как надо
+        // либо multiline_string_fragment поэтому ничего экранировать не нужно,
+        // они уже представлены так как надо
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             TSNode child = node.getNamedChild(i);
             builder.append(getCodePiece(child));
