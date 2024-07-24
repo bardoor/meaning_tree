@@ -383,6 +383,7 @@ public class JavaLanguage extends Language {
             TSNode child = node.getNamedChild(i);
             builder.append(getCodePiece(child));
         }
+
         return StringLiteral.fromUnescaped(builder.toString(), StringLiteral.Type.NONE);
     }
 

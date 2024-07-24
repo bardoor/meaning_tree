@@ -397,7 +397,7 @@ public class JavaViewer extends Viewer {
             return "/*" + comment.getUnescapedContent() + "\n*/";
         }
 
-        return "//%s".formatted(comment.getEscapedContent());
+        return "//%s".formatted(comment.getUnescapedContent());
     }
 
     private String toString(FieldDeclaration decl) {
