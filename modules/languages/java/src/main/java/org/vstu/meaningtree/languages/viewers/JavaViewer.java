@@ -394,7 +394,7 @@ public class JavaViewer extends Viewer {
 
     private String toString(Comment comment) {
         if (comment.isMultiline()) {
-            return "/*" + comment.getUnescapedContent() + "\n*/";
+            return "/*" + comment.getUnescapedContent() + "*/";
         }
 
         return "//%s".formatted(comment.getUnescapedContent());
