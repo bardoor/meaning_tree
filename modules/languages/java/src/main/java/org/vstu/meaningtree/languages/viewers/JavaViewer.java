@@ -109,8 +109,16 @@ public class JavaViewer extends Viewer {
             case ReturnStatement returnStatement -> toString(returnStatement);
             case CastTypeExpression castTypeExpression -> toString(castTypeExpression);
             case IndexExpression indexExpression -> toString(indexExpression);
+            case TernaryOperator ternaryOperator -> toString(ternaryOperator);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(TernaryOperator ternaryOperator) {
+        String condition = toString(ternaryOperator.getCondition());
+        String consequence = toString(ternaryOperator.getThenExpr());
+        String alternative = toString(ternaryOperator.getElseExpr());
+        return "%s ? %s : %s".formatted(condition, consequence, alternative);
     }
 
     private String toString(IndexExpression indexExpression) {

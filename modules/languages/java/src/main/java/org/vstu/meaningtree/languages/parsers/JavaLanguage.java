@@ -100,8 +100,16 @@ public class JavaLanguage extends Language {
             case "line_comment", "block_comment" -> fromCommentTSNode(node);
             case "cast_expression" -> fromCastExpressionTSNode(node);
             case "array_access" -> fromArrayAccessTSNode(node);
+            case "ternary_expression" -> fromTernaryExpressionTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Node fromTernaryExpressionTSNode(TSNode node) {
+        Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
+        Expression consequence = (Expression) fromTSNode(node.getChildByFieldName("consequence"));
+        Expression alternative = (Expression) fromTSNode(node.getChildByFieldName("alternative"));
+        return new TernaryOperator(condition, consequence, alternative);
     }
 
     private Node fromArrayAccessTSNode(TSNode node) {
