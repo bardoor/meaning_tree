@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages.viewers;
 
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
@@ -111,8 +112,38 @@ public class JavaViewer extends Viewer {
             case CastTypeExpression castTypeExpression -> toString(castTypeExpression);
             case IndexExpression indexExpression -> toString(indexExpression);
             case TernaryOperator ternaryOperator -> toString(ternaryOperator);
+            case BitwiseAndOp bitwiseAndOp -> toString(bitwiseAndOp);
+            case BitwiseOrOp bitwiseOrOp -> toString(bitwiseOrOp);
+            case XorOp xorOp -> toString(xorOp);
+            case InversionOp inversionOp -> toString(inversionOp);
+            case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
+            case RightShiftOp rightShiftOp -> toString(rightShiftOp);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(RightShiftOp rightShiftOp) {
+        return toString(rightShiftOp, ">>");
+    }
+
+    private String toString(LeftShiftOp leftShiftOp) {
+        return toString(leftShiftOp, "<<");
+    }
+
+    private String toString(InversionOp inversionOp) {
+        return "~" + toString(inversionOp.getArgument());
+    }
+
+    private String toString(XorOp xorOp) {
+        return toString(xorOp, "^");
+    }
+
+    private String toString(BitwiseOrOp bitwiseOrOp) {
+        return toString(bitwiseOrOp, "|");
+    }
+
+    private String toString(BitwiseAndOp bitwiseAndOp) {
+        return toString(bitwiseAndOp, "&");
     }
 
     private String toString(TernaryOperator ternaryOperator) {

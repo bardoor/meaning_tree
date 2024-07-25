@@ -4,8 +4,7 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.bitwise.BitwiseAndOp;
-import org.vstu.meaningtree.nodes.bitwise.BitwiseOrOp;
+import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
@@ -747,6 +746,7 @@ public class JavaLanguage extends Language {
         TSNode operation = node.getChildByFieldName("operator");
         return switch (getCodePiece(operation)) {
             case "!" -> new NotOp(argument);
+            case "~" -> new InversionOp(argument);
             case null, default -> throw new UnsupportedOperationException();
         };
     }
@@ -771,6 +771,9 @@ public class JavaLanguage extends Language {
             case "||" -> new ShortCircuitOrOp(left, right);
             case "&" -> new BitwiseAndOp(left, right);
             case "|" -> new BitwiseOrOp(left, right);
+            case "^" -> new XorOp(left, right);
+            case "<<" -> new LeftShiftOp(left, right);
+            case ">>" -> new RightShiftOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }
