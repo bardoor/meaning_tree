@@ -458,11 +458,11 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(FloatLiteral literal) {
-        return String.format("%f", (double) literal.getValue());
+        return Double.toString(literal.getDoubleValue());
     }
 
     public String toString(IntegerLiteral literal) {
-        return String.format("%d", (long) literal.getValue());
+        return Long.toString((long) literal.getValue());
     }
 
     public String toString(StringLiteral literal) {

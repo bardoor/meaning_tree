@@ -1,7 +1,6 @@
 package org.vstu.meaningtree.nodes.literals;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.vstu.meaningtree.nodes.Literal;
 
 import java.util.Objects;
 

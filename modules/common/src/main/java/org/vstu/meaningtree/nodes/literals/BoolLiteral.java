@@ -1,7 +1,5 @@
 package org.vstu.meaningtree.nodes.literals;
 
-import org.vstu.meaningtree.nodes.Literal;
-
 import java.util.Objects;
 
 public class BoolLiteral extends Literal {
