@@ -108,8 +108,22 @@ public class JavaViewer extends Viewer {
             case ArrayInitializer arrayInitializer -> toString(arrayInitializer);
             case ReturnStatement returnStatement -> toString(returnStatement);
             case CastTypeExpression castTypeExpression -> toString(castTypeExpression);
+            case IndexExpression indexExpression -> toString(indexExpression);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(IndexExpression indexExpression) {
+        Expression arrayName = indexExpression.getIndex();
+
+        if (!(arrayName instanceof Identifier)) {
+            throw new IllegalStateException("Expected array name to be identifier");
+        }
+
+        String name = toString((Identifier) arrayName);
+        String index = toString(indexExpression.getIndex());
+
+        return "%s[%s]".formatted(name, index);
     }
 
     private String toString(CastTypeExpression castTypeExpression) {
