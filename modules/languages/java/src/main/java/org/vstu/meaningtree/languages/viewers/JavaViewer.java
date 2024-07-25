@@ -21,6 +21,7 @@ import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
+import javax.swing.plaf.nimbus.State;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -122,7 +123,7 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(IndexExpression indexExpression) {
-        Expression arrayName = indexExpression.getIndex();
+        Expression arrayName = indexExpression.getExpr();
 
         if (!(arrayName instanceof Identifier)) {
             throw new IllegalStateException("Expected array name to be identifier");
@@ -130,7 +131,6 @@ public class JavaViewer extends Viewer {
 
         String name = toString((Identifier) arrayName);
         String index = toString(indexExpression.getIndex());
-
         return "%s[%s]".formatted(name, index);
     }
 
@@ -898,9 +898,19 @@ public class JavaViewer extends Viewer {
             builder.append(update);
         }
 
-        builder.append(")\n");
-
-        builder.append(toString(generalForLoop.getBody()));
+        Statement body = generalForLoop.getBody();
+        if (body instanceof CompoundStatement compoundStatement) {
+            builder
+                    .append(")")
+                    .append(_openBracketOnSameLine ? " " : "\n")
+                    .append(toString(compoundStatement));
+        }
+        else {
+            builder.append(")\n");
+            increaseIndentLevel();
+            builder.append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
 
         return builder.toString();
     }

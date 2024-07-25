@@ -540,7 +540,7 @@ public class JavaLanguage extends Language {
             update = (Expression) fromTSNode(node.getChildByFieldName("update"));
         }
 
-        CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
+        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
 
         return new GeneralForLoop(init, condition, update, body);
     }
