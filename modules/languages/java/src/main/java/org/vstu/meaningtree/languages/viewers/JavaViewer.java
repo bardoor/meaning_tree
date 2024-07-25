@@ -118,8 +118,19 @@ public class JavaViewer extends Viewer {
             case InversionOp inversionOp -> toString(inversionOp);
             case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
+            case MultipleAssignmentStatement multipleAssignmentStatement -> toString(multipleAssignmentStatement);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(MultipleAssignmentStatement multipleAssignmentStatement) {
+        StringBuilder builder = new StringBuilder();
+
+        for (AssignmentStatement stmt : multipleAssignmentStatement.getStatements()) {
+            builder.append(toString(stmt));
+        }
+
+        return builder.toString();
     }
 
     private String toString(RightShiftOp rightShiftOp) {

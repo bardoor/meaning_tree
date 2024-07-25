@@ -557,7 +557,7 @@ public class PythonLanguage extends Language {
             for (int i = 0; i < idents.size(); i++) {
                 stmts.add(new AssignmentStatement(idents.get(i), exprs.get(i), augOp));
             }
-            return new MultipleAssignmentStatement(stmts.toArray(new AssignmentStatement[0]));
+            return new MultipleAssignmentStatement(stmts);
         }
 
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));

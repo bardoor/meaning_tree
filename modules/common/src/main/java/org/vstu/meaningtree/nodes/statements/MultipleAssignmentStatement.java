@@ -10,7 +10,11 @@ public class MultipleAssignmentStatement extends Statement {
     private final List<AssignmentStatement> _statements;
 
     public MultipleAssignmentStatement(AssignmentStatement ... stmts) {
-        _statements = Arrays.asList(stmts);
+        this(List.of(stmts));
+    }
+
+    public MultipleAssignmentStatement(List<AssignmentStatement> stmts) {
+        _statements = List.copyOf(stmts);
     }
 
     public List<AssignmentStatement> getStatements() {
