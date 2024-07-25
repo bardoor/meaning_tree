@@ -98,8 +98,15 @@ public class JavaLanguage extends Language {
             case "array_initializer" -> fromArrayInitializer(node);
             case "return_statement" -> fromReturnStatementTSNode(node);
             case "line_comment", "block_comment" -> fromCommentTSNode(node);
+            case "cast_expression" -> fromCastExpressionTSNode(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Node fromCastExpressionTSNode(TSNode node) {
+        Type castType = fromTypeTSNode(node.getChildByFieldName("type"));
+        Expression value = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        return new CastTypeExpression(castType, value);
     }
 
     private Comment fromCommentTSNode(TSNode node) {

@@ -107,8 +107,15 @@ public class JavaViewer extends Viewer {
             case ArrayNewExpression arrayNewExpression -> toString(arrayNewExpression);
             case ArrayInitializer arrayInitializer -> toString(arrayInitializer);
             case ReturnStatement returnStatement -> toString(returnStatement);
+            case CastTypeExpression castTypeExpression -> toString(castTypeExpression);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(CastTypeExpression castTypeExpression) {
+        String castType = toString(castTypeExpression.getCastType());
+        String value = toString(castTypeExpression.getValue());
+        return "(%s) %s".formatted(castType, value);
     }
 
     private String toString(ReturnStatement returnStatement) {
