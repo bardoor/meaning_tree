@@ -375,7 +375,6 @@ public class JavaLanguage extends Language {
     private StringLiteral fromStringLiteralTSNode(TSNode node) {
         StringBuilder builder = new StringBuilder();
 
-        // Первый и последний ребенок - кавычки, их пропускаем.
         // Дети string_literal это либо string_fragment, либо escape_sequence,
         // либо multiline_string_fragment поэтому ничего экранировать не нужно,
         // они уже представлены так как надо

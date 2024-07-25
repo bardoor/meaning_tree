@@ -14,6 +14,6 @@ abstract public class Language {
         byte[] code = _code.getBytes(StandardCharsets.UTF_8);
         int start = node.getStartByte();
         int end = node.getEndByte();
-        return new String(code, start, end - start).trim();
+        return new String(code, start, end - start);
     }
 }
