@@ -53,8 +53,9 @@ group: LiteralsTest
 
 		c++:
 			345L;
-	case: NullLiteral
 
+
+	case: NullLiteral
 		python:
 		    None
 
@@ -66,8 +67,9 @@ group: LiteralsTest
 
 		c++:
 			NULL;
+
+
 	case: TrueLiteral
-
 		python:
 		    True
 
@@ -79,8 +81,9 @@ group: LiteralsTest
 
 		c++:
 			true;
+
+
 	case: FalseLiteral
-
 		python:
 		    False
 
@@ -92,8 +95,9 @@ group: LiteralsTest
 
 		c++:
 			false;
+
+
 	case: IntegerDecimalLiteral
-
 		python:
 		    345
 
@@ -105,8 +109,9 @@ group: LiteralsTest
 
 		c++:
 			345;
+
+
 	case: IntegerBinaryLiteral
-
 		python:
 		    0b01010
 
@@ -118,8 +123,9 @@ group: LiteralsTest
 
 		c++:
 			0b01010;
+
+
 	case: IntegerHexLiteral
-
 		python:
 		    0xABC
 
@@ -131,8 +137,9 @@ group: LiteralsTest
 
 		c++:
 			0xABC;
+
+
 	case: StringLiteral
-
 		python:
 		    "abc"
 
@@ -144,8 +151,9 @@ group: LiteralsTest
 
 		c++:
 			"abc";
+
+
 	case: StringRawLiteral
-
 		python:
 		    r"abc\t"
 
@@ -157,8 +165,9 @@ group: LiteralsTest
 
 		c++:
 			"abc\\t";
-	case: StringFormatLiteral
 
+
+	case: StringFormatLiteral
 		python:
 		    f"abc {abc} \t"
 
@@ -171,8 +180,9 @@ group: LiteralsTest
 		c++:
 			"abc {abc} \t";
 	# Нужно обсуждение
+	
+	
 	case: ListLiteral
-
 		python:
 		    [1, 2, 3, a, b]
 
@@ -184,8 +194,9 @@ group: LiteralsTest
 
 		c++:
 			{1, 2, 4, a, b};
-	case: TupleLiteral
 
+
+	case: TupleLiteral
 		python:
 		    (a, b, 10.3)
 
@@ -197,8 +208,9 @@ group: LiteralsTest
 
 		c++:
 			{a, b, 10.3};
-	case: DictLiteral
 
+
+	case: DictLiteral
 		python:
 		    {"a": b, "x": y}
 
@@ -210,9 +222,10 @@ group: LiteralsTest
 
 		c++:
 			std::map<std::string, void*> products {{"a", b}, {"x", y}};
+
+
 group: SimpleExpressionsTest
 	case: PlusOp
-
 		python:
 		    a + 5
 
@@ -224,8 +237,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			a + 5;
+
+
 	case: SubOp
-
 		python:
 		    x - y
 
@@ -237,8 +251,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x - y;
+
+
 	case: MulOp
-
 		python:
 		    x * y
 
@@ -250,8 +265,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x * y;
+
+
 	case: DivOp
-
 		python:
 		    x / y
 
@@ -263,8 +279,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x / y;
+
+
 	case: FloorDivOp
-
 		python:
 		    x // y
 
@@ -276,8 +293,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			(int)(x / y);
+
+
 	case: IncrementOp
-
 		python:
 		    x += 1
 
@@ -289,8 +307,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x++;
+
+
 	case: DecrementOp
-
 		python:
 		    x -= 1
 
@@ -302,8 +321,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x--;
+
+
 	case: UnaryMinusOp
-
 		python:
 		    -x
 
@@ -315,8 +335,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			-x;
+
+
 	case: UnaryPlusOp
-
 		python:
 		    +x
 
@@ -328,8 +349,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			+x;
+
+
 	case: ModOp
-
 		python:
 		    x % y
 
@@ -341,8 +363,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x % y;
-	case: PowOp
 
+
+	case: PowOp
 		python:
 		    x ** y
 
@@ -354,8 +377,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			std::pow(x, y);
+
+
 	case: AndOp
-
 		python:
 		    x and y
 
@@ -367,8 +391,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x && y;
+
+
 	case: OrOp
-
 		python:
 		    x or y
 
@@ -380,8 +405,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x || y;
+
+
 	case: BitwiseAndOp
-
 		python:
 		    x & y
 
@@ -393,8 +419,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x & y;
+
+
 	case: BitwiseOrOp
-
 		python:
 		    x | y
 
@@ -406,8 +433,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x | y;
+
+
 	case: BitwiseNotOp
-
 		python:
 		    ~x
 
@@ -419,8 +447,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			~x;
+
+
 	case: BitwiseXorOp
-
 		python:
 		    x ^ y
 
@@ -432,8 +461,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x ^ y;
+
+
 	case: NotOp
-
 		python:
 		    not x
 
@@ -445,8 +475,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			!x;
+
+
 	case: BitwiseLeftShiftOp
-
 		python:
 		    x << y
 
@@ -458,8 +489,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x << y;
+
+
 	case: BitwiseRightShiftOp
-
 		python:
 		    x >> y
 
@@ -471,8 +503,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x >> y;
+
+
 	case: TernaryOp
-
 		python:
 		    x if a else y
 
@@ -484,8 +517,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			a ? x : y;
+
+
 	case: AssignmentExpr
-
 		python:
 		    x := b
 
@@ -497,8 +531,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			x = b;
-	case: MemberAccess
 
+
+	case: MemberAccess
 		python:
 			x.a.b.c
 
@@ -509,8 +544,9 @@ group: SimpleExpressionsTest
 			x.a.b.c;
 		с++:
 			x.a.b.c;
+
+
 	case: FunctionCallWithoutArguments
-
 		python:
 			hello()
 
@@ -522,8 +558,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			hello();
+
+
 	case: FunctionCallWithArguments
-
 		python:
 			hello(a, b, 10.3, "abc")
 
@@ -535,8 +572,9 @@ group: SimpleExpressionsTest
 
 		c++:
 			hello(a, b, 10.3, "abc");
+
+
 	case: Indexing
-
 		python:
 			x[10]
 
@@ -548,8 +586,9 @@ group: SimpleExpressionsTest
 
 		java:
 			x[10];
+
+
 	case: ManyIndexes
-
 		python:
 			x[10][y]
 
@@ -561,8 +600,9 @@ group: SimpleExpressionsTest
 
 		java:
 			x[10][y];
+
+
 	case: CommaSeparatedIndex
-
 		python:
 			x[10, y]
 
@@ -574,9 +614,10 @@ group: SimpleExpressionsTest
 
 		java:
 			x[10, y];
+
+
 group: ComparisonsTest
 	case: LessOp
-
 		python:
 		    a < b
 
@@ -588,8 +629,9 @@ group: ComparisonsTest
 
 		c++:
 			a < b;
+
+
 	case: LessEqualOp
-
 		python:
 		    a <= b
 
@@ -601,8 +643,9 @@ group: ComparisonsTest
 
 		c++:
 			a <= b;
+
+
 	case: GreaterEqualOp
-
 		python:
 		    a >= b
 
@@ -614,8 +657,9 @@ group: ComparisonsTest
 
 		c++:
 			a >= b;
+
+
 	case: GreaterOp
-
 		python:
 		    a > b
 
@@ -627,8 +671,9 @@ group: ComparisonsTest
 
 		c++:
 			a > b;
+
+
 	case: EqOp
-
 		python:
 		    a == b
 
@@ -640,8 +685,9 @@ group: ComparisonsTest
 
 		c++:
 			a == b;
+
+
 	case: NotEqOp
-
 		python:
 		    a != b
 
@@ -653,64 +699,73 @@ group: ComparisonsTest
 
 		c++:
 			a != b;
-	case: CompoundComparisonConvertationCase1
 
+
+	case: CompoundComparisonConvertationCase1
 		python:
 		    a <= b and c <= k and b >= c
 
 		python:
 		    c <= b and a <= b and c < k
-	case: CompoundComparisonConvertationCase2
 
+
+	case: CompoundComparisonConvertationCase2
 		python:
 		    a < c and a < b and d > k and b > m and c > b and a > m
 
 		python:
 		    m < a < b < c and k < d
+
+
 	case: CompoundComparisonConvertationCase3
-
 		python:
 		    a < b and m >= k and x >= y
 
 		python:
 		    a < b and m >= k and x >= y
+
+
 	case: CompoundComparisonConvertationCase4
-
 		python:
 		    a < b and b < c and m >= k
 
 		python:
 		    a <	b < c and m >= k
-	case: CompoundComparisonConvertationCase5
 
+
+	case: CompoundComparisonConvertationCase5
 		python:
 		    a < b and m >= k and b < c
 
 		python:
 		    a < b < c and k <= m
-	case: CompoundComparisonConvertationCase6
 
+
+	case: CompoundComparisonConvertationCase6
 		python:
 		    a < b and a == b and b >= c
 
 		python:
 		    c <= b and a < b and a == b
-	case: CompoundComparisonConvertationCase7
 
+
+	case: CompoundComparisonConvertationCase7
 		python:
 		    a < b and a < c
 
 		python:
 		    a < b and a < c
+
+
 	case: CompoundComparisonConvertationCase7
-
 		python:
 		    a < b and b < c and c < a
 
 		python:
 		    a < b and b < c and c < a
+
+
 	case: CompoundComparisonConvertationBetweenLanguages
-
 		python:
 		    a < b < c and m >= k
 
@@ -719,9 +774,10 @@ group: ComparisonsTest
 
 		c++:
 		    a < b && b < c && m >= k
+
+
 group: SimpleStatements
 	case: VariableDeclaration
-
 		python:
 		    a: int = 456
 
@@ -730,8 +786,9 @@ group: SimpleStatements
 
 		c++:
 		    int a = 456;
+
+
 	case: AugmentedAssignmentStmt
-
 		python:
 		    a: int = 456
 			a += 3
@@ -789,8 +846,9 @@ group: SimpleStatements
 			a &= b;
 			c |= t;
 			v ^= m;
+
+
 	case: AssignmentStmt
-
 		python:
 		    a: int = 456
 			a = 3
@@ -806,8 +864,9 @@ group: SimpleStatements
 		c++:
 		    int a = 456;
 			a = 3
-	case: PassStatement
 
+
+	case: PassStatement
 		python:
 			if a:
 				pass
@@ -824,8 +883,9 @@ group: SimpleStatements
 			if (a) {
 			}
 	# TODO: Продумать как выполнять преобразование
-	case: MultipleAssignment
 
+
+	case: MultipleAssignment
 		python:
 			a, b = 3, 45
 
@@ -839,8 +899,9 @@ group: SimpleStatements
 		c++:
 			a = 3;
 			b = 45;
-	case: VariableSwapping
 
+
+	case: VariableSwapping
 		python:
 			a, b = b, a
 
@@ -854,9 +915,10 @@ group: SimpleStatements
 
 		c++:
 			std::swap(a, b);
+
+
 group: Conditions
 	case: IfElseCompound
-
 		python:
 		    if a > 0:
 				a += 1
@@ -878,8 +940,9 @@ group: Conditions
 				a++;
 				k = x + 1;
 			}
+
+
 	case: OnlyIf
-
 		python:
 			if a >= 0:
 				t()
@@ -901,8 +964,9 @@ group: Conditions
 				t();
 				x();
 			}
+
+
 	case: NestedOnlyIfCompound
-
 		python:
 			if a > 0:
 				if k:
@@ -930,8 +994,9 @@ group: Conditions
 					print("b")
 				}
 			}
+
+
 	case: OneAlternative
-
 		python:
 			if a:
 				pass
@@ -953,8 +1018,9 @@ group: Conditions
 			if (a) {
 			} else if (b) {
 			}
+
+
 	case: OneAlternativeWithElse
-
 		python:
 			if a:
 				pass
@@ -984,8 +1050,9 @@ group: Conditions
 			} else {
 				c = k * 3;
 			}
+
+
 	case: TwoAlternativesWithElseCompound
-
 		python:
 			if a:
 				b = a * 3
@@ -1049,8 +1116,9 @@ group: Conditions
 				d *= 5;
 				x++;
 			}
-	case: NestedAlternativesCompound
 
+
+	case: NestedAlternativesCompound
 		python:
 			if a > b:
 				z += 1
@@ -1130,9 +1198,10 @@ group: Conditions
 					}
 					c += 1;
 				y -= 1;
+
+
 group: ForLoop
 	case: RangeForLoop
-
 		python:
 			for i in range(1, 10, c):
 				func(a)
@@ -1150,8 +1219,9 @@ group: ForLoop
 			for (int i = 0; i < 10; i += c) {
 				func(a)
 			}
+
+
 	case: RangeForLoopWithExpressions
-
 		python:
 			for var in range(a * b * c, dx - 1, 1):
 				func(a)
@@ -1169,8 +1239,9 @@ group: ForLoop
 			for (int var = a * b * c; var < dx - 1; var++) {
 				func(a)
 			}
-	case: ForEachLoop
 
+
+	case: ForEachLoop
 		python:
 			for a in b:
 				x += 4
@@ -1188,8 +1259,9 @@ group: ForLoop
 			for (auto a : b) {
 				x += 4;
 			}
-	case: GeneralForTransformationTest
 
+
+	case: GeneralForTransformationTest
 		java:
 			for (int a = x; a != m; m = g()) {
 				func(a, b);
@@ -1201,8 +1273,9 @@ group: ForLoop
 				func(a, b)
 				m = g()
 			del a
-	case: GeneralForWithMissingInitialization
 
+
+	case: GeneralForWithMissingInitialization
 		java:
 			for (; a != m; m = g()) {
 				func(a, b);
@@ -1212,8 +1285,9 @@ group: ForLoop
 			while a != m:
 				func(a, b)
 				m = g()
-	case: GeneralForWithMissingCondition
 
+
+	case: GeneralForWithMissingCondition
 		java:
 			for (int a = x; ; m = g()) {
 				func(a, b);
@@ -1225,8 +1299,9 @@ group: ForLoop
 				func(a, b)
 				m = g()
 			del a
-	case: GeneralForWithMissingUpdate
 
+
+	case: GeneralForWithMissingUpdate
 		java:
 			for (int a = x; a != m;) {
 				func(a, b);
@@ -1237,8 +1312,9 @@ group: ForLoop
 			while a != m:
 				func(a, b)
 			del a
-	case: GeneralForWithMissingUpdateWithContinue
 
+
+	case: GeneralForWithMissingUpdateWithContinue
 		java:
 			for (int a = x; a != m;) {
 				func(a, b);
@@ -1254,8 +1330,9 @@ group: ForLoop
 				if a == k:
 					continue
 			del a
-	case: GeneralForEmptyLoop
 
+
+	case: GeneralForEmptyLoop
 		java:
 			for (;;) {
 			}
@@ -1263,8 +1340,9 @@ group: ForLoop
 		python:
 			while True:
 				pass
-	case: GeneralForWithContinueTransformationTest
 
+
+	case: GeneralForWithContinueTransformationTest
 		java:
 			for (int a = x; a != m; m = g()) {
 				func(a, b);
@@ -1284,9 +1362,10 @@ group: ForLoop
 					continue
 				m = g()
 			del a
+
+
 group: WhileLoop
 	case: SimpleWhileLoop
-
 		python:
 			while x != m:
 				g()
@@ -1308,8 +1387,9 @@ group: WhileLoop
 				g();
 				f();
 			}
+
+
 	case: WhileLoopWithBreak
-
 		python:
 			while started():
 				do_work()
@@ -1337,8 +1417,9 @@ group: WhileLoop
 					break;
 				}
 			}
+
+
 	case: WhileLoopWithEmptyBody
-
 		python:
 			while True:
 				pass
@@ -1356,8 +1437,9 @@ group: WhileLoop
 			while (true) {
 
 			}
-	case: DoWhileLoopTransformation
 
+
+	case: DoWhileLoopTransformation
 		java:
 			do {
 				a += 1;
@@ -1368,8 +1450,9 @@ group: WhileLoop
 				a += 1
 				if a == m:
 					break
-	case: DoWhileLoopTransformationWithComplexExpression
 
+
+	case: DoWhileLoopTransformationWithComplexExpression
 		java:
 			do {
 				a += 1;
@@ -1380,8 +1463,9 @@ group: WhileLoop
 				a += 1
 				if not (not has_errors() and a < 35 and flag):
 					break
-	case: EmptyDoWhileLoopTransformation
 
+
+	case: EmptyDoWhileLoopTransformation
 		java:
 			do {} while (true);
 
@@ -1389,9 +1473,10 @@ group: WhileLoop
 			while True:
 				if not True:
 					break
+
+
 group: SwitchStatement
 	case: SimpleMatch
-
 		python:
 			match a:
 				case t:
@@ -1442,8 +1527,9 @@ group: SwitchStatement
 					test = 0;
 					break;
 			}
-	case: MatchWithAsExpression
 
+
+	case: MatchWithAsExpression
 		python:
 			match a:
 				case t:
@@ -1480,9 +1566,10 @@ group: SwitchStatement
 					test = 0;
 					break;
 			}
+
+
 group: Functions
 	case: SimplePythonFunction
-
 		python:
 			def f(a, b):
 				return a + b
@@ -1496,8 +1583,9 @@ group: Functions
 			auto f(auto a, auto b) {
 				return a + b;
 			}
+
+
 	case: FullInformationPythonFunction
-
 		python:
 			def concat(a: str, b: str) -> str:
 				return a + b
@@ -1511,8 +1599,9 @@ group: Functions
 			std::string concat(std::string a, std::string b) {
 				return a + b;
 			}
+
+
 	case: DecoratedFunction
-
 		python:
 			@decorator
 			@next_decorator
@@ -1530,8 +1619,9 @@ group: Functions
 			std::string concat(std::string a, std::string b) {
 				return a + b;
 			}
-	case: FunctionWithCustomTypes
 
+
+	case: FunctionWithCustomTypes
 		python:
 			def join_data(a: Data, b: Data) -> DataUnion:
 				return a + b
@@ -1545,9 +1635,10 @@ group: Functions
 			DataUnion concat(Data a, Data b) {
 				return a + b;
 			}
+
+
 group: StructuresOOP
 	case: ClassDefinitionWithOnlyFields
-
 		python:
 			class A:
 				a: int = k
@@ -1566,8 +1657,9 @@ group: StructuresOOP
 				public int a = k;
 				public var b = GLOBAL();
 			}
-	case: ClassDefinitionWithOnlyMethods
 
+
+	case: ClassDefinitionWithOnlyMethods
 		python:
 			class A:
 				def a(self):
@@ -1598,8 +1690,9 @@ group: StructuresOOP
 						return r + m;
 					}
 			}
-	case: ClassDefinition
 
+
+	case: ClassDefinition
 		python:
 			class A:
 				k: int = 32
@@ -1639,8 +1732,9 @@ group: StructuresOOP
 						return r + m;
 					}
 			}
-	case: StaticMethodDetection
 
+
+	case: StaticMethodDetection
 		python:
 			class A:
 				@staticmethod
@@ -1660,9 +1754,10 @@ group: StructuresOOP
 					return a + b;
 				}
 			}
+
+
 group: Other
 	case: Import
-
 		python:
 			import a.b.c
 
@@ -1673,8 +1768,9 @@ group: Other
 			import a.b.c;
 		c++
 			#include "a.b.c"
+
+
 	case: ImportFrom
-
 		python:
 			from a.b import c
 
@@ -1685,8 +1781,9 @@ group: Other
 			import a.b.c;
 		c++
 			#include "a.b.c"
+
+
 	case: ImportFromAs
-
 		python:
 			from a.b import c as t
 
@@ -1697,8 +1794,9 @@ group: Other
 			import a.b.c;
 		c++
 			#include "a.b.c"
-	case: Range
 
+
+	case: Range
 		python:
 			a[x:y:z]
 
@@ -1707,8 +1805,9 @@ group: Other
 
 		java:
 			a[x:y:z];
+
+
 	case: MultilineComment
-
 		python:
 			"""
 			abc\t
@@ -1732,8 +1831,9 @@ group: Other
 			abc\t
 			def
 			*/
+
+
 	case: SinglelineComment
-
 		python:
 			# abc
 
@@ -1745,8 +1845,9 @@ group: Other
 
 		java:
 			// abc
+
+
 	case: ParenthesizedExpression
-
 		python:
 			(a + b * c) + 6 * (a := 3)
 
@@ -1758,8 +1859,9 @@ group: Other
 
 		java:
 			(a + b * c) + 6 * (a = 3)
-	case: NewArray
 
+
+	case: NewArray
 		java:
 			int[] a = new int[3];
 
@@ -1768,8 +1870,9 @@ group: Other
 
 		python:
 			a: list[int] = [0 for i in range(3)]
-	case: NewArrayInit
 
+
+	case: NewArrayInit
 		java:
 			int[] a = new int[3] {1, 2, 3};
 
@@ -1784,8 +1887,9 @@ group: Other
 			a[0] = 1
 			a[1] = 2
 			a[2] = 3
-	case: EntryPointConflictingWithC++
 
+
+	case: EntryPointConflictingWithC++
 		python:
 			a = 3
 			f()
@@ -1822,8 +1926,9 @@ group: Other
 					main();
 				}
 			}
-	case: StandardEntryPoint
 
+
+	case: StandardEntryPoint
 		python:
 			from funcs import func
 			a: int = 1
