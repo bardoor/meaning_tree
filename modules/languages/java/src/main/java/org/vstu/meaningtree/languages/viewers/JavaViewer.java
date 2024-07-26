@@ -150,7 +150,10 @@ public class JavaViewer extends Viewer {
         }
 
         String body = toString(objectConstructor.getBody());
-        builder.append(" ").append(body);
+        if (_openBracketOnSameLine)
+            { builder.append(" ").append(body); }
+        else
+            { builder.append("\n").append(indent(body)); }
 
         return builder.toString();
     }
@@ -481,10 +484,19 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(MethodDefinition methodDefinition) {
+        StringBuilder builder = new StringBuilder();
+
         // Преобразование типа нужно, чтобы избежать вызова toString(Node node)
         String methodDeclaration = toString((MethodDeclaration) methodDefinition.getDeclaration());
+        builder.append(methodDeclaration);
+
         String body = toString(methodDefinition.getBody());
-        return "%s %s".formatted(methodDeclaration, body);
+        if (_openBracketOnSameLine)
+        { builder.append(" ").append(body); }
+        else
+        { builder.append("\n").append(indent(body)); }
+
+        return builder.toString();
     }
 
     private String toString(ContinueStatement stmt) {
@@ -554,7 +566,18 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(ClassDefinition def) {
-        return "%s %s".formatted(toString(def.getDeclaration()), toString(def.getBody()));
+        StringBuilder builder = new StringBuilder();
+
+        String declaration = toString(def.getDeclaration());
+        builder.append(declaration);
+
+        String body = toString(def.getBody());
+        if (_openBracketOnSameLine)
+        { builder.append(" ").append(body); }
+        else
+        { builder.append("\n").append(indent(body)); }
+
+        return builder.toString();
     }
 
     public String toString(FloatLiteral literal) {
