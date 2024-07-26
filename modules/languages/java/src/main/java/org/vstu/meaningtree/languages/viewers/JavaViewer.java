@@ -127,7 +127,7 @@ public class JavaViewer extends Viewer {
         StringBuilder builder = new StringBuilder();
 
         for (AssignmentStatement stmt : multipleAssignmentStatement.getStatements()) {
-            builder.append(toString(stmt));
+            builder.append(toString(stmt)).append("\n");
         }
 
         return builder.toString();
