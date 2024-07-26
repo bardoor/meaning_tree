@@ -8,6 +8,7 @@ import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.definitions.ObjectConstructor;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
@@ -100,8 +101,22 @@ public class JavaLanguage extends Language {
             case "cast_expression" -> fromCastExpressionTSNode(node);
             case "array_access" -> fromArrayAccessTSNode(node);
             case "ternary_expression" -> fromTernaryExpressionTSNode(node);
+            case "constructor_declaration" -> fromConstructorDeclarationTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Node fromConstructorDeclarationTSNode(TSNode node) {
+        List<Modifier> modifiers;
+        if (node.getNamedChild(0).getType().equals("modifiers"))
+            { modifiers = fromModifiers(node.getNamedChild(0)); }
+        else
+            { modifiers = List.of(); }
+        Identifier name = fromIdentifierTSNode(node.getChildByFieldName("name"));
+        List<DeclarationArgument> parameters = fromMethodParameters(node.getChildByFieldName("parameters"));
+        CompoundStatement body = fromBlockTSNode(node.getChildByFieldName("body"));
+        // TODO: определение класса, к которому принадлежит метод и считывание аннотаций
+        return new ObjectConstructor(null, name, List.of(), modifiers, parameters, body);
     }
 
     private Node fromTernaryExpressionTSNode(TSNode node) {

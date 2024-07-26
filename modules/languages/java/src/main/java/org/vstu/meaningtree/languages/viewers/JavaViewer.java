@@ -5,6 +5,7 @@ import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.definitions.ObjectConstructor;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
@@ -95,6 +96,7 @@ public class JavaViewer extends Viewer {
             case Comment comment -> toString(comment);
             case BreakStatement stmt -> toString(stmt);
             case ContinueStatement stmt -> toString(stmt);
+            case ObjectConstructor objectConstructor -> toString(objectConstructor);
             case MethodDefinition methodDefinition -> toString(methodDefinition);
             case SwitchStatement switchStatement -> toString(switchStatement);
             case NullLiteral nullLiteral -> toString(nullLiteral);
@@ -121,6 +123,31 @@ public class JavaViewer extends Viewer {
             case MultipleAssignmentStatement multipleAssignmentStatement -> toString(multipleAssignmentStatement);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(ObjectConstructor objectConstructor) {
+        MethodDeclaration constructorDeclaration =
+                (MethodDeclaration) objectConstructor.getDeclaration();
+
+        StringBuilder builder = new StringBuilder();
+
+        String modifiers = toString(constructorDeclaration.getModifiers());
+        if (!modifiers.isEmpty()) {
+            builder.append(modifiers).append(" ");
+        }
+
+        String name = toString(objectConstructor.getName());
+        builder.append(name);
+
+        String parameters = toStringParameters(constructorDeclaration.getArguments());
+        if (!parameters.isEmpty()) {
+            builder.append(parameters);
+        }
+
+        String body = toString(objectConstructor.getBody());
+        builder.append(" ").append(body);
+
+        return builder.toString();
     }
 
     private String toString(MultipleAssignmentStatement multipleAssignmentStatement) {
