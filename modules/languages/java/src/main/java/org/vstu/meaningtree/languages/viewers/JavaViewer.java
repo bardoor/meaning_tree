@@ -545,7 +545,11 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(ClassDeclaration decl) {
-        String modifiers = toString(decl.getModifiers()) + " ";
+        String modifiers = toString(decl.getModifiers());
+        if (!modifiers.isEmpty()) {
+            modifiers += " ";
+        }
+
         return modifiers + "class " + toString(decl.getName());
     }
 
