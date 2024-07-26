@@ -121,8 +121,13 @@ public class JavaViewer extends Viewer {
             case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
             case MultipleAssignmentStatement multipleAssignmentStatement -> toString(multipleAssignmentStatement);
+            case SelfReference selfReference -> toString(selfReference);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(SelfReference selfReference) {
+        return "this";
     }
 
     private String toString(ObjectConstructor objectConstructor) {

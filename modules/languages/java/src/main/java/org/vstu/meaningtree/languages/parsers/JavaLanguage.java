@@ -102,8 +102,13 @@ public class JavaLanguage extends Language {
             case "array_access" -> fromArrayAccessTSNode(node);
             case "ternary_expression" -> fromTernaryExpressionTSNode(node);
             case "constructor_declaration" -> fromConstructorDeclarationTSNode(node);
+            case "this" -> fromThisTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private SelfReference fromThisTSNode(TSNode node) {
+        return new SelfReference();
     }
 
     private Node fromConstructorDeclarationTSNode(TSNode node) {
