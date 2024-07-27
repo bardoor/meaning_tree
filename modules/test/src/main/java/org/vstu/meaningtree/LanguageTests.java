@@ -61,7 +61,7 @@ class LanguageTests {
                         continue;
                     }
 
-                    CodeFormatter codeFormatter = new CodeFormatter(_config.getByName(source.language).indentSensitive());
+                    CodeFormatter codeFormatter = new CodeFormatter(sourceLangConfig.indentSensitive());
 
                     // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
                     dynamicTests.add(DynamicTest.dynamicTest(
@@ -77,7 +77,7 @@ class LanguageTests {
                                 String translatedSourceCode = codeFormatter.format(translatedCode);
 
                                 assertTrue(codeFormatter.equals(formatedSourceCode, translatedSourceCode),
-                                           String.format("\nИсходный код на %s:\n%s\nПереведённый код на %s:\n%s\n",
+                                           String.format("\nИсходный код на %s:\n%s\nПереведённый код с %s:\n%s\n",
                                                    source.language, formatedSourceCode, translated.language, translatedSourceCode));
                             }
                     ));
