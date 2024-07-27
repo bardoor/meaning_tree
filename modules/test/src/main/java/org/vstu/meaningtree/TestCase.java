@@ -30,16 +30,16 @@ public class TestCase {
         Pattern langNamePattern = Pattern.compile("^([ \\t\\f\\r]+).+:\\s*$", Pattern.MULTILINE);
         Matcher matcher = langNamePattern.matcher(testCase);
 
-
-        ArrayList<MatchResult> results = matcher.results().collect(Collectors.toCollection(ArrayList::new));
         // Найти строки с названиями языков
+        ArrayList<MatchResult> results = matcher.results().collect(Collectors.toCollection(ArrayList::new));
+        // Определить отступ
         String langNameIndent = results.getFirst().group().replace(results.getFirst().group().strip(), "");
         ArrayList<Integer> codesStarts = results.stream()
                 .filter(match -> match.group().replace(match.group().strip(), "").equals(langNameIndent))
                 .map(MatchResult::start)
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        codesStarts.add(testCase.length() - 1);
+        codesStarts.add(testCase.length());
 
         // Вычленить всё что начинается названием языка включительно
         // и кончается названием другого языка не включительно
