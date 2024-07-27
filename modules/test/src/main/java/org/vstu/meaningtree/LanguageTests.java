@@ -1,6 +1,5 @@
 package org.vstu.meaningtree;
 
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.*;
 import org.vstu.meaningtree.languages.JavaTranslator;
@@ -16,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LanguageTests {
     private static TestGroup[] _tests;
-    private static final String _testsFilePath = "python.test";
+    private static final String _testsFilePath = "src/main/resources/common.test";
     private static final TestConfig _config = new TestConfig();
 
     static String readTestsFile(String filePath) throws IOException {
