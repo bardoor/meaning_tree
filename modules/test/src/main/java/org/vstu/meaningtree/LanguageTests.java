@@ -1,98 +1,118 @@
 package org.vstu.meaningtree;
 
+import com.kitfox.svg.A;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.*;
 import org.vstu.meaningtree.languages.JavaTranslator;
 import org.vstu.meaningtree.languages.PythonTranslator;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class LanguageTests {
-    private static TestGroup[] _tests;
-    private static final String _testsFilePath = "src/main/resources/common.test";
+    private static final Map<String, TestGroup[]> _tests = new HashMap<>();
+    private static final File _resourcesDirectory = new File("src/main/resources");
     private static final TestConfig _config = new TestConfig();
 
-    static String readTestsFile(String filePath) throws IOException {
-        FileReader reader = new FileReader(filePath);
-        BufferedReader bufferedReader = new BufferedReader(reader);
+    static boolean checkExtension(File file, String extension) {
+        int i = file.getName().lastIndexOf(".") + 1;
+        return file.getName().substring(i).equals(extension);
+    }
 
-        StringBuilder tests = new StringBuilder();
-        String line;
-
-        while ((line = bufferedReader.readLine()) != null) {
-            tests.append(line).append(System.lineSeparator());
+    static void parseTestsFiles() throws IOException {
+        File[] files = _resourcesDirectory.listFiles();
+        if (files == null) {
+            throw new FileNotFoundException("В директории тестовых ресурсов не найдены тестировочные файлы!");
         }
-        return tests.toString();
+
+        for (File file : files) {
+            if (file.isDirectory() || !checkExtension(file, "test")) {
+                continue;
+            }
+
+            FileReader reader = new FileReader(file);
+            BufferedReader bufferedReader = new BufferedReader(reader);
+            StringBuilder testBuilder = new StringBuilder();
+            String line;
+
+            while ((line = bufferedReader.readLine()) != null) {
+                testBuilder.append(line).append(System.lineSeparator());
+            }
+
+            _tests.put(file.getName(), TestsParser.parse(testBuilder.toString()));
+        }
     }
 
     @BeforeAll
     static void setUp() throws IOException {
         _config.addLanguageConfig(new TestLanguageConfig(new JavaTranslator(), "java", false));
         _config.addLanguageConfig(new TestLanguageConfig(new PythonTranslator(), "python", true));
-        _tests = TestsParser.parse(readTestsFile(_testsFilePath));
+        parseTestsFiles();
+    }
+
+    List<DynamicTest> createTests(TestCase testCase) {
+        List<DynamicTest> tests = new ArrayList<>();
+        List<ImmutablePair<TestCode, TestCode>> codePermutations = Combinator.getPermutations(testCase.getCodes());
+
+        for (ImmutablePair<TestCode, TestCode> codePair : codePermutations) {
+            TestCode source = codePair.left;
+            TestCode translated = codePair.right;
+
+            // Взять трансляторы из конфига по названию языков
+            TestLanguageConfig sourceLangConfig = _config.getByName(source.language);
+            TestLanguageConfig translatedLangConfig = _config.getByName(translated.language);
+            // Если нет конфига хотя бы для одного языка из пары
+            if (sourceLangConfig == null || translatedLangConfig == null) {
+                continue;  // Пропустить акт тестирования
+            }
+
+            CodeFormatter codeFormatter = new CodeFormatter(sourceLangConfig.indentSensitive());
+
+            // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
+            tests.add(DynamicTest.dynamicTest(
+                    String.format("%s from %s to %s", testCase.getName(), source.language, translated.language),
+                    () -> {
+                        // Перегнать код на втором языке в MT, затем превратить в код на первом языке
+                        String translatedCode = sourceLangConfig.translator().getCode(
+                                translatedLangConfig.translator().getMeaningTree(translated.code)
+                        );
+
+                        // Отформатировать код с учётом чувствительности к индетации
+                        String formatedSourceCode = codeFormatter.format(source.code);
+                        String translatedSourceCode = codeFormatter.format(translatedCode);
+
+                        assertTrue(codeFormatter.equals(formatedSourceCode, translatedSourceCode),
+                                String.format("\nИсходный код на %s:\n%s\nПереведённый код с %s:\n%s\n",
+                                        source.language, formatedSourceCode, translated.language, translatedSourceCode));
+                    }
+            ));
+        }
+        return tests;
     }
 
     @TestFactory
-    Stream<DynamicContainer> testAllLanguages() {
-        List<ImmutablePair<TestCode, TestCode>> codePermutations;
+    List<DynamicContainer> testAllLanguages() {
         List<DynamicContainer> allTests = new ArrayList<>();
+        for (Map.Entry<String, TestGroup[]> entry : _tests.entrySet()) {
+            String fileName = entry.getKey();
+            TestGroup[] groups = entry.getValue();
 
-        for (TestGroup group : _tests) {
-            List<DynamicContainer> testGroup = new ArrayList<>();
+            List<DynamicContainer> testsInFile = new ArrayList<>();
 
-            for (TestCase testCase : group.getCases()) {
-                codePermutations = Combinator.getPermutations(testCase.getCodes());
-                List<DynamicTest> dynamicTests = new ArrayList<>();
+            for (TestGroup group : groups) {
+                List<DynamicContainer> testGroup = new ArrayList<>();
 
-                for (ImmutablePair<TestCode, TestCode> codePair : codePermutations) {
-                    TestCode source = codePair.left;
-                    TestCode translated = codePair.right;
-
-                    // Взять трансляторы из конфига по названию языков
-                    TestLanguageConfig sourceLangConfig = _config.getByName(source.language);
-                    TestLanguageConfig translatedLangConfig = _config.getByName(translated.language);
-                    if (sourceLangConfig == null || translatedLangConfig == null) {
-                        continue;
-                    }
-
-                    CodeFormatter codeFormatter = new CodeFormatter(sourceLangConfig.indentSensitive());
-
-                    // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
-                    dynamicTests.add(DynamicTest.dynamicTest(
-                            String.format("%s from %s to %s", testCase.getName(), source.language, translated.language),
-                            () -> {
-                                // Перегнать код на втором языке в MT, затем превратить в код на первом языке
-                                String translatedCode = sourceLangConfig.translator().getCode(
-                                        translatedLangConfig.translator().getMeaningTree(translated.code)
-                                );
-
-                                // Отформатировать код с учётом чувствительности к индетации
-                                String formatedSourceCode = codeFormatter.format(source.code);
-                                String translatedSourceCode = codeFormatter.format(translatedCode);
-
-                                assertTrue(codeFormatter.equals(formatedSourceCode, translatedSourceCode),
-                                           String.format("\nИсходный код на %s:\n%s\nПереведённый код с %s:\n%s\n",
-                                                   source.language, formatedSourceCode, translated.language, translatedSourceCode));
-                            }
-                    ));
+                for (TestCase testCase : group.getCases()) {
+                    testGroup.add(DynamicContainer.dynamicContainer(testCase.getName(), createTests(testCase)));
                 }
-                testGroup.add(DynamicContainer.dynamicContainer(
-                        testCase.getName(),
-                        dynamicTests
-                ));
+
+                testsInFile.add(DynamicContainer.dynamicContainer(group.getName(), testGroup));
             }
-            allTests.add(DynamicContainer.dynamicContainer(
-                    group.getName(),
-                    testGroup
-            ));
+            allTests.add(DynamicContainer.dynamicContainer(fileName, testsInFile));
         }
 
-        return allTests.stream();
+        return allTests;
     }
 }
