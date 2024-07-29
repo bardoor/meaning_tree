@@ -84,8 +84,8 @@ class LanguageTests {
                         String translatedSourceCode = codeFormatter.format(translatedCode);
 
                         assertTrue(codeFormatter.equals(formatedSourceCode, translatedSourceCode),
-                                String.format("\nИсходный код на %s:\n%s\nПереведённый код с %s:\n%s\n",
-                                        source.language, formatedSourceCode, translated.language, translatedSourceCode));
+                                String.format("\nИсходный код на %s:\n%s\nКод на %s, переведенный с %s:\n%s\n",
+                                        source.language, formatedSourceCode, source.language, translated.language, translatedSourceCode));
                     }
             ));
         }
