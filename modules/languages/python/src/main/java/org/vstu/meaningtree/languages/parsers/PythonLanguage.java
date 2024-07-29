@@ -71,7 +71,7 @@ public class PythonLanguage extends Language {
             case "expression_statement", "expression_list", "tuple_pattern" -> fromExpressionSequencesTSNode(node);
             case "parenthesized_expression" -> fromParenthesizedExpressionTSNode(node);
             case "binary_operator" -> fromBinaryExpressionTSNode(node);
-            case "unary_expression" -> fromUnaryExpressionTSNode(node);
+            case "unary_operator" -> fromUnaryExpressionTSNode(node);
             case "not_operator" -> fromNotOperatorTSNode(node);
             case "pass_statement", "ellipsis" -> null;
             case "integer" -> fromIntegerLiteralTSNode(node);
@@ -102,7 +102,8 @@ public class PythonLanguage extends Language {
             case "attribute"-> fromAttributeTSNode(node);
             case "return_statement" -> fromReturnTSNode(node);
             case "conditional_expression"-> fromTernaryOperatorTSNode(node);
-            case "assignment", "named_expression", "augmented_assignment" -> fromAssignmentTSNode(node);
+            case "named_expression" -> fromAssignmentExpressionTSNode(node);
+            case "assignment", "augmented_assignment" -> fromAssignmentStatementTSNode(node);
             case "function_definition" -> fromFunctionTSNode(node);
             case "decorated_definition" -> detectAnnotated(node);
             case "while_statement" -> fromWhileLoop(node);
@@ -195,12 +196,12 @@ public class PythonLanguage extends Language {
         }
         List<Expression> exprs = new ArrayList<>();
         TSNode arguments = node.getChildByFieldName("arguments");
-        for (int i = 0; i < arguments.getChildCount(); i++) {
+        for (int i = 0; i < arguments.getNamedChildCount(); i++) {
             String tsNodeChildType = arguments.getNamedChild(i).getType();
             if (tsNodeChildType.equals("(") || tsNodeChildType.equals(")") || tsNodeChildType.equals(",")) {
                 continue;
             }
-            Expression expr = (Expression) fromTSNode(arguments.getChild(i));
+            Expression expr = (Expression) fromTSNode(arguments.getNamedChild(i));
             exprs.add(expr);
         }
         return new FunctionCall((Identifier) ident, exprs);
@@ -331,8 +332,18 @@ public class PythonLanguage extends Language {
 
     private IndexExpression fromIndexTSNode(TSNode node) {
         Expression base = (Expression) fromTSNode(node.getChildByFieldName("value"));
-        Expression index = (Expression) fromTSNode(node.getChildByFieldName("subscript"));
-        return new IndexExpression(base, index);
+        TSNode subscriptNode = node.getChildByFieldName("subscript");
+        ArrayList<Expression> subscripts = new ArrayList<>();
+        subscripts.add((Expression) fromTSNode(subscriptNode));
+        while (!subscriptNode.getNextNamedSibling().isNull()) {
+            subscriptNode = subscriptNode.getNextNamedSibling();
+            subscripts.add((Expression) fromTSNode(subscriptNode));
+        }
+        if (subscripts.size() > 1) {
+            return new IndexExpression(base, new ExpressionSequence(subscripts));
+        } else {
+            return new IndexExpression(base, subscripts.getFirst());
+        }
     }
 
     private MemberAccess fromAttributeTSNode(TSNode node) {
@@ -342,10 +353,10 @@ public class PythonLanguage extends Language {
     }
 
     private DictionaryLiteral fromDictionary(TSNode node) {
-        SortedMap<Expression, Expression> dict = new TreeMap<>();
+        LinkedHashMap<Expression, Expression> dict = new LinkedHashMap<>();
         for (int i = 0; i < node.getNamedChildCount(); i++) {
-            Expression key = (Expression) fromTSNode(node.getChild(i).getChildByFieldName("key"));
-            Expression value = (Expression) fromTSNode(node.getChild(i).getChildByFieldName("value"));
+            Expression key = (Expression) fromTSNode(node.getNamedChild(i).getChildByFieldName("key"));
+            Expression value = (Expression) fromTSNode(node.getNamedChild(i).getChildByFieldName("value"));
             dict.put(key, value);
         }
         return new DictionaryLiteral(dict);
@@ -429,14 +440,15 @@ public class PythonLanguage extends Language {
 
     private Node fromString(TSNode node) {
         TSNode content = node.getChild(1);
-        if (node.getChild(0).getType().equals("\"\"\"")
-                && node.getParent().getType().equals("expression_statement")) {
+        if (getCodePiece(node.getChild(0)).equals("\"\"\"")
+                && node.getParent().getType().equals("expression_statement")
+                && node.getParent().getNamedChildCount() == 1) {
             return Comment.fromEscaped(getCodePiece(content));
         }
         StringLiteral.Type type = StringLiteral.Type.NONE;
-        if (node.getChild(0).getType().startsWith("f")) {
+        if (getCodePiece(node.getChild(0)).startsWith("f")) {
             type = StringLiteral.Type.INTERPOLATION;
-        } else if (node.getChild(0).getType().startsWith("r")) {
+        } else if (getCodePiece(node.getChild(0)).startsWith("r")) {
             type = StringLiteral.Type.RAW;
         }
         return StringLiteral.fromEscaped(getCodePiece(content), type);
@@ -488,7 +500,13 @@ public class PythonLanguage extends Language {
         }
     }
 
-    private Node fromAssignmentTSNode(TSNode node) {
+    private Node fromAssignmentExpressionTSNode(TSNode node) {
+        Expression left = (Expression) fromTSNode(node.getChildByFieldName("name"));
+        Expression right = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        return new AssignmentExpression(left, right);
+    }
+
+    private Node fromAssignmentStatementTSNode(TSNode node) {
         TSNode operator = node.getChildByFieldName("left").getNextSibling();
         AugmentedAssignmentOperator augOp;
         switch (getCodePiece(operator)) {
@@ -568,13 +586,7 @@ public class PythonLanguage extends Language {
             return new VariableDeclaration(type, (SimpleIdentifier) left, right);
         }
 
-        if (getCodePiece(operator).equals("=")) {
-            return new AssignmentStatement(left, right);
-        } else if (getCodePiece(operator).equals(":=")){
-            return new AssignmentExpression(left, right);
-        } else {
-            return new AssignmentStatement(left, right, augOp);
-        }
+        return new AssignmentStatement(left, right, augOp);
     }
 
     private Node fromList(TSNode node, String type) {
@@ -630,7 +642,7 @@ public class PythonLanguage extends Language {
     }
 
     private UnaryExpression fromUnaryExpressionTSNode(TSNode node) {
-        Expression argument = (Expression) fromTSNode(node.getChildByFieldName("operand"));
+        Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
         TSNode operation = node.getChildByFieldName("operator");
         return switch (getCodePiece(operation)) {
             case "~" -> new InversionOp(argument);
@@ -649,7 +661,7 @@ public class PythonLanguage extends Language {
     private Node fromExpressionSequencesTSNode(TSNode node) {
         if (node.getNamedChildCount() == 1 && node.getType().equals("expression_statement")) {
             Node n = fromTSNode(node.getChild(0));
-            if (n instanceof Statement || n instanceof Declaration) {
+            if (n instanceof Statement || n instanceof Declaration || n instanceof Comment) {
                 return n;
             }
             return new ExpressionStatement((Expression) n);

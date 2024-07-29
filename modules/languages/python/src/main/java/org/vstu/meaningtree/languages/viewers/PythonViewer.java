@@ -215,15 +215,11 @@ public class PythonViewer extends Viewer {
             rvalues.add(assignment.getRValue());
         }
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < lvalues.size(); i++) {
-            builder.append(toString(lvalues.get(i)));
-        }
+        builder.append(lvalues.stream().map(this::toString).collect(Collectors.joining(", ")));
         builder.append(' ');
         builder.append(operator);
         builder.append(' ');
-        for (int i = 0; i < lvalues.size(); i++) {
-            builder.append(toString(lvalues.get(i)));
-        }
+        builder.append(rvalues.stream().map(this::toString).collect(Collectors.joining(", ")));
         return builder.toString();
     }
 
@@ -418,13 +414,14 @@ public class PythonViewer extends Viewer {
         } else if (literal instanceof UnmodifiableListLiteral tuple) {
             return String.format("(%s)", argumentsToString(tuple.getList()));
         } else if (literal instanceof DictionaryLiteral dict) {
-            SortedMap<Expression, Expression> map = dict.getDictionary();
+            Map<Expression, Expression> map = dict.getDictionary();
             StringBuilder builder = new StringBuilder();
             builder.append('{');
             for (Expression key : map.keySet()) {
-                builder.append(String.format("%s : %s,", key, map.get(key)));
+                builder.append(String.format("%s: %s, ", toString(key), toString(map.get(key))));
             }
-            builder.append("}", builder.length() - 1, builder.length());
+            builder.setCharAt(builder.length() - 2, '}');
+            builder.setLength(builder.length() - 1);
             return builder.toString();
         } else {
             return "None";
@@ -533,17 +530,17 @@ public class PythonViewer extends Viewer {
     private String conditionToString(IfStatement node, Tab tab) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < node.getBranches().size(); i++) {
-            String pattern = "elif %s:\n%s";
-            if (i == 0) {
-                pattern = "if %s:\n%s";
-            }
             ConditionBranch branch = node.getBranches().get(i);
-            sb.append(String.format(pattern, toString(branch.getCondition()), toString(branch.getBody(), tab)));
+            if (i == 0) {
+                sb.append(String.format("if %s:\n%s\n", toString(branch.getCondition()), toString(branch.getBody(), tab)));
+            } else {
+                sb.append(String.format("%selif %s:\n%s\n", tab, toString(branch.getCondition()), toString(branch.getBody(), tab)));
+            }
         }
         if (node.hasElseBranch()) {
-            sb.append(String.format("else:\n%s\n", toString(node.getElseBranch(), tab)));
+            sb.append(String.format("%selse:\n%s\n", tab, toString(node.getElseBranch(), tab)));
         }
-        return sb.toString();
+        return sb.toString().stripTrailing();
     }
 
     private String unaryToString(UnaryExpression node) {
@@ -580,7 +577,7 @@ public class PythonViewer extends Viewer {
             }
             builder.append('\n');
         }
-        return builder.toString();
+        return builder.toString().stripTrailing();
     }
 
     private String nodeListToString(List<Node> nodes, Tab tab) {
@@ -598,7 +595,7 @@ public class PythonViewer extends Viewer {
             }
             builder.append('\n');
         }
-        return builder.toString();
+        return builder.toString().stripTrailing();
     }
 
     private String comparisonToString(BinaryComparison node) {
