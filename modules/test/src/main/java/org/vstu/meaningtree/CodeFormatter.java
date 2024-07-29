@@ -38,21 +38,22 @@ public class CodeFormatter {
     private String removeMeaninglessIndents(String code) {
         // Заменить все табы пробелами и разбить на строки
         String[] lines = code.replaceAll("\\t", " ".repeat(TAB_SIZE))
-                             .split(System.lineSeparator());
+                             .replaceAll("\\r\\n", "\n")
+                             .split("\n");
 
         // Если язык не чувствителен к индетации, вырезать пробелы из начала и конца строки
         if (!_indentSensitive) {
             return Arrays.stream(lines)
                             .map(String::strip)
-                            .collect(Collectors.joining(System.lineSeparator()));
+                            .collect(Collectors.joining("\n"));
         }
 
         // Иначе считать индетацию первой строки - базовой
         // Удалить индетацию, равную базовой у каждой строки
             String baseIndent = lines[0].replace(lines[0].strip(), "");
             return Arrays.stream(lines)
-                    .map(line -> line.replace(baseIndent, ""))
-                    .collect(Collectors.joining(System.lineSeparator()));
+                    .map(line -> line.replaceAll("^".concat(baseIndent), ""))
+                    .collect(Collectors.joining("\n"));
 
     }
 
