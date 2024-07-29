@@ -119,16 +119,25 @@ group: LiteralsTest
         c++:
             "abc";
 
+    case: StringLiteralWithEscape
+        python:
+            "abc \n\t \r"
+
+        java:
+            "abc \n\t \r";
+
+        c++:
+            "abc \n\t \r";
 
     case: StringRawLiteral
         python:
-            r"abc\t"
+            r"abc\t \n"
 
         java:
-            "abc\\t";
+            "abc\\t \\n";
 
         c++:
-            "abc\\t";
+            "abc\\t \\n";
 
 
     case: StringFormatLiteral

@@ -86,13 +86,19 @@ group: LiteralsTest
         python:
             "abc"
 
+    case: StringLiteralWithEscape
+        python:
+            "abc \n\t\r"
+
+        python:
+            "abc \n\t\r"
 
     case: StringRawLiteral
         python:
-            r"abc\t"
+            r"abc\t \n \r"
 
         python:
-            r"abc\t"
+            r"abc\t \n \r"
 
 
     case: StringFormatLiteral
@@ -108,7 +114,7 @@ group: LiteralsTest
             [1, 2, 3, a, b]
 
         python:
-            [1, 2, 4, a, b]
+            [1, 2, 3, a, b]
 
 
     case: TupleLiteral
@@ -652,6 +658,8 @@ group: Conditions
                 if x > 5:
                     if x != 7:
                         print("alarm")
+                    elif x > 3:
+                        i_am_here
                     else:
                         k += 1
                     c += 1
@@ -669,7 +677,9 @@ group: Conditions
                 x += 1
                 if x > 5:
                     if x != 7:
-                        print("alarm");
+                        print("alarm")
+                    elif x > 3:
+                        i_am_here
                     else:
                         k += 1
                     c += 1
