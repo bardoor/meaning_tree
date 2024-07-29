@@ -1,20 +1,18 @@
 package org.vstu.meaningtree.nodes.literals;
 
-import java.util.Objects;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 import org.vstu.meaningtree.nodes.Expression;
 
 public class DictionaryLiteral extends Literal {
-    private final SortedMap<Expression, Expression> _content;
+    private final SequencedMap<Expression, Expression> _content;
 
-    public DictionaryLiteral(SortedMap<Expression, Expression> content) {
-        this._content = new TreeMap<>(content);
+    public DictionaryLiteral(SequencedMap<Expression, Expression> content) {
+        this._content = new LinkedHashMap<>(content);
     }
 
-    public SortedMap<Expression, Expression> getDictionary() {
-        return new TreeMap<>(_content);
+    public SequencedMap<Expression, Expression> getDictionary() {
+        return new LinkedHashMap<>(_content);
     }
 
     @Override
