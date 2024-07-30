@@ -382,32 +382,33 @@ public class JavaViewer extends Viewer {
             nodesList = List.of(caseBlockBody);
         }
 
-        if (_bracketsAroundCaseBranches) {
-            if (_openBracketOnSameLine) {
-                builder.append(" {\n");
+        if (!nodesList.isEmpty()) {
+            if (_bracketsAroundCaseBranches) {
+                if (_openBracketOnSameLine) {
+                    builder.append(" {\n");
+                }
+                else {
+                    builder.append("\n").append(indent("{\n"));
+                }
             }
             else {
-
-                builder.append("\n").append(indent("{\n"));
+                builder.append("\n");
             }
-        }
-        else {
-            builder.append("\n");
-        }
 
-        increaseIndentLevel();
-        for (Node node : nodesList) {
-            builder
-                    .append(indent(toString(node)))
-                    .append("\n");
-        }
-        builder.deleteCharAt(builder.length() - 1);
-        decreaseIndentLevel();
+            increaseIndentLevel();
+            for (Node node : nodesList) {
+                builder
+                        .append(indent(toString(node)))
+                        .append("\n");
+            }
+            builder.deleteCharAt(builder.length() - 1);
+            decreaseIndentLevel();
 
-        if (_bracketsAroundCaseBranches) {
-            builder
-                    .append("\n")
-                    .append(indent("}"));
+            if (_bracketsAroundCaseBranches) {
+                builder
+                        .append("\n")
+                        .append(indent("}"));
+            }
         }
 
         return builder.toString();
