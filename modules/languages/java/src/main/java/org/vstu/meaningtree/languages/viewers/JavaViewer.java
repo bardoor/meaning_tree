@@ -476,11 +476,23 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(MethodDeclaration methodDeclaration) {
+        StringBuilder builder = new StringBuilder();
+
         String modifiersList = toString(methodDeclaration.getModifiers());
+        if (!modifiersList.isEmpty()) {
+            builder.append(modifiersList).append(" ");
+        }
+
         String returnType = toString(methodDeclaration.getReturnType());
+        builder.append(returnType).append(" ");
+
         String name = toString(methodDeclaration.getName());
+        builder.append(name);
+
         String parameters = toStringParameters(methodDeclaration.getArguments());
-        return "%s %s %s%s".formatted(modifiersList, returnType, name, parameters);
+        builder.append(parameters);
+
+        return builder.toString();
     }
 
     private String toString(MethodDefinition methodDefinition) {
