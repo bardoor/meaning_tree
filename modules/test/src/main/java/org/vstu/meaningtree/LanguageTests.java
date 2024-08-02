@@ -61,39 +61,66 @@ class LanguageTests {
 
             // Взять трансляторы из конфига по названию языков
             TestLanguageConfig sourceLangConfig = _config.getByName(source.language);
-            TestLanguageConfig translatedLangConfig = _config.getByName(alternatives.getLanguage());
+            TestLanguageConfig destLangConfig = _config.getByName(alternatives.getLanguage());
             // Если нет конфига хотя бы для одного языка из пары
-            if (sourceLangConfig == null || translatedLangConfig == null) {
+            if (sourceLangConfig == null || destLangConfig == null) {
                 continue;  // Пропустить акт тестирования
             }
             CodeFormatter sourceCodeFormatter = new CodeFormatter(sourceLangConfig.indentSensitive());
-            CodeFormatter translatedCodeFormatter = new CodeFormatter(translatedLangConfig.indentSensitive());
+            CodeFormatter destCodeFormatter = new CodeFormatter(destLangConfig.indentSensitive());
 
             // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
             tests.add(DynamicTest.dynamicTest(
                     String.format("%s from %s to %s", testCase.getName(), source.language, alternatives.getLanguage()),
                     () -> {
-                        // Отформатировать код с учётом чувствительности к индетации
-                        String formatedSourceCode = source.getFormattedCode(sourceCodeFormatter);
+                        if (source.getType().equals(TestCodeType.MAIN)) {
+                            // Выполняем проверку на равенство кода по следующей схеме: (source -> dest) == dest
 
-                        // Перегнать код на втором языке в MT, затем превратить в код на первом языке
-                        String[] translatedCodeAlternatives = new String[alternatives.size()];
-                        for (int i = 0; i < translatedCodeAlternatives.length; i++) {
-                            translatedCodeAlternatives[i] = sourceLangConfig.translator().getCode(
-                                    translatedLangConfig.translator().getMeaningTree(alternatives.get(i).getFormattedCode(translatedCodeFormatter))
-                            );
-                            translatedCodeAlternatives[i] = sourceCodeFormatter.format(translatedCodeAlternatives[i]);
+                            // Отформатировать код с учётом чувствительности к индетации
+                            String formatedSourceCode = source.getFormattedCode(sourceCodeFormatter);
+
+                            // Преобразуем код первого языка в MT, а затем MT - в код второго языка
+                            String destSourceCode = destCodeFormatter.format(destLangConfig.translator().getCode(
+                                    sourceLangConfig.translator().getMeaningTree(formatedSourceCode)
+                            ));
+
+                            boolean anyMatch = alternatives.stream().map((SingleTestCode code) -> code.getFormattedCode(destCodeFormatter))
+                                    .anyMatch((String alternative) -> destCodeFormatter.equals(destSourceCode, alternative));
+
+                            assertTrue(anyMatch,
+                                    String.format(
+                                            "\nПроверка (%s->%s) == %s\nИсходный код на %s:\n%s\nИсходный код, переведенный в %s:\n%s\nПроверяемый код на %s\n%s\n",
+                                            source.language, alternatives.getLanguage(), alternatives.getLanguage(),
+                                            source.language, formatedSourceCode,
+                                            alternatives.getLanguage(), destSourceCode,
+                                            alternatives.getLanguage(), alternatives.getFirst().getFormattedCode(destCodeFormatter)
+                                            ));
+
+                        } else {
+                            // Выполняем проверку на равенство кода по следующей схеме: source == (dest -> source)
+
+                            // Отформатировать код с учётом чувствительности к индетации
+                            String formatedSourceCode = source.getFormattedCode(sourceCodeFormatter);
+
+                            // Перегнать код на втором языке в MT, затем превратить в код на первом языке
+                            String[] destCodeAlternatives = new String[alternatives.size()];
+                            for (int i = 0; i < destCodeAlternatives.length; i++) {
+                                destCodeAlternatives[i] = sourceLangConfig.translator().getCode(
+                                        destLangConfig.translator().getMeaningTree(alternatives.get(i).getFormattedCode(destCodeFormatter))
+                                );
+                                destCodeAlternatives[i] = sourceCodeFormatter.format(destCodeAlternatives[i]);
+                            }
+
+                            boolean anyMatch = Arrays.stream(destCodeAlternatives).anyMatch((String translatedSourceCode) -> sourceCodeFormatter.equals(formatedSourceCode, translatedSourceCode));
+
+                            assertTrue(anyMatch,
+                                    String.format(
+                                            "\nПроверка %s==(%s->%s)\nИсходный код на %s:\n%s\nПроверяемый код на %s:\n%s\nПроверяемый код, переведенный на %s:\n%s\n",
+                                            source.language, alternatives.getLanguage(), source.language,
+                                            source.language, formatedSourceCode,
+                                            alternatives.getLanguage(), alternatives.getFirst().getFormattedCode(destCodeFormatter),
+                                            source.language, destCodeAlternatives[0]));
                         }
-
-                        boolean anyMatch = Arrays.stream(translatedCodeAlternatives).anyMatch((String translatedSourceCode) -> sourceCodeFormatter.equals(formatedSourceCode, translatedSourceCode));
-
-                        assertTrue(anyMatch,
-                                String.format(
-                                        "\nПроверка %s->%s\nИсходный код на %s:\n%s\nИсходный код на %s:\n%s\nКод на %s, переведенный с %s:\n%s\n",
-                                        source.language, alternatives.getLanguage(),
-                                        source.language, formatedSourceCode,
-                                        alternatives.getLanguage(), alternatives.getFirst().getFormattedCode(translatedCodeFormatter),
-                                        source.language, alternatives.getLanguage(), translatedCodeAlternatives[0]));
                     }
             ));
         }
