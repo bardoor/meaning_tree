@@ -89,13 +89,13 @@ group: LiteralsTest
 
     case: IntegerBinaryLiteral
         python:
-            0b01010
+            0b1010
 
         java:
-            0b01010;
+            0b1010;
 
         c++:
-            0b01010;
+            0b1010;
 
 
     case: IntegerHexLiteral

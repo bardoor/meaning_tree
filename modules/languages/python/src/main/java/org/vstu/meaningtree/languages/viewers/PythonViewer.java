@@ -430,9 +430,9 @@ public class PythonViewer extends Viewer {
 
     private String commentToString(Comment comment) {
         if (comment.isMultiline()) {
-            return String.format("\"\"\"\n%s\n\"\"\"", comment.getEscapedContent());
+            return String.format("\"\"\"%s\"\"\"", comment.getUnescapedContent());
         } else {
-            return String.format("# %s", comment.getEscapedContent());
+            return String.format("# %s", comment.getUnescapedContent());
         }
     }
 

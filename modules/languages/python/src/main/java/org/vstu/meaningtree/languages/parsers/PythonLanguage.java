@@ -443,7 +443,7 @@ public class PythonLanguage extends Language {
         if (getCodePiece(node.getChild(0)).equals("\"\"\"")
                 && node.getParent().getType().equals("expression_statement")
                 && node.getParent().getNamedChildCount() == 1) {
-            return Comment.fromEscaped(getCodePiece(content));
+            return Comment.fromUnescaped(getCodePiece(content));
         }
         StringLiteral.Type type = StringLiteral.Type.NONE;
         if (getCodePiece(node.getChild(0)).startsWith("f")) {

@@ -65,10 +65,10 @@ group: LiteralsTest
 
     case: IntegerBinaryLiteral
         python:
-            0b01010
+            0b1010
 
         python:
-            0b01010
+            0b1010
 
 
     case: IntegerHexLiteral
@@ -408,15 +408,15 @@ group: ComparisonsTest
 
 
     case: CompoundComparisonConvertationCase1
-        python:
+        main python:
             a <= b and c <= k and b >= c
 
         python:
-            c <= b and a <= b and c < k
+            c <= b and a <= b and c <= k
 
 
     case: CompoundComparisonConvertationCase2
-        python:
+        main python:
             a < c and a < b and d > k and b > m and c > b and a > m
 
         python:
@@ -424,7 +424,7 @@ group: ComparisonsTest
 
 
     case: CompoundComparisonConvertationCase3
-        python:
+        main python:
             a < b and m >= k and x >= y
 
         python:
@@ -432,7 +432,7 @@ group: ComparisonsTest
 
 
     case: CompoundComparisonConvertationCase4
-        python:
+        main python:
             a < b and b < c and m >= k
 
         python:
@@ -440,7 +440,7 @@ group: ComparisonsTest
 
 
     case: CompoundComparisonConvertationCase5
-        python:
+        main python:
             a < b and m >= k and b < c
 
         python:
@@ -448,7 +448,7 @@ group: ComparisonsTest
 
 
     case: CompoundComparisonConvertationCase6
-        python:
+        main python:
             a < b and a == b and b >= c
 
         python:
@@ -456,7 +456,7 @@ group: ComparisonsTest
 
 
     case: CompoundComparisonConvertationCase7
-        python:
+        main python:
             a < b and a < c
 
         python:
@@ -464,7 +464,7 @@ group: ComparisonsTest
 
 
     case: CompoundComparisonConvertationCase7
-        python:
+        main python:
             a < b and b < c and c < a
 
         python:
