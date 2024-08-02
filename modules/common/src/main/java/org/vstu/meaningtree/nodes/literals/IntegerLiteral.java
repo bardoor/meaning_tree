@@ -68,7 +68,7 @@ public class IntegerLiteral extends NumericLiteral {
             case 8 -> builder.append("0o");
             case 16 -> builder.append("0x");
         }
-        builder.append(Long.toString(getLongValue(), base));
+        builder.append(Long.toString(getLongValue(), base).toUpperCase());
         if (_isLongNumber) {
             builder.append("L");
         }
