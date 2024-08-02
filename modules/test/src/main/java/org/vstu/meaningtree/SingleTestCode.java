@@ -2,28 +2,39 @@ package org.vstu.meaningtree;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class TestCode {
+public class SingleTestCode {
     public final String code;
-    public final String language;
+    public String language;
+    public TestCodeType type;
 
-    public TestCode(String code) {
-        language = parseName(code);
+
+    public SingleTestCode(String code) {
+        parseName(code);
         this.code = parseCode(code);
     }
 
     private String parseName(String testCode) {
-        Pattern langNamePattern = Pattern.compile("^\\s+(.+):\\s*$", Pattern.MULTILINE);
+        Pattern langNamePattern = Pattern.compile("^\\s+((main|alt)\\s+)?([^\\s]+):\\s*$", Pattern.MULTILINE);
         Matcher langNameMatcher = langNamePattern.matcher(testCode);
 
         if (!langNameMatcher.find()) {
             throw new IllegalArgumentException("Название языка в тест-кейсе не найдено!");
         }
-        return langNameMatcher.group(1);
+        language = langNameMatcher.group(3);
+
+        String langPrefix = langNameMatcher.group(2);
+        type = switch (langPrefix) {
+            case "alt" -> TestCodeType.ALTERNATIVE;
+            case "main" -> TestCodeType.MAIN;
+            case null, default -> TestCodeType.DEFAULT;
+        };
+        return language;
     }
 
     private String parseCode(String testCode) {
@@ -51,4 +62,12 @@ public class TestCode {
     public String getLanguage() { return language; }
 
     public String getCode() { return code; }
+
+    public String getFormattedCode(CodeFormatter formatter) {
+        return formatter.format(code);
+    }
+
+    public TestCodeType getType() {
+        return type;
+    }
 }

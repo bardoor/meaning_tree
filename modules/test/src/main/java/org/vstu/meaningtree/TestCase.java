@@ -1,19 +1,20 @@
 package org.vstu.meaningtree;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TestCase {
     private final String _name;
-    private final List<TestCode> _codes;  // Язык -> Код
+    private List<TestCodeGroup> _codeGroups; // Группы, состоящие из альтернатив кода на одном языке
+    private SingleTestCode _mainCode; // Основной язык, если установлен, то все преобразования производятся от него
 
     public TestCase(String testCase) {
         _name = parseName(testCase);
-        _codes = parseCodes(testCase);
+        parseCodes(testCase);
     }
 
     private String parseName(String testCase) {
@@ -26,8 +27,8 @@ public class TestCase {
         return nameMatcher.group(1);
     }
 
-    private List<TestCode> parseCodes(String testCase) {
-        Pattern langNamePattern = Pattern.compile("^([ \\t\\f\\r]+).+:\\s*$", Pattern.MULTILINE);
+    private void parseCodes(String testCase) {
+        Pattern langNamePattern = Pattern.compile("^([ \\t\\f\\r]+)((main|alt)\\s+)?[^\\s]+:\\s*$", Pattern.MULTILINE);
         Matcher matcher = langNamePattern.matcher(testCase);
 
         // Найти строки с названиями языков
@@ -43,29 +44,53 @@ public class TestCase {
 
         // Вычленить всё что начинается названием языка включительно
         // и кончается названием другого языка не включительно
-        ArrayList<TestCode> codes = new ArrayList<>();
-        try {
-            for (int i = 0; i < codesStarts.size() - 1; i++) {
-                String code = testCase.substring(codesStarts.get(i), codesStarts.get(i + 1));
-                codes.add(new TestCode(code));
-            }
-        } catch (RuntimeException e) {
-            throw new RuntimeException("В тест кейсе отсутствует код:\n" + testCase);
-        }
+        List<SingleTestCode> codes = new ArrayList<>();
+        HashMap<String, TestCodeGroup> alternatives = new HashMap<>();
+        SingleTestCode mainCode = null;
 
-        return codes;
+        for (int i = 0; i < codesStarts.size() - 1; i++) {
+            String code = testCase.substring(codesStarts.get(i), codesStarts.get(i + 1));
+            SingleTestCode testCode = new SingleTestCode(code);
+            if (mainCode != null && testCode.getType().equals(TestCodeType.MAIN)) {
+                throw new RuntimeException("В тест кейсе несколько главных кодов:\n" + testCase);
+            }
+            if (testCode.getType().equals(TestCodeType.MAIN)) {
+                mainCode = testCode;
+            } else if (testCode.getType().equals(TestCodeType.ALTERNATIVE)) {
+                if (!alternatives.containsKey(testCode.getLanguage())) {
+                    alternatives.put(testCode.getLanguage(), new TestCodeGroup(testCode.getLanguage()));
+                }
+                alternatives.get(testCode.getLanguage()).add(testCode);
+            } else {
+                if (alternatives.containsKey(testCode.getLanguage())) {
+                    throw new RuntimeException("В тест кейсе язык " + testCode.getLanguage() + " должен состоять только из альтернатив");
+                }
+                codes.add(testCode);
+            }
+        }
+        _codeGroups = new ArrayList<>();
+        _codeGroups.addAll(alternatives.values());
+        for (SingleTestCode code : codes) {
+            _codeGroups.add(new TestCodeGroup(code.getLanguage(), code));
+        }
+        _mainCode = mainCode;
     }
 
     public String getName() { return _name; }
 
-    public TestCode getCode(String language) {
-        return _codes.stream()
-                        .filter(code -> code.getLanguage().equals(language))
-                        .findFirst()
-                        .orElse(null);
+    public List<TestCodeGroup> getCodeGroups() {
+        return new ArrayList<>(_codeGroups);
     }
 
-    public TestCode[] getCodes() { return _codes.toArray(TestCode[]::new); }
+    public SingleTestCode getMainCode() {
+        return _mainCode;
+    }
 
-    public String[] getLanguages() { return _codes.stream().map(TestCode::getLanguage).toArray(String[]::new); }
+    public boolean hasMainCode() {
+        return _mainCode != null;
+    }
+
+    public String[] getLanguages() {
+        return _codeGroups.stream().flatMap(Collection::stream).map(SingleTestCode::getLanguage).distinct().toArray(String[]::new);
+    }
 }

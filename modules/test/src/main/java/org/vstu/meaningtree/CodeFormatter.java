@@ -37,8 +37,8 @@ public class CodeFormatter {
      */
     private String removeMeaninglessIndents(String code) {
         // Заменить все табы пробелами и разбить на строки
-        String[] lines = code.replaceAll("\\t", " ".repeat(TAB_SIZE))
-                             .replaceAll("\\r\\n", "\n")
+        String[] lines = code.replaceAll("\\r\\n", "\n")
+                             .replaceAll("\\t", " ".repeat(TAB_SIZE))
                              .split("\n");
 
         // Если язык не чувствителен к индетации, вырезать пробелы из начала и конца строки
@@ -52,7 +52,7 @@ public class CodeFormatter {
         // Удалить индетацию, равную базовой у каждой строки
             String baseIndent = lines[0].replace(lines[0].strip(), "");
             return Arrays.stream(lines)
-                    .map(line -> line.replaceAll("^".concat(baseIndent), ""))
+                    .map(line -> line.replaceAll("^".concat(baseIndent), "").stripTrailing())
                     .collect(Collectors.joining("\n"));
 
     }
