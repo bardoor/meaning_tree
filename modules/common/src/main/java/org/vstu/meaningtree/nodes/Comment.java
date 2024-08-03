@@ -4,7 +4,7 @@ import org.apache.commons.text.StringEscapeUtils;
 
 public class Comment extends Node {
     protected final String _content;
-    // NOTE: Комментарии хранятся аналогично строковым литералам в неэкранированном виде
+    // Комментарии хранятся аналогично строковым литералам в неэкранированном виде
 
     private Comment(String content) {
         _content = content;
@@ -14,18 +14,10 @@ public class Comment extends Node {
         return new Comment(codePiece);
     }
 
-    public static Comment fromEscaped(String codePiece) {
-        codePiece = StringEscapeUtils.unescapeJava(codePiece);
-        return new Comment(codePiece);
-    }
-
     public String getUnescapedContent() {
         return _content;
     }
 
-    public String getEscapedContent() {
-        return StringEscapeUtils.escapeJava(_content);
-    }
 
     public boolean isMultiline() {
         return getUnescapedContent().contains("\n");
