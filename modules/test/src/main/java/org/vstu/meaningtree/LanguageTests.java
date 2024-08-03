@@ -7,6 +7,7 @@ import org.vstu.meaningtree.languages.PythonTranslator;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,17 +54,21 @@ class LanguageTests {
 
     List<DynamicTest> createTests(TestCase testCase) {
         List<DynamicTest> tests = new ArrayList<>();
-        List<ImmutablePair<SingleTestCode, TestCodeGroup>> codePermutations = TestCombinator.getPairs(testCase);
+        List<ImmutablePair<TestCodeGroup, TestCodeGroup>> codePermutations = TestCombinator.getPairs(testCase);
 
-        for (ImmutablePair<SingleTestCode, TestCodeGroup> codePair : codePermutations) {
-            SingleTestCode source = codePair.left;
-            TestCodeGroup alternatives = codePair.right;
+        for (ImmutablePair<TestCodeGroup, TestCodeGroup> codePair : codePermutations) {
+            TestCodeGroup source = codePair.left;
+            TestCodeGroup dest = codePair.right;
 
             // Взять трансляторы из конфига по названию языков
-            TestLanguageConfig sourceLangConfig = _config.getByName(source.language);
-            TestLanguageConfig destLangConfig = _config.getByName(alternatives.getLanguage());
-            // Если нет конфига хотя бы для одного языка из пары
-            if (sourceLangConfig == null || destLangConfig == null) {
+            TestLanguageConfig sourceLangConfig = _config.getByName(source.getLanguage());
+            TestLanguageConfig destLangConfig = _config.getByName(dest.getLanguage());
+            // Если нет конфига хотя бы для одного языка из пары или не выполняются условия тестирования по схеме
+            boolean skipCheck = (sourceLangConfig == null || destLangConfig == null)
+                    || (codePair.left.size() > 1 && codePair.right.size() > 1)
+                    || (codePair.right.size() > 1 && codePair.left.size() == 1 && !codePair.left.getFirst().getType().equals(TestCodeType.MAIN));
+
+            if (skipCheck) {
                 continue;  // Пропустить акт тестирования
             }
             CodeFormatter sourceCodeFormatter = new CodeFormatter(sourceLangConfig.indentSensitive());
@@ -71,55 +76,51 @@ class LanguageTests {
 
             // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
             tests.add(DynamicTest.dynamicTest(
-                    String.format("%s from %s to %s", testCase.getName(), source.language, alternatives.getLanguage()),
+                    String.format("%s from %s to %s", testCase.getName(), source.getLanguage(), dest.getLanguage()),
                     () -> {
-                        if (source.getType().equals(TestCodeType.MAIN)) {
+                        if (source.getFirst().getType().equals(TestCodeType.MAIN)) {
                             // Выполняем проверку на равенство кода по следующей схеме: (source -> dest) == dest
 
                             // Отформатировать код с учётом чувствительности к индетации
-                            String formatedSourceCode = source.getFormattedCode(sourceCodeFormatter);
+                            String formatedSourceCode = source.getFirst().getFormattedCode(sourceCodeFormatter);
 
                             // Преобразуем код первого языка в MT, а затем MT - в код второго языка
                             String destSourceCode = destCodeFormatter.format(destLangConfig.translator().getCode(
                                     sourceLangConfig.translator().getMeaningTree(formatedSourceCode)
                             ));
 
-                            boolean anyMatch = alternatives.stream().map((SingleTestCode code) -> code.getFormattedCode(destCodeFormatter))
+                            boolean anyMatch = dest.stream().map((SingleTestCode code) -> code.getFormattedCode(destCodeFormatter))
                                     .anyMatch((String alternative) -> destCodeFormatter.equals(destSourceCode, alternative));
 
                             assertTrue(anyMatch,
                                     String.format(
                                             "\nПроверка (%s->%s) == %s\nИсходный код на %s:\n%s\nИсходный код, переведенный в %s:\n%s\nПроверяемый код на %s\n%s\n",
-                                            source.language, alternatives.getLanguage(), alternatives.getLanguage(),
-                                            source.language, formatedSourceCode,
-                                            alternatives.getLanguage(), destSourceCode,
-                                            alternatives.getLanguage(), alternatives.getFirst().getFormattedCode(destCodeFormatter)
+                                            source.getLanguage(), dest.getLanguage(), dest.getLanguage(),
+                                            source.getLanguage(), formatedSourceCode,
+                                            dest.getLanguage(), destSourceCode,
+                                            dest.getLanguage(), dest.getFirst().getFormattedCode(destCodeFormatter)
                                             ));
 
                         } else {
                             // Выполняем проверку на равенство кода по следующей схеме: source == (dest -> source)
 
                             // Отформатировать код с учётом чувствительности к индетации
-                            String formatedSourceCode = source.getFormattedCode(sourceCodeFormatter);
+                            List<String> formattedSourceCode = source.stream().map((SingleTestCode code) -> code.getFormattedCode(sourceCodeFormatter)).toList();
 
                             // Перегнать код на втором языке в MT, затем превратить в код на первом языке
-                            String[] destCodeAlternatives = new String[alternatives.size()];
-                            for (int i = 0; i < destCodeAlternatives.length; i++) {
-                                destCodeAlternatives[i] = sourceLangConfig.translator().getCode(
-                                        destLangConfig.translator().getMeaningTree(alternatives.get(i).getFormattedCode(destCodeFormatter))
-                                );
-                                destCodeAlternatives[i] = sourceCodeFormatter.format(destCodeAlternatives[i]);
-                            }
+                            String destSourceCode = sourceLangConfig.translator().getCode(
+                                    destLangConfig.translator().getMeaningTree(dest.getFirst().getFormattedCode(destCodeFormatter))
+                            );
 
-                            boolean anyMatch = Arrays.stream(destCodeAlternatives).anyMatch((String translatedSourceCode) -> sourceCodeFormatter.equals(formatedSourceCode, translatedSourceCode));
+                            boolean anyMatch = formattedSourceCode.stream().anyMatch((String sourceCodeAlt) -> sourceCodeFormatter.equals(sourceCodeAlt, destSourceCode));
 
                             assertTrue(anyMatch,
                                     String.format(
                                             "\nПроверка %s==(%s->%s)\nИсходный код на %s:\n%s\nПроверяемый код на %s:\n%s\nПроверяемый код, переведенный на %s:\n%s\n",
-                                            source.language, alternatives.getLanguage(), source.language,
-                                            source.language, formatedSourceCode,
-                                            alternatives.getLanguage(), alternatives.getFirst().getFormattedCode(destCodeFormatter),
-                                            source.language, destCodeAlternatives[0]));
+                                            source.getLanguage(), dest.getLanguage(), source.getLanguage(),
+                                            source.getLanguage(), formattedSourceCode.getFirst(),
+                                            dest.getLanguage(), dest.getFirst().getFormattedCode(destCodeFormatter),
+                                            source.getLanguage(), destSourceCode));
                         }
                     }
             ));
