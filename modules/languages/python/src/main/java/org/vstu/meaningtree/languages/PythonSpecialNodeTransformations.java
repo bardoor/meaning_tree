@@ -217,5 +217,6 @@ public class PythonSpecialNodeTransformations {
     /*
     TODO:
     - convert assignment statement of first variable usage to variable declaration
+    - detect self reference and use it
      */
 }

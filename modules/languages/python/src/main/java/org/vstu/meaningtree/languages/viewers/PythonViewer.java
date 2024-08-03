@@ -89,6 +89,7 @@ public class PythonViewer extends Viewer {
             case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
             case ExpressionSequence exprSeq -> String.join(", ", exprSeq.getExpressions().stream().map((Expression nd) -> toString(nd, tab)).toList().toArray(new String[0]));
             case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
+            case CastTypeExpression cast -> callsToString(cast);
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
     }
@@ -396,11 +397,35 @@ public class PythonViewer extends Viewer {
         } else if (literal instanceof StringLiteral strLiteral) {
             String prefix;
             switch (strLiteral.getStringType()) {
-                case INTERPOLATION -> prefix = "f";
                 case RAW ->  prefix = "r";
                 default -> prefix = "";
             }
-            return String.format("%s\"%s\"", prefix, strLiteral.getEscapedValue());
+            String value;
+            if (strLiteral.getStringType().equals(StringLiteral.Type.RAW)) {
+                value = strLiteral.getUnescapedValue();
+            } else {
+                value = strLiteral.getEscapedValue();
+            }
+            return String.format("%s\"%s\"", prefix, value);
+        } else if (literal instanceof InterpolatedStringLiteral interpolation) {
+            String prefix = "f";
+            switch (interpolation.getStringType()) {
+                case RAW ->  prefix += "r";
+                default -> prefix += "";
+            }
+            StringBuilder builder = new StringBuilder();
+            for (Expression expr : interpolation) {
+                if (expr instanceof StringLiteral simpleString) {
+                    if (interpolation.getStringType().equals(StringLiteral.Type.RAW)) {
+                        builder.append(simpleString.getUnescapedValue());
+                    } else {
+                        builder.append(simpleString.getEscapedValue());
+                    }
+                } else {
+                    builder.append(String.format("{%s}", toString(expr)));
+                }
+            }
+            return String.format("%s\"%s\"", prefix, builder);
         } else if (literal instanceof BoolLiteral bool) {
            if (bool.getValue()) {
                return "True";
@@ -502,21 +527,29 @@ public class PythonViewer extends Viewer {
     private String callsToString(Node node) {
         if (node instanceof ArrayNewExpression newExpr) {
             if (newExpr.getInitializer().isPresent()) {
-                ArrayInitializer initializer = newExpr.getInitializer().get();
-                return String.format("[%s]", argumentsToString(initializer.getValues()));
+                return String.format("[%s]", argumentsToString(newExpr.getInitializer().get().getValues()));
             } else {
-                // TODO: добавить обработку многомерных массивов
                 Shape shape = newExpr.getShape();
-                Optional<Expression> dimension = shape.getDimension(0);
-                return String.format("[%s for _ in range(%s)]", String.format("%s()", newExpr.getType()), toString(dimension.get()));
+                String result = _getListComprehensionByDimension(1,
+                        shape.getDimension(shape.getDimensionCount() - 1).get(), String.format("%s()", toString(newExpr.getType())));
+                for (int i = shape.getDimensionCount() - 2; i >= 0; i--) {
+                    result = _getListComprehensionByDimension(shape.getDimensionCount() - i, shape.getDimension(i).get(), result);
+                }
+                return result;
             }
         } else if (node instanceof ObjectNewExpression newExpr) {
             return String.format("%s(%s)", newExpr.getType(), argumentsToString(newExpr.getConstructorArguments()));
         } else if (node instanceof FunctionCall funcCall) {
             return String.format("%s(%s)", funcCall.getFunctionName(), argumentsToString(funcCall.getArguments()));
+        } else if (node instanceof CastTypeExpression cast) {
+            return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));
         } else {
             throw new RuntimeException("Not a callable object");
         }
+    }
+
+    private String _getListComprehensionByDimension(int depth, Expression dimension, String fillExpression) {
+        return String.format("[%s for %s in range(%s)]", fillExpression, "_".repeat(depth), dimension);
     }
 
     private String argumentsToString(List<Expression> expressions) {

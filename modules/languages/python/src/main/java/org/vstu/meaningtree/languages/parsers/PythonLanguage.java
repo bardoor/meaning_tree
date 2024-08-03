@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class PythonLanguage extends Language {
 
@@ -83,6 +84,7 @@ public class PythonLanguage extends Language {
             case "list", "set", "tuple" -> fromList(node, node.getType());
             case "dictionary" -> fromDictionary(node);
             case "string" -> fromString(node);
+            case "interpolation" -> fromTSNode(node.getNamedChild(0));
             case "slice" -> fromSlice(node);
             case "for_statement" -> fromForLoop(node);
             case "class_definition" -> fromClass(node);
@@ -446,12 +448,33 @@ public class PythonLanguage extends Language {
             return Comment.fromUnescaped(getCodePiece(content));
         }
         StringLiteral.Type type = StringLiteral.Type.NONE;
-        if (getCodePiece(node.getChild(0)).startsWith("f")) {
-            type = StringLiteral.Type.INTERPOLATION;
-        } else if (getCodePiece(node.getChild(0)).startsWith("r")) {
+
+        if (Stream.of("fr", "r", "rf")
+                .anyMatch((String prefix) -> getCodePiece(node.getChild(0)).startsWith(prefix))) {
             type = StringLiteral.Type.RAW;
         }
-        return StringLiteral.fromEscaped(getCodePiece(content), type);
+
+        if (Stream.of("fr", "f", "rf")
+                .anyMatch((String prefix) -> getCodePiece(node.getChild(0)).startsWith(prefix))) {
+            TSNode contentNode = node.getNamedChild(1);
+            List<Expression> interpolation = new ArrayList<>();
+
+            while (!contentNode.getType().equals("string_end")) {
+                if (contentNode.getType().equals("string_content")) {
+                    interpolation.add(StringLiteral.fromEscaped(getCodePiece(contentNode), type));
+                } else {
+                    interpolation.add((Expression) fromTSNode(contentNode));
+                }
+                contentNode = contentNode.getNextNamedSibling();
+            }
+            return new InterpolatedStringLiteral(type, interpolation);
+        }
+
+        if (type == StringLiteral.Type.RAW) {
+            return StringLiteral.fromUnescaped(getCodePiece(content), type);
+        } else {
+            return StringLiteral.fromEscaped(getCodePiece(content), type);
+        }
     }
 
     private Comment fromComment(TSNode node) {
