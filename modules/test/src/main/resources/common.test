@@ -1439,6 +1439,25 @@ group: StructuresOOP
                 }
             }
 
+    case: MethodSelfReferenceDetection
+        python:
+            class A:
+                def name(self, k):
+                    x = self.method().plus
+                    self.method()
+                    this.k
+                    return x.a + self.m
+
+        java:
+            class A {
+                Object name(Object k) {
+                    Object x = this.method().plus;
+                    this.method();
+                    this.k;
+                    return x.a + this.m;
+                }
+            }
+         # TODO: добавить C++
 
 group: Other
     case: Import
@@ -1504,6 +1523,34 @@ group: Other
             def
             */
 
+    case: CastTypePrimitive
+        java:
+            (int)a;
+        c++:
+            (int)a;
+        static python:
+            int(a)
+
+    case: CastTypeCustom
+        java:
+            (MyClass)a;
+        c++:
+            (int)a;
+        static python:
+            MyClass(a)
+
+    case: ListUnpacking
+        java:
+            class A {
+                int a(T t, int ... args) {
+                    return t + sum(args);
+                }
+            }
+
+        python:
+            class A:
+                def a(t: T, *args: int) -> int:
+                    return t + sum(args)
 
     case: SinglelineComment
         python:
@@ -1515,6 +1562,37 @@ group: Other
         java:
             // abc
 
+    case: ArrayNewSingleDimensionWithInit
+        java:
+            int[] args = new int[] {1, 2, 3, 4, 5};
+        python:
+            args: list[int] = [1, 2, 3, 4, 5]
+        c++:
+            int args[] = {1, 2, 3, 4, 5};
+
+    case: ArrayNewMultiDimensionWithInit
+        java:
+            int[][] args = new int[][] {{1, 2}, {3, 4}, {5, 6}};
+        python:
+            args: list[list[int]] = [[1, 2], [3, 4], [5, 6]]
+        c++:
+            int args[][] = {{1, 2}, {3, 4}, {5, 6}};
+
+    case: ArrayNewSingleDimensionWithoutInit
+        java:
+            int[] args = new int[35 + x.y()];
+        python:
+            args: list[int] = [int() for _ in range(35 + x.y())]
+        c++:
+            int args[35 + x.y()];
+
+    case: ArrayNewMultiDimensionWithoutInit
+        java:
+            int[] args = new int[a][b];
+        python:
+            args: list[int] = [[int() for __ in range(b)] for _ in range(a)]
+        c++:
+            int args[a][b];
 
     case: ParenthesizedExpression
         python:
@@ -1525,35 +1603,6 @@ group: Other
 
         java:
             (a + b * c) + 6 * (a = 3)
-
-
-    case: NewArray
-        java:
-            int[] a = new int[3];
-
-        c++:
-            int * a = new int[3];
-
-        python:
-            a: list[int] = [0 for i in range(3)]
-
-
-    case: NewArrayInit
-        java:
-            int[] a = new int[3] {1, 2, 3};
-
-        c++:
-            int * a = new int[3];
-            a[0] = 1;
-            a[1] = 2;
-            a[2] = 3;
-
-        python:
-            a: list[int] = [0 for i in range(3)]
-            a[0] = 1
-            a[1] = 2
-            a[2] = 3
-
 
     case: EntryPointConflictingWithC++
         python:
@@ -1634,4 +1683,3 @@ group: Other
                     main();
                 }
         }
-

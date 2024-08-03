@@ -808,6 +808,16 @@ group: Other
         python:
             # abc
 
+    case: ListUnpacking
+        python:
+            class A:
+                def a(t: T, *args: int) -> int:
+                    return t + sum(args)
+
+        python:
+            class A:
+                def a(t: T, *args: int) -> int:
+                    return t + sum(args)
 
     case: ParenthesizedExpression
         python:
