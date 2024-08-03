@@ -18,7 +18,6 @@ public class Comment extends Node {
         return _content;
     }
 
-
     public boolean isMultiline() {
         return getUnescapedContent().contains("\n");
     }

@@ -478,7 +478,7 @@ public class PythonLanguage extends Language {
     }
 
     private Comment fromComment(TSNode node) {
-        return Comment.fromEscaped(getCodePiece(node).replace("#", "").trim());
+        return Comment.fromUnescaped(getCodePiece(node).replace("#", "").trim());
     }
 
     private Type determineType(TSNode typeNode) {
