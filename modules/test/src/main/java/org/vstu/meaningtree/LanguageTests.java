@@ -63,20 +63,23 @@ class LanguageTests {
             // Взять трансляторы из конфига по названию языков
             TestLanguageConfig sourceLangConfig = _config.getByName(source.getLanguage());
             TestLanguageConfig destLangConfig = _config.getByName(dest.getLanguage());
-            // Если нет конфига хотя бы для одного языка из пары или не выполняются условия тестирования по схеме
-            boolean skipCheck = (sourceLangConfig == null || destLangConfig == null)
-                    || (codePair.left.size() > 1 && codePair.right.size() > 1)
-                    || (codePair.right.size() > 1 && codePair.left.size() == 1 && !codePair.left.getFirst().getType().equals(TestCodeType.MAIN));
-
-            if (skipCheck) {
+            // Если нет конфига хотя бы для одного языка из пары
+            if (sourceLangConfig == null || destLangConfig == null) {
                 continue;  // Пропустить акт тестирования
             }
             CodeFormatter sourceCodeFormatter = new CodeFormatter(sourceLangConfig.indentSensitive());
             CodeFormatter destCodeFormatter = new CodeFormatter(destLangConfig.indentSensitive());
 
+            String testScheme;
+            if (source.getFirst().getType().equals(TestCodeType.MAIN)) {
+                testScheme = String.format("(%s to %s) == %s", source.getLanguage(), dest.getLanguage(), dest.getLanguage());
+            } else {
+                testScheme = String.format("%s == (%s to %s)", source.getLanguage(), dest.getLanguage(), source.getLanguage());
+            }
+
             // Добавить в контейнер динамических тестов проверку эквивалентности исходного кода и переведённого
             tests.add(DynamicTest.dynamicTest(
-                    String.format("%s from %s to %s", testCase.getName(), source.getLanguage(), dest.getLanguage()),
+                    String.format("%s by %s", testCase.getName(), testScheme),
                     () -> {
                         if (source.getFirst().getType().equals(TestCodeType.MAIN)) {
                             // Выполняем проверку на равенство кода по следующей схеме: (source -> dest) == dest
@@ -94,8 +97,8 @@ class LanguageTests {
 
                             assertTrue(anyMatch,
                                     String.format(
-                                            "\nПроверка (%s->%s) == %s\nИсходный код на %s:\n%s\nИсходный код, переведенный в %s:\n%s\nПроверяемый код на %s\n%s\n",
-                                            source.getLanguage(), dest.getLanguage(), dest.getLanguage(),
+                                            "\nПроверка %s\nИсходный код на %s:\n%s\nИсходный код, переведенный в %s:\n%s\nПроверяемый код на %s\n%s\n",
+                                            testScheme,
                                             source.getLanguage(), formatedSourceCode,
                                             dest.getLanguage(), destSourceCode,
                                             dest.getLanguage(), dest.getFirst().getFormattedCode(destCodeFormatter)
@@ -116,8 +119,8 @@ class LanguageTests {
 
                             assertTrue(anyMatch,
                                     String.format(
-                                            "\nПроверка %s==(%s->%s)\nИсходный код на %s:\n%s\nПроверяемый код на %s:\n%s\nПроверяемый код, переведенный на %s:\n%s\n",
-                                            source.getLanguage(), dest.getLanguage(), source.getLanguage(),
+                                            "\nПроверка %s\nИсходный код на %s:\n%s\nПроверяемый код на %s:\n%s\nПроверяемый код, переведенный на %s:\n%s\n",
+                                            testScheme,
                                             source.getLanguage(), formattedSourceCode.getFirst(),
                                             dest.getLanguage(), dest.getFirst().getFormattedCode(destCodeFormatter),
                                             source.getLanguage(), destSourceCode));

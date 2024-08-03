@@ -2,7 +2,6 @@ package org.vstu.meaningtree;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,7 +19,7 @@ public class SingleTestCode {
     }
 
     private String parseName(String testCode) {
-        Pattern langNamePattern = Pattern.compile("^\\s+((main|alt)\\s+)?([^\\s]+):\\s*$", Pattern.MULTILINE);
+        Pattern langNamePattern = Pattern.compile("^\\s+((main|alt|static)\\s+)?([^\\s]+):\\s*$", Pattern.MULTILINE);
         Matcher langNameMatcher = langNamePattern.matcher(testCode);
 
         if (!langNameMatcher.find()) {
@@ -32,6 +31,7 @@ public class SingleTestCode {
         type = switch (langPrefix) {
             case "alt" -> TestCodeType.ALTERNATIVE;
             case "main" -> TestCodeType.MAIN;
+            case "static" -> TestCodeType.STATIC;
             case null, default -> TestCodeType.DEFAULT;
         };
         return language;
