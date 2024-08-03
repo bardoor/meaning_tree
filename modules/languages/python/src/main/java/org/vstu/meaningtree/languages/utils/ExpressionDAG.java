@@ -6,7 +6,7 @@ import java.util.*;
 
 public class ExpressionDAG {
     private HashMap<Expression, ArrayList<Expression>> edges;
-    private HashMap<Expression, Expression> specialTaggedEdges;
+    private HashMap<Expression, ArrayList<Expression>> specialTaggedEdges;
 
     public ExpressionDAG(Expression ... vertices) {
         edges = new HashMap<>();
@@ -24,7 +24,7 @@ public class ExpressionDAG {
     }
 
     public boolean isTagged(Expression from, Expression to) {
-        return specialTaggedEdges.containsKey(from) && specialTaggedEdges.get(from).equals(to);
+        return specialTaggedEdges.containsKey(from) && specialTaggedEdges.get(from).contains(to);
     }
 
     public Expression[] getRouteFrom(Expression one) {
@@ -91,7 +91,10 @@ public class ExpressionDAG {
 
     public void addTaggedEdge(Expression i, Expression j) {
         addEdge(i, j);
-        specialTaggedEdges.put(i, j);
+        if (!specialTaggedEdges.containsKey(i)) {
+            specialTaggedEdges.put(i, new ArrayList<>());
+        }
+        specialTaggedEdges.get(i).add(j);
     }
 
     private void findConnectedComponent(Expression src, HashMap<Expression, Boolean> isVisited, ArrayList<Expression> component, ExpressionDAG undirectedGraph)

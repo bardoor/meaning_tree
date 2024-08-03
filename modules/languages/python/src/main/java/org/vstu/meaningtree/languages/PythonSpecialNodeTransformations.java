@@ -123,7 +123,7 @@ public class PythonSpecialNodeTransformations {
             _collectCompoundStatementElements(op, primary, secondary);
 
             // Построим орграф из выражений и создадим связи на основе сравнений. Стрелка указывает на больший элемент
-            Set<Expression> vertices = new HashSet<>();
+            Set<Expression> vertices = new LinkedHashSet<>();
             for (BinaryComparison cmp : primary) {
                 vertices.add(cmp.getLeft());
                 vertices.add(cmp.getRight());

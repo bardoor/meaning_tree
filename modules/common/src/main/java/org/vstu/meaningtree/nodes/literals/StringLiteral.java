@@ -7,14 +7,14 @@ import java.util.Objects;
 public class StringLiteral extends Literal {
     public enum Type {
         NONE,
-        INTERPOLATION, //строка, в которую можно подставить значения
         RAW, // строка, которая игнорирует символы экранирования
     }
 
     protected final String value;
     protected final Type stringType;
 
-    // NOTE Строка хранится в чистом виде, не экранированная. Т.е. представление как в памяти
+    // Строка хранится в чистом виде, не экранированная. Т.е. представление как в памяти
+    // Интерполяция не поддерживается в этом классе
 
     public String getUnescapedValue() {
         return value;
