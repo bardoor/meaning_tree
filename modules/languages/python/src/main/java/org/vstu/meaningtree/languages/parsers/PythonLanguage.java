@@ -12,11 +12,11 @@ import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.comprehensions.Comprehension;
+import org.vstu.meaningtree.nodes.comprehensions.ContainerBasedComprehension;
+import org.vstu.meaningtree.nodes.comprehensions.RangeBasedComprehension;
 import org.vstu.meaningtree.nodes.declarations.*;
-import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
-import org.vstu.meaningtree.nodes.definitions.DefinitionArgument;
-import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
-import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.definitions.*;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
@@ -112,9 +112,65 @@ public class PythonLanguage extends Language {
             case "function_definition" -> fromFunctionTSNode(node);
             case "decorated_definition" -> detectAnnotated(node);
             case "while_statement" -> fromWhileLoop(node);
+            case "set_comprehension", "dictionary_comprehension", "list_comprehension", "generator_expression" -> fromComprehension(node);
             case "match_statement" -> fromMatchStatement(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+
+    private Node fromComprehension(TSNode node) {
+        TSNode body = node.getChildByFieldName("body");
+        Comprehension.ComprehensionItem item;
+        if (body.getType().equals("pair")) {
+            item = new Comprehension.KeyValuePair(
+                    (Expression) fromTSNode(body.getChildByFieldName("key")),
+                    (Expression) fromTSNode(body.getChildByFieldName("value")));
+        } else {
+            if (node.getType().equals("set_expression")) {
+                item = new Comprehension.SetItem((Expression) fromTSNode(body));
+            } else {
+                item = new Comprehension.ListItem((Expression) fromTSNode(body));
+            }
+        }
+        Expression condition = null;
+        TSNode for_clause = null;
+
+        while (!body.isNull()) {
+            body = body.getNextNamedSibling();
+            if (body.getType().equals("if_clause")) {
+                condition = (Expression) fromTSNode(body.getNamedChild(0));
+            } else if (body.getType().equals("for_in_clause")) {
+                for_clause = body;
+            }
+        }
+
+        SimpleIdentifier leftOfForEach = (SimpleIdentifier) fromTSNode(for_clause.getChildByFieldName("left"));
+        Expression rightOfForEach = (Expression) fromTSNode(for_clause.getChildByFieldName("right"));
+        if (rightOfForEach instanceof FunctionCall call && call.getFunctionName().toString().equals("range")) {
+            Expression start = null, stop = null, step = null;
+            switch (call.getArguments().size()) {
+                case 0:
+                    throw new IllegalArgumentException("Range requires at least 1 argument");
+                case 1:
+                    stop = call.getArguments().getFirst();
+                    start = new IntegerLiteral("0");
+                    step = new IntegerLiteral("1");
+                    break;
+                case 2:
+                    start = call.getArguments().getFirst();
+                    stop = call.getArguments().get(1);
+                    step = new IntegerLiteral("1");
+                    break;
+                default:
+                    start = call.getArguments().getFirst();
+                    stop = call.getArguments().get(1);
+                    step = call.getArguments().get(2);
+                    break;
+            }
+            return new RangeBasedComprehension(item, leftOfForEach, start, stop, step, condition);
+        } else {
+            return new ContainerBasedComprehension(item, new VariableDeclaration(new UnknownType(), leftOfForEach), rightOfForEach, condition);
+        }
     }
 
     private Node fromMatchStatement(TSNode node) {
@@ -243,7 +299,7 @@ public class PythonLanguage extends Language {
             arguments.add(fromDeclarationArgument(node.getChildByFieldName("parameters").getNamedChild(i)));
         }
         Type returnType = determineType(node.getChildByFieldName("return_type"));
-        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+        CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
         return new FunctionDefinition(new FunctionDeclaration(name, returnType, anno, arguments.toArray(new DeclarationArgument[0])), body);
     }
 
@@ -289,8 +345,15 @@ public class PythonLanguage extends Language {
                 if (isStatic) {
                     modifiers.add(Modifier.STATIC);
                 }
-                modifiers.add(Modifier.PUBLIC);
+                Modifier visibility = Modifier.PUBLIC;
+                modifiers.add(visibility);
                 MethodDefinition method = func.makeMethod(type, modifiers);
+                MethodDeclaration decl = ((MethodDeclaration) method.getDeclaration());
+                if (method.getName().toString().equals("__del__") && decl.getArguments().isEmpty()) {
+                    method = new ObjectDestructorDefinition(decl.getOwner(), decl.getName(), decl.getAnnotations(), decl.getModifiers(), method.getBody());
+                } else if (method.getName().toString().equals("__init__")) {
+                    method = new ObjectConstructorDefinition(decl.getOwner(), decl.getName(), decl.getAnnotations(), decl.getModifiers(), decl.getArguments(), method.getBody());
+                }
                 nodes.add(PythonSpecialNodeTransformations.detectInstanceReferences(method));
             } else {
                 nodes.add(bodyNode);
@@ -329,9 +392,9 @@ public class PythonLanguage extends Language {
                 }
                 return new RangeForLoop(start, stop, step, left, body);
             }
-            return new ForEachLoop(new VariableDeclaration(null, left), (Expression) right, body);
+            return new ForEachLoop(new VariableDeclaration(new UnknownType(), left), (Expression) right, body);
         } else {
-            return new ForEachLoop(new VariableDeclaration(null, left), (Expression) right, body);
+            return new ForEachLoop(new VariableDeclaration(new UnknownType(), left), (Expression) right, body);
         }
     }
 

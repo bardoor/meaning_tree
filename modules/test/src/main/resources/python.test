@@ -30,6 +30,12 @@ group: LiteralsTest
         python:
             345L
 
+    case: ExponentialLiteral
+        python:
+            1.0E26
+
+        python:
+            1.0E26
 
     case: NullLiteral
         python:
@@ -850,4 +856,84 @@ group: Other
 
             if __name == "__main__":
                 main()        
+
+group: StructuresOOP
+    case: MethodCustomSelfReference
+        main python:
+            class A:
+                def main(ins, k):
+                    return ins.tree + ins.method()
+
+        python:
+            class A:
+                def main(self, k):
+                    return self.tree + self.method()
+    case: FullClass
+        python:
+            class A(MyClass1, MyClass3):
+                field1 = 3
+                field2: str = "abcj"
+
+                def __init__(self):
+                    print("constructor!!!1")
+
+                def __del__(self):
+                    free_all()
+                    print("DESTRUCTOR")
+
+                def my_method(self, k):
+                    self.my_method2()
+
+                def my_method2(self, key):
+                    feature()
+
+                @staticmethod
+                def staticfunc():
+                    self = "a"
+                    self += "b"
+                    return A.unknown.self()
+
+                @classmethod
+                def anothercls(cls: A, p):
+                    return cls(p)
+
+                @property
+                def my_prop(self):
+                    return 1.0E31
+        python:
+            class A(MyClass1, MyClass3):
+                field1 = 3
+                field2: str = "abcj"
+
+                def __init__(self):
+                    print("constructor!!!1")
+
+                def __del__(self):
+                    free_all()
+                    print("DESTRUCTOR")
+
+                def my_method(self, k):
+                    self.my_method2()
+
+                def my_method2(self, key):
+                    feature()
+
+                @staticmethod
+                def staticfunc():
+                    self = "a"
+                    self += "b"
+                    return A.unknown.self()
+
+                @classmethod
+                def anothercls(cls: A, p):
+                    return cls(p)
+
+                @property
+                def my_prop(self):
+                    return 1.0E31
+
+
+
+
+
 

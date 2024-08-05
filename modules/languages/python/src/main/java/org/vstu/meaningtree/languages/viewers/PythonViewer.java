@@ -5,6 +5,9 @@ import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.comprehensions.Comprehension;
+import org.vstu.meaningtree.nodes.comprehensions.ContainerBasedComprehension;
+import org.vstu.meaningtree.nodes.comprehensions.RangeBasedComprehension;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.Definition;
@@ -83,13 +86,53 @@ public class PythonViewer extends Viewer {
             case Import importStmt -> importToString(importStmt);
             case ExpressionStatement exprStmt -> toString(exprStmt.getExpression());
             case ReturnStatement returnStmt -> returnToString(returnStmt);
+            case ArrayInitializer arrayInit -> arrayInitializerToString(arrayInit);
             case Include incl -> String.format("import %s", toString(incl.getFileName()));
             case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
             case ExpressionSequence exprSeq -> String.join(", ", exprSeq.getExpressions().stream().map((Expression nd) -> toString(nd, tab)).toList().toArray(new String[0]));
             case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
             case CastTypeExpression cast -> callsToString(cast);
+            case Comprehension compr -> comprehensionToString(compr);
             case null, default -> throw new RuntimeException("Unsupported tree element");
         };
+    }
+
+    private String comprehensionToString(Comprehension compr) {
+        char startBracket = '[';
+        char endBracket = ']';
+        if (compr.getItem() instanceof Comprehension.KeyValuePair) {
+            startBracket = '{';
+            endBracket = '}';
+        } else if (compr.getItem() instanceof Comprehension.SetItem) {
+            startBracket = '(';
+            endBracket = ')';
+        }
+
+        StringBuilder comprehension = new StringBuilder();
+        comprehension.append(startBracket);
+        if (compr.getItem() instanceof Comprehension.KeyValuePair pair) {
+            comprehension.append(String.format("%s:%s", toString(pair.key()), toString(pair.value())));
+        } else if (compr.getItem() instanceof Comprehension.SetItem item) {
+            comprehension.append(toString(item.value()));
+        } else if (compr.getItem() instanceof Comprehension.ListItem item) {
+            comprehension.append(toString(item.value()));
+        } else {
+            throw new RuntimeException("Неизвестный тип comprehension");
+        }
+        comprehension.append(' ');
+        if (compr instanceof RangeBasedComprehension rangeBased) {
+            comprehension.append(String.format("for %s in range(%s, %s, %s)",
+                    toString(rangeBased.getRangeVariableIdentifier()), toString(rangeBased.getStart()),
+                    toString(rangeBased.getEnd()), toString(rangeBased.getStep())));
+        } else if (compr instanceof ContainerBasedComprehension containered) {
+            comprehension.append(String.format("for %s in %s", toString(containered.getContainerItemDeclaration()), toString(containered.getContainerExpression())));
+        }
+        if (compr.hasCondition()) {
+            comprehension.append(' ');
+            comprehension.append(String.format("if %s", toString(compr.getCondition())));
+        }
+        comprehension.append(endBracket);
+        return comprehension.toString();
     }
 
     private String returnToString(ReturnStatement returnStmt) {
@@ -163,7 +206,7 @@ public class PythonViewer extends Viewer {
             }
         }
         function.append("def ");
-        function.append(decl.getName());
+        function.append(toString(decl.getName()));
         function.append("(");
         if (decl instanceof MethodDeclaration methodDecl && !methodDecl.getModifiers().contains(Modifier.STATIC)) {
             function.append("self");
@@ -308,7 +351,7 @@ public class PythonViewer extends Viewer {
         for (int i = 0; i < decls.length; i++) {
             lValues.append(toString(decls[i].getIdentifier()));
             //NEED DISCUSSION, see typeToString notes
-            if (!(varDecl.getType() instanceof UnknownType) && varDecl.getType() != null) {
+            if (varDecl.getType() != null && !(varDecl.getType() instanceof UnknownType)) {
                 lValues.append(String.format(": %s", typeToString(varDecl.getType())));
             }
             if (decls[i].hasInitialization() && decls[i].getRValue().isPresent()) {
@@ -534,7 +577,7 @@ public class PythonViewer extends Viewer {
     private String callsToString(Node node) {
         if (node instanceof ArrayNewExpression newExpr) {
             if (newExpr.getInitializer().isPresent()) {
-                return String.format("[%s]", argumentsToString(newExpr.getInitializer().get().getValues()));
+                return arrayInitializerToString(newExpr.getInitializer().get());
             } else {
                 Shape shape = newExpr.getShape();
                 String result = _getListComprehensionByDimension(1,
@@ -553,6 +596,10 @@ public class PythonViewer extends Viewer {
         } else {
             throw new RuntimeException("Not a callable object");
         }
+    }
+
+    private String arrayInitializerToString(ArrayInitializer initializer) {
+        return String.format("[%s]", argumentsToString(initializer.getValues()));
     }
 
     private String _getListComprehensionByDimension(int depth, Expression dimension, String fillExpression) {
