@@ -10,10 +10,7 @@ import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.Definition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
-import org.vstu.meaningtree.nodes.identifiers.QualifiedIdentifier;
-import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.identifiers.*;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
@@ -57,6 +54,7 @@ public class PythonViewer extends Viewer {
             case CompoundStatement exprNode -> blockToString(exprNode, tab);
             case CompoundComparison compound -> compoundComparisonToString(compound);
             case Identifier identifier -> identifierToString(identifier);
+            case Type type -> typeToString(type);
             case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
             case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
             case TernaryOperator ternary -> String.format("%s if %s else %s", toString(ternary.getThenExpr()), toString(ternary.getCondition()), toString(ternary.getElseExpr()));
@@ -102,6 +100,10 @@ public class PythonViewer extends Viewer {
     private String identifierToString(Identifier identifier) {
         if (identifier instanceof Alias alias) {
             return String.format("%s as %s", toString(alias.getRealName()), toString(alias.getAlias()));
+        } else if (identifier instanceof SelfReference) {
+            return "self";
+        } else if (identifier instanceof SuperClassReference) {
+            return "super()";
         } else if (identifier instanceof SimpleIdentifier ident) {
             return ident.getName();
         } else if (identifier instanceof ScopedIdentifier scopedIdent) {
@@ -142,7 +144,7 @@ public class PythonViewer extends Viewer {
         } else {
             builder.append(String.format("class %s(%s):\n", toString(decl.getName()), String.join(",", decl.getParents().stream().map(this::typeToString).toList().toArray(new String[0]))));
         }
-        builder.append(toString(def.getBody(), tab.up()));
+        builder.append(toString(def.getBody(), tab));
         return builder.toString();
     }
 
@@ -155,16 +157,22 @@ public class PythonViewer extends Viewer {
         FunctionDeclaration decl = (FunctionDeclaration) func.getDeclaration();
         for (Annotation anno : decl.getAnnotations()) {
             if (anno.getArguments().length != 0) {
-                function.append(String.format("@%s(%s)\n", toString(anno.getName()), argumentsToString(Arrays.asList(anno.getArguments()))));
+                function.append(String.format("@%s(%s)\n%s", toString(anno.getName()), argumentsToString(Arrays.asList(anno.getArguments())), tab));
             } else {
-                function.append(String.format("@%s\n", toString(anno.getName())));
+                function.append(String.format("@%s\n%s", toString(anno.getName()), tab));
             }
         }
         function.append("def ");
         function.append(decl.getName());
         function.append("(");
+        if (decl instanceof MethodDeclaration methodDecl && !methodDecl.getModifiers().contains(Modifier.STATIC)) {
+            function.append("self");
+        }
         List<DeclarationArgument> declArgs = decl.getArguments();
         for (int i = 0; i < declArgs.size(); i++) {
+            if (function.charAt(function.length() - 1) != '(') {
+                function.append(", ");
+            }
             DeclarationArgument arg = declArgs.get(i);
             function.append(toString(arg.getName()));
             if (!(arg.getType() instanceof UnknownType) && arg.getType() != null) {
@@ -172,9 +180,6 @@ public class PythonViewer extends Viewer {
                 function.append(typeToString(arg.getType()));
             } else if (i == 0 && decl instanceof MethodDeclaration method) {
                 function.append(String.format(": %s", typeToString(method.getOwner())));
-            }
-            if (i != declArgs.size() - 1) {
-                function.append(", ");
             }
         }
         function.append(")");
@@ -363,6 +368,8 @@ public class PythonViewer extends Viewer {
             return String.format("%s[%s]", generic.getName().toString(), String.join(", ", Arrays.stream(generic.getTypeParameters()).map(this::typeToString).toList().toArray(new String[0])));
         } else if (type instanceof UserType userType) {
             return userType.getName().toString();
+        } else if (type instanceof NoReturn) {
+            return "None";
         }
         return "object";
     }
@@ -538,9 +545,9 @@ public class PythonViewer extends Viewer {
                 return result;
             }
         } else if (node instanceof ObjectNewExpression newExpr) {
-            return String.format("%s(%s)", newExpr.getType(), argumentsToString(newExpr.getConstructorArguments()));
+            return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
         } else if (node instanceof FunctionCall funcCall) {
-            return String.format("%s(%s)", funcCall.getFunctionName(), argumentsToString(funcCall.getArguments()));
+            return String.format("%s(%s)", toString(funcCall.getFunctionName()), argumentsToString(funcCall.getArguments()));
         } else if (node instanceof CastTypeExpression cast) {
             return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));
         } else {

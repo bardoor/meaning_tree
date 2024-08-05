@@ -8,6 +8,7 @@ import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.definitions.ObjectConstructor;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.literals.*;
@@ -23,10 +24,8 @@ import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
-import javax.swing.plaf.nimbus.State;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
 
@@ -53,6 +52,7 @@ public class JavaViewer extends Viewer {
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
             case StringLiteral l -> toString(l);
+            case SelfReference selfReference -> toString(selfReference);
             case AddOp op -> toString(op);
             case SubOp op -> toString(op);
             case MulOp op -> toString(op);
@@ -121,7 +121,6 @@ public class JavaViewer extends Viewer {
             case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
             case MultipleAssignmentStatement multipleAssignmentStatement -> toString(multipleAssignmentStatement);
-            case SelfReference selfReference -> toString(selfReference);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }

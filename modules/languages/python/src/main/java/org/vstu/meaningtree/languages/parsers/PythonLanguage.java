@@ -7,6 +7,7 @@ import org.treesitter.TSTree;
 import org.treesitter.TSParser;
 
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.languages.PythonSpecialNodeTransformations;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
@@ -15,6 +16,7 @@ import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.DefinitionArgument;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
@@ -245,7 +247,7 @@ public class PythonLanguage extends Language {
     }
 
     private DeclarationArgument fromDeclarationArgument(TSNode namedChild) {
-        Type type = null;
+        Type type = new UnknownType();
         Expression initial = null;
         boolean isListUnpacking = false;
         if (namedChild.getType().equals("typed_parameter")) {
@@ -258,7 +260,12 @@ public class PythonLanguage extends Language {
         } else if (namedChild.getType().equals("list_splat_pattern")) {
             isListUnpacking = true;
         }
-        SimpleIdentifier identifier = (SimpleIdentifier) fromTSNode(namedChild.getNamedChild(0));
+        SimpleIdentifier identifier;
+        if (namedChild.getType().equals("identifier")) {
+            identifier = (SimpleIdentifier) fromTSNode(namedChild);
+        } else {
+            identifier = (SimpleIdentifier) fromTSNode(namedChild.getNamedChild(0));
+        }
         return new DeclarationArgument(type, isListUnpacking, identifier, initial);
     }
 
@@ -282,7 +289,8 @@ public class PythonLanguage extends Language {
                     modifiers.add(Modifier.STATIC);
                 }
                 modifiers.add(Modifier.PUBLIC);
-                nodes.add(func.makeMethod(type, modifiers));
+                MethodDefinition method = func.makeMethod(type, modifiers);
+                nodes.add(PythonSpecialNodeTransformations.detectInstanceReferences(method));
             } else {
                 nodes.add(bodyNode);
             }

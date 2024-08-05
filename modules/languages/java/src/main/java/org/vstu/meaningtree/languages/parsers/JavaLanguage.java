@@ -11,6 +11,7 @@ import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.definitions.ObjectConstructor;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
@@ -108,7 +109,7 @@ public class JavaLanguage extends Language {
     }
 
     private SelfReference fromThisTSNode(TSNode node) {
-        return new SelfReference();
+        return new SelfReference("this");
     }
 
     private Node fromConstructorDeclarationTSNode(TSNode node) {
