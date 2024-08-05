@@ -3,14 +3,18 @@ package org.vstu.meaningtree.languages;
 import org.vstu.meaningtree.languages.utils.ExpressionDAG;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.identifiers.*;
 import org.vstu.meaningtree.nodes.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.statements.*;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class PythonSpecialNodeTransformations {
@@ -214,9 +218,72 @@ public class PythonSpecialNodeTransformations {
         }
     }
 
+    // NEED DISCUSSION: Приемлемый ли метод "ломать" узлы дерева, чтобы выполнить постпроцессинг?
+    public static MethodDefinition detectInstanceReferences(MethodDefinition def) {
+        MethodDeclaration decl = (MethodDeclaration)def.getDeclaration();
+        if (decl.getArguments().isEmpty() || decl.getModifiers().contains(Modifier.STATIC)) {
+            return def;
+        }
+        SimpleIdentifier instanceName = decl.getArguments().getFirst().getName();
+        List newArgs = decl.ensureMutableNodeListInChildren("_arguments");
+        newArgs.removeFirst();
+
+        BiConsumer<Node, Map.Entry<String, Object>> callable = (Node parent, Map.Entry<String, Object> node) -> {
+            if (parent == null) {
+                return;
+            }
+            if (node.getValue() instanceof SimpleIdentifier ident && ident.equals(instanceName)) {
+                parent.substituteChildren(node.getKey(), new SelfReference(instanceName.getName()));
+            } else if (node.getValue() instanceof FunctionCall call && call.getFunctionName().equals(new SimpleIdentifier("super"))) {
+                parent.substituteChildren(node.getKey(), new SuperClassReference());
+            } else if (node.getValue() instanceof List collection) {
+                collection = parent.ensureMutableNodeListInChildren(node.getKey());
+                for (int i = 0; i < collection.size(); i++) {
+                    if (collection.get(i).equals(instanceName)) {
+                        collection.set(i, new SelfReference(instanceName.getName()));
+                        break;
+                    }
+                }
+                for (int i = 0; i < collection.size(); i++) {
+                    if (collection.get(i) instanceof FunctionCall call && call.getFunctionName().equals(new SimpleIdentifier("super"))) {
+                        collection.set(i, new SuperClassReference());
+                        break;
+                    }
+                }
+            } else if (node.getValue() instanceof Map map) {
+                for (Object key : map.keySet()) {
+                    if (map.get(key).equals(instanceName)) {
+                        map.put(key, new SelfReference(instanceName.getName()));
+                        break;
+                    }
+                }
+                for (Object key : map.keySet()) {
+                    if (map.get(key) instanceof FunctionCall call && call.getFunctionName().equals(new SimpleIdentifier("super"))) {
+                        map.put(key, new SuperClassReference());
+                        break;
+                    }
+                }
+            }
+        };
+        _walkChildren(null, def.getBody(), callable);
+        return def;
+    }
+
+    private static void _walkChildren(String nodeName, Node node, BiConsumer<Node, Map.Entry<String, Object>> handler) {
+        for (Map.Entry<String, Object> child : node.getChildren().entrySet()) {
+            handler.accept(node, child);
+            if (child.getValue() instanceof Node childNode) {
+                _walkChildren(child.getKey(), childNode, handler);
+            } else if (child.getValue() instanceof List collection) {
+                for (Object obj : collection) {
+                    _walkChildren(null, (Node) obj, handler);
+                }
+            }
+        }
+    }
+
     /*
     TODO:
     - convert assignment statement of first variable usage to variable declaration
-    - detect self reference and use it
      */
 }
