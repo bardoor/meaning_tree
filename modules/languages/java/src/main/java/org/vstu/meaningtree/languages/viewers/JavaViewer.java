@@ -5,7 +5,7 @@ import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
-import org.vstu.meaningtree.nodes.definitions.ObjectConstructor;
+import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SelfReference;
@@ -96,7 +96,7 @@ public class JavaViewer extends Viewer {
             case Comment comment -> toString(comment);
             case BreakStatement stmt -> toString(stmt);
             case ContinueStatement stmt -> toString(stmt);
-            case ObjectConstructor objectConstructor -> toString(objectConstructor);
+            case ObjectConstructorDefinition objectConstructor -> toString(objectConstructor);
             case MethodDefinition methodDefinition -> toString(methodDefinition);
             case SwitchStatement switchStatement -> toString(switchStatement);
             case NullLiteral nullLiteral -> toString(nullLiteral);
@@ -129,7 +129,7 @@ public class JavaViewer extends Viewer {
         return "this";
     }
 
-    private String toString(ObjectConstructor objectConstructor) {
+    private String toString(ObjectConstructorDefinition objectConstructor) {
         MethodDeclaration constructorDeclaration =
                 (MethodDeclaration) objectConstructor.getDeclaration();
 

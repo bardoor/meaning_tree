@@ -8,7 +8,7 @@ import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
-import org.vstu.meaningtree.nodes.definitions.ObjectConstructor;
+import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SelfReference;
@@ -26,6 +26,7 @@ import org.vstu.meaningtree.nodes.math.DivOp;
 import org.vstu.meaningtree.nodes.math.MulOp;
 import org.vstu.meaningtree.nodes.math.SubOp;
 import org.vstu.meaningtree.nodes.types.*;
+import org.vstu.meaningtree.nodes.types.Class;
 import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
@@ -122,7 +123,7 @@ public class JavaLanguage extends Language {
         List<DeclarationArgument> parameters = fromMethodParameters(node.getChildByFieldName("parameters"));
         CompoundStatement body = fromBlockTSNode(node.getChildByFieldName("body"));
         // TODO: определение класса, к которому принадлежит метод и считывание аннотаций
-        return new ObjectConstructor(null, name, List.of(), modifiers, parameters, body);
+        return new ObjectConstructorDefinition(null, name, List.of(), modifiers, parameters, body);
     }
 
     private Node fromTernaryExpressionTSNode(TSNode node) {
@@ -611,7 +612,7 @@ public class JavaLanguage extends Language {
                     case "Object" -> parsedType = new UnknownType();
                     default -> {
                         if (!_userTypes.containsKey(typeName)) {
-                            _userTypes.put(typeName, new UserType(new SimpleIdentifier(typeName)));
+                            _userTypes.put(typeName, new Class(new SimpleIdentifier(typeName)));
                         }
                         parsedType = _userTypes.get(typeName);
                     }

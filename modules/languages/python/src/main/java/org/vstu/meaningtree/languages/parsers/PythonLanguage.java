@@ -31,6 +31,7 @@ import org.vstu.meaningtree.nodes.modules.ImportAll;
 import org.vstu.meaningtree.nodes.modules.ImportMembers;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
+import org.vstu.meaningtree.nodes.types.Class;
 import org.vstu.meaningtree.nodes.unary.UnaryMinusOp;
 import org.vstu.meaningtree.nodes.unary.UnaryPlusOp;
 
@@ -271,7 +272,7 @@ public class PythonLanguage extends Language {
 
     private ClassDefinition fromClass(TSNode node) {
         ClassDeclaration classDecl = new ClassDeclaration((SimpleIdentifier) fromTSNode(node.getChildByFieldName("name")));
-        UserType type = new UserType((SimpleIdentifier) classDecl.getName());
+        UserType type = new Class((SimpleIdentifier) classDecl.getName());
         CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
         List<Node> nodes = new ArrayList<>();
         for (Node bodyNode : body) {
@@ -527,7 +528,7 @@ public class PythonLanguage extends Language {
             case "set":
                 return new SetType(new UnknownType());
             default:
-                return new UserType(new SimpleIdentifier(getCodePiece(typeNode)));
+                return new Class(new SimpleIdentifier(getCodePiece(typeNode)));
         }
     }
 
@@ -725,7 +726,7 @@ public class PythonLanguage extends Language {
     }
 
     private Node fromComparisonTSNode(TSNode node) {
-        Class<? extends BinaryComparison> operator = null;
+        java.lang.Class<? extends BinaryComparison> operator = null;
         ArrayDeque<TSNode> operands = new ArrayDeque<>();
 
         List<BinaryComparison> comparisons = new ArrayList<>();

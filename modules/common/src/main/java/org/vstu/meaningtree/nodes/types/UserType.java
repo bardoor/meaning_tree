@@ -6,7 +6,7 @@ import org.vstu.meaningtree.nodes.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
-public class UserType extends Type {
+public abstract class UserType extends Type {
     private final Identifier _name;
 
     public SimpleIdentifier getName() {
@@ -23,7 +23,7 @@ public class UserType extends Type {
         return _name;
     }
 
-    public UserType(Identifier name) {
+    protected UserType(Identifier name) {
         _name = name;
     }
 
