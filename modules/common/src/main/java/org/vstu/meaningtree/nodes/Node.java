@@ -63,6 +63,7 @@ abstract public class Node implements Serializable {
         return fields.toArray(new Field[0]);
     }
 
+    // EXPERIMENTAL
     public boolean substituteChildren(String fieldName, Object newChild) {
         Field[] fields = getAllFields(this);
         for (Field field : fields) {
@@ -83,6 +84,7 @@ abstract public class Node implements Serializable {
         return false;
     }
 
+    // EXPERIMENTAL
     public List ensureMutableNodeListInChildren(String listName) {
         Field[] fields = getAllFields(this);
         for (Field field : fields) {

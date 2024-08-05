@@ -9,8 +9,8 @@ public class RangeBasedComprehension extends Comprehension {
     private final Expression _step;
     private final SimpleIdentifier _identifier;
 
-    public RangeBasedComprehension(ComprehensionItem item, SimpleIdentifier rangeVariable, Expression start, Expression end, Expression step) {
-        super(item);
+    public RangeBasedComprehension(ComprehensionItem item, SimpleIdentifier rangeVariable, Expression start, Expression end, Expression step, Expression condition) {
+        super(item, condition);
         _start = start;
         _end = end;
         _step = step;

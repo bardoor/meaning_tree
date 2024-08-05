@@ -7,9 +7,9 @@ import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.HasBodyStatement;
 
 public class MethodDefinition extends Definition implements HasBodyStatement {
-    private Statement _body;
+    private CompoundStatement _body;
 
-    public MethodDefinition(MethodDeclaration declaration, Statement body) {
+    public MethodDefinition(MethodDeclaration declaration, CompoundStatement body) {
         super(declaration);
         _body = body;
     }
@@ -19,14 +19,12 @@ public class MethodDefinition extends Definition implements HasBodyStatement {
         throw new UnsupportedOperationException();
     }
 
-    public Statement getBody() {
+    public CompoundStatement getBody() {
         return _body;
     }
 
     @Override
-    public void makeBodyCompound() {
-        assert getBody() instanceof CompoundStatement;
-    }
+    public void makeBodyCompound() {}
 
     public SimpleIdentifier getName() {
         MethodDeclaration methodDeclaration = (MethodDeclaration) getDeclaration();

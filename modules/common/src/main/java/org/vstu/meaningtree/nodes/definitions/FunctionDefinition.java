@@ -13,9 +13,9 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements HasBodyStatement {
-    private Statement _body;
+    private CompoundStatement _body;
 
-    public FunctionDefinition(FunctionDeclaration declaration, Statement body) {
+    public FunctionDefinition(FunctionDeclaration declaration, CompoundStatement body) {
         super(declaration);
         _body = body;
     }
@@ -39,12 +39,10 @@ public class FunctionDefinition extends Definition implements HasBodyStatement {
         throw new UnsupportedOperationException();
     }
 
-    public Statement getBody() {
+    public CompoundStatement getBody() {
         return _body;
     }
 
     @Override
-    public void makeBodyCompound() {
-        assert getBody() instanceof CompoundStatement;
-    }
+    public void makeBodyCompound() {}
 }

@@ -7,8 +7,8 @@ public class ContainerBasedComprehension extends Comprehension {
     private final VariableDeclaration _containerItem;
     private final Expression _container;
 
-    public ContainerBasedComprehension(ComprehensionItem compItem, VariableDeclaration containerItem, Expression container) {
-        super(compItem);
+    public ContainerBasedComprehension(ComprehensionItem compItem, VariableDeclaration containerItem, Expression container, Expression condition) {
+        super(compItem, condition);
         this._containerItem = containerItem;
         this._container = container;
     }
