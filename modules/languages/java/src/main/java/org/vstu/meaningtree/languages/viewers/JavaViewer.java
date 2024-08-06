@@ -1029,8 +1029,8 @@ public class JavaViewer extends Viewer {
     }
 
     private String getForRangeUpdate(RangeForLoop forRangeLoop) {
-        if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.UP) {
-            int stepValue = forRangeLoop.getStepValue();
+        if (forRangeLoop.getRange().getType() == Range.Type.UP) {
+            int stepValue = forRangeLoop.getRange().getStepIntegerValue();
 
             if (stepValue == 1) {
                 return String.format("%s++", toString(forRangeLoop.getIdentifier()));
@@ -1039,8 +1039,8 @@ public class JavaViewer extends Viewer {
                 return String.format("%s += %d", toString(forRangeLoop.getIdentifier()), stepValue);
             }
         }
-        else if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.DOWN) {
-            int stepValue = forRangeLoop.getStepValue();
+        else if (forRangeLoop.getRange().getType() == Range.Type.DOWN) {
+            int stepValue = forRangeLoop.getRange().getStepIntegerValue();
 
             if (stepValue == 1) {
                 return String.format("%s--", toString(forRangeLoop.getIdentifier()));
@@ -1054,23 +1054,23 @@ public class JavaViewer extends Viewer {
     }
 
     private String getForRangeHeader(RangeForLoop forRangeLoop) {
-        if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.UP) {
+        if (forRangeLoop.getRange().getType() == Range.Type.UP) {
             String header = "int %s = %s; %s < %s; %s";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getStart()),
+                    toString(forRangeLoop.getRange().getStart()),
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getEnd()),
+                    toString(forRangeLoop.getRange().getStop()),
                     getForRangeUpdate(forRangeLoop)
             );
         }
-        else if (forRangeLoop.getRangeType() == RangeForLoop.RANGE_TYPE.DOWN) {
+        else if (forRangeLoop.getRange().getType() == Range.Type.DOWN) {
             String header = "int %s = %s; %s > %s; %s";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getStart()),
+                    toString(forRangeLoop.getRange().getStart()),
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getEnd()),
+                    toString(forRangeLoop.getRange().getStop()),
                     getForRangeUpdate(forRangeLoop)
             );
         }
@@ -1115,7 +1115,7 @@ public class JavaViewer extends Viewer {
     public String toString(FunctionCall funcCall) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(toString(funcCall.getFunctionName())).append("(");
+        builder.append(toString(funcCall.getFunction())).append("(");
         for (Expression expr : funcCall.getArguments()) {
             builder.append(toString(expr)).append(", ");
         }
@@ -1162,7 +1162,6 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(PowOp op) {
-        // TODO: убедится, что импортирован модуль Math
         return "Math.pow(%s, %s)".formatted(toString(op.getLeft()), toString(op.getRight()));
     }
 

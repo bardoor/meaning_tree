@@ -146,7 +146,7 @@ public class PythonLanguage extends Language {
 
         SimpleIdentifier leftOfForEach = (SimpleIdentifier) fromTSNode(for_clause.getChildByFieldName("left"));
         Expression rightOfForEach = (Expression) fromTSNode(for_clause.getChildByFieldName("right"));
-        if (rightOfForEach instanceof FunctionCall call && call.getFunctionName().toString().equals("range")) {
+        if (rightOfForEach instanceof FunctionCall call && call.hasFunctionName() && call.getFunctionName().toString().equals("range")) {
             Expression start = null, stop = null, step = null;
             switch (call.getArguments().size()) {
                 case 0:
@@ -167,7 +167,7 @@ public class PythonLanguage extends Language {
                     step = call.getArguments().get(2);
                     break;
             }
-            return new RangeBasedComprehension(item, leftOfForEach, start, stop, step, condition);
+            return new RangeBasedComprehension(item, leftOfForEach, new Range(start, stop, step), condition);
         } else {
             return new ContainerBasedComprehension(item, new VariableDeclaration(new UnknownType(), leftOfForEach), rightOfForEach, condition);
         }
@@ -272,7 +272,7 @@ public class PythonLanguage extends Language {
         TSNode child = node.getNamedChild(0);
         if (child.getType().equals("call")) {
             FunctionCall call = fromFunctionCall(node);
-            return new Annotation(call.getFunctionName(), call.getArguments().toArray(new Expression[0]));
+            return new Annotation(call.getFunction(), call.getArguments().toArray(new Expression[0]));
         } else {
             Node ident = fromTSNode(node.getNamedChild(0));
             if (ident instanceof MemberAccess memAccess) {
@@ -338,7 +338,7 @@ public class PythonLanguage extends Language {
                 boolean isStatic = false;
                 List<Annotation> anno = ((FunctionDeclaration) (func.getDeclaration())).getAnnotations();
                 for (Annotation annotation : anno) {
-                    isStatic = annotation.getName().toString().equals("staticmethod") || annotation.getName().toString().equals("classmethod");
+                    isStatic = annotation.hasName() && (annotation.getName().toString().equals("staticmethod") || annotation.getName().toString().equals("classmethod"));
                     if (isStatic) break;
                 }
                 List<Modifier> modifiers = new ArrayList<>();
@@ -390,7 +390,7 @@ public class PythonLanguage extends Language {
                         step = args.get(2);
                         break;
                 }
-                return new RangeForLoop(start, stop, step, left, body);
+                return new RangeForLoop(new Range(start, stop, step), left, body);
             }
             return new ForEachLoop(new VariableDeclaration(new UnknownType(), left), (Expression) right, body);
         } else {

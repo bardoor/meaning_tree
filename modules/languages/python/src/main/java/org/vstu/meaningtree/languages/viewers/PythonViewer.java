@@ -121,9 +121,10 @@ public class PythonViewer extends Viewer {
         }
         comprehension.append(' ');
         if (compr instanceof RangeBasedComprehension rangeBased) {
+            Range range = rangeBased.getRange();
             comprehension.append(String.format("for %s in range(%s, %s, %s)",
-                    toString(rangeBased.getRangeVariableIdentifier()), toString(rangeBased.getStart()),
-                    toString(rangeBased.getEnd()), toString(rangeBased.getStep())));
+                    toString(rangeBased.getRangeVariableIdentifier()), toString(range.getStart()),
+                    toString(range.getStop()), toString(range.getStep())));
         } else if (compr instanceof ContainerBasedComprehension containered) {
             comprehension.append(String.format("for %s in %s", toString(containered.getContainerItemDeclaration()), toString(containered.getContainerExpression())));
         }
@@ -200,9 +201,9 @@ public class PythonViewer extends Viewer {
         FunctionDeclaration decl = (FunctionDeclaration) func.getDeclaration();
         for (Annotation anno : decl.getAnnotations()) {
             if (anno.getArguments().length != 0) {
-                function.append(String.format("@%s(%s)\n%s", toString(anno.getName()), argumentsToString(Arrays.asList(anno.getArguments())), tab));
+                function.append(String.format("@%s(%s)\n%s", toString(anno.getFunctionExpression()), argumentsToString(Arrays.asList(anno.getArguments())), tab));
             } else {
-                function.append(String.format("@%s\n%s", toString(anno.getName()), tab));
+                function.append(String.format("@%s\n%s", toString(anno.getFunctionExpression()), tab));
             }
         }
         function.append("def ");
@@ -309,9 +310,9 @@ public class PythonViewer extends Viewer {
         if (stmt instanceof RangeForLoop rangeFor) {
             builder.append(String.format("for %s in range(%s, %s, %s):\n",
                     toString(rangeFor.getIdentifier()),
-                    toString(rangeFor.getStart()),
-                    toString(rangeFor.getEnd()),
-                    toString(rangeFor.getStep())
+                    toString(rangeFor.getRange().getStart()),
+                    toString(rangeFor.getRange().getStop()),
+                    toString(rangeFor.getRange().getStep())
             ));
             builder.append(toString(rangeFor.getBody(), tab));
         } else if (stmt instanceof GeneralForLoop generalFor) {
