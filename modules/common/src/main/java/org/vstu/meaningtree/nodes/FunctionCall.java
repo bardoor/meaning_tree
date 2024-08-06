@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Objects;
 
 public class FunctionCall extends Expression {
-    protected final Identifier _functionName;
+    protected final Expression _function;
 
-    public Identifier getFunctionName() {
-        return _functionName;
+    public Expression getFunction() {
+        return _function;
     }
 
     public List<Expression> getArguments() {
@@ -19,13 +19,25 @@ public class FunctionCall extends Expression {
 
     protected final List<Expression> _arguments;
 
-    public FunctionCall(Identifier functionName, Expression ... arguments) {
-        this(functionName, List.of(arguments));
+    public FunctionCall(Expression function, Expression ... arguments) {
+        this(function, List.of(arguments));
     }
 
-    public FunctionCall(Identifier functionName, List<Expression> arguments) {
-        this._functionName = functionName;
+    public FunctionCall(Expression function, List<Expression> arguments) {
+        this._function = function;
         this._arguments = arguments;
+    }
+
+    public boolean hasFunctionName() {
+        return _function instanceof Identifier;
+    }
+
+    public Identifier getFunctionName() {
+        if (hasFunctionName()) {
+            return (Identifier) _function;
+        }
+
+        throw new RuntimeException("Function does not have identifier of call");
     }
 
     @Override
@@ -38,11 +50,11 @@ public class FunctionCall extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FunctionCall that = (FunctionCall) o;
-        return Objects.equals(_functionName, that._functionName) && Objects.equals(_arguments, that._arguments);
+        return Objects.equals(_function, that._function) && Objects.equals(_arguments, that._arguments);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_functionName, _arguments);
+        return Objects.hash(_function, _arguments);
     }
 }

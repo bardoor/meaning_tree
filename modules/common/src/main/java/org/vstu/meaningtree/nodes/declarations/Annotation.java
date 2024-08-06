@@ -7,10 +7,10 @@ import java.util.List;
 
 public class Annotation extends Declaration {
     private final List<Expression> arguments;
-    private final Identifier _name;
+    private final Expression _function;
 
-    public Annotation(Identifier name, Expression... arguments) {
-        _name = name;
+    public Annotation(Expression function, Expression... arguments) {
+        _function = function;
         this.arguments = List.of(arguments);
     }
 
@@ -18,8 +18,16 @@ public class Annotation extends Declaration {
         return arguments.toArray(new Expression[0]);
     }
 
+    public Expression getFunctionExpression() {
+        return _function;
+    }
+
+    public boolean hasName() {
+        return _function instanceof Identifier;
+    }
+
     public Identifier getName() {
-        return _name;
+        return (Identifier) _function;
     }
 
     @Override
