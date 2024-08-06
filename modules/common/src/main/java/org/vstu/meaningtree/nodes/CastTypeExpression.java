@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.nodes;
 
+import java.util.Objects;
+
 public class CastTypeExpression extends Expression {
     private final Type _castType;
     private final Expression _value;
@@ -15,5 +17,18 @@ public class CastTypeExpression extends Expression {
 
     public Expression getValue() {
         return _value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CastTypeExpression that = (CastTypeExpression) o;
+        return Objects.equals(_castType, that._castType) && Objects.equals(_value, that._value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_castType, _value);
     }
 }

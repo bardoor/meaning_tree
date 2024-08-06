@@ -31,6 +31,7 @@ abstract public class Node implements Serializable {
     /**
      * @return словарь дочерних узлов или контейнеров, состоящих из узлов данного узла. Возможные типы значений: Map, List, Node
      */
+    @SuppressWarnings("unchecked")
     public SortedMap<String, Object> getChildren() {
         SortedMap<String, Object> map = new TreeMap<>();
         Field[] fields = getAllFields(this);

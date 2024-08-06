@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.nodes;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ArrayInitializer extends Expression {
     private final List<Expression> _values;
@@ -15,5 +16,18 @@ public class ArrayInitializer extends Expression {
 
     public int getValuesCount() {
         return _values.size();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ArrayInitializer that = (ArrayInitializer) o;
+        return Objects.equals(_values, that._values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_values);
     }
 }
