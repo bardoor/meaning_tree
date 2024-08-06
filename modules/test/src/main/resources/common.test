@@ -1528,7 +1528,7 @@ group: Other
             (int)a;
         c++:
             (int)a;
-        static python:
+        isolated python:
             int(a)
 
     case: CastTypeCustom
@@ -1536,7 +1536,7 @@ group: Other
             (MyClass)a;
         c++:
             (int)a;
-        static python:
+        isolated python:
             MyClass(a)
 
     case: ListUnpacking

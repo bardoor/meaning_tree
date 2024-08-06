@@ -28,7 +28,7 @@ public class TestCase {
     }
 
     private void parseCodes(String testCase) {
-        Pattern langNamePattern = Pattern.compile("^([ \\t\\f\\r]+)((main|alt|static)\\s+)?[^\\s]+:\\s*$", Pattern.MULTILINE);
+        Pattern langNamePattern = Pattern.compile("^([ \\t\\f\\r]+)((main|alt|isolated)\\s+)?[^\\s]+:\\s*$", Pattern.MULTILINE);
         Matcher matcher = langNamePattern.matcher(testCase);
 
         // Найти строки с названиями языков

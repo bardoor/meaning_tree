@@ -19,7 +19,7 @@ public class SingleTestCode {
     }
 
     private String parseName(String testCode) {
-        Pattern langNamePattern = Pattern.compile("^\\s+((main|alt|static)\\s+)?([^\\s]+):\\s*$", Pattern.MULTILINE);
+        Pattern langNamePattern = Pattern.compile("^\\s+((main|alt|isolated)\\s+)?([^\\s]+):\\s*$", Pattern.MULTILINE);
         Matcher langNameMatcher = langNamePattern.matcher(testCode);
 
         if (!langNameMatcher.find()) {
@@ -31,7 +31,7 @@ public class SingleTestCode {
         type = switch (langPrefix) {
             case "alt" -> TestCodeType.ALTERNATIVE;
             case "main" -> TestCodeType.MAIN;
-            case "static" -> TestCodeType.STATIC;
+            case "isolated" -> TestCodeType.ISOLATED;
             case null, default -> TestCodeType.DEFAULT;
         };
         return language;

@@ -4,5 +4,5 @@ public enum TestCodeType {
     DEFAULT,
     ALTERNATIVE,
     MAIN,
-    STATIC
+    ISOLATED
 }
