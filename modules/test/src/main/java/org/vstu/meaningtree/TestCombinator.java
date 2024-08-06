@@ -6,26 +6,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestCombinator {
-    public static List<ImmutablePair<TestCodeGroup, TestCodeGroup>> getPairs(TestCase case_) {
+    public static List<ImmutablePair<TestCodeGroup, TestCodeGroup>> getPairs(TestCase testCase) {
         List<ImmutablePair<TestCodeGroup, TestCodeGroup>> result;
 
-        boolean hasMain = case_.hasMainCode();
+        boolean hasMain = testCase.hasMainCode();
 
-        if (!hasMain) {
-            Combinator<TestCodeGroup> comb = new Combinator<TestCodeGroup>(case_.getCodeGroups());
-            result = comb.getPermutations();
-        } else {
+        if (hasMain) {
+            // Для каждой группы кодов в тест кейсе сделать пару {язык, код}
             result = new ArrayList<>();
-            for (TestCodeGroup code : case_.getCodeGroups()) {
-                result.add(new ImmutablePair<>(new TestCodeGroup(case_.getMainCode().getLanguage(), case_.getMainCode()), code));
+            for (TestCodeGroup code : testCase.getCodeGroups()) {
+                result.add(new ImmutablePair<>(new TestCodeGroup(testCase.getMainCode().getLanguage(), testCase.getMainCode()), code));
             }
+        } else {
+            Combinator<TestCodeGroup> comb = new Combinator<>(testCase.getCodeGroups());
+            result = comb.getPermutations();
         }
 
         // Убираем запрещенные условия тестирования
-        return result.stream().filter((ImmutablePair<TestCodeGroup, TestCodeGroup> codePair) -> (
-                !(codePair.left.size() > 1 && codePair.right.size() > 1) // сравнение двух групп альтернатив
-                && !(codePair.right.size() > 1 && codePair.left.size() == 1 && !hasMain) // альтернативы не должны преобразовываться в другой язык (бессмысленно)
-                && !(codePair.right.size() == 1 && codePair.right.getFirst().getType().equals(TestCodeType.STATIC) && !hasMain) // статический блок кода не должен подвергаться преобразованию в другой язык
-        )).toList();
+        result.removeIf(codePair -> {
+            TestCodeGroup left = codePair.left;
+            TestCodeGroup right = codePair.right;
+            // сравнение двух групп альтернатив
+            return left.size() > 1 && right.size() > 1
+                    // альтернативы не должны преобразовываться в другой язык (бессмысленно)
+                    || right.size() > 1 && left.size() == 1 && !hasMain
+                    // статический блок кода не должен подвергаться преобразованию в другой язык
+                    || right.size() == 1 && right.getFirst().getType().equals(TestCodeType.ISOLATED) && !hasMain;
+        });
+
+        return result;
     }
 }
