@@ -1013,10 +1013,17 @@ public class JavaViewer extends Viewer {
 
         Statement body = generalForLoop.getBody();
         if (body instanceof CompoundStatement compoundStatement) {
-            builder
-                    .append(")")
-                    .append(_openBracketOnSameLine ? " " : "\n")
-                    .append(toString(compoundStatement));
+            builder.append(")");
+
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compoundStatement));
+            }
+            else {
+                builder.append("\n");
+                builder.append(indent(toString(body)));
+            }
         }
         else {
             builder.append(")\n");
