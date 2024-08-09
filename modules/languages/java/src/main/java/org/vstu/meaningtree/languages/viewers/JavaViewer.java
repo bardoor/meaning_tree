@@ -504,9 +504,9 @@ public class JavaViewer extends Viewer {
 
         String body = toString(methodDefinition.getBody());
         if (_openBracketOnSameLine)
-        { builder.append(" ").append(body); }
+            { builder.append(" ").append(body); }
         else
-        { builder.append("\n").append(indent(body)); }
+            { builder.append("\n").append(indent(body)); }
 
         return builder.toString();
     }

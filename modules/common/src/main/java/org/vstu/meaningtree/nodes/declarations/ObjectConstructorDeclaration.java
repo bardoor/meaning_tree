@@ -6,7 +6,8 @@ import org.vstu.meaningtree.nodes.types.UserType;
 
 import java.util.List;
 
-public class ObjectConstructorDeclaration extends MethodDeclaration{
+public class ObjectConstructorDeclaration extends MethodDeclaration {
+
     public ObjectConstructorDeclaration(UserType owner, Identifier name,
                                         List<Annotation> annotations, List<Modifier> modifiers,
                                         DeclarationArgument... arguments) {

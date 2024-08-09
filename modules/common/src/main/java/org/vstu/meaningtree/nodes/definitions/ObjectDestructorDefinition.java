@@ -10,10 +10,12 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import java.util.List;
 
 public class ObjectDestructorDefinition extends MethodDefinition {
+
     public ObjectDestructorDefinition(UserType owner,
                                       Identifier name,
                                       List<Annotation> annotations,
-                                      List<Modifier> modifiers, CompoundStatement body) {
+                                      List<Modifier> modifiers,
+                                      CompoundStatement body) {
         super(new ObjectDestructorDeclaration(owner, name, annotations, modifiers), body);
     }
 }

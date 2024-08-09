@@ -7,7 +7,8 @@ import org.vstu.meaningtree.nodes.types.UserType;
 
 import java.util.List;
 
-public class ObjectDestructorDeclaration extends MethodDeclaration{
+public class ObjectDestructorDeclaration extends MethodDeclaration {
+
     public ObjectDestructorDeclaration(UserType owner,
                                        Identifier name,
                                        List<Annotation> annotations,
