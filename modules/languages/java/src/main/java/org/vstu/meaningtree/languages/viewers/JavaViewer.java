@@ -122,8 +122,25 @@ public class JavaViewer extends Viewer {
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
             case MultipleAssignmentStatement multipleAssignmentStatement -> toString(multipleAssignmentStatement);
             case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
+            case ExpressionSequence expressionSequence -> toString(expressionSequence);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(ExpressionSequence expressionSequence) {
+         StringBuilder builder = new StringBuilder();
+
+         for (Expression expression : expressionSequence.getExpressions()) {
+             builder.append(toString(expression)).append(", ");
+         }
+
+         // Удаляем лишние пробел и запятую
+         if (builder.length() > 2) {
+             builder.deleteCharAt(builder.length() - 1);
+             builder.deleteCharAt(builder.length() - 1);
+         }
+
+         return builder.toString();
     }
 
     private String toString(InfiniteLoop infiniteLoop) {
@@ -1003,6 +1020,30 @@ public class JavaViewer extends Viewer {
             case AssignmentExpression expr -> toString(expr);
             case AssignmentStatement stmt -> toString(stmt);
             case VariableDeclaration decl -> toString(decl);
+            case MultipleAssignmentStatement multipleAssignmentStatement -> {
+                // Трансляция MultipleAssignmentStatement по умолчанию не подходит -
+                // в результате будут получены присваивания, написанные через точку с запятой.
+                // Поэтому вручную получаем список присваиваний и создаем правильное отображение.
+                StringBuilder builder = new StringBuilder();
+
+                for (AssignmentStatement assignmentStatement : multipleAssignmentStatement.getStatements()) {
+                    AssignmentExpression assignmentExpression = new AssignmentExpression(
+                            assignmentStatement.getLValue(),
+                            assignmentStatement.getRValue()
+                    );
+                    builder
+                            .append(toString(assignmentExpression))
+                            .append(", ");
+                }
+
+                // Удаляем лишние пробел и запятую в конце последнего присвоения
+                if (builder.length() > 2) {
+                    builder.deleteCharAt(builder.length() - 1);
+                    builder.deleteCharAt(builder.length() - 1);
+                }
+
+                yield builder.toString();
+            }
             default -> throw new IllegalStateException("Unexpected value: " + init);
         };
     }
