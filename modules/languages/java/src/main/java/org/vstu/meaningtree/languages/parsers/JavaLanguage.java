@@ -65,6 +65,10 @@ public class JavaLanguage extends Language {
     private Node fromTSNode(TSNode node) {
         Objects.requireNonNull(node);
 
+        if (node.hasError()) {
+            throw new IllegalArgumentException("Cannot parse code containing errors");
+        }
+
         String nodeType = node.getType();
         return switch (nodeType) {
             case "program" -> fromProgramTSNode(node);
