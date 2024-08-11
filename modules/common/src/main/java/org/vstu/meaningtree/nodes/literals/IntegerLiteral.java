@@ -16,7 +16,6 @@ public class IntegerLiteral extends NumericLiteral {
     private final long _value;
     private Representation _repr;
 
-
     public IntegerLiteral(String s) {
         _value = parseValue(s);
     }

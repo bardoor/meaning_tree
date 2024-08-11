@@ -167,7 +167,7 @@ public class PythonLanguage extends Language {
                     step = call.getArguments().get(2);
                     break;
             }
-            return new RangeBasedComprehension(item, leftOfForEach, new Range(start, stop, step), condition);
+            return new RangeBasedComprehension(item, leftOfForEach, new Range(start, stop, step, false, true), condition);
         } else {
             return new ContainerBasedComprehension(item, new VariableDeclaration(new UnknownType(), leftOfForEach), rightOfForEach, condition);
         }
@@ -390,7 +390,7 @@ public class PythonLanguage extends Language {
                         step = args.get(2);
                         break;
                 }
-                return new RangeForLoop(new Range(start, stop, step), left, body);
+                return new RangeForLoop(new Range(start, stop, step, false, true), left, body);
             }
             return new ForEachLoop(new VariableDeclaration(new UnknownType(), left), (Expression) right, body);
         } else {
@@ -477,7 +477,7 @@ public class PythonLanguage extends Language {
                 }
             }
         }
-        return new Range(start, stop, step);
+        return new Range(start, stop, step, false, true);
     }
 
     private ReturnStatement fromReturnTSNode(TSNode node) {

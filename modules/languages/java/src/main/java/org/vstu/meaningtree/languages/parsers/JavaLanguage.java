@@ -32,6 +32,7 @@ import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
 import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
 
+import javax.swing.plaf.nimbus.State;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -544,13 +545,113 @@ public class JavaLanguage extends Language {
         return new AssignmentExpression(identifier, right);
     }
 
-    private GeneralForLoop fromForStatementTSNode(TSNode node) {
+    private List<TSNode> getChildrenByFieldName(TSNode node, String fieldName) {
+        List<TSNode> nodes = new ArrayList<>();
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            String currentNodeFieldName = node.getFieldNameForChild(i);
+            if (currentNodeFieldName != null && currentNodeFieldName.equals(fieldName)) {
+                nodes.add(node.getChild(i));
+            }
+        }
+
+        return nodes;
+    }
+
+    private AssignmentStatement assignmentExpressionToStatement(AssignmentExpression expression) {
+        return new AssignmentStatement(expression.getLValue(), expression.getRValue());
+    }
+
+    private Optional<RangeForLoop> tryMakeRangeForLoop(HasInitialization init,
+                                                Expression condition,
+                                                Expression update,
+                                                Statement body) {
+        SimpleIdentifier loopVariable = null;
+        Expression start = null;
+        Expression stop = null;
+        Expression step = null;
+        boolean isExcludingEnd = false;
+
+        if (init instanceof AssignmentExpression assignmentExpression
+                && assignmentExpression.getLValue() instanceof SimpleIdentifier loopVariable_
+                && assignmentExpression.getRValue() instanceof IntegerLiteral start_) {
+            loopVariable = loopVariable_;
+            start = start_;
+        }
+        // TODO: этот ужас нужно когда-нибудь переписать нормально
+        else if (init instanceof VariableDeclaration variableDeclaration) {
+            List<VariableDeclarator> declarators = List.of(variableDeclaration.getDeclarators());
+
+            if (declarators.size() == 1) {
+                VariableDeclarator declarator = declarators.getFirst();
+                loopVariable = declarator.getIdentifier();
+
+                Optional<Expression> wrappedExpression = declarator.getRValue();
+                if (wrappedExpression.isPresent()) {
+                    Expression expression = wrappedExpression.get();
+                    if (expression instanceof IntegerLiteral start_) {
+                        start = start_;
+                    }
+                }
+            }
+        }
+
+        if (condition instanceof BinaryComparison binaryComparison
+            && binaryComparison.getLeft().equals(loopVariable)
+            && binaryComparison.getRight() instanceof IntegerLiteral stop_) {
+            stop = stop_;
+
+            if (binaryComparison instanceof LtOp || binaryComparison instanceof GtOp) {
+                isExcludingEnd = true;
+            }
+            else if (binaryComparison instanceof LeOp || binaryComparison instanceof GeOp) {
+                isExcludingEnd = false;
+            }
+            else {
+                // Т.к. binaryComparison может быть не только операцией больше/меньше, а еще
+                // равно/не равно, то во втором случае нельзя организовать диапазон
+                stop = null;
+            }
+        }
+
+        step = switch (update) {
+            case PostfixDecrementOp postfixDecrementOp -> new IntegerLiteral("-1");
+            case PostfixIncrementOp postfixIncrementOp -> new IntegerLiteral("1");
+            case PrefixDecrementOp prefixDecrementOp -> new IntegerLiteral("-1");
+            case PrefixIncrementOp prefixIncrementOp -> new IntegerLiteral("1");
+            default -> null;
+        };
+
+        if (start != null && stop != null && step != null && loopVariable != null) {
+            Range range = new Range(start, stop, step, false, isExcludingEnd);
+            return Optional.of(new RangeForLoop(range, loopVariable, body));
+        }
+
+        return Optional.empty();
+    }
+
+    private ForLoop fromForStatementTSNode(TSNode node) {
         HasInitialization init = null;
         Expression condition = null;
         Expression update = null;
 
         if (!node.getChildByFieldName("init").isNull()) {
-            init = (HasInitialization) fromTSNode(node.getChildByFieldName("init"));
+            List<TSNode> assignments = getChildrenByFieldName(node, "init");
+
+            if (assignments.size() == 1) {
+                init = (HasInitialization) fromTSNode(assignments.getFirst());
+            }
+            else if (assignments.size() > 1) {
+                List<AssignmentStatement> assignmentStatements =
+                        assignments.stream().map(
+                                tsNode ->
+                                        assignmentExpressionToStatement((AssignmentExpression) fromTSNode(tsNode))
+                        ).toList();
+                init = new MultipleAssignmentStatement(assignmentStatements);
+            }
+            else {
+                throw new IllegalStateException("This should never occur");
+            }
         }
 
         if (!node.getChildByFieldName("condition").isNull()) {
@@ -558,10 +659,27 @@ public class JavaLanguage extends Language {
         }
 
         if (!node.getChildByFieldName("update").isNull()) {
-            update = (Expression) fromTSNode(node.getChildByFieldName("update"));
+            List<TSNode> updates = getChildrenByFieldName(node, "update");
+
+            if (updates.size() == 1) {
+                update = (Expression) fromTSNode(updates.getFirst());
+            }
+            else if (updates.size() > 1) {
+                List<Expression> updateExpressions =
+                        updates.stream().map(tsNode -> (Expression) fromTSNode(tsNode)).toList();
+                update = new ExpressionSequence(updateExpressions);
+            }
+            else {
+                throw new IllegalStateException("This should never occur");
+            }
         }
 
         Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+
+        Optional<RangeForLoop> rangeFor = tryMakeRangeForLoop(init, condition, update, body);
+        if (rangeFor.isPresent()) {
+            return rangeFor.get();
+        }
 
         return new GeneralForLoop(init, condition, update, body);
     }

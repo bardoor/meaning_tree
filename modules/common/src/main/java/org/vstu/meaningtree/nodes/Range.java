@@ -6,9 +6,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class Range extends Expression {
-    private final Optional<Expression> _start;
-    private final Optional<Expression> _stop;
-    private final Optional<Expression> _step;
+    private final Expression _start;
+    private final Expression _stop;
+    private final Expression _step;
+    private final boolean _isExcludingStart;
+    private final boolean _isExcludingEnd;
 
     public enum Type {
         UP,
@@ -16,109 +18,20 @@ public class Range extends Expression {
         UNKNOWN,
     }
 
-    public Range(Expression start, Expression stop, Expression step) {
-        _start = Optional.ofNullable(start);
-        _stop = Optional.ofNullable(stop);
-        _step = Optional.ofNullable(step);
-    }
-
-    public boolean hasStart() {
-        return _start.isPresent();
-    }
-
-    public boolean hasStop() {
-        return _stop.isPresent();
-    }
-
-    public boolean hasStep() {
-        return _step.isPresent();
-    }
-
-    public Expression getStart() {
-        if (!hasStart()) {
-            throw new RuntimeException("Start is not present");
-        }
-        return _start.get();
-    }
-
-    public Expression getStop() {
-        if (!hasStop()) {
-            throw new RuntimeException("Stop is not present");
-        }
-        return _stop.get();
-    }
-
-    public Expression getStep() {
-        if (!hasStep()) {
-            throw new RuntimeException("Step is not present");
-        }
-        return _step.get();
-    }
-
-    public boolean isStartIntegerValue() {
-        return !hasStart() || (hasStart() && getStart() instanceof IntegerLiteral);
-    }
-
-    public boolean isStopIntegerValue() {
-        return hasStop() && getStop() instanceof IntegerLiteral;
-    }
-
-    public boolean isStepIntegerValue() {
-        return !hasStep() || (hasStep() && getStep() instanceof IntegerLiteral);
-    }
-
-
-    public Type getType() {
-        if (isStartIntegerValue() && isStepIntegerValue() && isStopIntegerValue()) {
-            int startValue = getStartIntegerValue();
-            int endValue = getStopIntegerValue();
-            int stepValue = getStepIntegerValue();
-
-            if (startValue < endValue && stepValue > 0) {
-                return Type.UP;
-            }
-            else if (startValue > endValue && stepValue < 0) {
-                return Type.DOWN;
-            }
-        }
-
-        return Type.UNKNOWN;
-    }
-
-    public int getStartIntegerValue() {
-        if (!hasStart()) {
-            return 0;
-        }
-
-        if (getStart() instanceof IntegerLiteral start) {
-            return (int) start.getValue();
-        }
-
-        throw new RuntimeException("Start value is not an integer");
-    }
-
-    public int getStopIntegerValue() {
-        if (getStop() instanceof IntegerLiteral end) {
-            return (int) end.getValue();
-        }
-
-        throw new RuntimeException("End value is not an integer");
-    }
-
-    public int getStepIntegerValue() {
-        if (!hasStep()) {
-            return 1;
-        }
-
-        if (getStep() instanceof IntegerLiteral step) {
-            return (int) step.getValue();
-        }
-
-        throw new RuntimeException("Step value is not an integer");
+    public Range(Expression start,
+                 Expression stop,
+                 Expression step,
+                 boolean isExcludingStart,
+                 boolean isExcludingEnd) {
+        _start = start;
+        _stop = stop;
+        _step = step;
+        _isExcludingStart = isExcludingStart;
+        _isExcludingEnd = isExcludingEnd;
     }
 
     public Range(Expression start, Expression stop) {
-        this(start, stop, null);
+        this(start, stop, null, false, true);
     }
 
     public static Range fromStart(Expression start) {
@@ -127,6 +40,82 @@ public class Range extends Expression {
 
     public static Range untilStop(Expression stop) {
         return new Range(null, stop);
+    }
+
+    public Optional<Expression> getStart() {
+        return Optional.ofNullable(_start);
+    }
+
+    public Optional<Expression> getStop() {
+        return Optional.ofNullable(_stop);
+    }
+
+    public Optional<Expression> getStep() {
+        return Optional.ofNullable(_step);
+    }
+
+    public boolean isExcludingStart() {
+        return _isExcludingStart;
+    }
+
+    public boolean isExcludingEnd() {
+        return _isExcludingEnd;
+    }
+
+    public Type getType() {
+        try {
+            long start = getStartValueAsLong();
+            long stop = getStopValueAsLong();
+            long step = getStepValueAsLong();
+
+            if (start < stop && step > 0) {
+                return Type.UP;
+            }
+            else if (start > stop && step < 0) {
+                return Type.DOWN;
+            }
+
+            return Type.UNKNOWN;
+        }
+        catch (IllegalStateException exception) {
+            return Type.UNKNOWN;
+        }
+    }
+
+    public long getStartValueAsLong() throws IllegalStateException {
+        if (_start == null) {
+            throw new IllegalStateException("Start value is not specified");
+        }
+
+        if (!(_start instanceof IntegerLiteral)) {
+            throw new IllegalStateException("Start value cannot be interpreted as long");
+        }
+
+        return ((IntegerLiteral) _start).getLongValue();
+    }
+
+    public long getStopValueAsLong() throws IllegalStateException {
+        if (_stop == null) {
+            throw new IllegalStateException("Stop value is not specified");
+        }
+
+        if (!(_stop instanceof IntegerLiteral)) {
+            throw new IllegalStateException("Stop value cannot be interpreted as long");
+        }
+
+        return ((IntegerLiteral) _stop).getLongValue();
+    }
+
+    public long getStepValueAsLong() throws IllegalStateException {
+        if (_step == null) {
+            throw new IllegalStateException("Step value is not specified");
+        }
+
+        if (!(_step instanceof IntegerLiteral)) {
+            throw new IllegalStateException("Step value cannot be interpreted as long");
+        }
+
+        return ((IntegerLiteral) _step).getLongValue();
     }
 
     @Override

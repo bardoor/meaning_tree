@@ -7,14 +7,14 @@ import java.util.List;
 
 public class ExpressionSequence extends Expression  {
     // Применяется в случаях Python в `return a, b`, простых перечислениях выражений, множественных индексов x[a, b]
-    private List<Expression> _expressions;
+    private final List<Expression> _expressions;
 
     public ExpressionSequence(Expression ... expressions) {
-        _expressions = List.of(expressions);
+        this(List.of(expressions));
     }
 
     public ExpressionSequence(List<Expression> expressions) {
-        _expressions = new ArrayList<>(expressions);
+        _expressions = List.copyOf(expressions);
     }
 
     public List<Expression> getExpressions() {

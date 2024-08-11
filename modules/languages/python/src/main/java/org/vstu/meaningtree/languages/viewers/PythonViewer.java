@@ -122,9 +122,20 @@ public class PythonViewer extends Viewer {
         comprehension.append(' ');
         if (compr instanceof RangeBasedComprehension rangeBased) {
             Range range = rangeBased.getRange();
-            comprehension.append(String.format("for %s in range(%s, %s, %s)",
-                    toString(rangeBased.getRangeVariableIdentifier()), toString(range.getStart()),
-                    toString(range.getStop()), toString(range.getStep())));
+
+            Expression start = range.getStart().orElseThrow();
+            Expression stop = range.getStop().orElseThrow();
+            Expression step = range.getStep().orElseThrow();
+
+            comprehension.append(
+                    String.format(
+                            "for %s in range(%s, %s, %s)",
+                            toString(rangeBased.getRangeVariableIdentifier()),
+                            toString(start),
+                            toString(stop),
+                            toString(step)
+                    )
+            );
         } else if (compr instanceof ContainerBasedComprehension containered) {
             comprehension.append(String.format("for %s in %s", toString(containered.getContainerItemDeclaration()), toString(containered.getContainerExpression())));
         }
@@ -308,12 +319,19 @@ public class PythonViewer extends Viewer {
     private String loopToString(Statement stmt, Tab tab) {
         StringBuilder builder = new StringBuilder();
         if (stmt instanceof RangeForLoop rangeFor) {
-            builder.append(String.format("for %s in range(%s, %s, %s):\n",
-                    toString(rangeFor.getIdentifier()),
-                    toString(rangeFor.getRange().getStart()),
-                    toString(rangeFor.getRange().getStop()),
-                    toString(rangeFor.getRange().getStep())
-            ));
+            Expression start = rangeFor.getStart().orElseThrow();
+            Expression stop = rangeFor.getStop().orElseThrow();
+            Expression step = rangeFor.getStep().orElseThrow();
+
+            builder.append(
+                    String.format(
+                            "for %s in range(%s, %s, %s):\n",
+                            toString(rangeFor.getIdentifier()),
+                            toString(start),
+                            toString(stop),
+                            toString(step)
+                    )
+            );
             builder.append(toString(rangeFor.getBody(), tab));
         } else if (stmt instanceof GeneralForLoop generalFor) {
             return toString(PythonSpecialNodeTransformations.representGeneralFor(generalFor));
@@ -514,17 +532,21 @@ public class PythonViewer extends Viewer {
 
     private String rangeToString(Range range) {
         StringBuilder builder = new StringBuilder();
-        if (range.hasStart()) {
-            builder.append(toString(range.getStart()));
-        }
+
+        Optional<Expression> start = range.getStart();
+        start.ifPresent(expression -> builder.append(toString(expression)));
+
         builder.append(':');
-        if (range.hasStop()) {
-            builder.append(toString(range.getStop()));
-        }
-        if (range.hasStep()) {
+
+        Optional<Expression> stop = range.getStop();
+        stop.ifPresent(expression -> builder.append(toString(expression)));
+
+        Optional<Expression> step = range.getStep();
+        if (step.isPresent()) {
             builder.append(':');
-            builder.append(toString(range.getStep()));
+            builder.append(toString(step.get()));
         }
+
         return builder.toString();
     }
 

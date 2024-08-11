@@ -4,10 +4,11 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Range;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
+
+import java.util.Optional;
 
 /**
- * Цикл по диапазону целых чисел (начало и конец являются частью диапазна) с заданным шагом.
+ * Цикл по диапазону целых чисел (начало и конец являются частью диапазона) с заданным шагом.
  */
 public class RangeForLoop extends ForLoop {
     private final Range _range;
@@ -26,13 +27,64 @@ public class RangeForLoop extends ForLoop {
         _body = body;
     }
 
-    public Range getRange() { return _range; }
+    /**
+     * Создает цикл по диапазону.
+     * @param start начало диапазона (включительно)
+     * @param end конец диапазона (не включительно)
+     * @param step _identifier
+     * @param body тело цикла
+     */
+    public RangeForLoop(Expression start,
+                        Expression end,
+                        Expression step,
+                        boolean isExcludingStart,
+                        boolean isExcludingEnd,
+                        SimpleIdentifier identifier,
+                        Statement body) {
+        this(new Range(start, end, step, isExcludingStart, isExcludingEnd), identifier, body);
+    }
+
+    public Range getRange() {
+        return _range;
+    }
 
     public SimpleIdentifier getIdentifier() {
         return _identifier;
     }
 
     public Statement getBody() { return _body; }
+
+    public Range.Type getRangeType() {
+        return _range.getType();
+    }
+
+    public Optional<Expression> getStart() {
+        return _range.getStart();
+    }
+
+    public Optional<Expression> getStop() {
+        return _range.getStop();
+    }
+
+    public Optional<Expression> getStep() {
+        return _range.getStep();
+    }
+
+    public long getStartValueAsLong() throws IllegalStateException {
+        return _range.getStartValueAsLong();
+    }
+
+    public long getStopValueAsLong() throws IllegalStateException {
+        return _range.getStopValueAsLong();
+    }
+
+    public long getStepValueAsLong() throws IllegalStateException {
+        return _range.getStepValueAsLong();
+    }
+
+    public boolean isExcludingStop() {
+        return _range.isExcludingEnd();
+    }
 
     @Override
     public void makeBodyCompound() {
@@ -57,6 +109,4 @@ public class RangeForLoop extends ForLoop {
 
         return builder.toString();
     }
-
-
 }

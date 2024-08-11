@@ -1037,7 +1037,7 @@ public class JavaViewer extends Viewer {
 
     private String getForRangeUpdate(RangeForLoop forRangeLoop) {
         if (forRangeLoop.getRange().getType() == Range.Type.UP) {
-            int stepValue = forRangeLoop.getRange().getStepIntegerValue();
+            long stepValue = forRangeLoop.getStepValueAsLong();
 
             if (stepValue == 1) {
                 return String.format("%s++", toString(forRangeLoop.getIdentifier()));
@@ -1047,7 +1047,7 @@ public class JavaViewer extends Viewer {
             }
         }
         else if (forRangeLoop.getRange().getType() == Range.Type.DOWN) {
-            int stepValue = forRangeLoop.getRange().getStepIntegerValue();
+            long stepValue = forRangeLoop.getStepValueAsLong();
 
             if (stepValue == 1) {
                 return String.format("%s--", toString(forRangeLoop.getIdentifier()));
@@ -1062,22 +1062,26 @@ public class JavaViewer extends Viewer {
 
     private String getForRangeHeader(RangeForLoop forRangeLoop) {
         if (forRangeLoop.getRange().getType() == Range.Type.UP) {
-            String header = "int %s = %s; %s < %s; %s";
+            String header = "int %s = %s; %s %s %s; %s";
+            String compOperator = forRangeLoop.isExcludingStop() ? "<" : "<=";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getRange().getStart()),
+                    Long.toString(forRangeLoop.getStartValueAsLong()),
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getRange().getStop()),
+                    compOperator,
+                    Long.toString(forRangeLoop.getStopValueAsLong()),
                     getForRangeUpdate(forRangeLoop)
             );
         }
         else if (forRangeLoop.getRange().getType() == Range.Type.DOWN) {
-            String header = "int %s = %s; %s > %s; %s";
+            String header = "int %s = %s; %s %s %s; %s";
+            String compOperator = forRangeLoop.isExcludingStop() ? ">" : ">=";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getRange().getStart()),
+                    Long.toString(forRangeLoop.getStartValueAsLong()),
                     toString(forRangeLoop.getIdentifier()),
-                    toString(forRangeLoop.getRange().getStop()),
+                    compOperator,
+                    Long.toString(forRangeLoop.getStopValueAsLong()),
                     getForRangeUpdate(forRangeLoop)
             );
         }
@@ -1086,18 +1090,31 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(RangeForLoop forRangeLoop) {
+        StringBuilder builder = new StringBuilder();
+
         String header = "for (" + getForRangeHeader(forRangeLoop) + ")";
+        builder.append(header);
 
         Statement body = forRangeLoop.getBody();
-        if (body instanceof CompoundStatement compStmt) {
-            return header + (_openBracketOnSameLine ? " " : "\n") + toString(compStmt);
+        if (body instanceof CompoundStatement compoundStatement) {
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compoundStatement));
+            }
+            else {
+                builder.append("\n");
+                builder.append(indent(toString(body)));
+            }
         }
         else {
+            builder.append("\n");
             increaseIndentLevel();
-            String result = header + "\n" + indent(toString(body));
+            builder.append(indent(toString(body)));
             decreaseIndentLevel();
-            return result;
         }
+
+        return builder.toString();
     }
 
     public String toString(ProgramEntryPoint entryPoint) {
