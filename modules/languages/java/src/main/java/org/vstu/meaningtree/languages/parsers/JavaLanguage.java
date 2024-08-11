@@ -1,4 +1,6 @@
 package org.vstu.meaningtree.languages.parsers;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
@@ -106,8 +108,16 @@ public class JavaLanguage extends Language {
             case "ternary_expression" -> fromTernaryExpressionTSNode(node);
             case "constructor_declaration" -> fromConstructorDeclarationTSNode(node);
             case "this" -> fromThisTSNode(node);
+            case "character_literal" -> fromCharacterLiteralTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private CharacterLiteral fromCharacterLiteralTSNode(TSNode node) {
+        String representation = getCodePiece(node);
+        String withoutQuotes = representation.substring(1, representation.length() - 1);
+        int value = StringEscapeUtils.unescapeJava(withoutQuotes).codePointAt(0);
+        return new CharacterLiteral(value);
     }
 
     private SelfReference fromThisTSNode(TSNode node) {
@@ -709,7 +719,8 @@ public class JavaLanguage extends Language {
         switch (type) {
             case "integral_type":
                 parsedType = switch(typeName) {
-                    case "int", "short", "long", "byte", "char" -> new IntType();
+                    case "char" -> new CharacterType();
+                    case "int", "short", "long", "byte" -> new IntType();
                     default -> throw new IllegalStateException("Unexpected value: " + typeName);
                 };
                 break;

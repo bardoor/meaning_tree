@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages.viewers;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
@@ -123,8 +124,16 @@ public class JavaViewer extends Viewer {
             case MultipleAssignmentStatement multipleAssignmentStatement -> toString(multipleAssignmentStatement);
             case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
             case ExpressionSequence expressionSequence -> toString(expressionSequence);
+            case CharacterLiteral characterLiteral -> toString(characterLiteral);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(CharacterLiteral characterLiteral) {
+        String symbol = StringEscapeUtils.escapeJava(
+                Character.toString(characterLiteral.getValue())
+        );
+        return "'" + symbol + "'";
     }
 
     private String toString(ExpressionSequence expressionSequence) {
@@ -726,7 +735,6 @@ public class JavaViewer extends Viewer {
 
         // В Java нет встроенного оператора возведения в степень, следовательно,
         // нет и соотвествующего оператора присванивания, поэтому этот случай обрабатываем по особому
-        // TODO: нужно убедится, что был импортирован модуль Math
         if (op == POW) {
             return "%s = Math.pow(%s, %s)".formatted(l, l, r);
         }
@@ -771,8 +779,8 @@ public class JavaViewer extends Viewer {
         return "%s;".formatted(toString(stmt.getAugmentedOperator(), stmt.getLValue(), stmt.getRValue()));
     }
 
-    private String toString (Type t) {
-        return switch (t) {
+    private String toString(Type type) {
+        return switch (type) {
             case FloatType floatType -> toString(floatType);
             case IntType intType -> toString(intType);
             case BooleanType booleanType -> toString(booleanType);
@@ -781,23 +789,24 @@ public class JavaViewer extends Viewer {
             case UnknownType unknownType -> toString(unknownType);
             case ArrayType arrayType -> toString(arrayType);
             case UserType userType -> toString(userType);
-            default -> throw new IllegalStateException("Unexpected value: " + t.getClass());
+            case CharacterType characterType -> toString(characterType);
+            default -> throw new IllegalStateException("Unexpected value: " + type.getClass());
         };
     }
 
-    private String toString(FloatType t) {
+    private String toString(FloatType type) {
         return "double";
     }
 
-    private String toString(IntType t) {
+    private String toString(IntType type) {
         return "int";
     }
 
-    private String toString(BooleanType t) {
+    private String toString(BooleanType type) {
         return "boolean";
     }
 
-    private String toString(StringType t) {
+    private String toString(StringType type) {
         return "String";
     }
 
@@ -807,6 +816,10 @@ public class JavaViewer extends Viewer {
 
     private String toString(UnknownType type) {
         return "Object";
+    }
+
+    private String toString(CharacterType type) {
+        return "char";
     }
 
     private String toString(Shape shape) {
