@@ -630,7 +630,7 @@ public class JavaLanguage extends Language {
         return Optional.empty();
     }
 
-    private ForLoop fromForStatementTSNode(TSNode node) {
+    private Loop fromForStatementTSNode(TSNode node) {
         HasInitialization init = null;
         Expression condition = null;
         Expression update = null;
@@ -675,6 +675,10 @@ public class JavaLanguage extends Language {
         }
 
         Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+
+        if (init == null && condition == null && update == null) {
+            return new InfiniteLoop(body);
+        }
 
         Optional<RangeForLoop> rangeFor = tryMakeRangeForLoop(init, condition, update, body);
         if (rangeFor.isPresent()) {
@@ -816,12 +820,16 @@ public class JavaLanguage extends Language {
         return new ProgramEntryPoint(nodes, mainClass, mainMethod);
     }
 
-    private WhileLoop fromWhileTSNode(TSNode node) {
+    private Loop fromWhileTSNode(TSNode node) {
         TSNode tsCond = node.getChildByFieldName("condition");
         Expression mtCond = (Expression) fromTSNode(tsCond);
 
         TSNode tsBody = node.getChildByFieldName("body");
         Statement mtBody = (Statement) fromTSNode(tsBody);
+
+        if (mtCond instanceof BoolLiteral boolLiteral && boolLiteral.getValue()) {
+            return new InfiniteLoop(mtBody);
+        }
 
         return new WhileLoop(mtCond, mtBody);
     }

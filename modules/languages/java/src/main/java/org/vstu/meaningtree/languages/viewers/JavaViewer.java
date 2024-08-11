@@ -121,8 +121,35 @@ public class JavaViewer extends Viewer {
             case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
             case MultipleAssignmentStatement multipleAssignmentStatement -> toString(multipleAssignmentStatement);
+            case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(InfiniteLoop infiniteLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("while (true)"));
+        Statement body = infiniteLoop.getBody();
+        if (body instanceof CompoundStatement compoundStatement) {
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compoundStatement));
+            }
+            else {
+                builder.append("\n");
+                builder.append(indent(toString(body)));
+            }
+        }
+        else {
+            builder.append("\n");
+            increaseIndentLevel();
+            builder.append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
+
+        return builder.toString();
     }
 
     private String toString(SelfReference selfReference) {
