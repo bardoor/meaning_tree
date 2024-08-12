@@ -75,6 +75,7 @@ public class PythonViewer extends Viewer {
             case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
             case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
             case ForLoop forLoop -> loopToString(forLoop, tab);
+            case InfiniteLoop infLoop -> loopToString(infLoop, tab);
             case WhileLoop whileLoop -> loopToString(whileLoop, tab);
             case DoWhileLoop doWhileLoop -> loopToString(doWhileLoop, tab);
             case SwitchStatement switchStmt -> loopToString(switchStmt, tab);
@@ -356,6 +357,9 @@ public class PythonViewer extends Viewer {
             if (switchStmt.hasDefaultCase()) {
                 builder.append(String.format("%scase _:\n%s\n", tab, toString(switchStmt.getDefaultCase(), tab)));
             }
+        } else if (stmt instanceof InfiniteLoop infLoop) {
+            builder.append("while True:\n");
+            builder.append(toString(infLoop.getBody(), tab));
         }
         return builder.toString();
     }

@@ -398,9 +398,16 @@ public class PythonLanguage extends Language {
         }
     }
 
-    private WhileLoop fromWhileLoop(TSNode node) {
+    private Loop fromWhileLoop(TSNode node) {
         Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
         Statement body = (Statement)  fromTSNode(node.getChildByFieldName("body"));
+        if (
+                condition instanceof IntegerLiteral integer && integer.getLongValue() != 0
+                || condition instanceof BoolLiteral bool && bool.getValue()
+                || condition instanceof StringLiteral str && !str.getUnescapedValue().isEmpty()
+        ) {
+            return new InfiniteLoop(body);
+        }
         return new WhileLoop(condition, body);
     }
 
