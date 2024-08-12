@@ -309,20 +309,22 @@ public class PythonLanguage extends Language {
         boolean isListUnpacking = false;
         if (namedChild.getType().equals("typed_parameter")) {
             type = determineType(namedChild.getChildByFieldName("type"));
-        }  else if (namedChild.getType().equals("typed_default_parameter")) {
+            namedChild = namedChild.getNamedChild(0);
+        } else if (namedChild.getType().equals("typed_default_parameter")) {
             type = determineType(namedChild.getChildByFieldName("type"));
             initial = (Expression) fromTSNode(namedChild.getChildByFieldName("value"));
-        } else if (namedChild.getType().equals("default_parameter")) {
+            namedChild = namedChild.getNamedChild(0);
+        }
+
+        if (namedChild.getType().equals("default_parameter")) {
             initial = (Expression) fromTSNode(namedChild.getChildByFieldName("value"));
+            namedChild = namedChild.getNamedChild(0);
         } else if (namedChild.getType().equals("list_splat_pattern")) {
             isListUnpacking = true;
+            namedChild = namedChild.getNamedChild(0);
         }
-        SimpleIdentifier identifier;
-        if (namedChild.getType().equals("identifier")) {
-            identifier = (SimpleIdentifier) fromTSNode(namedChild);
-        } else {
-            identifier = (SimpleIdentifier) fromTSNode(namedChild.getNamedChild(0));
-        }
+
+        SimpleIdentifier identifier = (SimpleIdentifier) fromTSNode(namedChild);
         return new DeclarationArgument(type, isListUnpacking, identifier, initial);
     }
 

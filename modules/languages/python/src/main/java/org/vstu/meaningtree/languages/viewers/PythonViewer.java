@@ -230,12 +230,13 @@ public class PythonViewer extends Viewer {
                 function.append(", ");
             }
             DeclarationArgument arg = declArgs.get(i);
+            if (arg.isListUnpacking()) {
+                function.append('*');
+            }
             function.append(toString(arg.getName()));
             if (!(arg.getType() instanceof UnknownType) && arg.getType() != null) {
                 function.append(": ");
                 function.append(typeToString(arg.getType()));
-            } else if (i == 0 && decl instanceof MethodDeclaration method) {
-                function.append(String.format(": %s", typeToString(method.getOwner())));
             }
         }
         function.append(")");
