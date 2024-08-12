@@ -489,7 +489,14 @@ group: SimpleStatements
     case: VariableDeclaration
         python:
             a: int = 456
+        python:
+            a: int = 456
 
+    case: MultipleVariableDeclaration
+        python:
+            a, b, c: int = 456, 4, k
+        python:
+            a, b, c: int = 456, 4, k
 
     case: AugmentedAssignmentStmt
         python:
@@ -543,10 +550,10 @@ group: SimpleStatements
 
     case: MultipleAssignment
         python:
-            a, b = 3, 45
+            a, b, c = 3, 45, 77
 
         python:
-            a, b = 3, 45
+            a, b, c = 3, 45, 77
 
 
     case: VariableSwapping
@@ -814,16 +821,16 @@ group: Other
         python:
             # abc
 
+
     case: ListUnpacking
         python:
-            class A:
-                def a(t: T, *args: int) -> int:
-                    return t + sum(args)
+            def a(t: T, *args: int) -> int:
+                return t + sum(args)
 
         python:
-            class A:
-                def a(t: T, *args: int) -> int:
-                    return t + sum(args)
+            def a(t: T, *args: int) -> int:
+                return t + sum(args)
+
 
     case: ParenthesizedExpression
         python:
@@ -855,7 +862,43 @@ group: Other
                 return 0
 
             if __name == "__main__":
-                main()        
+                main()
+
+
+    case: ListComprehensionWithoutIf
+        python:
+            func([i for i in range(1, 100)])
+        python:
+            func([i for i in range(1, 100)])
+
+
+    case: ListComprehension
+        python:
+            func([i for i in range(1, 100) if i < 50])
+        python:
+            func([i for i in range(1, 100) if i < 50])
+
+
+    case: DictComprehension
+        python:
+            func({i: 5 for i in range(1, 100) if i < 50})
+        python:
+            func({i: 5 for i in range(1, 100) if i < 50})
+
+
+    case: SetComprehension
+        python:
+            func({i for i in range(1, 100) if i < 50})
+        python:
+            func({i for i in range(1, 100) if i < 50})
+
+
+    case: TupleComprehension
+        python:
+            func((i for i in range(1, 100) if i < 50))
+        python:
+            func((i for i in range(1, 100) if i < 50))
+
 
 group: StructuresOOP
     case: MethodCustomSelfReference

@@ -584,6 +584,55 @@ group: SimpleStatements
             int a = 456;
 
 
+    case: MultipleVariableDeclarationWithDifferentType
+        main python:
+            a: int, b: int, c: str = 40, 78, "Hello"
+
+        java:
+            int a = 40;
+            int b = 78;
+            String c = "Hello";
+
+        c++:
+            int a = 40;
+            int b = 78;
+            string c = "Hello";
+
+
+    case: MultipleVariableDeclarationWithUnknownType
+        python:
+            a, b, c = 40, t, "Hello"
+
+        java:
+            Object a = 40, b = t, c = "Hello";
+
+        c++:
+            Object a = 40, b = t, c = "Hello";
+
+        #TODO: исправить общий тип в C++
+
+
+    case: MultipleVariableDeclarationWithSameType
+        python:
+            a, b, c: int = 40, 78, 55
+
+        java:
+            int a = 40, b = 78, c = 55;
+
+        c++:
+            int a = 40, b = 78, c = 55;
+
+
+    case: MultipleVariableDeclarationWithSameType
+        main python:
+            a, b, c: int = 40, 78, 55
+
+        java:
+            int a = 40, b = 78, c = 55;
+
+        c++:
+            int a = 40, b = 78, c = 55;
+
     case: AugmentedAssignmentStmt
         python:
             a: int = 456
@@ -641,7 +690,7 @@ group: SimpleStatements
 
         c++:
             int a = 456;
-            a = 3
+            a = 3;
 
 
     case: PassStatement
@@ -682,7 +731,7 @@ group: SimpleStatements
             b = t;
 
         c++:
-            std::swap(a, b);
+            std::swap(&a, &b);
 
 
 group: Conditions
@@ -1459,6 +1508,111 @@ group: StructuresOOP
             }
          # TODO: добавить C++
 
+
+    case: ConstructorDetection
+        python:
+            class A:
+                def __init__(self):
+                    print("construct")
+
+        java:
+            class A {
+                A() {
+                    print("construct");
+                }
+            }
+
+        c++:
+            class A {
+            public:
+                A() {
+                    print("construct");
+                }
+            }
+
+
+    case: DestructorDetection
+        python:
+            class A:
+                def __del__(self):
+                    print("destruct")
+
+        java:
+            class A {
+                public void finalize() {
+                    print("destruct");
+                }
+            }
+
+        c++:
+            class A {
+            public:
+                ~A() {
+                    print("destruct");
+                }
+            }
+
+    case: SuperAndThisClassConstructorCall
+        java:
+            class A extends B {
+                A(int a, String b, float c) {
+                    super(a, b);
+                    this(a);
+                }
+            }
+
+        python:
+            class A(B):
+                def __init__(self, a: int, b: str, c: float):
+                    super().__init__(a, b)
+                    self.__init__(a)
+
+        c++:
+            class A : public B {
+            public:
+                A(int a, string b, float c) : B(a, b), A(a) {
+
+                }
+            }
+
+    case: InstanceFieldDeclaration
+        python:
+            class A:
+                out: int = 567
+
+                def __init__(self):
+                    self.out = 5
+                    self.k : int = 5
+                    self.m = hello()
+
+        java:
+            class A {
+                public int out = 567;
+                public int k;
+                public Object m;
+
+                A() {
+                    out = 5;
+                    k = 5;
+                    m = hello();
+                }
+            }
+
+        java:
+            class A {
+                public:
+                int out = 567;
+                int k;
+                object m;
+
+                A() {
+                    out = 5;
+                    k = 5;
+                    m = hello();
+                }
+            }
+    # TODO: требуется разрешение областей видимостей переменных
+
 group: Other
     case: Import
         python:
@@ -1523,6 +1677,7 @@ group: Other
             def
             */
 
+
     case: CastTypePrimitive
         java:
             (int)a;
@@ -1531,6 +1686,7 @@ group: Other
         isolated python:
             int(a)
 
+
     case: CastTypeCustom
         java:
             (MyClass)a;
@@ -1538,6 +1694,7 @@ group: Other
             (int)a;
         isolated python:
             MyClass(a)
+
 
     case: ListUnpacking
         java:
@@ -1552,6 +1709,7 @@ group: Other
                 def a(t: T, *args: int) -> int:
                     return t + sum(args)
 
+
     case: SinglelineComment
         python:
             # abc
@@ -1562,6 +1720,71 @@ group: Other
         java:
             // abc
 
+
+    case: ListComprehensionWithoutIf
+        python:
+            for x in range(m):
+                if x > func([next(k) for _ in range(t)]):
+                    print("Good")
+
+        java:
+            for (int x = 0; x < m; i++) {
+                ArrayList<Object> _tmp_compreh = new ArrayList<Object>();
+                for (int _ = 0; _ < t; _++) {
+                    _tmp_compreh.add(next(k));
+                }
+                if (x > func(_tmp_compreh)) {
+                    print("Good");
+                }
+            }
+
+        c++:
+            for (int x = 0; x < m; i++) {
+                list<object> _tmp_compreh;
+                for (int _ = 0; _ < t; _++) {
+                    _tmp_compreh.push_back(next(k));
+                }
+                if (x > func(_tmp_compreh)) {
+                    print("Good");
+                }
+            }
+
+        #TODO: нейминг временных переменных, нужен алгоритм уникального и предсказуемого именования
+
+
+    case: ListComprehension
+        python:
+            for x in range(m):
+                if x > func([next(k) for _ in range(t) if x > 5]):
+                    print("Good")
+
+        java:
+            for (int x = 0; x < m; i++) {
+                ArrayList<Object> _tmp_compreh = new ArrayList<Object>();
+                for (int _ = 0; _ < t; _++) {
+                    if (x > 5) {
+                        _tmp_compreh.add(next(k));
+                    }
+                }
+                if (x > func(_tmp_compreh)) {
+                    print("Good");
+                }
+            }
+
+        c++:
+            for (int x = 0; x < m; i++) {
+                list<object> _tmp_compreh;
+                for (int _ = 0; _ < t; _++) {
+                    if (x > 5) {
+                        _tmp_compreh.push_back(next(k));
+                    }
+                }
+                if (x > func(_tmp_compreh)) {
+                    print("Good");
+                }
+            }
+
+
     case: ArrayNewSingleDimensionWithInit
         java:
             int[] args = new int[] {1, 2, 3, 4, 5};
@@ -1569,6 +1792,7 @@ group: Other
             args: list[int] = [1, 2, 3, 4, 5]
         c++:
             int args[] = {1, 2, 3, 4, 5};
+
 
     case: ArrayNewMultiDimensionWithInit
         java:
@@ -1578,6 +1802,7 @@ group: Other
         c++:
             int args[][] = {{1, 2}, {3, 4}, {5, 6}};
 
+
     case: ArrayNewSingleDimensionWithoutInit
         java:
             int[] args = new int[35 + x.y()];
@@ -1586,6 +1811,7 @@ group: Other
         c++:
             int args[35 + x.y()];
 
+
     case: ArrayNewMultiDimensionWithoutInit
         java:
             int[] args = new int[a][b];
@@ -1593,6 +1819,7 @@ group: Other
             args: list[int] = [[int() for __ in range(b)] for _ in range(a)]
         c++:
             int args[a][b];
+
 
     case: ParenthesizedExpression
         python:
@@ -1603,6 +1830,7 @@ group: Other
 
         java:
             (a + b * c) + 6 * (a = 3)
+
 
     case: EntryPointConflictingWithC++
         python:
