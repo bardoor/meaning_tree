@@ -19,7 +19,7 @@ public class TestCombinator {
             }
         } else {
             Combinator<TestCodeGroup> comb = new Combinator<>(testCase.getCodeGroups());
-            result = comb.getPermutations();
+            result = new ArrayList<>(comb.getPermutations());
         }
 
         // Убираем запрещенные условия тестирования

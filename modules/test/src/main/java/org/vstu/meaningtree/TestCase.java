@@ -58,9 +58,10 @@ public class TestCase {
                 mainCode = testCode;
             } else if (testCode.getType().equals(TestCodeType.ALTERNATIVE)) {
                 if (!alternatives.containsKey(testCode.getLanguage())) {
-                    alternatives.put(testCode.getLanguage(), new TestCodeGroup(testCode.getLanguage()));
+                    alternatives.put(testCode.getLanguage(), new TestCodeGroup(testCode.getLanguage(), testCode));
+                } else {
+                    alternatives.get(testCode.getLanguage()).add(testCode);
                 }
-                alternatives.get(testCode.getLanguage()).add(testCode);
             } else {
                 if (alternatives.containsKey(testCode.getLanguage())) {
                     throw new RuntimeException("В тест кейсе язык " + testCode.getLanguage() + " должен состоять только из альтернатив");
