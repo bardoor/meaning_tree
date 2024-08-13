@@ -6,6 +6,8 @@ import org.vstu.meaningtree.nodes.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
+import java.util.Objects;
+
 public abstract class UserType extends Type {
     private final Identifier _name;
 
@@ -38,5 +40,10 @@ public abstract class UserType extends Type {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _name);
     }
 }

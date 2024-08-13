@@ -4,9 +4,23 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ArrayType extends PlainCollectionType {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ArrayType arrayType = (ArrayType) o;
+        return Objects.equals(_shape, arrayType._shape);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _shape);
+    }
+
     private final Shape _shape;
 
     public ArrayType(Type itemType, int dimensionCount) {

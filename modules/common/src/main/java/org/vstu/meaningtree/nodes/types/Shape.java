@@ -1,12 +1,14 @@
 package org.vstu.meaningtree.nodes.types;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Node;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-public class Shape {
+public class Shape extends Node {
     // Количество измерений
     private final int _dimensionCount;
     // Размер каждого измерения
@@ -45,5 +47,18 @@ public class Shape {
 
     public List<Expression> getDimensions() {
         return _dimensions;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Shape shape = (Shape) o;
+        return _dimensionCount == shape._dimensionCount && Objects.equals(_dimensions, shape._dimensions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_dimensionCount, _dimensions);
     }
 }

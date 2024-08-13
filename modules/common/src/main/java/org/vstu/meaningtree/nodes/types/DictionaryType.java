@@ -2,6 +2,8 @@ package org.vstu.meaningtree.nodes.types;
 
 import org.vstu.meaningtree.nodes.Type;
 
+import java.util.Objects;
+
 public class DictionaryType extends Type implements Generic {
     private final Type _keyType;
     private final Type _valueType;
@@ -27,5 +29,18 @@ public class DictionaryType extends Type implements Generic {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DictionaryType that = (DictionaryType) o;
+        return Objects.equals(_keyType, that._keyType) && Objects.equals(_valueType, that._valueType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _keyType, _valueType);
     }
 }
