@@ -894,10 +894,10 @@ group: Other
 
 
     case: TupleComprehension
-        python:
+        main python:
             func((i for i in range(1, 100) if i < 50))
         python:
-            func((i for i in range(1, 100) if i < 50))
+            func([i for i in range(1, 100) if i < 50])
 
 
 group: StructuresOOP
