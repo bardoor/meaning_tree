@@ -113,8 +113,15 @@ public class JavaLanguage extends Language {
             case "constructor_declaration" -> fromConstructorDeclarationTSNode(node);
             case "this" -> fromThisTSNode(node);
             case "character_literal" -> fromCharacterLiteralTSNode(node);
+            case "do_statement" -> fromDoStatementTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Node fromDoStatementTSNode(TSNode node) {
+        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+        Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
+        return new DoWhileLoop(condition, body);
     }
 
     private CharacterLiteral fromCharacterLiteralTSNode(TSNode node) {

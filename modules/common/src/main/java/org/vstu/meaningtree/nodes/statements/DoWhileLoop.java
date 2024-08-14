@@ -3,7 +3,7 @@ package org.vstu.meaningtree.nodes.statements;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
-public class DoWhileLoop extends Statement implements HasBodyStatement {
+public class DoWhileLoop extends Loop {
     protected final Expression condition;
     protected Statement body;
 

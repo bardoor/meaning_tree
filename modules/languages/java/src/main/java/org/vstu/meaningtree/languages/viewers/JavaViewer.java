@@ -125,8 +125,54 @@ public class JavaViewer extends Viewer {
             case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
             case ExpressionSequence expressionSequence -> toString(expressionSequence);
             case CharacterLiteral characterLiteral -> toString(characterLiteral);
+            case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(DoWhileLoop doWhileLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("do");
+
+        if (_openBracketOnSameLine) {
+            builder.append(" {\n");
+        }
+        else {
+            builder.append("\n").append(indent("{\n"));
+        }
+
+        List<Node> nodes = new ArrayList<>();
+        Statement body = doWhileLoop.getBody();
+        if (body instanceof CompoundStatement) {
+            nodes.addAll(Arrays.asList(((CompoundStatement) body).getNodes()));
+        }
+        else {
+            nodes.add(body);
+        }
+
+        increaseIndentLevel();
+        for (Node node : nodes) {
+            builder
+                    .append(indent(toString(node)))
+                    .append("\n");
+        }
+        decreaseIndentLevel();
+
+        if (_openBracketOnSameLine) {
+            builder.append("} ");
+        }
+        else {
+            builder.append("}\n");
+        }
+
+        builder.append(
+                "while %s;".formatted(
+                        toString(doWhileLoop.getCondition())
+                )
+        );
+
+        return builder.toString();
     }
 
     private String toString(CharacterLiteral characterLiteral) {
