@@ -337,8 +337,8 @@ public class JavaLanguage extends Language {
         return new BreakStatement();
     }
 
-    private ConditionBranch fromSwitchGroupTSNode(TSNode switchGroup) {
-        Expression condition =
+    private CaseBlock fromSwitchGroupTSNode(TSNode switchGroup) {
+        Expression matchValue =
                 (Expression) fromTSNode(switchGroup.getNamedChild(0).getNamedChild(0));
 
         List<Node> statements = new ArrayList<>();
@@ -346,16 +346,24 @@ public class JavaLanguage extends Language {
             statements.add(fromTSNode(switchGroup.getNamedChild(i)));
         }
 
-        CompoundStatement body = new CompoundStatement(statements);
-        return new ConditionBranch(condition, body);
+        CaseBlock caseBlock;
+        if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
+            statements.removeLast();
+            caseBlock = new BasicCaseBlock(matchValue, new CompoundStatement(statements));
+        }
+        else {
+            caseBlock = new FallthroughCaseBlock(matchValue, new CompoundStatement(statements));
+        }
+
+        return caseBlock;
     }
 
     private Node fromSwitchExpressionTSNode(TSNode switchNode) {
-        Expression condition =
+        Expression matchValue =
                 (Expression) fromTSNode(switchNode.getChildByFieldName("condition").getNamedChild(0));
 
-        Statement defaultCase = null;
-        List<ConditionBranch> cases = new ArrayList<>();
+        DefaultCaseBlock defaultCaseBlock = null;
+        List<CaseBlock> cases = new ArrayList<>();
 
         TSNode switchBlock = switchNode.getChildByFieldName("body");
         for (int i = 0; i < switchBlock.getNamedChildCount(); i++) {
@@ -369,15 +377,18 @@ public class JavaLanguage extends Language {
                     statements.add(fromTSNode(switchGroup.getNamedChild(j)));
                 }
 
-                defaultCase = new CompoundStatement(statements);
+                if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
+                    statements.removeLast();
+                }
+                defaultCaseBlock = new DefaultCaseBlock(new CompoundStatement(statements));
             }
             else {
-                ConditionBranch caseBlock = fromSwitchGroupTSNode(switchGroup);
+                CaseBlock caseBlock = fromSwitchGroupTSNode(switchGroup);
                 cases.add(caseBlock);
             }
         }
 
-        return new SwitchStatement(condition, cases, defaultCase);
+        return new SwitchStatement(matchValue, cases, defaultCaseBlock);
     }
 
     private MethodDefinition fromMethodDeclarationTSNode(TSNode node) {

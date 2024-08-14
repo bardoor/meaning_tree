@@ -176,14 +176,16 @@ public class PythonLanguage extends Language {
     private Node fromMatchStatement(TSNode node) {
         Expression target = (Expression) fromTSNode(node.getChildByFieldName("subject"));
         node = node.getChildByFieldName("body");
-        List<ConditionBranch> branches = new ArrayList<>();
-        Statement defaultBranch = null;
+        List<CaseBlock> branches = new ArrayList<>();
+        DefaultCaseBlock defaultBranch = null;
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             TSNode alternative = node.getNamedChild(i);
             Expression condition;
             VariableDeclaration newDecl = null;
             if (alternative.getNamedChild(0).getNamedChildCount() == 0) {
-                defaultBranch = (Statement) fromTSNode(alternative.getChildByFieldName("consequence"));
+                defaultBranch = new DefaultCaseBlock(
+                        (Statement) fromTSNode(alternative.getChildByFieldName("consequence"))
+                );
                 continue;
             } else if (alternative.getNamedChild(0).getNamedChild(0).getType().equals("as_pattern")) {
                 condition = (Expression) fromTSNode(alternative.getNamedChild(0).getNamedChild(0).getNamedChild(0).getNamedChild(0));
@@ -196,7 +198,7 @@ public class PythonLanguage extends Language {
             if (newDecl != null) {
                 compoundStatement.insert(0, newDecl);
             }
-            branches.add(new ConditionBranch(condition, compoundStatement));
+            branches.add(new BasicCaseBlock(condition, compoundStatement));
         }
         return new SwitchStatement(target, branches, defaultBranch);
     }

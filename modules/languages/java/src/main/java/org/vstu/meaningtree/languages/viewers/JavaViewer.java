@@ -411,19 +411,22 @@ public class JavaViewer extends Viewer {
         return "null";
     }
 
-    private String toStringCaseBlock(Statement caseBlock) {
+    private String toStringCaseBlock(CaseBlock caseBlock) {
         StringBuilder builder = new StringBuilder();
 
         Statement caseBlockBody;
-        if (caseBlock instanceof ConditionBranch conditionBranch) {
+        if (caseBlock instanceof MatchValueCaseBlock mvcb) {
             builder.append("case ");
-            builder.append(toString(conditionBranch.getCondition()));
+            builder.append(toString(mvcb.getMatchValue()));
             builder.append(":");
-            caseBlockBody = conditionBranch.getBody();
+            caseBlockBody = mvcb.getBody();
+        }
+        else if (caseBlock instanceof DefaultCaseBlock dcb) {
+            builder.append("default:");
+            caseBlockBody = dcb.getBody();
         }
         else {
-            builder.append("default:");
-            caseBlockBody = caseBlock;
+            throw new IllegalStateException("Unsupported case block type: " + caseBlock.getClass());
         }
 
         List<Node> nodesList;
@@ -448,12 +451,20 @@ public class JavaViewer extends Viewer {
             }
 
             increaseIndentLevel();
+
             for (Node node : nodesList) {
                 builder
                         .append(indent(toString(node)))
                         .append("\n");
             }
-            builder.deleteCharAt(builder.length() - 1);
+
+            if (caseBlock instanceof BasicCaseBlock || caseBlock instanceof DefaultCaseBlock) {
+                builder.append(indent("break;"));
+            }
+            else {
+                builder.deleteCharAt(builder.length() - 1);
+            }
+
             decreaseIndentLevel();
 
             if (_bracketsAroundCaseBranches) {
@@ -481,14 +492,9 @@ public class JavaViewer extends Viewer {
         }
 
         increaseIndentLevel();
-        for (ConditionBranch caseBlock : switchStatement.getCases()) {
+        for (CaseBlock caseBlock : switchStatement.getCases()) {
             builder
                     .append(indent(toStringCaseBlock(caseBlock)))
-                    .append("\n");
-        }
-        if (switchStatement.hasDefaultCase()) {
-            builder
-                    .append(indent(toStringCaseBlock(switchStatement.getDefaultCase())))
                     .append("\n");
         }
         decreaseIndentLevel();
