@@ -997,9 +997,16 @@ public class JavaViewer extends Viewer {
             // if (a > b) {
             //     max = a;
             // }
-            builder
-                    .append(_openBracketOnSameLine ? " " : "\n")
-                    .append(toString(compStmt));
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compStmt));
+            }
+            else {
+                builder
+                        .append("\n")
+                        .append(indent(toString(compStmt)));
+            }
         }
         else {
             // В случае если тело ветки не блок кода, то добавляем отступ
@@ -1044,7 +1051,9 @@ public class JavaViewer extends Viewer {
 
         builder.append("if ");
         List<ConditionBranch> branches = stmt.getBranches();
-        builder.append(toString(branches.getFirst())).append("\n");
+        builder
+                .append(toString(branches.getFirst()))
+                .append("\n");
 
         for (ConditionBranch branch : branches.subList(1, branches.size())) {
             builder
@@ -1063,8 +1072,16 @@ public class JavaViewer extends Viewer {
                         .append(toString(innerIfStmt));
             }
             else if (elseBranch instanceof CompoundStatement innerCompStmt) {
-                builder.append(_openBracketOnSameLine ? " " : "\n");
-                builder.append(toString(innerCompStmt));
+                if (_openBracketOnSameLine) {
+                    builder
+                            .append(" ")
+                            .append(toString(innerCompStmt));
+                }
+                else {
+                    builder
+                            .append("\n")
+                            .append(indent(toString(innerCompStmt)));
+                }
             }
             else {
                 builder
