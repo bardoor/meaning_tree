@@ -149,8 +149,8 @@ public class PythonViewer extends Viewer {
     }
 
     private String returnToString(ReturnStatement returnStmt) {
-        Optional<Expression> expression = returnStmt.getExpression();
-        return expression.map(value -> "return " + toString(value)).orElse("return;");
+        Expression expression = returnStmt.getExpression();
+        return (expression != null) ? "return %s".formatted(toString(expression)) : "return";
     }
 
     private String identifierToString(Identifier identifier) {

@@ -270,8 +270,8 @@ public class JavaViewer extends Viewer {
     }
 
     private String toString(ReturnStatement returnStatement) {
-        Optional<Expression> expression = returnStatement.getExpression();
-        return expression.map(value -> "return " + toString(value) + ";").orElse("return;");
+        Expression expression = returnStatement.getExpression();
+        return (expression != null) ? "return %s;".formatted(toString(expression)) : "return;";
     }
 
     private String toString(ArrayInitializer initializer) {

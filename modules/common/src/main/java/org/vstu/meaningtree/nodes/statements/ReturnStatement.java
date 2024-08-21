@@ -1,9 +1,8 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
-
-import java.util.Optional;
 
 public class ReturnStatement extends Statement {
     private final Expression _expr;
@@ -21,7 +20,8 @@ public class ReturnStatement extends Statement {
         throw new UnsupportedOperationException();
     }
 
-    public Optional<Expression> getExpression() {
-        return Optional.ofNullable(_expr);
+    @Nullable
+    public Expression getExpression() {
+        return _expr;
     }
 }
