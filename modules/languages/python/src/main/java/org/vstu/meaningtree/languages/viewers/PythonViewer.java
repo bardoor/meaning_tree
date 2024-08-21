@@ -352,11 +352,32 @@ public class PythonViewer extends Viewer {
         } else if (stmt instanceof SwitchStatement switchStmt) {
             tab = tab.up();
             builder.append(String.format("match %s:\n", toString(switchStmt.getTargetExpression())));
-            for (ConditionBranch caseBranch : switchStmt.getCases()) {
-                builder.append(String.format("%scase %s:\n%s\n", tab, toString(caseBranch.getCondition()), toString(caseBranch.getBody(), tab)));
-            }
-            if (switchStmt.hasDefaultCase()) {
-                builder.append(String.format("%scase _:\n%s\n", tab, toString(switchStmt.getDefaultCase(), tab)));
+            for (CaseBlock caseBranch : switchStmt.getCases()) {
+                switch (caseBranch) {
+                    case BasicCaseBlock basicCaseBlock -> {
+                        builder.append(
+                                String.format(
+                                        "%scase %s:\n%s\n",
+                                        tab,
+                                        toString(basicCaseBlock.getMatchValue()),
+                                        toString(basicCaseBlock.getBody(), tab)
+                                )
+                        );
+                    }
+                    case FallthroughCaseBlock fallthroughCaseBlock -> {
+                        throw new UnsupportedOperationException("Cannot translate fallthrough case branches");
+                    }
+                    case DefaultCaseBlock defaultCaseBlock -> {
+                        builder.append(
+                                String.format(
+                                        "%scase _:\n%s\n",
+                                        tab,
+                                        toString(defaultCaseBlock.getBody(), tab)
+                                )
+                        );
+                    }
+                    default -> throw new IllegalStateException("Unexpected case block: " + caseBranch.getClass());
+                }
             }
         } else if (stmt instanceof InfiniteLoop infLoop) {
             builder.append("while True:\n");

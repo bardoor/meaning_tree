@@ -3,23 +3,45 @@ package org.vstu.meaningtree.nodes.statements;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class SwitchStatement extends Statement {
     private final Expression _targetExpression;
-    private final List<ConditionBranch> _cases;
-    private Statement _defaultCase;
+    private final List<CaseBlock> _cases;
+    private final DefaultCaseBlock _defaultCase;
 
-    public SwitchStatement(Expression targetExpression, List<ConditionBranch> cases, Statement defaultCase) {
+    public SwitchStatement(Expression targetExpression,
+                            List<CaseBlock> cases) {
         _targetExpression = targetExpression;
-        _cases = new ArrayList<>(cases);
-        _defaultCase = defaultCase;
+        _cases = List.copyOf(cases);
+        // Возможно, не имеет смысла делать возвращаемое значение типа Optional,
+        // но хочется фиксировать, что этот метод может вернуть null
+        _defaultCase = findDefaultCase(_cases).orElse(null);
     }
 
-    public SwitchStatement(Expression targetExpression, List<ConditionBranch> cases) {
-        this(targetExpression, cases, null);
+    public SwitchStatement(Expression targetExpression,
+                           List<CaseBlock> cases,
+                           DefaultCaseBlock defaultCaseBlock) {
+        this(targetExpression, Stream.concat(cases.stream(), Stream.of(defaultCaseBlock)).toList());
+    }
+
+    public Optional<DefaultCaseBlock> findDefaultCase(List<CaseBlock> cases) {
+        DefaultCaseBlock defaultCaseBlock = null;
+
+        boolean found = false;
+        for (CaseBlock caseBlock : cases) {
+            if (found && caseBlock instanceof DefaultCaseBlock) {
+                throw new IllegalArgumentException("Switch cannot have several default branches");
+            }
+
+            if (caseBlock instanceof DefaultCaseBlock dcb) {
+                defaultCaseBlock = dcb;
+                found = true;
+            }
+        }
+
+        return Optional.ofNullable(defaultCaseBlock);
     }
 
     @Override
@@ -31,11 +53,11 @@ public class SwitchStatement extends Statement {
         return _targetExpression;
     }
 
-    public List<ConditionBranch> getCases() {
-        return new ArrayList<>(_cases);
+    public List<CaseBlock> getCases() {
+        return List.copyOf(_cases);
     }
 
-    public Statement getDefaultCase() {
+    public DefaultCaseBlock getDefaultCase() {
         if (!hasDefaultCase()) {
             throw new RuntimeException("Switch has not default case");
         }
@@ -46,14 +68,17 @@ public class SwitchStatement extends Statement {
         return _defaultCase != null;
     }
 
+    public List<FallthroughCaseBlock> getFallthroughCaseBlocks() {
+        return _cases
+                .stream()
+                .filter(caseBlock -> caseBlock instanceof FallthroughCaseBlock)
+                .map(caseBlock -> (FallthroughCaseBlock) caseBlock)
+                .toList();
+    }
+
     public void makeBodyCompound() {
-        if (hasDefaultCase()) {
-            if (!(getDefaultCase() instanceof CompoundStatement)) {
-                _defaultCase = new CompoundStatement(getDefaultCase());
-            }
-        }
-        for (ConditionBranch branch : _cases) {
-            branch.makeBodyCompound();
+        for (CaseBlock caseBlock : _cases) {
+            caseBlock.makeBodyCompound();
         }
     }
 }

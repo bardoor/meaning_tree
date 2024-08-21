@@ -125,8 +125,54 @@ public class JavaViewer extends Viewer {
             case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
             case ExpressionSequence expressionSequence -> toString(expressionSequence);
             case CharacterLiteral characterLiteral -> toString(characterLiteral);
+            case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(DoWhileLoop doWhileLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("do");
+
+        if (_openBracketOnSameLine) {
+            builder.append(" {\n");
+        }
+        else {
+            builder.append("\n").append(indent("{\n"));
+        }
+
+        List<Node> nodes = new ArrayList<>();
+        Statement body = doWhileLoop.getBody();
+        if (body instanceof CompoundStatement) {
+            nodes.addAll(Arrays.asList(((CompoundStatement) body).getNodes()));
+        }
+        else {
+            nodes.add(body);
+        }
+
+        increaseIndentLevel();
+        for (Node node : nodes) {
+            builder
+                    .append(indent(toString(node)))
+                    .append("\n");
+        }
+        decreaseIndentLevel();
+
+        if (_openBracketOnSameLine) {
+            builder.append("} ");
+        }
+        else {
+            builder.append("}\n");
+        }
+
+        builder.append(
+                "while %s;".formatted(
+                        toString(doWhileLoop.getCondition())
+                )
+        );
+
+        return builder.toString();
     }
 
     private String toString(CharacterLiteral characterLiteral) {
@@ -411,19 +457,22 @@ public class JavaViewer extends Viewer {
         return "null";
     }
 
-    private String toStringCaseBlock(Statement caseBlock) {
+    private String toStringCaseBlock(CaseBlock caseBlock) {
         StringBuilder builder = new StringBuilder();
 
         Statement caseBlockBody;
-        if (caseBlock instanceof ConditionBranch conditionBranch) {
+        if (caseBlock instanceof MatchValueCaseBlock mvcb) {
             builder.append("case ");
-            builder.append(toString(conditionBranch.getCondition()));
+            builder.append(toString(mvcb.getMatchValue()));
             builder.append(":");
-            caseBlockBody = conditionBranch.getBody();
+            caseBlockBody = mvcb.getBody();
+        }
+        else if (caseBlock instanceof DefaultCaseBlock dcb) {
+            builder.append("default:");
+            caseBlockBody = dcb.getBody();
         }
         else {
-            builder.append("default:");
-            caseBlockBody = caseBlock;
+            throw new IllegalStateException("Unsupported case block type: " + caseBlock.getClass());
         }
 
         List<Node> nodesList;
@@ -448,12 +497,20 @@ public class JavaViewer extends Viewer {
             }
 
             increaseIndentLevel();
+
             for (Node node : nodesList) {
                 builder
                         .append(indent(toString(node)))
                         .append("\n");
             }
-            builder.deleteCharAt(builder.length() - 1);
+
+            if (caseBlock instanceof BasicCaseBlock || caseBlock instanceof DefaultCaseBlock) {
+                builder.append(indent("break;"));
+            }
+            else {
+                builder.deleteCharAt(builder.length() - 1);
+            }
+
             decreaseIndentLevel();
 
             if (_bracketsAroundCaseBranches) {
@@ -481,14 +538,9 @@ public class JavaViewer extends Viewer {
         }
 
         increaseIndentLevel();
-        for (ConditionBranch caseBlock : switchStatement.getCases()) {
+        for (CaseBlock caseBlock : switchStatement.getCases()) {
             builder
                     .append(indent(toStringCaseBlock(caseBlock)))
-                    .append("\n");
-        }
-        if (switchStatement.hasDefaultCase()) {
-            builder
-                    .append(indent(toStringCaseBlock(switchStatement.getDefaultCase())))
                     .append("\n");
         }
         decreaseIndentLevel();
@@ -945,9 +997,16 @@ public class JavaViewer extends Viewer {
             // if (a > b) {
             //     max = a;
             // }
-            builder
-                    .append(_openBracketOnSameLine ? " " : "\n")
-                    .append(toString(compStmt));
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compStmt));
+            }
+            else {
+                builder
+                        .append("\n")
+                        .append(indent(toString(compStmt)));
+            }
         }
         else {
             // В случае если тело ветки не блок кода, то добавляем отступ
@@ -992,7 +1051,9 @@ public class JavaViewer extends Viewer {
 
         builder.append("if ");
         List<ConditionBranch> branches = stmt.getBranches();
-        builder.append(toString(branches.getFirst())).append("\n");
+        builder
+                .append(toString(branches.getFirst()))
+                .append("\n");
 
         for (ConditionBranch branch : branches.subList(1, branches.size())) {
             builder
@@ -1011,8 +1072,16 @@ public class JavaViewer extends Viewer {
                         .append(toString(innerIfStmt));
             }
             else if (elseBranch instanceof CompoundStatement innerCompStmt) {
-                builder.append(_openBracketOnSameLine ? " " : "\n");
-                builder.append(toString(innerCompStmt));
+                if (_openBracketOnSameLine) {
+                    builder
+                            .append(" ")
+                            .append(toString(innerCompStmt));
+                }
+                else {
+                    builder
+                            .append("\n")
+                            .append(indent(toString(innerCompStmt)));
+                }
             }
             else {
                 builder

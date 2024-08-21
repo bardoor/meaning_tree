@@ -78,11 +78,11 @@ public class PythonSpecialNodeTransformations {
             } else if (node instanceof SwitchStatement switchStmt) {
                 //TODO: it is correct (continue usage) in programming languages?
                 switchStmt.makeBodyCompound();
-                for (ConditionBranch branch : switchStmt.getCases()) {
+                for (CaseBlock branch : switchStmt.getCases()) {
                     _prepend_continue_with_expression((CompoundStatement) branch.getBody(), update);
                 }
                 if (switchStmt.hasDefaultCase()) {
-                    _prepend_continue_with_expression((CompoundStatement) switchStmt.getDefaultCase(), update);
+                    _prepend_continue_with_expression((CompoundStatement) switchStmt.getDefaultCase().getBody(), update);
                 }
             } else if (node instanceof HasBodyStatement hasBodyStmt) {
                 hasBodyStmt.makeBodyCompound();
