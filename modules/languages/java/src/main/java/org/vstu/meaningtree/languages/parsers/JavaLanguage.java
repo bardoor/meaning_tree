@@ -18,21 +18,15 @@ import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
+import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
-import org.vstu.meaningtree.nodes.math.AddOp;
-import org.vstu.meaningtree.nodes.math.DivOp;
-import org.vstu.meaningtree.nodes.math.MulOp;
-import org.vstu.meaningtree.nodes.math.SubOp;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.types.Class;
-import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
-import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
-import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
-import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
+import org.vstu.meaningtree.nodes.unary.*;
 
 import javax.swing.plaf.nimbus.State;
 import java.io.File;
@@ -928,7 +922,9 @@ public class JavaLanguage extends Language {
         return switch (getCodePiece(operation)) {
             case "!" -> new NotOp(argument);
             case "~" -> new InversionOp(argument);
-            case null, default -> throw new UnsupportedOperationException();
+            case "-" -> new UnaryMinusOp(argument);
+            case "+" -> new UnaryPlusOp(argument);
+            default -> throw new UnsupportedOperationException();
         };
     }
 
@@ -942,6 +938,7 @@ public class JavaLanguage extends Language {
             case "-" -> new SubOp(left, right);
             case "*" -> new MulOp(left, right);
             case "/" -> new DivOp(left, right);
+            case "%" -> new ModOp(left, right);
             case "<" -> new LtOp(left, right);
             case ">" -> new GtOp(left, right);
             case "==" -> new EqOp(left, right);

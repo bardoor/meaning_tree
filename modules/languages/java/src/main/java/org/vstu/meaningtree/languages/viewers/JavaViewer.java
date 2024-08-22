@@ -20,10 +20,7 @@ import org.vstu.meaningtree.nodes.math.*;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.unary.PostfixDecrementOp;
-import org.vstu.meaningtree.nodes.unary.PostfixIncrementOp;
-import org.vstu.meaningtree.nodes.unary.PrefixDecrementOp;
-import org.vstu.meaningtree.nodes.unary.PrefixIncrementOp;
+import org.vstu.meaningtree.nodes.unary.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,6 +51,8 @@ public class JavaViewer extends Viewer {
             case IntegerLiteral l -> toString(l);
             case StringLiteral l -> toString(l);
             case SelfReference selfReference -> toString(selfReference);
+            case UnaryMinusOp unaryMinusOp -> toString(unaryMinusOp);
+            case UnaryPlusOp unaryPlusOp -> toString(unaryPlusOp);
             case AddOp op -> toString(op);
             case SubOp op -> toString(op);
             case MulOp op -> toString(op);
@@ -128,6 +127,14 @@ public class JavaViewer extends Viewer {
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    public String toString(UnaryPlusOp unaryPlusOp) {
+        return "+" + toString(unaryPlusOp.getArgument());
+    }
+
+    public String toString(UnaryMinusOp unaryMinusOp) {
+        return "-" + toString(unaryMinusOp.getArgument());
     }
 
     private String toString(DoWhileLoop doWhileLoop) {
@@ -299,12 +306,7 @@ public class JavaViewer extends Viewer {
 
     private String toString(IndexExpression indexExpression) {
         Expression arrayName = indexExpression.getExpr();
-
-        if (!(arrayName instanceof Identifier)) {
-            throw new IllegalStateException("Expected array name to be identifier");
-        }
-
-        String name = toString((Identifier) arrayName);
+        String name = toString(arrayName);
         String index = toString(indexExpression.getIndex());
         return "%s[%s]".formatted(name, index);
     }
@@ -483,8 +485,18 @@ public class JavaViewer extends Viewer {
             nodesList = List.of(caseBlockBody);
         }
 
+        // Внутри case веток нельзя объявлять переменные, нужно обернуть их скобками,
+        // поэтому проверяем наличие деклараций переменных
+        boolean hasDeclarationInside = false;
+        for (Node node : nodesList) {
+            if (node instanceof VariableDeclaration) {
+                hasDeclarationInside = true;
+                break;
+            }
+        }
+
         if (!nodesList.isEmpty()) {
-            if (_bracketsAroundCaseBranches) {
+            if (_bracketsAroundCaseBranches || hasDeclarationInside) {
                 if (_openBracketOnSameLine) {
                     builder.append(" {\n");
                 }
@@ -513,7 +525,7 @@ public class JavaViewer extends Viewer {
 
             decreaseIndentLevel();
 
-            if (_bracketsAroundCaseBranches) {
+            if (_bracketsAroundCaseBranches || hasDeclarationInside) {
                 builder
                         .append("\n")
                         .append(indent("}"));
@@ -917,8 +929,15 @@ public class JavaViewer extends Viewer {
     public String toString(VariableDeclaration stmt) {
         StringBuilder builder = new StringBuilder();
 
-        String declarationType = toString(stmt.getType());
-        builder.append(declarationType).append(" ");
+        Type declarationType = stmt.getType();
+        if (declarationType instanceof UnknownType) {
+            declarationType = JavaTypeGuesser.guessType(stmt);
+        }
+
+        String type = toString(declarationType);
+        builder
+                .append(type)
+                .append(" ");
 
         for (VariableDeclarator varDecl : stmt.getDeclarators()) {
             builder.append(toString(varDecl)).append(", ");
