@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.languages.viewers;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Contract;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
@@ -35,15 +35,44 @@ public class JavaViewer extends Viewer {
     private int _indentLevel;
     private final boolean _openBracketOnSameLine;
     private final boolean _bracketsAroundCaseBranches;
+    private final boolean _autoVariableDeclaration;
 
-    public JavaViewer(int indentSpaceCount, boolean openBracketOnSameLine, boolean bracketsAroundCaseBranches) {
+    private Scope _currentScope;
+
+    private void enterNewScope() {
+        _currentScope = new Scope(_currentScope);
+    }
+
+    private void leaveScope() {
+        Scope parentScope = _currentScope.getParentScope();
+        if (parentScope == null) {
+            throw new RuntimeException("No parent scope found");
+        }
+        _currentScope = parentScope;
+    }
+
+    private void addVariableToCurrentScope(@NotNull SimpleIdentifier variableName, Type type) {
+        _currentScope.addVariable(variableName, type);
+    }
+
+    private void addMethodToCurrentScope(@NotNull SimpleIdentifier methodName, Type returnType) {
+        _currentScope.addMethod(methodName, returnType);
+    }
+
+    public JavaViewer(int indentSpaceCount,
+                      boolean openBracketOnSameLine,
+                      boolean bracketsAroundCaseBranches,
+                      boolean autoVariableDeclaration
+    ) {
         _indentation = " ".repeat(indentSpaceCount);
         _indentLevel = 0;
         _openBracketOnSameLine = openBracketOnSameLine;
         _bracketsAroundCaseBranches = bracketsAroundCaseBranches;
+        _currentScope = new Scope();
+        _autoVariableDeclaration = autoVariableDeclaration;
     }
 
-    public JavaViewer() { this(4, true, false); }
+    public JavaViewer() { this(4, true, false, false); }
 
     @Override
     public String toString(Node node) {
@@ -270,6 +299,11 @@ public class JavaViewer extends Viewer {
 
         for (AssignmentStatement stmt : multipleAssignmentStatement.getStatements()) {
             builder.append(toString(stmt)).append("\n");
+        }
+
+        // Удаляем последний перевод строки
+        if (builder.length() > 1) {
+            builder.deleteCharAt(builder.length() - 1);
         }
 
         return builder.toString();
@@ -842,7 +876,23 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(AssignmentStatement stmt) {
-        return "%s;".formatted(toString(stmt.getAugmentedOperator(), stmt.getLValue(), stmt.getRValue()));
+        AugmentedAssignmentOperator assignmentOperator = stmt.getAugmentedOperator();
+        Expression leftValue = stmt.getLValue();
+        Expression rightValue = stmt.getRValue();
+
+        if (leftValue instanceof SimpleIdentifier identifier
+                && assignmentOperator == AugmentedAssignmentOperator.NONE) {
+            Type variableType = _currentScope.getVariableType(identifier);
+            if (variableType == null && _autoVariableDeclaration) {
+                Type possibleType = JavaTypeGuesser.guessType(rightValue, _currentScope);
+                String typeName = toString(possibleType);
+                String variableName = toString(identifier);
+                _currentScope.addVariable(identifier, possibleType);
+                return "%s %s = %s;".formatted(typeName, variableName, toString(rightValue));
+            }
+        }
+
+        return "%s;".formatted(toString(assignmentOperator, leftValue, rightValue));
     }
 
     private String toString(Type type) {

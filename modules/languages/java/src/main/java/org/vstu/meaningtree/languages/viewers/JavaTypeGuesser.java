@@ -4,6 +4,8 @@ import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.comparison.BinaryComparison;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
+import org.vstu.meaningtree.nodes.identifiers.Identifier;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.literals.StringLiteral;
@@ -15,22 +17,21 @@ import java.util.List;
 
 public class JavaTypeGuesser {
 
-    public static Type guessType(VariableDeclaration variableDeclaration) {
-        return guessType(variableDeclaration.getDeclarators());
+    public static Type guessType(VariableDeclaration variableDeclaration, Scope scope) {
+        return guessType(List.of(variableDeclaration.getDeclarators()), scope);
     }
 
-    public static Type guessType(VariableDeclarator... variableDeclarators) {
-        if (variableDeclarators.length == 0) {
+    public static Type guessType(List<VariableDeclarator> declarators, Scope scope) {
+        if (declarators.isEmpty()) {
             throw new IllegalArgumentException("No declarators found");
         }
 
         List<Type> guessedTypes = new ArrayList<>();
 
-        for (VariableDeclarator variableDeclarator : variableDeclarators) {
-            Expression rvalue = variableDeclarator.getRValue();
-            if (rvalue != null) {
-                guessedTypes.add(guessType(rvalue));
-            }
+        for (VariableDeclarator variableDeclarator : declarators) {
+            variableDeclarator.getRValue().ifPresent(
+                    expression -> guessedTypes.add(guessType(expression, scope))
+            );
         }
 
         // В случае, если хотя бы у одного выражения не получилось определить тип
@@ -63,26 +64,28 @@ public class JavaTypeGuesser {
         return guessedType;
     }
 
-    public static Type guessType(Expression expression) {
+    public static Type guessType(Expression expression, Scope scope) {
         return switch (expression) {
-            case UnaryExpression unaryExpression -> guessType(unaryExpression);
+            case UnaryExpression unaryExpression -> guessType(unaryExpression, scope);
             case BinaryComparison binaryComparison -> guessType(binaryComparison);
-            case BinaryExpression binaryExpression -> guessType(binaryExpression);
+            case BinaryExpression binaryExpression -> guessType(binaryExpression, scope);
             case IntegerLiteral integerLiteral -> guessType(integerLiteral);
             case FloatLiteral floatLiteral -> guessType(floatLiteral);
             case StringLiteral stringLiteral -> guessType(stringLiteral);
-            case TernaryOperator ternaryOperator -> guessType(ternaryOperator);
-            case ParenthesizedExpression parenthesizedExpression -> guessType(parenthesizedExpression.getExpression());
+            case TernaryOperator ternaryOperator -> guessType(ternaryOperator, scope);
+            case ParenthesizedExpression parenthesizedExpression -> guessType(parenthesizedExpression.getExpression(), scope);
             case CastTypeExpression castTypeExpression -> castTypeExpression.getCastType();
+            case Identifier identifier -> guessType(identifier, scope);
+            case FunctionCall functionCall -> guessType(functionCall, scope);
             default -> new UnknownType();
         };
     }
 
-    private static Type guessType(TernaryOperator ternaryOperator) {
+    private static Type guessType(TernaryOperator ternaryOperator, Scope scope) {
         // Для упрощения определения типа, достаточно преобразовать тернарник в
         // любой бинарный оператор, т.к. правила вывода типов будут одинаковы
         AddOp addOp = new AddOp(ternaryOperator.getThenExpr(), ternaryOperator.getElseExpr());
-        return guessType(addOp);
+        return guessType(addOp, scope);
     }
 
     private static Type guessType(StringLiteral stringLiteral) {
@@ -101,13 +104,37 @@ public class JavaTypeGuesser {
         return new BooleanType();
     }
 
-    private static Type guessType(UnaryExpression unaryExpression) {
-        return guessType(unaryExpression.getArgument());
+    private static Type guessType(UnaryExpression unaryExpression, Scope scope) {
+        Expression expression = unaryExpression.getArgument();
+        if (expression instanceof SimpleIdentifier identifier) {
+            Type possibleType = scope.getVariableType(identifier);
+            return (possibleType == null) ? new UnknownType() : possibleType;
+        }
+        return guessType(expression, scope);
     }
 
-    public static Type guessType(BinaryExpression binaryExpression) {
-        Type leftType = guessType(binaryExpression.getLeft());
-        Type rightType = guessType(binaryExpression.getRight());
+    private static Type guessType(Identifier identifier, Scope scope) {
+        if (identifier instanceof SimpleIdentifier simpleIdentifier) {
+            Type possibleType = scope.getVariableType(simpleIdentifier);
+            return (possibleType == null) ? new UnknownType() : possibleType;
+        }
+
+        return new UnknownType();
+    }
+
+    private static Type guessType(FunctionCall functionCall, Scope scope) {
+        Identifier identifier = functionCall.getFunctionName();
+        if (identifier instanceof SimpleIdentifier simpleIdentifier) {
+            Type possibleType = scope.getMethodReturnType(simpleIdentifier);
+            return (possibleType == null) ? new UnknownType() : possibleType;
+        }
+
+        return new UnknownType();
+    }
+
+    private static Type guessType(BinaryExpression binaryExpression, Scope scope) {
+        Type leftType = guessType(binaryExpression.getLeft(), scope);
+        Type rightType = guessType(binaryExpression.getRight(), scope);
 
         if (leftType instanceof UnknownType
                 || rightType instanceof UnknownType) {
