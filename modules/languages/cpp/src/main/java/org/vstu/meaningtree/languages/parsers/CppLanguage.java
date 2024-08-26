@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages.parsers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
@@ -7,6 +8,10 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.AssignmentExpression;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.declarations.Declaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
@@ -16,7 +21,7 @@ import org.vstu.meaningtree.nodes.literals.Literal;
 import org.vstu.meaningtree.nodes.literals.NumericLiteral;
 import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
-import org.vstu.meaningtree.nodes.types.UserType;
+import org.vstu.meaningtree.nodes.types.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +40,7 @@ public class CppLanguage extends Language {
         _userTypes = new HashMap<>();
     }
 
+    @NotNull
     public MeaningTree getMeaningTree(String code) {
         _code = code;
 
@@ -59,9 +65,9 @@ public class CppLanguage extends Language {
             case "expression_statement" -> fromExprStatement(node);
             //case "binary_expression" -> fromBinaryExpression(node);
             case "assignment_expression" -> fromAssignmentExpression(node);
-            //case "primitive_type" -> fromPrimitiveType(node);
-            //case "init_declarator" -> fromInitDeclarators(node);
-            //case "declaration" -> fromDeclaration(node);
+            case "primitive_type" -> fromPrimitiveType(node);
+            case "sized_type_specifier" -> fromSizedTypeSpecifier(node);
+            case "declaration" -> fromDeclaration(node);
             case "identifier" -> fromIdentifier(node);
             case "number_literal" -> fromNumberLiteral(node);
 
@@ -69,12 +75,67 @@ public class CppLanguage extends Language {
         };
     }
 
-    private Node fromIdentifier(@NotNull TSNode node) {
+    @NotNull
+    private Type fromSizedTypeSpecifier(@NotNull TSNode node) {
+        String type = getCodePiece(node);
+
+        if (type.matches(".*(long|int|short|unsigned).*")) {
+            return getNumericType(type);
+        } else {
+            throw new UnsupportedOperationException(String.format("Can't parse sized type %s this code:\n%s", node.getType(), getCodePiece(node)));
+        }
+    }
+
+    @NotNull
+    private NumericType getNumericType(@NotNull String type) {
+        boolean isUnsigned = false;
+        int size = 32;
+
+        if (type.contains("unsigned")) {
+            isUnsigned = true;
+        }
+
+        if (type.contains("long")) {
+            size = 2 * StringUtils.countMatches(type, "long");
+        } else if (type.contains("short")) {
+            size = 16;
+        }
+
+        return new IntType(size, isUnsigned);
+    }
+
+
+    @NotNull
+    private Type fromPrimitiveType(@NotNull TSNode node) {
+        String typeName = getCodePiece(node);
+        return switch (typeName) {
+            case "int" -> new IntType();
+            case "double", "float" -> new FloatType();
+            case "char", "w_char" -> new CharacterType();
+            case "bool" -> new BooleanType();
+            case "void" -> new VoidType();
+            default -> throw new UnsupportedOperationException(String.format("Can't parse type in %s this code:\n%s", node.getType(), getCodePiece(node)));
+        };
+    }
+
+    @NotNull
+    private VariableDeclaration fromDeclaration(@NotNull TSNode node) {
+        Type type = (Type) fromTSNode(node.getChildByFieldName("type"));
+        TSNode declarator = node.getChildByFieldName("declarator");
+
+        // TODO: пофиксить чтоб работало не только для SimpleIdentifier
+        SimpleIdentifier identifier = (SimpleIdentifier) fromTSNode(declarator.getChildByFieldName("declarator"));
+        Expression value = (Expression) fromTSNode(declarator.getChildByFieldName("value"));
+        return new VariableDeclaration(type, new VariableDeclarator(identifier, value));
+    }
+
+    @NotNull
+    private SimpleIdentifier fromIdentifier(@NotNull TSNode node) {
         return new SimpleIdentifier(getCodePiece(node));
     }
 
     @NotNull
-    private Node fromAssignmentExpression(@NotNull TSNode node) {
+    private AssignmentExpression fromAssignmentExpression(@NotNull TSNode node) {
         String varName = getCodePiece(node.getChildByFieldName("left"));
         SimpleIdentifier identifier = new SimpleIdentifier(varName);
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
@@ -92,6 +153,7 @@ public class CppLanguage extends Language {
         }
     }
 
+    @NotNull
     private Node fromTranslationUnit(@NotNull TSNode node) {
         return fromTSNode(node.getChild(0));
     }
