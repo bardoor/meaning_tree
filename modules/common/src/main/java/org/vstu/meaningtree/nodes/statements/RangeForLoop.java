@@ -58,15 +58,15 @@ public class RangeForLoop extends ForLoop {
         return _range.getType();
     }
 
-    public Optional<Expression> getStart() {
+    public Expression getStart() {
         return _range.getStart();
     }
 
-    public Optional<Expression> getStop() {
+    public Expression getStop() {
         return _range.getStop();
     }
 
-    public Optional<Expression> getStep() {
+    public Expression getStep() {
         return _range.getStep();
     }
 

@@ -1,13 +1,18 @@
 package org.vstu.meaningtree.nodes;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.literals.IntegerLiteral;
 
 import java.util.Objects;
-import java.util.Optional;
 
 public class Range extends Expression {
+    @Nullable
     private final Expression _start;
+
+    @Nullable
     private final Expression _stop;
+
+    @Nullable
     private final Expression _step;
     private final boolean _isExcludingStart;
     private final boolean _isExcludingEnd;
@@ -18,9 +23,9 @@ public class Range extends Expression {
         UNKNOWN,
     }
 
-    public Range(Expression start,
-                 Expression stop,
-                 Expression step,
+    public Range(@Nullable Expression start,
+                 @Nullable Expression stop,
+                 @Nullable Expression step,
                  boolean isExcludingStart,
                  boolean isExcludingEnd) {
         _start = start;
@@ -42,16 +47,19 @@ public class Range extends Expression {
         return new Range(null, stop);
     }
 
-    public Optional<Expression> getStart() {
-        return Optional.ofNullable(_start);
+    @Nullable
+    public Expression getStart() {
+        return _start;
     }
 
-    public Optional<Expression> getStop() {
-        return Optional.ofNullable(_stop);
+    @Nullable
+    public Expression getStop() {
+        return _stop;
     }
 
-    public Optional<Expression> getStep() {
-        return Optional.ofNullable(_step);
+    @Nullable
+    public Expression getStep() {
+        return _step;
     }
 
     public boolean isExcludingStart() {

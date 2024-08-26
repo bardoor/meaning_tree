@@ -124,9 +124,13 @@ public class PythonViewer extends Viewer {
         if (compr instanceof RangeBasedComprehension rangeBased) {
             Range range = rangeBased.getRange();
 
-            Expression start = range.getStart().orElseThrow();
-            Expression stop = range.getStop().orElseThrow();
-            Expression step = range.getStep().orElseThrow();
+            Expression start = range.getStart();
+            Expression stop = range.getStop();
+            Expression step = range.getStep();
+
+            if (start == null || stop == null || step == null) {
+                throw new NoSuchElementException(String.format("start: %s, stop: %s, step:%s", start, stop, step));
+            }
 
             comprehension.append(
                     String.format(
@@ -321,9 +325,13 @@ public class PythonViewer extends Viewer {
     private String loopToString(Statement stmt, Tab tab) {
         StringBuilder builder = new StringBuilder();
         if (stmt instanceof RangeForLoop rangeFor) {
-            Expression start = rangeFor.getStart().orElseThrow();
-            Expression stop = rangeFor.getStop().orElseThrow();
-            Expression step = rangeFor.getStep().orElseThrow();
+            Expression start = rangeFor.getStart();
+            Expression stop = rangeFor.getStop();
+            Expression step = rangeFor.getStep();
+
+            if (start == null || stop == null || step == null) {
+                throw new NoSuchElementException(String.format("start: %s, stop: %s, step:%s", start, stop, step));
+            }
 
             builder.append(
                     String.format(
@@ -559,18 +567,21 @@ public class PythonViewer extends Viewer {
     private String rangeToString(Range range) {
         StringBuilder builder = new StringBuilder();
 
-        Optional<Expression> start = range.getStart();
-        start.ifPresent(expression -> builder.append(toString(expression)));
-
+        Expression start = range.getStart();
+        if (start != null) {
+            builder.append(toString(start));
+        }
         builder.append(':');
 
-        Optional<Expression> stop = range.getStop();
-        stop.ifPresent(expression -> builder.append(toString(expression)));
+        Expression stop = range.getStop();
+        if (stop != null) {
+            builder.append(toString(stop));
+        }
 
-        Optional<Expression> step = range.getStep();
-        if (step.isPresent()) {
+        Expression step = range.getStep();
+        if (step != null) {
             builder.append(':');
-            builder.append(toString(step.get()));
+            builder.append(toString(step));
         }
 
         return builder.toString();
