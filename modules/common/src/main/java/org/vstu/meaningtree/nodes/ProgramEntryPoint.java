@@ -1,9 +1,11 @@
 package org.vstu.meaningtree.nodes;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ProgramEntryPoint extends Node {
@@ -17,12 +19,14 @@ public class ProgramEntryPoint extends Node {
     /**
      * Может быть функцией, методом главного класса, либо просто составным оператором (например, как в Python)
      */
-    private final Optional<Node> _entryPointNode;
+    @Nullable
+    private final Node _entryPointNode;
 
     /**
      * Ссылка на главный класс. Он не исключается из body, нужен для удобства разработчиков поддержки для языков
      */
-    private final Optional<ClassDefinition> _mainClass;
+    @Nullable
+    private final ClassDefinition _mainClass;
 
     public ProgramEntryPoint(List<Node> body, ClassDefinition mainClass) {
         this(body, mainClass, null);
@@ -36,10 +40,10 @@ public class ProgramEntryPoint extends Node {
         this(body, null, entryPoint);
     }
 
-    public ProgramEntryPoint(List<Node> body, ClassDefinition mainClass, Node entryPoint) {
+    public ProgramEntryPoint(List<Node> body, @Nullable ClassDefinition mainClass, @Nullable Node entryPoint) {
         _body = body;
-        _mainClass = Optional.ofNullable(mainClass);
-        _entryPointNode = Optional.ofNullable(entryPoint);
+        _mainClass = mainClass;
+        _entryPointNode = entryPoint;
     }
 
     public List<Node> getBody() {
@@ -47,25 +51,19 @@ public class ProgramEntryPoint extends Node {
     }
 
     public ClassDefinition getMainClass() {
-        if (!hasMainClass()) {
-            throw new RuntimeException("Main class is not present");
-        }
-        return _mainClass.get();
+        return Objects.requireNonNull(_mainClass, "Main class is not present");
     }
 
     public boolean hasMainClass() {
-        return _mainClass.isPresent();
+        return _mainClass != null;
     }
 
     public boolean hasEntryPoint() {
-        return _entryPointNode.isPresent();
+        return _entryPointNode != null;
     }
 
     public Node getEntryPoint() {
-        if (!hasEntryPoint()) {
-            throw new RuntimeException("Main class is not present");
-        }
-        return _entryPointNode.get();
+        return Objects.requireNonNull(_entryPointNode, "Main class is not present");
     }
 
     @Override

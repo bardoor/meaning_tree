@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.languages.parsers;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.ParenthesizedExpression;
@@ -28,7 +28,6 @@ import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.types.Class;
 import org.vstu.meaningtree.nodes.unary.*;
 
-import javax.swing.plaf.nimbus.State;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -588,7 +587,8 @@ public class JavaLanguage extends Language {
         return new AssignmentStatement(expression.getLValue(), expression.getRValue());
     }
 
-    private Optional<RangeForLoop> tryMakeRangeForLoop(HasInitialization init,
+    @Nullable
+    private RangeForLoop tryMakeRangeForLoop(HasInitialization init,
                                                 Expression condition,
                                                 Expression update,
                                                 Statement body) {
@@ -649,10 +649,10 @@ public class JavaLanguage extends Language {
 
         if (start != null && stop != null && step != null && loopVariable != null) {
             Range range = new Range(start, stop, step, false, isExcludingEnd);
-            return Optional.of(new RangeForLoop(range, loopVariable, body));
+            return new RangeForLoop(range, loopVariable, body);
         }
 
-        return Optional.empty();
+        return null;
     }
 
     private Loop fromForStatementTSNode(TSNode node) {
@@ -705,9 +705,9 @@ public class JavaLanguage extends Language {
             return new InfiniteLoop(body);
         }
 
-        Optional<RangeForLoop> rangeFor = tryMakeRangeForLoop(init, condition, update, body);
-        if (rangeFor.isPresent()) {
-            return rangeFor.get();
+        RangeForLoop rangeFor = tryMakeRangeForLoop(init, condition, update, body);
+        if (rangeFor != null) {
+            return rangeFor;
         }
 
         return new GeneralForLoop(init, condition, update, body);
