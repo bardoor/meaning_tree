@@ -8,10 +8,7 @@ import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.*;
 import org.vstu.meaningtree.nodes.math.AddOp;
-import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
-import org.vstu.meaningtree.nodes.statements.IfStatement;
+import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
 
@@ -210,6 +207,28 @@ public class HindleyMilner {
     }
 
     @NotNull
+    public static Type inference(@NotNull Range range, @NotNull Scope scope) {
+        var start = range.getStart();
+        if (start != null) {
+            inference(start, scope);
+        }
+
+        var stop = range.getStop();
+        if (stop != null) {
+            inference(range.getStop(), scope);
+        }
+
+        var step = range.getStep();
+        if (step != null) {
+            inference(range.getStep(), scope);
+        }
+
+        // Все, для чего нужен этот метод это обход детей диапазона,
+        // чтобы вывести типы переменных, участвующих в формировании диапазона
+        return new UnknownType();
+    }
+
+    @NotNull
     public static Type inference(@NotNull Expression expression, @NotNull Scope scope) {
         return switch (expression) {
             case Literal literal -> inference(literal);
@@ -220,6 +239,7 @@ public class HindleyMilner {
             case AssignmentExpression assignmentExpression -> inference(assignmentExpression, scope);
             case CompoundComparison compoundComparison -> inference(compoundComparison, scope);
             case TernaryOperator ternaryOperator -> inference(ternaryOperator, scope);
+            case Range range -> inference(range, scope);
             default -> new UnknownType();
             //default -> throw new IllegalStateException("Unexpected expression type: " + expression.getClass());
         };

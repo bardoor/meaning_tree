@@ -1310,10 +1310,10 @@ public class JavaViewer extends Viewer {
             String compOperator = forRangeLoop.isExcludingStop() ? "<" : "<=";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    Long.toString(forRangeLoop.getStartValueAsLong()),
+                    toString(forRangeLoop.getStart()),
                     toString(forRangeLoop.getIdentifier()),
                     compOperator,
-                    Long.toString(forRangeLoop.getStopValueAsLong()),
+                    toString(forRangeLoop.getStop()),
                     getForRangeUpdate(forRangeLoop)
             );
         }
@@ -1322,10 +1322,10 @@ public class JavaViewer extends Viewer {
             String compOperator = forRangeLoop.isExcludingStop() ? ">" : ">=";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    Long.toString(forRangeLoop.getStartValueAsLong()),
+                    toString(forRangeLoop.getStart()),
                     toString(forRangeLoop.getIdentifier()),
                     compOperator,
-                    Long.toString(forRangeLoop.getStopValueAsLong()),
+                    toString(forRangeLoop.getStop()),
                     getForRangeUpdate(forRangeLoop)
             );
         }

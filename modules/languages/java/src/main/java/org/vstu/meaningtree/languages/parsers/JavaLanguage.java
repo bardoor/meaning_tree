@@ -648,7 +648,7 @@ public class JavaLanguage extends Language {
         };
 
         if (start != null && stop != null && step != null && loopVariable != null) {
-            Range range = new Range(start, stop, step, false, isExcludingEnd);
+            Range range = new Range(start, stop, step, false, isExcludingEnd, Range.Type.UNKNOWN);
             return new RangeForLoop(range, loopVariable, body);
         }
 
