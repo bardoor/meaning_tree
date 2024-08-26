@@ -1,9 +1,11 @@
 package org.vstu.meaningtree.nodes.declarations;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class DeclarationArgument extends Declaration {
@@ -19,24 +21,23 @@ public class DeclarationArgument extends Declaration {
     }
 
     private final SimpleIdentifier _name;
-    private final Optional<Expression> _initial;
 
-    public DeclarationArgument(Type type, boolean isListUnpacking, SimpleIdentifier name, Expression initial) {
+    @Nullable
+    private final Expression _initial;
+
+    public DeclarationArgument(Type type, boolean isListUnpacking, SimpleIdentifier name, @Nullable Expression initial) {
         _type = type;
         _isListUnpacking = isListUnpacking;
         _name = name;
-        _initial = Optional.ofNullable(initial);
+        _initial = initial;
     }
 
     public Expression getInitialExpression() {
-        if (!hasInitialExpression()) {
-            throw new RuntimeException("Initial expression isn't present");
-        }
-        return _initial.get();
+        return Objects.requireNonNull(_initial, "Initial expression isn't present");
     }
 
     public boolean hasInitialExpression() {
-        return _initial.isPresent();
+        return _initial != null;
     }
 
     public boolean isListUnpacking() {
