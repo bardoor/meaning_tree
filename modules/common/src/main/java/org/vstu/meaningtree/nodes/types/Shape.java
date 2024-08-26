@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.types;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 
@@ -36,12 +37,13 @@ public class Shape extends Node {
         return _dimensionCount;
     }
 
-    public Optional<Expression> getDimension(int index) {
+    @Nullable
+    public Expression getDimension(int index) {
         try {
-            return Optional.ofNullable(_dimensions.get(index));
+            return _dimensions.get(index);
         }
         catch (IndexOutOfBoundsException exception) {
-            return Optional.empty();
+            return null;
         }
     }
 

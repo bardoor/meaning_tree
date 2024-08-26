@@ -894,8 +894,10 @@ public class JavaViewer extends Viewer {
         for (int i = 0; i < shape.getDimensionCount(); i++) {
             builder.append("[");
 
-            Optional<Expression> dimension = shape.getDimension(i);
-            dimension.ifPresent(expression -> builder.append(toString(expression)));
+            Expression dimension = shape.getDimension(i);
+            if (dimension != null) {
+                builder.append(toString(dimension));
+            }
 
             builder.append("]");
         }
