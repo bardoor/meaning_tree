@@ -27,9 +27,10 @@ public class JavaTypeGuesser {
         List<Type> guessedTypes = new ArrayList<>();
 
         for (VariableDeclarator variableDeclarator : variableDeclarators) {
-            variableDeclarator.getRValue().ifPresent(
-                    expression -> guessedTypes.add(guessType(expression))
-            );
+            Expression rvalue = variableDeclarator.getRValue();
+            if (rvalue != null) {
+                guessedTypes.add(guessType(rvalue));
+            }
         }
 
         // В случае, если хотя бы у одного выражения не получилось определить тип

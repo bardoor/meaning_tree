@@ -399,7 +399,7 @@ public class PythonViewer extends Viewer {
         StringBuilder rValues = new StringBuilder();
         VariableDeclarator[] decls = varDecl.getDeclarators();
 
-        long rValuesCount = Arrays.stream(decls).filter((VariableDeclarator decl) -> decl.hasInitialization() && decl.getRValue().isPresent()).count();
+        long rValuesCount = Arrays.stream(decls).filter((VariableDeclarator decl) -> decl.hasInitialization() && decl.getRValue() != null).count();
 
         for (int i = 0; i < decls.length; i++) {
             lValues.append(toString(decls[i].getIdentifier()));
@@ -407,8 +407,8 @@ public class PythonViewer extends Viewer {
             if (varDecl.getType() != null && !(varDecl.getType() instanceof UnknownType)) {
                 lValues.append(String.format(": %s", typeToString(varDecl.getType())));
             }
-            if (decls[i].hasInitialization() && decls[i].getRValue().isPresent()) {
-                rValues.append(toString(decls[i].getRValue().get()));
+            if (decls[i].hasInitialization() && decls[i].getRValue() != null) {
+                rValues.append(toString(decls[i].getRValue()));
             } else if (rValuesCount > 0) {
                 rValues.append("None");
             }

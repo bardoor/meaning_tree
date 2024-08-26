@@ -612,10 +612,9 @@ public class JavaLanguage extends Language {
                 VariableDeclarator declarator = declarators.getFirst();
                 loopVariable = declarator.getIdentifier();
 
-                Optional<Expression> wrappedExpression = declarator.getRValue();
-                if (wrappedExpression.isPresent()) {
-                    Expression expression = wrappedExpression.get();
-                    if (expression instanceof IntegerLiteral start_) {
+                Expression wrappedExpression = declarator.getRValue();
+                if (wrappedExpression != null) {
+                    if (wrappedExpression instanceof IntegerLiteral start_) {
                         start = start_;
                     }
                 }

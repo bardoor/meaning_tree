@@ -922,9 +922,10 @@ public class JavaViewer extends Viewer {
         builder.append(identifier);
 
         if (varDecl.hasInitialization()) {
-            varDecl.getRValue().ifPresent(init ->
-                    builder.append(" = ").append(toString(init))
-            );
+            Expression rvalue = varDecl.getRValue();
+            if (rvalue != null) {
+                builder.append(" = ").append(toString(rvalue));
+            }
         }
 
         return builder.toString();
