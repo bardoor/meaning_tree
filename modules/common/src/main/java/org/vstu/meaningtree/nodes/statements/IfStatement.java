@@ -1,31 +1,36 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class IfStatement extends Statement {
     private final List<ConditionBranch> _branches;
-    private Optional<Statement> _elseBranch;
 
-    public IfStatement(Expression condition, Statement thenBranch, Statement elseBranch) {
-        _elseBranch = Optional.ofNullable(elseBranch);
+    @Nullable
+    private Statement _elseBranch;
+
+    public IfStatement(Expression condition, @Nullable Statement thenBranch, @Nullable Statement elseBranch) {
+        _elseBranch = elseBranch;
         _branches = new ArrayList<>();
         _branches.add(new ConditionBranch(condition, thenBranch));
     }
 
-    public IfStatement(List<ConditionBranch> branches, Statement elseBranch) {
-        _elseBranch = Optional.ofNullable(elseBranch);
+    public IfStatement(List<ConditionBranch> branches, @Nullable Statement elseBranch) {
+        _elseBranch = elseBranch;
         _branches = new ArrayList<>(branches);
     }
 
     public IfStatement(Expression condition, Statement thenBranch) {
         _branches = new ArrayList<>();
         _branches.add(new ConditionBranch(condition, thenBranch));
-        _elseBranch = Optional.empty();
+        _elseBranch = null;
     }
 
     public List<ConditionBranch> getBranches() {
@@ -33,15 +38,11 @@ public class IfStatement extends Statement {
     }
 
     public Statement getElseBranch() {
-        if (!hasElseBranch()) {
-            throw new RuntimeException("If statement does not have else branch");
-        }
-
-        return _elseBranch.get();
+        return Objects.requireNonNull(_elseBranch, "If statement does not have else branch");
     }
 
     public boolean hasElseBranch() {
-        return _elseBranch.isPresent();
+        return _elseBranch != null;
     }
 
     @Override
@@ -54,9 +55,9 @@ public class IfStatement extends Statement {
             builder.append(String.format("%s -- %s;\n", _id, branch.getId()));
         }
 
-        if (_elseBranch.isPresent()) {
-            builder.append(_elseBranch.get().generateDot());
-            builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _elseBranch.get().getId(), "else"));
+        if (_elseBranch != null) {
+            builder.append(_elseBranch.generateDot());
+            builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _elseBranch.getId(), "else"));
         }
 
         return builder.toString();
@@ -65,7 +66,7 @@ public class IfStatement extends Statement {
     public void makeBodyCompound() {
         if (hasElseBranch()) {
             if (!(getElseBranch() instanceof CompoundStatement)) {
-                _elseBranch = Optional.of(new CompoundStatement(getElseBranch()));
+                _elseBranch = new CompoundStatement(getElseBranch());
             }
         }
         for (ConditionBranch branch : _branches) {
