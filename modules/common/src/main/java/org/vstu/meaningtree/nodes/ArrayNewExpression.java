@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.types.Shape;
 
 import java.util.*;
@@ -26,8 +27,9 @@ public class ArrayNewExpression extends NewExpression {
         return _shape.getDimensionCount();
     }
 
-    public Optional<ArrayInitializer> getInitializer() {
-        return Optional.ofNullable(_initializer);
+    @Nullable
+    public ArrayInitializer getInitializer() {
+        return _initializer;
     }
 
     @Override

@@ -1,6 +1,8 @@
 package org.vstu.meaningtree.languages.viewers;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
@@ -353,9 +355,9 @@ public class JavaViewer extends Viewer {
         String dimensions = toString(arrayNewExpression.getShape());
         builder.append(dimensions);
 
-        Optional<ArrayInitializer> optionalInitializer = arrayNewExpression.getInitializer();
-        if (optionalInitializer.isPresent()) {
-            String initializer = toString(optionalInitializer.get());
+        ArrayInitializer optionalInitializer = arrayNewExpression.getInitializer();
+        if (optionalInitializer != null) {
+            String initializer = toString(optionalInitializer);
             builder.append(" ").append(initializer);
         }
 

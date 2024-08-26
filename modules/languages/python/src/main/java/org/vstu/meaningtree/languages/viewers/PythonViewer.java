@@ -624,26 +624,30 @@ public class PythonViewer extends Viewer {
     }
 
     private String callsToString(Node node) {
-        if (node instanceof ArrayNewExpression newExpr) {
-            if (newExpr.getInitializer().isPresent()) {
-                return arrayInitializerToString(newExpr.getInitializer().get());
-            } else {
-                Shape shape = newExpr.getShape();
-                String result = _getListComprehensionByDimension(1,
-                        shape.getDimension(shape.getDimensionCount() - 1).get(), String.format("%s()", toString(newExpr.getType())));
-                for (int i = shape.getDimensionCount() - 2; i >= 0; i--) {
-                    result = _getListComprehensionByDimension(shape.getDimensionCount() - i, shape.getDimension(i).get(), result);
+        switch (node) {
+            case ArrayNewExpression newExpr -> {
+                if (newExpr.getInitializer() != null) {
+                    return arrayInitializerToString(newExpr.getInitializer());
+                } else {
+                    Shape shape = newExpr.getShape();
+                    String result = _getListComprehensionByDimension(1,
+                            shape.getDimension(shape.getDimensionCount() - 1), String.format("%s()", toString(newExpr.getType())));
+                    for (int i = shape.getDimensionCount() - 2; i >= 0; i--) {
+                        result = _getListComprehensionByDimension(shape.getDimensionCount() - i, shape.getDimension(i), result);
+                    }
+                    return result;
                 }
-                return result;
             }
-        } else if (node instanceof ObjectNewExpression newExpr) {
-            return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
-        } else if (node instanceof FunctionCall funcCall) {
-            return String.format("%s(%s)", toString(funcCall.getFunctionName()), argumentsToString(funcCall.getArguments()));
-        } else if (node instanceof CastTypeExpression cast) {
-            return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));
-        } else {
-            throw new RuntimeException("Not a callable object");
+            case ObjectNewExpression newExpr -> {
+                return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
+            }
+            case FunctionCall funcCall -> {
+                return String.format("%s(%s)", toString(funcCall.getFunctionName()), argumentsToString(funcCall.getArguments()));
+            }
+            case CastTypeExpression cast -> {
+                return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));
+            }
+            case null, default -> throw new RuntimeException("Not a callable object");
         }
     }
 
