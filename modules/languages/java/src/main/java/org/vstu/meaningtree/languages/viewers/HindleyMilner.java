@@ -203,7 +203,10 @@ public class HindleyMilner {
 
     @NotNull
     public static Type inference(@NotNull TernaryOperator ternaryOperator, @NotNull Scope scope) {
-        return null;
+        inference(ternaryOperator.getCondition(), scope);
+        Type thenExprType = inference(ternaryOperator.getThenExpr(), scope);
+        Type elseExprType = inference(ternaryOperator.getElseExpr(), scope);
+        return chooseGeneralType(thenExprType, elseExprType);
     }
 
     @NotNull
@@ -216,6 +219,7 @@ public class HindleyMilner {
             case ParenthesizedExpression parenthesizedExpression -> inference(parenthesizedExpression.getExpression(), scope);
             case AssignmentExpression assignmentExpression -> inference(assignmentExpression, scope);
             case CompoundComparison compoundComparison -> inference(compoundComparison, scope);
+            case TernaryOperator ternaryOperator -> inference(ternaryOperator, scope);
             default -> new UnknownType();
             //default -> throw new IllegalStateException("Unexpected expression type: " + expression.getClass());
         };
