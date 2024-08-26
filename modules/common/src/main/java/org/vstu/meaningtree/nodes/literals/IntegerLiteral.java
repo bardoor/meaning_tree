@@ -13,6 +13,7 @@ public class IntegerLiteral extends NumericLiteral {
     }
 
     private boolean _isLongNumber;
+    private boolean _isUnsigned;
     private final long _value;
     private Representation _repr;
 
@@ -39,8 +40,13 @@ public class IntegerLiteral extends NumericLiteral {
         s = StringUtils.removeStart(s, "0o");
         s = StringUtils.removeStart(s, "0x");
 
-        _isLongNumber = s.endsWith("l");
-        s = StringUtils.removeEnd(s, "l");
+        // В c++ литерал unsigned long может быть записан "75ul" или "75lu"
+        // Поэтому проверяем не окончание строки, а содержание
+        _isUnsigned = s.contains("u");
+        _isLongNumber = s.contains("l");
+        s = StringUtils.remove(s, "l");
+        s = StringUtils.remove(s, "u");
+
         return Long.parseLong(s, base);
     }
 
@@ -81,6 +87,8 @@ public class IntegerLiteral extends NumericLiteral {
     public boolean isLong() {
         return _isLongNumber;
     }
+
+    public boolean isUnsigned() { return _isUnsigned; }
 
     @Override
     public boolean equals(Object o) {
