@@ -1,14 +1,22 @@
 package org.vstu.meaningtree.nodes.comprehensions;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.Objects;
 import java.util.Optional;
 
 public abstract class Comprehension extends Expression {
-    protected Comprehension(ComprehensionItem item, Expression condition) {
+    @NotNull
+    protected final ComprehensionItem _item;
+
+    @Nullable
+    protected final Expression _condition;
+
+    protected Comprehension(@NotNull ComprehensionItem item, @Nullable Expression condition) {
         _item = item;
-        _condition = Optional.ofNullable(condition);
+        _condition = condition;
     }
 
     public interface ComprehensionItem {}
@@ -16,15 +24,12 @@ public abstract class Comprehension extends Expression {
     public record ListItem(Expression value) implements ComprehensionItem {};
     public record SetItem(Expression value) implements ComprehensionItem {};
 
-    protected final ComprehensionItem _item;
-    protected final Optional<Expression> _condition;
-
     public ComprehensionItem getItem() {
         return _item;
     }
 
     public boolean hasCondition() {
-        return _condition.isPresent();
+        return _condition != null;
     }
 
     @Override
@@ -40,11 +45,8 @@ public abstract class Comprehension extends Expression {
         return Objects.hash(_item, _condition);
     }
 
+    @NotNull
     public Expression getCondition() {
-        if (!hasCondition()) {
-            throw new RuntimeException("Comprehension does not have condition");
-        }
-
-        return _condition.get();
+        return Objects.requireNonNull(_condition, "Comprehension does not have condition");
     }
 }
