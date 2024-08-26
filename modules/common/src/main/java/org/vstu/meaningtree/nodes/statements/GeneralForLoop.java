@@ -1,21 +1,26 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.HasInitialization;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
-import java.util.Optional;
-
 public class GeneralForLoop extends ForLoop {
-    private final Optional<HasInitialization> _initializer;
-    private final Optional<Expression> _condition;
-    private final Optional<Expression> _update;
+    @Nullable
+    private final HasInitialization _initializer;
+
+    @Nullable
+    private final Expression _condition;
+
+    @Nullable
+    private final Expression _update;
     private Statement _body;
 
-    public GeneralForLoop(HasInitialization initializer, Expression condition, Expression update, Statement body) {
-        this._initializer = Optional.ofNullable(initializer);
-        this._condition = Optional.ofNullable(condition);
-        this._update = Optional.ofNullable(update);
+    public GeneralForLoop(@Nullable HasInitialization initializer, @Nullable Expression condition,
+                          @Nullable Expression update, Statement body) {
+        this._initializer = initializer;
+        this._condition = condition;
+        this._update = update;
         this._body = body;
     }
 
@@ -27,19 +32,19 @@ public class GeneralForLoop extends ForLoop {
     }
 
     public boolean hasInitializer() {
-        return _initializer.isPresent();
+        return _initializer != null;
     }
 
     public HasInitialization getInitializer() {
         if (!hasInitializer()) {
-            throw new RuntimeException("No initizalier");
+            throw new RuntimeException("No initializer");
         }
 
-        return _initializer.get();
+        return _initializer;
     }
 
     public boolean hasCondition() {
-        return _condition.isPresent();
+        return _condition != null;
     }
 
     public Expression getCondition() {
@@ -47,11 +52,11 @@ public class GeneralForLoop extends ForLoop {
             throw new RuntimeException("No condition");
         }
 
-        return _condition.get();
+        return _condition;
     }
 
     public boolean hasUpdate() {
-        return _update.isPresent();
+        return _update != null;
     }
 
     public Expression getUpdate() {
@@ -59,7 +64,7 @@ public class GeneralForLoop extends ForLoop {
             throw new RuntimeException("No update");
         }
 
-        return _update.get();
+        return _update;
     }
 
     public Statement getBody() {
