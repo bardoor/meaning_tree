@@ -167,7 +167,22 @@ public class PythonLanguage extends Language {
                     step = call.getArguments().get(2);
                     break;
             }
-            return new RangeBasedComprehension(item, leftOfForEach, new Range(start, stop, step, false, true), condition);
+
+            if (step instanceof IntegerLiteral integerLiteral && integerLiteral.getLongValue() == 1L) {
+                return new RangeBasedComprehension(
+                        item,
+                        leftOfForEach,
+                        new Range(start, stop, step, false, true, Range.Type.UP),
+                        condition
+                );
+            }
+
+            return new RangeBasedComprehension(
+                    item,
+                    leftOfForEach,
+                    new Range(start, stop, step, false, true, Range.Type.UNKNOWN),
+                    condition
+            );
         } else {
             return new ContainerBasedComprehension(item, new VariableDeclaration(new UnknownType(), leftOfForEach), rightOfForEach, condition);
         }
@@ -394,7 +409,19 @@ public class PythonLanguage extends Language {
                         step = args.get(2);
                         break;
                 }
-                return new RangeForLoop(new Range(start, stop, step, false, true), left, body);
+                if (step instanceof IntegerLiteral integerLiteral && integerLiteral.getLongValue() == 1L) {
+                    return new RangeForLoop(
+                            new Range(start, stop, step, false, true, Range.Type.UP),
+                            left,
+                            body
+                    );
+                }
+
+                return new RangeForLoop(
+                        new Range(start, stop, step, false, true, Range.Type.UNKNOWN),
+                        left,
+                        body
+                );
             }
             return new ForEachLoop(new VariableDeclaration(new UnknownType(), left), (Expression) right, body);
         } else {
@@ -488,7 +515,7 @@ public class PythonLanguage extends Language {
                 }
             }
         }
-        return new Range(start, stop, step, false, true);
+        return new Range(start, stop, step, false, true, Range.Type.UNKNOWN);
     }
 
     private ReturnStatement fromReturnTSNode(TSNode node) {

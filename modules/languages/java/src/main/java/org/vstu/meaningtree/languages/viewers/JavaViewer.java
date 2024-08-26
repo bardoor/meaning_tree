@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.languages.viewers;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Contract;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
@@ -35,19 +35,61 @@ public class JavaViewer extends Viewer {
     private int _indentLevel;
     private final boolean _openBracketOnSameLine;
     private final boolean _bracketsAroundCaseBranches;
+    private final boolean _autoVariableDeclaration;
 
-    public JavaViewer(int indentSpaceCount, boolean openBracketOnSameLine, boolean bracketsAroundCaseBranches) {
+    private Scope _currentScope;
+    private Scope _typeScope;
+
+    private void enterNewScope() {
+        _currentScope = new Scope(_currentScope);
+        _typeScope = new Scope(_typeScope);
+    }
+
+    private void leaveScope() {
+        Scope parentScope = _currentScope.getParentScope();
+        Scope parentTypeScope = _typeScope.getParentScope();
+        if (parentScope == null) {
+            throw new RuntimeException("No parent scope found");
+        }
+        _currentScope = parentScope;
+        _typeScope = parentTypeScope;
+    }
+
+    private void addVariableToCurrentScope(@NotNull SimpleIdentifier variableName, Type type) {
+        _currentScope.addVariable(variableName, type);
+    }
+
+    private void addMethodToCurrentScope(@NotNull SimpleIdentifier methodName, Type returnType) {
+        _currentScope.addMethod(methodName, returnType);
+    }
+
+    public JavaViewer(int indentSpaceCount,
+                      boolean openBracketOnSameLine,
+                      boolean bracketsAroundCaseBranches,
+                      boolean autoVariableDeclaration
+    ) {
         _indentation = " ".repeat(indentSpaceCount);
         _indentLevel = 0;
         _openBracketOnSameLine = openBracketOnSameLine;
         _bracketsAroundCaseBranches = bracketsAroundCaseBranches;
+        _currentScope = new Scope();
+        _typeScope = new Scope();
+        _autoVariableDeclaration = autoVariableDeclaration;
     }
 
-    public JavaViewer() { this(4, true, false); }
+    public JavaViewer() { this(4, true, false, false); }
 
     @Override
     public String toString(Node node) {
         Objects.requireNonNull(node);
+
+        if (node instanceof Expression expression) {
+            HindleyMilner.inference(expression, _typeScope);
+        }
+        else if (node instanceof Statement statement) {
+            HindleyMilner.inference(statement, _typeScope);
+        }
+
         return switch (node) {
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
@@ -270,6 +312,11 @@ public class JavaViewer extends Viewer {
 
         for (AssignmentStatement stmt : multipleAssignmentStatement.getStatements()) {
             builder.append(toString(stmt)).append("\n");
+        }
+
+        // Удаляем последний перевод строки
+        if (builder.length() > 1) {
+            builder.deleteCharAt(builder.length() - 1);
         }
 
         return builder.toString();
@@ -842,7 +889,27 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(AssignmentStatement stmt) {
-        return "%s;".formatted(toString(stmt.getAugmentedOperator(), stmt.getLValue(), stmt.getRValue()));
+        AugmentedAssignmentOperator assignmentOperator = stmt.getAugmentedOperator();
+        Expression leftValue = stmt.getLValue();
+        Expression rightValue = stmt.getRValue();
+
+        if (leftValue instanceof SimpleIdentifier identifier
+                && assignmentOperator == AugmentedAssignmentOperator.NONE) {
+            Type variableType = _currentScope.getVariableType(identifier);
+            // Objects.requireNonNull(variableType);
+
+            if (variableType == null && _autoVariableDeclaration) {
+                variableType = _typeScope.getVariableType(identifier);
+                Objects.requireNonNull(variableType); // Никогда не будет null...
+
+                String typeName = toString(variableType);
+                String variableName = toString(identifier);
+                addVariableToCurrentScope(identifier, variableType);
+                return "%s %s = %s;".formatted(typeName, variableName, toString(rightValue));
+            }
+        }
+
+        return "%s;".formatted(toString(assignmentOperator, leftValue, rightValue));
     }
 
     private String toString(Type type) {
@@ -918,14 +985,21 @@ public class JavaViewer extends Viewer {
     private String toString(VariableDeclarator varDecl) {
         StringBuilder builder = new StringBuilder();
 
-        String identifier = toString(varDecl.getIdentifier());
-        builder.append(identifier);
 
-        if (varDecl.hasInitialization()) {
-            Expression rvalue = varDecl.getRValue();
-            if (rvalue != null) {
-                builder.append(" = ").append(toString(rvalue));
-            }
+        SimpleIdentifier identifier = varDecl.getIdentifier();
+        Type variableType = new UnknownType();
+        Expression rValue = varDecl.getRValue();
+        if (rValue != null) {
+            variableType = HindleyMilner.inference(rValue, _typeScope);
+        }
+
+        addVariableToCurrentScope(identifier, variableType);
+
+        String identifierName = toString(identifier);
+        builder.append(identifierName);
+
+        if (rValue != null) {
+            builder.append(" = ").append(toString(rValue));
         }
 
         return builder.toString();
@@ -935,10 +1009,6 @@ public class JavaViewer extends Viewer {
         StringBuilder builder = new StringBuilder();
 
         Type declarationType = stmt.getType();
-        if (declarationType instanceof UnknownType) {
-            declarationType = JavaTypeGuesser.guessType(stmt);
-        }
-
         String type = toString(declarationType);
         builder
                 .append(type)
@@ -1240,10 +1310,10 @@ public class JavaViewer extends Viewer {
             String compOperator = forRangeLoop.isExcludingStop() ? "<" : "<=";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    Long.toString(forRangeLoop.getStartValueAsLong()),
+                    toString(forRangeLoop.getStart()),
                     toString(forRangeLoop.getIdentifier()),
                     compOperator,
-                    Long.toString(forRangeLoop.getStopValueAsLong()),
+                    toString(forRangeLoop.getStop()),
                     getForRangeUpdate(forRangeLoop)
             );
         }
@@ -1252,10 +1322,10 @@ public class JavaViewer extends Viewer {
             String compOperator = forRangeLoop.isExcludingStop() ? ">" : ">=";
             return header.formatted(
                     toString(forRangeLoop.getIdentifier()),
-                    Long.toString(forRangeLoop.getStartValueAsLong()),
+                    toString(forRangeLoop.getStart()),
                     toString(forRangeLoop.getIdentifier()),
                     compOperator,
-                    Long.toString(forRangeLoop.getStopValueAsLong()),
+                    toString(forRangeLoop.getStop()),
                     getForRangeUpdate(forRangeLoop)
             );
         }
@@ -1292,10 +1362,18 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(ProgramEntryPoint entryPoint) {
+        List<Node> nodes = entryPoint.getBody();
+        for (var node : nodes) {
+            if (node instanceof Statement statement) {
+                HindleyMilner.inference(statement, _typeScope);
+            }
+        }
+
         StringBuilder builder = new StringBuilder();
-        for (Node node : entryPoint.getBody()) {
+        for (Node node : nodes) {
             builder.append("%s\n".formatted(toString(node)));
         }
+
         return builder.toString();
     }
 

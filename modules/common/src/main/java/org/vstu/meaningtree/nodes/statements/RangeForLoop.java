@@ -41,7 +41,7 @@ public class RangeForLoop extends ForLoop {
                         boolean isExcludingEnd,
                         SimpleIdentifier identifier,
                         Statement body) {
-        this(new Range(start, end, step, isExcludingStart, isExcludingEnd), identifier, body);
+        this(new Range(start, end, step, isExcludingStart, isExcludingEnd, Range.Type.UNKNOWN), identifier, body);
     }
 
     public Range getRange() {

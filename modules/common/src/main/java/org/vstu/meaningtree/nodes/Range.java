@@ -14,8 +14,11 @@ public class Range extends Expression {
 
     @Nullable
     private final Expression _step;
+
     private final boolean _isExcludingStart;
     private final boolean _isExcludingEnd;
+
+    private Range.Type _rangeType;
 
     public enum Type {
         UP,
@@ -27,16 +30,19 @@ public class Range extends Expression {
                  @Nullable Expression stop,
                  @Nullable Expression step,
                  boolean isExcludingStart,
-                 boolean isExcludingEnd) {
+                 boolean isExcludingEnd,
+                 Range.Type rangeType
+    ) {
         _start = start;
         _stop = stop;
         _step = step;
         _isExcludingStart = isExcludingStart;
         _isExcludingEnd = isExcludingEnd;
+        _rangeType = rangeType;
     }
 
     public Range(Expression start, Expression stop) {
-        this(start, stop, null, false, true);
+        this(start, stop, null, false, true, Type.UNKNOWN);
     }
 
     public static Range fromStart(Expression start) {
@@ -71,23 +77,30 @@ public class Range extends Expression {
     }
 
     public Type getType() {
+        if (_rangeType != Type.UNKNOWN) {
+            return _rangeType;
+        }
+
         try {
             long start = getStartValueAsLong();
             long stop = getStopValueAsLong();
             long step = getStepValueAsLong();
 
             if (start < stop && step > 0) {
-                return Type.UP;
+                _rangeType = Type.UP;
             }
             else if (start > stop && step < 0) {
-                return Type.DOWN;
+                _rangeType = Type.DOWN;
             }
-
-            return Type.UNKNOWN;
+            else {
+                _rangeType = Type.UNKNOWN;
+            }
         }
         catch (IllegalStateException exception) {
-            return Type.UNKNOWN;
+            _rangeType = Type.UNKNOWN;
         }
+
+        return _rangeType;
     }
 
     public long getStartValueAsLong() throws IllegalStateException {
