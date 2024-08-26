@@ -1361,12 +1361,44 @@ public class JavaViewer extends Viewer {
         return builder.toString();
     }
 
+    private String makeSimpleJavaProgram(List<Node> nodes) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("package main;\n\n");
+
+        builder.append("public class Main {\n\n");
+        increaseIndentLevel();
+
+        builder.append(
+                indent("public static void main(String[] args) {\n")
+        );
+        increaseIndentLevel();
+
+        for (Node node : nodes) {
+            builder.append(
+                    indent("%s\n".formatted(toString(node)))
+            );
+        }
+        decreaseIndentLevel();
+
+        builder.append(indent("}\n"));
+        decreaseIndentLevel();
+
+        builder.append("}");
+
+        return builder.toString();
+    }
+
     public String toString(ProgramEntryPoint entryPoint) {
         List<Node> nodes = entryPoint.getBody();
         for (var node : nodes) {
             if (node instanceof Statement statement) {
                 HindleyMilner.inference(statement, _typeScope);
             }
+        }
+
+        if (!entryPoint.hasMainClass()) {
+            return makeSimpleJavaProgram(nodes);
         }
 
         StringBuilder builder = new StringBuilder();
