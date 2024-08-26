@@ -488,10 +488,10 @@ group: SimpleExpressionsTest
             x[10, y]
 
         c++:
-            x[10, y];
+            x[10][y];
 
         java:
-            x[10, y];
+            x[10][y];
 
 
 group: ComparisonsTest
@@ -566,10 +566,10 @@ group: ComparisonsTest
             a < b < c and m >= k
 
         java:
-            a < b && b < c && m >= k
+            a < b && b < c && m >= k;
 
         c++:
-            a < b && b < c && m >= k
+            a < b && b < c && m >= k;
 
 
 group: SimpleStatements
@@ -585,6 +585,7 @@ group: SimpleStatements
 
 
     case: MultipleVariableDeclarationWithDifferentType
+        #TODO: синтаксическая ошибка в Python, нельзя указать тип при перечислении переменных
         main python:
             a: int, b: int, c: str = 40, 78, "Hello"
 
@@ -657,7 +658,7 @@ group: SimpleStatements
             a >>= b;
             a <<= b;
             a /= 5;
-            a //= 6;
+            a /= 6;
             a %= t;
             a &= b;
             c |= t;
@@ -672,7 +673,7 @@ group: SimpleStatements
             a >>= b;
             a <<= b;
             a /= 5;
-            a //= 6;
+            a /= 6;
             a %= t;
             a &= b;
             c |= t;
@@ -921,16 +922,18 @@ group: Conditions
                 }
                 c += 1;
             }
-            elif a < b:
+            else if (a < b) {
                 x += 1;
-                if x > 5;
+                if (x > 5) {
                     if (x != 7) {
                         print("alarm");
                     } else {
                         k += 1;
                     }
                     c += 1;
+                }
                 y -= 1;
+            }
 
         c++:
             if (a > b) {
@@ -943,16 +946,18 @@ group: Conditions
                 }
                 c += 1;
             }
-            elif a < b:
+            else if (a < b) {
                 x += 1;
-                if x > 5;
+                if (x > 5) {
                     if (x != 7) {
                         print("alarm");
                     } else {
                         k += 1;
                     }
                     c += 1;
+                }
                 y -= 1;
+            }
 
 
 group: ForLoop
@@ -963,28 +968,28 @@ group: ForLoop
 
         java:
             for (int i = 0; i < 10; i += c) {
-                func(a)
+                func(a);
             }
 
         c++:
             for (int i = 0; i < 10; i += c) {
-                func(a)
+                func(a);
             }
 
 
     case: RangeForLoopWithExpressions
         python:
-            for var in range(a * b * c, dx - 1, 1):
+            for v in range(a * b * c, dx - 1, 1):
                 func(a)
 
         java:
-            for (int var = a * b * c; var < dx - 1; var++) {
-                func(a)
+            for (int v = a * b * c; v < dx - 1; v++) {
+                func(a);
             }
 
         c++:
-            for (int var = a * b * c; var < dx - 1; var++) {
-                func(a)
+            for (int v = a * b * c; v < dx - 1; v++) {
+                func(a);
             }
 
 
@@ -1232,12 +1237,12 @@ group: SwitchStatement
                     test += 3;
                     break;
                 case k:
-                    test += 4
+                    test += 4;
                     break;
                 case m:
-                    test += 5
+                    test += 5;
                     break;
-                case _:
+                default:
                     test = 0;
                     break;
             }
@@ -1251,12 +1256,12 @@ group: SwitchStatement
                     test += 3;
                     break;
                 case k:
-                    test += 4
+                    test += 4;
                     break;
                 case m:
                     test += 5
                     break;
-                case _:
+                default:
                     test = 0;
                     break;
             }
