@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
@@ -15,9 +16,7 @@ public class SwitchStatement extends Statement {
                             List<CaseBlock> cases) {
         _targetExpression = targetExpression;
         _cases = List.copyOf(cases);
-        // Возможно, не имеет смысла делать возвращаемое значение типа Optional,
-        // но хочется фиксировать, что этот метод может вернуть null
-        _defaultCase = findDefaultCase(_cases).orElse(null);
+        _defaultCase = findDefaultCase(_cases);
     }
 
     public SwitchStatement(Expression targetExpression,
@@ -26,7 +25,8 @@ public class SwitchStatement extends Statement {
         this(targetExpression, Stream.concat(cases.stream(), Stream.of(defaultCaseBlock)).toList());
     }
 
-    public Optional<DefaultCaseBlock> findDefaultCase(List<CaseBlock> cases) {
+    @Nullable
+    public DefaultCaseBlock findDefaultCase(List<CaseBlock> cases) {
         DefaultCaseBlock defaultCaseBlock = null;
 
         boolean found = false;
@@ -41,7 +41,7 @@ public class SwitchStatement extends Statement {
             }
         }
 
-        return Optional.ofNullable(defaultCaseBlock);
+        return defaultCaseBlock;
     }
 
     @Override
