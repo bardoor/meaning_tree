@@ -38,17 +38,21 @@ public class JavaViewer extends Viewer {
     private final boolean _autoVariableDeclaration;
 
     private Scope _currentScope;
+    private Scope _typeScope;
 
     private void enterNewScope() {
         _currentScope = new Scope(_currentScope);
+        _typeScope = new Scope(_typeScope);
     }
 
     private void leaveScope() {
         Scope parentScope = _currentScope.getParentScope();
+        Scope parentTypeScope = _typeScope.getParentScope();
         if (parentScope == null) {
             throw new RuntimeException("No parent scope found");
         }
         _currentScope = parentScope;
+        _typeScope = parentTypeScope;
     }
 
     private void addVariableToCurrentScope(@NotNull SimpleIdentifier variableName, Type type) {
@@ -69,6 +73,7 @@ public class JavaViewer extends Viewer {
         _openBracketOnSameLine = openBracketOnSameLine;
         _bracketsAroundCaseBranches = bracketsAroundCaseBranches;
         _currentScope = new Scope();
+        _typeScope = new Scope();
         _autoVariableDeclaration = autoVariableDeclaration;
     }
 
@@ -77,6 +82,14 @@ public class JavaViewer extends Viewer {
     @Override
     public String toString(Node node) {
         Objects.requireNonNull(node);
+
+        if (node instanceof Expression expression) {
+            HindleyMilner.inference(expression, _typeScope);
+        }
+        else if (node instanceof Statement statement) {
+            HindleyMilner.inference(statement, _typeScope);
+        }
+
         return switch (node) {
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
@@ -883,11 +896,15 @@ public class JavaViewer extends Viewer {
         if (leftValue instanceof SimpleIdentifier identifier
                 && assignmentOperator == AugmentedAssignmentOperator.NONE) {
             Type variableType = _currentScope.getVariableType(identifier);
+            // Objects.requireNonNull(variableType);
+
             if (variableType == null && _autoVariableDeclaration) {
-                Type possibleType = JavaTypeGuesser.guessType(rightValue, _currentScope);
-                String typeName = toString(possibleType);
+                variableType = _typeScope.getVariableType(identifier);
+                Objects.requireNonNull(variableType); // Никогда не будет null...
+
+                String typeName = toString(variableType);
                 String variableName = toString(identifier);
-                _currentScope.addVariable(identifier, possibleType);
+                addVariableToCurrentScope(identifier, variableType);
                 return "%s %s = %s;".formatted(typeName, variableName, toString(rightValue));
             }
         }
@@ -968,14 +985,21 @@ public class JavaViewer extends Viewer {
     private String toString(VariableDeclarator varDecl) {
         StringBuilder builder = new StringBuilder();
 
-        String identifier = toString(varDecl.getIdentifier());
-        builder.append(identifier);
 
-        if (varDecl.hasInitialization()) {
-            Expression rvalue = varDecl.getRValue();
-            if (rvalue != null) {
-                builder.append(" = ").append(toString(rvalue));
-            }
+        SimpleIdentifier identifier = varDecl.getIdentifier();
+        Type variableType = new UnknownType();
+        Expression rValue = varDecl.getRValue();
+        if (rValue != null) {
+            variableType = HindleyMilner.inference(rValue, _typeScope);
+        }
+
+        addVariableToCurrentScope(identifier, variableType);
+
+        String identifierName = toString(identifier);
+        builder.append(identifierName);
+
+        if (rValue != null) {
+            builder.append(" = ").append(toString(rValue));
         }
 
         return builder.toString();
@@ -985,10 +1009,6 @@ public class JavaViewer extends Viewer {
         StringBuilder builder = new StringBuilder();
 
         Type declarationType = stmt.getType();
-        if (declarationType instanceof UnknownType) {
-            declarationType = JavaTypeGuesser.guessType(stmt);
-        }
-
         String type = toString(declarationType);
         builder
                 .append(type)
@@ -1342,10 +1362,18 @@ public class JavaViewer extends Viewer {
     }
 
     public String toString(ProgramEntryPoint entryPoint) {
+        List<Node> nodes = entryPoint.getBody();
+        for (var node : nodes) {
+            if (node instanceof Statement statement) {
+                HindleyMilner.inference(statement, _typeScope);
+            }
+        }
+
         StringBuilder builder = new StringBuilder();
-        for (Node node : entryPoint.getBody()) {
+        for (Node node : nodes) {
             builder.append("%s\n".formatted(toString(node)));
         }
+
         return builder.toString();
     }
 

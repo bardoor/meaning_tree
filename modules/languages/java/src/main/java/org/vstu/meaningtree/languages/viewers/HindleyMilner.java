@@ -1,0 +1,309 @@
+package org.vstu.meaningtree.languages.viewers;
+
+import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.comparison.BinaryComparison;
+import org.vstu.meaningtree.nodes.comparison.CompoundComparison;
+import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.literals.*;
+import org.vstu.meaningtree.nodes.logical.*;
+import org.vstu.meaningtree.nodes.math.AddOp;
+import org.vstu.meaningtree.nodes.statements.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.IfStatement;
+import org.vstu.meaningtree.nodes.types.*;
+import org.vstu.meaningtree.nodes.unary.*;
+
+import java.util.List;
+
+public class HindleyMilner {
+
+    @NotNull
+    public static NumericType inference(@NotNull NumericLiteral numericLiteral) {
+        return switch (numericLiteral) {
+            case FloatLiteral floatLiteral -> new FloatType();
+            case IntegerLiteral integerLiteral -> new IntType();
+            default -> throw new IllegalStateException("Unexpected number type: " + numericLiteral);
+        };
+    }
+
+    @NotNull
+    public static Type inference(@NotNull Literal literal) {
+        return switch (literal) {
+            case NumericLiteral numericLiteral -> inference(numericLiteral);
+            case BoolLiteral boolLiteral -> new BooleanType();
+            case StringLiteral stringLiteral -> new StringType();
+            default -> throw new IllegalStateException("Unexpected type: " + literal);
+        };
+    }
+
+    @NotNull
+    public static Type inference(
+            @NotNull SimpleIdentifier identifier,
+            @NotNull Scope scope) {
+        Type inferredType = scope.getVariableType(identifier);
+        if (inferredType == null) {
+            return new UnknownType();
+        }
+
+        return inferredType;
+    }
+
+    @NotNull
+    public static Type chooseGeneralType(Type first, Type second) {
+        if (first instanceof NumericType && second instanceof NumericType) {
+            if (first instanceof FloatType || second instanceof FloatType) {
+                return new FloatType();
+            }
+
+            return new IntType();
+        }
+        else if (first instanceof StringType || second instanceof StringType) {
+            return new StringType();
+        }
+        else if (first instanceof BooleanType && second instanceof BooleanType) {
+            return new BooleanType();
+        }
+
+        return new UnknownType();
+    }
+
+    @NotNull
+    private static List<Expression> expressionChildren(@NotNull Expression expression) {
+        return expression
+                .getChildren()
+                .values()
+                .stream()
+                .map(node -> (Expression) node)
+                .toList();
+    }
+
+    public static void backwardVariableTypeSet(
+            @NotNull Expression expression,
+            @NotNull Scope scope,
+            @NotNull Type type) {
+        List<Expression> children;
+        if (expression instanceof SimpleIdentifier identifier) {
+            children = List.of(identifier);
+        }
+        else {
+            children = expressionChildren(expression);
+        }
+
+        for (Expression childExpression : children) {
+
+            if (childExpression instanceof SimpleIdentifier identifier) {
+                Type possibleType = scope.getVariableType(identifier);
+
+                if (possibleType == null || possibleType instanceof UnknownType) {
+                    scope.changeVariableType(identifier, type);
+                }
+                // Добавить что-то про обобщение типов
+                else if (possibleType instanceof IntType
+                        && type instanceof FloatType) {
+                    scope.changeVariableType(identifier, type);
+                }
+            }
+            else {
+                backwardVariableTypeSet(childExpression, scope, type);
+            }
+        }
+    }
+
+    @NotNull
+    public static Type inferenceOperandsTypeByExpressionType(@NotNull Expression expression) {
+        return switch (expression) {
+            case LongCircuitOrOp longCircuitOrOp -> new BooleanType();
+            case LongCircuitAndOp longCircuitAndOp -> new BooleanType();
+            case ShortCircuitOrOp shortCircuitOrOp -> new BooleanType();
+            case ShortCircuitAndOp shortCircuitAndOp -> new BooleanType();
+            default -> new UnknownType();
+        };
+    }
+
+    @NotNull
+    public static Type inference(@NotNull BinaryExpression binaryExpression, @NotNull Scope scope) {
+        Expression left = binaryExpression.getLeft();
+        Expression right = binaryExpression.getRight();
+
+        Type leftType = inference(left, scope);
+        Type rightType = inference(right, scope);
+
+        if (leftType instanceof UnknownType && rightType instanceof UnknownType) {
+            if (binaryExpression instanceof BinaryComparison) {
+                leftType = rightType = new FloatType();
+            }
+            else {
+                leftType = rightType = inferenceOperandsTypeByExpressionType(binaryExpression);
+            }
+
+            if (!(leftType instanceof UnknownType)) {
+                backwardVariableTypeSet(left, scope, leftType);
+                backwardVariableTypeSet(right, scope, rightType);
+            }
+        }
+        else if (leftType instanceof UnknownType) {
+            backwardVariableTypeSet(left, scope, rightType);
+            leftType = rightType;
+        }
+        else if (rightType instanceof UnknownType) {
+            backwardVariableTypeSet(left, scope, leftType);
+            rightType = leftType;
+        }
+
+        if (binaryExpression instanceof BinaryComparison) {
+            return new BooleanType();
+        }
+
+        Type generalType = chooseGeneralType(leftType, rightType);
+        if (left instanceof SimpleIdentifier leftIdentifier) {
+            backwardVariableTypeSet(leftIdentifier, scope, generalType);
+        }
+        if (right instanceof SimpleIdentifier rightIdentifier) {
+            backwardVariableTypeSet(rightIdentifier, scope, generalType);
+        }
+
+        return generalType;
+    }
+
+    @NotNull
+    public static Type inference(@NotNull UnaryExpression unaryExpression, @NotNull Scope scope) {
+        Expression argument = unaryExpression.getArgument();
+        Type operandType = inference(argument, scope);
+
+        if (unaryExpression instanceof NotOp) {
+            // Тип операнда игнорируется?..
+            Type expressionType = new BooleanType();
+            backwardVariableTypeSet(argument, scope, expressionType);
+            return expressionType;
+        }
+        else if (unaryExpression instanceof PostfixDecrementOp
+                || unaryExpression instanceof PostfixIncrementOp
+                || unaryExpression instanceof PrefixDecrementOp
+                || unaryExpression instanceof PrefixIncrementOp
+                || unaryExpression instanceof UnaryMinusOp
+                || unaryExpression instanceof UnaryPlusOp) {
+            if (operandType instanceof UnknownType) {
+                Type expressionType = new FloatType();
+                backwardVariableTypeSet(argument, scope, expressionType);
+                return expressionType;
+            }
+            return operandType;
+        }
+
+        throw new IllegalArgumentException("Unsupported unary expression type: " + unaryExpression.getClass());
+    }
+
+    @NotNull
+    public static Type inference(@NotNull AssignmentExpression assignmentExpression, @NotNull Scope scope) {
+        AddOp addOp = new AddOp(assignmentExpression.getLValue(), assignmentExpression.getRValue());
+        return inference(addOp, scope);
+    }
+
+    @NotNull
+    public static Type inference(@NotNull TernaryOperator ternaryOperator, @NotNull Scope scope) {
+        return null;
+    }
+
+    @NotNull
+    public static Type inference(@NotNull Expression expression, @NotNull Scope scope) {
+        return switch (expression) {
+            case Literal literal -> inference(literal);
+            case SimpleIdentifier identifier -> inference(identifier, scope);
+            case UnaryExpression unaryExpression -> inference(unaryExpression, scope);
+            case BinaryExpression binaryExpression -> inference(binaryExpression, scope);
+            case ParenthesizedExpression parenthesizedExpression -> inference(parenthesizedExpression.getExpression(), scope);
+            case AssignmentExpression assignmentExpression -> inference(assignmentExpression, scope);
+            case CompoundComparison compoundComparison -> inference(compoundComparison, scope);
+            default -> new UnknownType();
+            //default -> throw new IllegalStateException("Unexpected expression type: " + expression.getClass());
+        };
+    }
+
+    public static void inference(@NotNull AssignmentStatement assignmentStatement, @NotNull Scope scope) {
+        AssignmentExpression assignmentExpression = new AssignmentExpression(
+                assignmentStatement.getLValue(),
+                assignmentStatement.getRValue(),
+                assignmentStatement.getAugmentedOperator()
+        );
+        inference(assignmentExpression, scope);
+    }
+
+    public static void inference(@NotNull CompoundStatement compoundStatement, @NotNull Scope scope) {
+
+        for (var node : compoundStatement.getNodes()) {
+
+            if (node instanceof Statement statement) {
+                inference(statement, scope);
+            }
+            else if (node instanceof Expression expression) {
+                inference(expression, scope);
+            }
+        }
+    }
+
+    public static void inference(@NotNull IfStatement ifStatement, @NotNull Scope scope) {
+
+        for (var conditionBranch : ifStatement.getBranches()) {
+            inference(conditionBranch, scope);
+        }
+
+        if (ifStatement.hasElseBranch()) {
+            inference(ifStatement.getElseBranch(), scope);
+        }
+    }
+
+    public static Type inference(@NotNull CompoundComparison compoundComparison, @NotNull Scope scope) {
+
+        for (var binaryComparison : compoundComparison.getComparisons()) {
+            inference(binaryComparison, scope);
+        }
+
+        return new BooleanType();
+    }
+
+    public static void inference(@NotNull Statement statement, @NotNull Scope scope) {
+        inference(List.of(statement), scope);
+    }
+
+    public static void inference(@NotNull List<Statement> statements, @NotNull Scope scope) {
+
+        for (var statement : statements) {
+
+            if (statement instanceof ExpressionStatement expressionStatement) {
+                inference(expressionStatement.getExpression(), scope);
+            }
+            else if (statement instanceof AssignmentStatement assignmentStatement) {
+                inference(assignmentStatement, scope);
+            }
+            else if (statement instanceof CompoundStatement compoundStatement) {
+                inference(compoundStatement, scope);
+            }
+            else if (statement instanceof IfStatement ifStatement) {
+                inference(ifStatement, scope);
+            }
+            else {
+                List<Node> nodes = statement
+                        .getChildren()
+                        .values()
+                        .stream()
+                        .map(obj -> (Node) obj)
+                        .toList();
+
+                for (var node : nodes) {
+
+                    if (node instanceof Expression expression) {
+                        inference(expression, scope);
+                    }
+                    else if (node instanceof Statement s) {
+                        inference(s, scope);
+                    }
+                    else {
+                        throw new IllegalArgumentException("Unsupported node type: " + node.getClass());
+                    }
+                }
+            }
+        }
+    }
+}
