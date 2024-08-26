@@ -818,8 +818,9 @@ public class JavaLanguage extends Language {
 
         List<Node> body = List.of(packageDeclaration, classDefinition);
 
-        Optional<MethodDefinition> mainMethod = classDefinition.findMethod("main");
-        return mainMethod.map(methodDefinition -> new ProgramEntryPoint(body, classDefinition, methodDefinition)).orElseGet(() -> new ProgramEntryPoint(body, classDefinition));
+        MethodDefinition mainMethod = classDefinition.findMethod("main");
+        return (mainMethod != null) ? new ProgramEntryPoint(body, classDefinition, mainMethod)
+                                    : new ProgramEntryPoint(body, classDefinition);
     }
 
     private ProgramEntryPoint fromProgramTSNode(TSNode node) {
@@ -837,9 +838,9 @@ public class JavaLanguage extends Language {
                     && classDefinition.getModifiers().contains(Modifier.PUBLIC)) {
                 mainClass = classDefinition;
 
-                Optional<MethodDefinition> m = mainClass.findMethod("main");
-                if (m.isPresent()) {
-                    mainMethod = m.get();
+                MethodDefinition m = mainClass.findMethod("main");
+                if (m != null) {
+                    mainMethod = m;
                 }
             }
         }
