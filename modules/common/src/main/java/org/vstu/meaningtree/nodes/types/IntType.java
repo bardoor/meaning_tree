@@ -12,25 +12,25 @@ public class IntType extends NumericType {
     }
 
     /**
-     * @param isUnsigned флаг, является ли тип беззнаковым.
      * Создаёт целочисленный тип размером 32
+     * @param isUnsigned флаг, является ли тип беззнаковым.
      */
     public IntType(boolean isUnsigned) {
         this(32, isUnsigned);
     }
 
     /**
-     * @param size размер типа.
      * Создаёт знаковый целочисленный тип
+     * @param size размер типа.
      */
     public IntType(int size) {
         this(size, false);
     }
 
     /**
-     * @param size размер типа.
-     * @param isUnsigned флаг, является ли тип беззнаковым.
      * Создаёт целочисленный тип
+     * @param isUnsigned флаг, является ли тип беззнаковым.
+     * @param size размер типа.
      */
     public IntType(int size, boolean isUnsigned) {
         this.isUnsigned = isUnsigned;
