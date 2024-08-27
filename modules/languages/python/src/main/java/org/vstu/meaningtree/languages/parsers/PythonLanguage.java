@@ -20,6 +20,7 @@ import org.vstu.meaningtree.nodes.definitions.*;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
@@ -268,7 +269,8 @@ public class PythonLanguage extends Language {
     }
 
     private FunctionCall fromFunctionCall(TSNode node) {
-        Node ident = fromTSNode(node.getChildByFieldName("function"));
+        TSNode tsNode = node.getChildByFieldName("function");
+        Node ident = fromTSNode(tsNode);
         if (ident instanceof MemberAccess memAccess) {
             ident = memAccess.toScopedIdentifier();
         }
@@ -282,6 +284,15 @@ public class PythonLanguage extends Language {
             Expression expr = (Expression) fromTSNode(arguments.getNamedChild(i));
             exprs.add(expr);
         }
+
+        if (getCodePiece(tsNode).equals("print")) {
+            return new PrintValues.PrintValuesBuilder()
+                    .endWithNewline()
+                    .separateBySpace()
+                    .setValues(exprs)
+                    .build();
+        }
+
         return new FunctionCall((Identifier) ident, exprs);
     }
 

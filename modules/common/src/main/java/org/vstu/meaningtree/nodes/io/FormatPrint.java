@@ -1,16 +1,22 @@
 package org.vstu.meaningtree.nodes.io;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.literals.StringLiteral;
 
 import java.util.List;
 
-public class FormatPrint extends PrintValueSequence {
+public abstract class FormatPrint extends PrintValues {
     private final Expression _formatString;
 
-    public FormatPrint(Expression formatString, List<Expression> expressions) {
-        super(expressions);
+    protected FormatPrint(Expression formatString) {
+        super(
+                List.of(),
+                StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
+                StringLiteral.fromUnescaped("", StringLiteral.Type.NONE)
+        );
         _formatString = formatString;
     }
+
 
     public Expression getFormatString() {
         return _formatString;

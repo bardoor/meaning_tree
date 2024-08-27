@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages.parsers;
 import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
@@ -15,6 +16,9 @@ import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.io.PrintStatement;
+import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
@@ -263,22 +267,71 @@ public class JavaLanguage extends Language {
         return new ObjectNewExpression(type, arguments);
     }
 
-    private FunctionCall fromMethodInvocation(TSNode methodInvocation) {
-        Identifier methodName = fromIdentifierTSNode(methodInvocation.getChildByFieldName("name"));
-
+    @NotNull
+    private PrintStatement makePrintCall(String outObjectMethodName, TSNode tsNodeArguments) {
         List<Expression> arguments = new ArrayList<>();
-        TSNode tsArguments = methodInvocation.getChildByFieldName("arguments");
-        for (int i = 0; i < tsArguments.getNamedChildCount(); i++) {
-            TSNode tsArgument = tsArguments.getNamedChild(i);
+        for (int i = 0; i < tsNodeArguments.getNamedChildCount(); i++) {
+            TSNode tsArgument = tsNodeArguments.getNamedChild(i);
             Expression argument = (Expression) fromTSNode(tsArgument);
             arguments.add(argument);
         }
 
-        if (methodInvocation.getChildByFieldName("object").isNull()) {
+        return switch (outObjectMethodName) {
+            case "println" -> {
+                if (arguments.size() > 1) {
+                    throw new IllegalArgumentException("\"println\" cannot have more than one argument");
+                }
+
+                yield new PrintValues
+                        .PrintValuesBuilder()
+                        .endWithNewline()
+                        .setValues(arguments)
+                        .build();
+            }
+            case "print" -> {
+                if (arguments.size() != 1) {
+                    throw new IllegalArgumentException("\"println\" can have only one argument");
+                }
+
+                yield new PrintValues
+                        .PrintValuesBuilder()
+                        .setValues(arguments)
+                        .build();
+            }
+
+            default -> throw new IllegalStateException("Unexpected out object method: " + outObjectMethodName);
+        };
+    }
+
+    @NotNull
+    private FunctionCall fromMethodInvocation(@NotNull TSNode methodInvocation) {
+        TSNode objectNode = methodInvocation.getChildByFieldName("object");
+        TSNode nameNode = methodInvocation.getChildByFieldName("name");
+        TSNode argumentsNode = methodInvocation.getChildByFieldName("arguments");
+
+        if (!objectNode.isNull()) {
+            String objectName = getCodePiece(objectNode);
+            String objectMethodName = getCodePiece(nameNode);
+            if (objectName.equals("System.out")
+                    && (objectMethodName.equals("println") || objectMethodName.equals("print"))) {
+                return makePrintCall(objectMethodName, argumentsNode);
+            }
+        }
+
+        Identifier methodName = fromIdentifierTSNode(nameNode);
+
+        List<Expression> arguments = new ArrayList<>();
+        for (int i = 0; i < argumentsNode.getNamedChildCount(); i++) {
+            TSNode tsArgument = argumentsNode.getNamedChild(i);
+            Expression argument = (Expression) fromTSNode(tsArgument);
+            arguments.add(argument);
+        }
+
+        if (objectNode.isNull()) {
             return new FunctionCall(methodName, arguments);
         }
 
-        Expression object = (Expression) fromTSNode(methodInvocation.getChildByFieldName("object"));
+        Expression object = (Expression) fromTSNode(objectNode);
         return new MethodCall(object, methodName, arguments);
     }
 

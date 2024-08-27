@@ -2,7 +2,6 @@ package org.vstu.meaningtree.languages.viewers;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Contract;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
@@ -14,6 +13,7 @@ import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
@@ -126,6 +126,7 @@ public class JavaViewer extends Viewer {
             case RangeForLoop rangeLoop -> toString(rangeLoop);
             case ProgramEntryPoint entryPoint -> toString(entryPoint);
             case MethodCall methodCall -> toString(methodCall);
+            case PrintValues printValues -> toString(printValues);
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
@@ -171,6 +172,47 @@ public class JavaViewer extends Viewer {
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    public String toString(PrintValues printValues) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("System.out.");
+        builder.append(printValues.addsNewLine() ? "println" : "print");
+        builder.append("(");
+
+        if (printValues.valuesCount() > 1) {
+            builder.append("String.join(");
+
+            if (printValues.separator != null) {
+                builder
+                        .append(toString(printValues.separator))
+                        .append(", ");
+            }
+
+            for (Expression value : printValues.getArguments()) {
+                builder
+                        .append(toString(value))
+                        .append(", ");
+            }
+            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
+
+            if (!printValues.addsNewLine() && printValues.end != null) {
+                builder.append(toString(printValues.end));
+            }
+
+            builder.append(")");
+        }
+        else if (printValues.valuesCount() == 1) {
+            builder.append(
+                    toString(printValues.getArguments().getFirst())
+            );
+        }
+
+        builder.append(")");
+
+        return builder.toString();
     }
 
     public String toString(UnaryPlusOp unaryPlusOp) {
