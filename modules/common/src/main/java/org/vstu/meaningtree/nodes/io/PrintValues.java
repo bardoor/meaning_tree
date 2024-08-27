@@ -8,7 +8,7 @@ import org.vstu.meaningtree.nodes.literals.StringLiteral;
 import java.util.List;
 import java.util.Objects;
 
-public class PrintValues extends PrintStatement {
+public class PrintValues extends PrintCommand {
     @Nullable
     public final StringLiteral separator;
 

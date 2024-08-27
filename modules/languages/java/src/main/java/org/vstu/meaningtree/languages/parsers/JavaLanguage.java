@@ -16,8 +16,7 @@ import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.io.PrintStatement;
-import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
@@ -268,7 +267,7 @@ public class JavaLanguage extends Language {
     }
 
     @NotNull
-    private PrintStatement makePrintCall(String outObjectMethodName, TSNode tsNodeArguments) {
+    private PrintCommand makePrintCall(String outObjectMethodName, TSNode tsNodeArguments) {
         List<Expression> arguments = new ArrayList<>();
         for (int i = 0; i < tsNodeArguments.getNamedChildCount(); i++) {
             TSNode tsArgument = tsNodeArguments.getNamedChild(i);

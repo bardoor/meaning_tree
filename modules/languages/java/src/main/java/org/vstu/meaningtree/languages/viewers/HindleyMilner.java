@@ -8,6 +8,7 @@ import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.*;
 import org.vstu.meaningtree.nodes.math.AddOp;
+import org.vstu.meaningtree.nodes.math.DivOp;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.unary.*;
@@ -115,6 +116,7 @@ public class HindleyMilner {
             case LongCircuitAndOp longCircuitAndOp -> new BooleanType();
             case ShortCircuitOrOp shortCircuitOrOp -> new BooleanType();
             case ShortCircuitAndOp shortCircuitAndOp -> new BooleanType();
+            case DivOp divOp -> new FloatType();
             default -> new UnknownType();
         };
     }
@@ -151,6 +153,9 @@ public class HindleyMilner {
 
         if (binaryExpression instanceof BinaryComparison) {
             return new BooleanType();
+        }
+        else if (binaryExpression instanceof DivOp) {
+            return new FloatType();
         }
 
         Type generalType = chooseGeneralType(leftType, rightType);
