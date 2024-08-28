@@ -292,6 +292,13 @@ public class HindleyMilner {
         return new BooleanType();
     }
 
+    public static void inference(@NotNull SwitchStatement switchStatement, @NotNull Scope scope) {
+        inference(switchStatement.getTargetExpression(), scope);
+        for (var caseBranch : switchStatement.getCases()) {
+            inference(caseBranch, scope);
+        }
+    }
+
     public static void inference(@NotNull Statement statement, @NotNull Scope scope) {
         inference(List.of(statement), scope);
     }
@@ -300,36 +307,29 @@ public class HindleyMilner {
 
         for (var statement : statements) {
 
-            if (statement instanceof ExpressionStatement expressionStatement) {
-                inference(expressionStatement.getExpression(), scope);
-            }
-            else if (statement instanceof AssignmentStatement assignmentStatement) {
-                inference(assignmentStatement, scope);
-            }
-            else if (statement instanceof CompoundStatement compoundStatement) {
-                inference(compoundStatement, scope);
-            }
-            else if (statement instanceof IfStatement ifStatement) {
-                inference(ifStatement, scope);
-            }
-            else {
-                List<Node> nodes = statement
-                        .getChildren()
-                        .values()
-                        .stream()
-                        .map(obj -> (Node) obj)
-                        .toList();
+            switch (statement) {
+                case ExpressionStatement expressionStatement -> inference(expressionStatement.getExpression(), scope);
+                case AssignmentStatement assignmentStatement -> inference(assignmentStatement, scope);
+                case CompoundStatement compoundStatement -> inference(compoundStatement, scope);
+                case IfStatement ifStatement -> inference(ifStatement, scope);
+                case SwitchStatement switchStatement -> inference(switchStatement, scope);
+                case null, default -> {
+                    List<Node> nodes = statement
+                            .getChildren()
+                            .values()
+                            .stream()
+                            .map(obj -> (Node) obj)
+                            .toList();
 
-                for (var node : nodes) {
+                    for (var node : nodes) {
 
-                    if (node instanceof Expression expression) {
-                        inference(expression, scope);
-                    }
-                    else if (node instanceof Statement s) {
-                        inference(s, scope);
-                    }
-                    else {
-                        throw new IllegalArgumentException("Unsupported node type: " + node.getClass());
+                        if (node instanceof Expression expression) {
+                            inference(expression, scope);
+                        } else if (node instanceof Statement s) {
+                            inference(s, scope);
+                        } else {
+                            throw new IllegalArgumentException("Unsupported node type: " + node.getClass());
+                        }
                     }
                 }
             }
