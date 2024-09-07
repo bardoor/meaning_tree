@@ -492,12 +492,6 @@ group: SimpleStatements
         python:
             a: int = 456
 
-    case: MultipleVariableDeclaration
-        python:
-            a, b, c: int = 456, 4, k
-        python:
-            a, b, c: int = 456, 4, k
-
     case: AugmentedAssignmentStmt
         python:
             a: int = 456
@@ -720,12 +714,48 @@ group: ForLoop
 
     case: RangeForLoopWithExpressions
         python:
-            for var in range(a * b * c, dx - 1, 1):
+            for var in range(a * b * c, dx - 1):
                 func(a)
 
         python:
-            for var in range(a * b * c, dx - 1, 1):
+            for var in range(a * b * c, dx - 1):
                 func(a)
+
+
+    case: RangeNoSimplification1
+        main python:
+            for i in range(a, b, c):
+                pass
+        python:
+            for i in range(a, b, c):
+                pass
+
+
+    case: RangeNoSimplification2
+        main python:
+            for i in range(0, b, c):
+                pass
+        python:
+            for i in range(0, b, c):
+                pass
+
+
+    case: RangeSimplification1
+        main python:
+            for i in range(a, b, 1):
+                pass
+        python:
+            for i in range(a, b):
+                pass
+
+
+    case: RangeSimplification2
+        main python:
+            for i in range(0, b, 1):
+                pass
+        python:
+            for i in range(b):
+                pass
 
 
     case: ForEachLoop

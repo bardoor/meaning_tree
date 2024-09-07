@@ -9,6 +9,7 @@ import org.treesitter.TSParser;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.languages.PythonSpecialNodeTransformations;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
+import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.comparison.*;
@@ -20,6 +21,7 @@ import org.vstu.meaningtree.nodes.definitions.*;
 import org.vstu.meaningtree.nodes.identifiers.Identifier;
 import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.NotOp;
@@ -127,66 +129,39 @@ public class PythonLanguage extends Language {
                     (Expression) fromTSNode(body.getChildByFieldName("key")),
                     (Expression) fromTSNode(body.getChildByFieldName("value")));
         } else {
-            if (node.getType().equals("set_expression")) {
+            if (node.getType().equals("set_comprehension")) {
                 item = new Comprehension.SetItem((Expression) fromTSNode(body));
             } else {
                 item = new Comprehension.ListItem((Expression) fromTSNode(body));
             }
         }
+        body = body.getNextNamedSibling();
         Expression condition = null;
         TSNode for_clause = null;
 
         while (!body.isNull()) {
-            body = body.getNextNamedSibling();
             if (body.getType().equals("if_clause")) {
                 condition = (Expression) fromTSNode(body.getNamedChild(0));
             } else if (body.getType().equals("for_in_clause")) {
                 for_clause = body;
             }
+            body = body.getNextNamedSibling();
         }
 
         SimpleIdentifier leftOfForEach = (SimpleIdentifier) fromTSNode(for_clause.getChildByFieldName("left"));
         Expression rightOfForEach = (Expression) fromTSNode(for_clause.getChildByFieldName("right"));
-        if (rightOfForEach instanceof FunctionCall call && call.hasFunctionName() && call.getFunctionName().toString().equals("range")) {
-            Expression start = null, stop = null, step = null;
-            switch (call.getArguments().size()) {
-                case 0:
-                    throw new IllegalArgumentException("Range requires at least 1 argument");
-                case 1:
-                    stop = call.getArguments().getFirst();
-                    start = new IntegerLiteral("0");
-                    step = new IntegerLiteral("1");
-                    break;
-                case 2:
-                    start = call.getArguments().getFirst();
-                    stop = call.getArguments().get(1);
-                    step = new IntegerLiteral("1");
-                    break;
-                default:
-                    start = call.getArguments().getFirst();
-                    stop = call.getArguments().get(1);
-                    step = call.getArguments().get(2);
-                    break;
-            }
-
-            if (step instanceof IntegerLiteral integerLiteral && integerLiteral.getLongValue() == 1L) {
+        if (rightOfForEach instanceof FunctionCall call) {
+            Range range = rangeFromFunction(call);
+            if (range != null) {
                 return new RangeBasedComprehension(
                         item,
                         leftOfForEach,
-                        new Range(start, stop, step, false, true, Range.Type.UP),
+                        range,
                         condition
                 );
             }
-
-            return new RangeBasedComprehension(
-                    item,
-                    leftOfForEach,
-                    new Range(start, stop, step, false, true, Range.Type.UNKNOWN),
-                    condition
-            );
-        } else {
-            return new ContainerBasedComprehension(item, new VariableDeclaration(new UnknownType(), leftOfForEach), rightOfForEach, condition);
         }
+        return new ContainerBasedComprehension(item, new VariableDeclaration(new UnknownType(), leftOfForEach), rightOfForEach, condition);
     }
 
     private Node fromMatchStatement(TSNode node) {
@@ -268,9 +243,37 @@ public class PythonLanguage extends Language {
         }
     }
 
+    private Range rangeFromFunction(FunctionCall call) {
+        if (call.hasFunctionName()
+                && PythonSpecificFeatures.getFunctionName(call).equals(new SimpleIdentifier("range"))
+                && !call.getArguments().isEmpty()
+                && call.getArguments().size() <= 3) {
+            Expression start = null, stop, step = null;
+            List<Expression> exprs = call.getArguments();
+            switch (exprs.size()) {
+                case 1 -> stop = exprs.get(0);
+                case 2 -> {
+                    start = exprs.get(0);
+                    stop = exprs.get(1);
+                }
+                default -> {
+                    start = exprs.get(0);
+                    stop = exprs.get(1);
+                    step = exprs.get(2);
+                }
+            }
+            Range.Type rangeType = Range.Type.UNKNOWN;
+            if (step instanceof IntegerLiteral intLit) {
+                rangeType = intLit.getLongValue() < 0 ? Range.Type.DOWN : Range.Type.UP;
+            }
+            return new Range(start, stop, step, false, true, rangeType);
+        }
+        return null;
+    }
+
     private FunctionCall fromFunctionCall(TSNode node) {
         TSNode tsNode = node.getChildByFieldName("function");
-        Node ident = fromTSNode(tsNode);
+        Expression ident = (Expression) fromTSNode(tsNode);
         if (ident instanceof MemberAccess memAccess) {
             ident = memAccess.toScopedIdentifier();
         }
@@ -293,14 +296,14 @@ public class PythonLanguage extends Language {
                     .build();
         }
 
-        return new FunctionCall((Identifier) ident, exprs);
+        return new FunctionCall(ident, exprs);
     }
 
     private Annotation fromDecorator(TSNode node) {
         TSNode child = node.getNamedChild(0);
         if (child.getType().equals("call")) {
             FunctionCall call = fromFunctionCall(node);
-            return new Annotation(call.getFunction(), call.getArguments().toArray(new Expression[0]));
+            return new Annotation(PythonSpecificFeatures.getFunctionName(call), call.getArguments().toArray(new Expression[0]));
         } else {
             Node ident = fromTSNode(node.getNamedChild(0));
             if (ident instanceof MemberAccess memAccess) {
@@ -357,7 +360,19 @@ public class PythonLanguage extends Language {
     }
 
     private ClassDefinition fromClass(TSNode node) {
-        ClassDeclaration classDecl = new ClassDeclaration((SimpleIdentifier) fromTSNode(node.getChildByFieldName("name")));
+        TSNode superclasses = node.getChildByFieldName("superclasses");
+        Type[] supertypes = new Type[0];
+        if (!superclasses.isNull()) {
+            supertypes = new Type[superclasses.getNamedChildCount()];
+            for (int i = 0; i < supertypes.length; i++) {
+                supertypes[i] = new Class((SimpleIdentifier) fromTSNode(superclasses.getNamedChild(i)));
+            }
+        }
+
+        ClassDeclaration classDecl = new ClassDeclaration(new ArrayList<>(),
+                (SimpleIdentifier) fromTSNode(node.getChildByFieldName("name")),
+                supertypes
+        );
         UserType type = new Class((SimpleIdentifier) classDecl.getName());
         CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
         List<Node> nodes = new ArrayList<>();
@@ -397,42 +412,9 @@ public class PythonLanguage extends Language {
         Node right = fromTSNode(node.getChildByFieldName("right"));
         Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
         if (right instanceof FunctionCall call) {
-            String funcName = call.getFunctionName().toString();
-            if (funcName.equals("range")) {
-                List<Expression> args = call.getArguments();
-                Expression start = null, stop = null, step = null;
-                switch (args.size()) {
-                    case 0:
-                        throw new IllegalArgumentException("Range requires at least 1 argument");
-                    case 1:
-                        stop = args.getFirst();
-                        start = new IntegerLiteral("0");
-                        step = new IntegerLiteral("1");
-                        break;
-                    case 2:
-                        start = args.getFirst();
-                        stop = args.get(1);
-                        step = new IntegerLiteral("1");
-                        break;
-                    default:
-                        start = args.getFirst();
-                        stop = args.get(1);
-                        step = args.get(2);
-                        break;
-                }
-                if (step instanceof IntegerLiteral integerLiteral && integerLiteral.getLongValue() == 1L) {
-                    return new RangeForLoop(
-                            new Range(start, stop, step, false, true, Range.Type.UP),
-                            left,
-                            body
-                    );
-                }
-
-                return new RangeForLoop(
-                        new Range(start, stop, step, false, true, Range.Type.UNKNOWN),
-                        left,
-                        body
-                );
+            Range range = rangeFromFunction(call);
+            if (range != null) {
+                return new RangeForLoop(range, left, body);
             }
             return new ForEachLoop(new VariableDeclaration(new UnknownType(), left), (Expression) right, body);
         } else {

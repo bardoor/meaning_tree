@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages.viewers;
 
 import org.vstu.meaningtree.languages.PythonSpecialNodeTransformations;
+import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.bitwise.*;
@@ -94,25 +95,23 @@ public class PythonViewer extends Viewer {
             case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
             case CastTypeExpression cast -> callsToString(cast);
             case Comprehension compr -> comprehensionToString(compr);
-            case null, default -> throw new RuntimeException("Unsupported tree element");
+            case null -> throw new RuntimeException("Null node detected");
+            default -> throw new RuntimeException("Unsupported tree element: " + node.getClass().getName());
         };
     }
 
     private String comprehensionToString(Comprehension compr) {
         char startBracket = '[';
         char endBracket = ']';
-        if (compr.getItem() instanceof Comprehension.KeyValuePair) {
+        if (compr.getItem() instanceof Comprehension.KeyValuePair || compr.getItem() instanceof Comprehension.SetItem) {
             startBracket = '{';
             endBracket = '}';
-        } else if (compr.getItem() instanceof Comprehension.SetItem) {
-            startBracket = '(';
-            endBracket = ')';
         }
 
         StringBuilder comprehension = new StringBuilder();
         comprehension.append(startBracket);
         if (compr.getItem() instanceof Comprehension.KeyValuePair pair) {
-            comprehension.append(String.format("%s:%s", toString(pair.key()), toString(pair.value())));
+            comprehension.append(String.format("%s: %s", toString(pair.key()), toString(pair.value())));
         } else if (compr.getItem() instanceof Comprehension.SetItem item) {
             comprehension.append(toString(item.value()));
         } else if (compr.getItem() instanceof Comprehension.ListItem item) {
@@ -124,21 +123,11 @@ public class PythonViewer extends Viewer {
         if (compr instanceof RangeBasedComprehension rangeBased) {
             Range range = rangeBased.getRange();
 
-            Expression start = range.getStart();
-            Expression stop = range.getStop();
-            Expression step = range.getStep();
-
-            if (start == null || stop == null || step == null) {
-                throw new NoSuchElementException(String.format("start: %s, stop: %s, step:%s", start, stop, step));
-            }
-
             comprehension.append(
                     String.format(
-                            "for %s in range(%s, %s, %s)",
+                            "for %s in %s",
                             toString(rangeBased.getRangeVariableIdentifier()),
-                            toString(start),
-                            toString(stop),
-                            toString(step)
+                            rangeFunctionToString(range)
                     )
             );
         } else if (compr instanceof ContainerBasedComprehension containered) {
@@ -202,7 +191,7 @@ public class PythonViewer extends Viewer {
         if (decl.getParents().isEmpty()) {
             builder.append(String.format("class %s:\n", toString(decl.getName())));
         } else {
-            builder.append(String.format("class %s(%s):\n", toString(decl.getName()), String.join(",", decl.getParents().stream().map(this::typeToString).toList().toArray(new String[0]))));
+            builder.append(String.format("class %s(%s):\n", toString(decl.getName()), String.join(", ", decl.getParents().stream().map(this::typeToString).toList().toArray(new String[0]))));
         }
         builder.append(toString(def.getBody(), tab));
         return builder.toString();
@@ -244,7 +233,8 @@ public class PythonViewer extends Viewer {
             }
         }
         function.append(")");
-        if (decl.getReturnType() != null && !(decl.getReturnType() instanceof UnknownType)) {
+        if (decl.getReturnType() != null && !(decl.getReturnType() instanceof UnknownType)
+                && !(decl instanceof ObjectConstructorDeclaration || decl instanceof ObjectDestructorDeclaration)) {
             function.append(" -> ");
             function.append(typeToString(decl.getReturnType()));
         }
@@ -325,21 +315,11 @@ public class PythonViewer extends Viewer {
     private String loopToString(Statement stmt, Tab tab) {
         StringBuilder builder = new StringBuilder();
         if (stmt instanceof RangeForLoop rangeFor) {
-            Expression start = rangeFor.getStart();
-            Expression stop = rangeFor.getStop();
-            Expression step = rangeFor.getStep();
-
-            if (start == null || stop == null || step == null) {
-                throw new NoSuchElementException(String.format("start: %s, stop: %s, step:%s", start, stop, step));
-            }
-
             builder.append(
                     String.format(
-                            "for %s in range(%s, %s, %s):\n",
+                            "for %s in %s:\n",
                             toString(rangeFor.getIdentifier()),
-                            toString(start),
-                            toString(stop),
-                            toString(step)
+                            rangeFunctionToString(rangeFor.getRange())
                     )
             );
             builder.append(toString(rangeFor.getBody(), tab));
@@ -565,26 +545,58 @@ public class PythonViewer extends Viewer {
     }
 
     private String rangeToString(Range range) {
-        StringBuilder builder = new StringBuilder();
-
         Expression start = range.getStart();
-        if (start != null) {
-            builder.append(toString(start));
-        }
-        builder.append(':');
-
         Expression stop = range.getStop();
-        if (stop != null) {
-            builder.append(toString(stop));
-        }
-
         Expression step = range.getStep();
-        if (step != null) {
-            builder.append(':');
-            builder.append(toString(step));
+
+
+        String[] parts = new String[] {"", "", ""};
+        if (start != null) {
+            parts[0] = toString(start).concat(":");
         }
 
-        return builder.toString();
+        if (stop != null) {
+            parts[1] = toString(stop);
+        }
+
+        if (step != null) {
+            parts[2] = ":".concat(toString(step));
+        }
+
+        if (parts[0].isEmpty() && !parts[1].isEmpty() && !parts[2].isEmpty()) {
+            parts[0] = ":";
+        }
+        if (parts[0].isEmpty() && parts[1].isEmpty() && !parts[2].isEmpty()) {
+            parts[0] = ":";
+            parts[1] = ":";
+        }
+
+        return String.join("", parts);
+    }
+
+    public String rangeFunctionToString(Range range) {
+        Expression start = range.getStart();
+        Expression stop = range.getStop();
+        Expression step = range.getStep();
+
+        boolean isStartDefault = range.getStart() instanceof IntegerLiteral intLit && intLit.getLongValue() == 0;
+        boolean isStepDefault = range.getStep() instanceof IntegerLiteral intLit && intLit.getLongValue() == 1;
+
+        if (stop == null) {
+            throw new RuntimeException("Range must contain stop condition at least");
+        }
+
+        if ((start == null || isStartDefault) && (step == null || isStepDefault)) {
+            return String.format("range(%s)", toString(stop));
+        } else if (start != null && (step == null || isStepDefault)) {
+            return String.format("range(%s, %s)", toString(start), toString(stop));
+        }
+
+        if (start == null || isStartDefault) {
+            start = new IntegerLiteral(0);
+        }
+
+        return String.format("range(%s, %s, %s)", toString(start), toString(stop), toString(step));
     }
 
     private String binaryOpToString(BinaryExpression node) {
@@ -653,7 +665,7 @@ public class PythonViewer extends Viewer {
                 return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
             }
             case FunctionCall funcCall -> {
-                return String.format("%s(%s)", toString(funcCall.getFunctionName()), argumentsToString(funcCall.getArguments()));
+                return String.format("%s(%s)", toString(PythonSpecificFeatures.getFunctionExpression(funcCall)), argumentsToString(funcCall.getArguments()));
             }
             case CastTypeExpression cast -> {
                 return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));

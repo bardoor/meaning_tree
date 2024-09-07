@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.languages.utils.ExpressionDAG;
+import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.declarations.*;
@@ -233,7 +234,7 @@ public class PythonSpecialNodeTransformations {
             }
             if (node.getValue() instanceof SimpleIdentifier ident && ident.equals(instanceName)) {
                 parent.substituteChildren(node.getKey(), new SelfReference(instanceName.getName()));
-            } else if (node.getValue() instanceof FunctionCall call && call.hasFunctionName() && call.getFunctionName().equals(new SimpleIdentifier("super"))) {
+            } else if (node.getValue() instanceof FunctionCall call && call.hasFunctionName() && PythonSpecificFeatures.getFunctionName(call).equals(new SimpleIdentifier("super"))) {
                 parent.substituteChildren(node.getKey(), new SuperClassReference());
             } else if (node.getValue() instanceof List collection) {
                 collection = parent.ensureMutableNodeListInChildren(node.getKey());
