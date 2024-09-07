@@ -21,6 +21,10 @@ public class IntegerLiteral extends NumericLiteral {
         _value = parseValue(s);
     }
 
+    public IntegerLiteral(long value) {
+        _value = parseValue(Long.toString(value));
+    }
+
     public long parseValue(String s) {
         int base = 10;
         s = s.toLowerCase();

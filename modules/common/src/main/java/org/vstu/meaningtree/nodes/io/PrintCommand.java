@@ -11,4 +11,10 @@ public abstract class PrintCommand extends FunctionCall {
     public PrintCommand(@NotNull List<Expression> values) {
         super(null, values);
     }
+
+    @Override
+    public boolean hasFunctionName() {
+        // Язык определяет это имя самостоятельно
+        return true;
+    }
 }

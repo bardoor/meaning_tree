@@ -11,6 +11,16 @@ public class FloatLiteral extends NumericLiteral {
         _isDoublePrecision = isDoublePrecision;
     }
 
+    public FloatLiteral(float fValue) {
+        _value = fValue;
+        _isDoublePrecision = false;
+    }
+
+    public FloatLiteral(double dValue) {
+        _value = dValue;
+        _isDoublePrecision = true;
+    }
+
     public FloatLiteral(String s) {
         _value = Double.parseDouble(s);
         _isDoublePrecision = !s.toLowerCase().endsWith("f");
