@@ -15,7 +15,7 @@ public class SwitchStatement extends Statement {
     public SwitchStatement(Expression targetExpression,
                             List<CaseBlock> cases) {
         _targetExpression = targetExpression;
-        _cases = List.copyOf(cases);
+        _cases = cases;
         _defaultCase = findDefaultCase(_cases);
     }
 
@@ -54,7 +54,7 @@ public class SwitchStatement extends Statement {
     }
 
     public List<CaseBlock> getCases() {
-        return List.copyOf(_cases);
+        return _cases;
     }
 
     public DefaultCaseBlock getDefaultCase() {

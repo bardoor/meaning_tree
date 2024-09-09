@@ -341,6 +341,9 @@ public class PythonViewer extends Viewer {
             tab = tab.up();
             builder.append(String.format("match %s:\n", toString(switchStmt.getTargetExpression())));
             for (CaseBlock caseBranch : switchStmt.getCases()) {
+                if (caseBranch == null) {
+                    continue;
+                }
                 switch (caseBranch) {
                     case BasicCaseBlock basicCaseBlock -> {
                         builder.append(

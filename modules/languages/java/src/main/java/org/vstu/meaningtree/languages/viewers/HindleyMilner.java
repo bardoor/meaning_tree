@@ -4,6 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.comparison.BinaryComparison;
 import org.vstu.meaningtree.nodes.comparison.CompoundComparison;
+import org.vstu.meaningtree.nodes.declarations.Declaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
 import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.literals.*;
 import org.vstu.meaningtree.nodes.logical.*;
@@ -295,7 +298,9 @@ public class HindleyMilner {
     public static void inference(@NotNull SwitchStatement switchStatement, @NotNull Scope scope) {
         inference(switchStatement.getTargetExpression(), scope);
         for (var caseBranch : switchStatement.getCases()) {
-            inference(caseBranch, scope);
+            if (caseBranch != null) {
+                inference(caseBranch, scope);
+            }
         }
     }
 
@@ -303,32 +308,56 @@ public class HindleyMilner {
         inference(List.of(statement), scope);
     }
 
-    public static void inference(@NotNull List<Statement> statements, @NotNull Scope scope) {
+    public static void inference(@NotNull VariableDeclarator variableDeclarator, @NotNull Scope scope) {
+        if (variableDeclarator.hasInitialization()) {
+            inference(variableDeclarator.getRValue(), scope);
+        }
+        inference(variableDeclarator.getIdentifier(), scope);
+    }
 
-        for (var statement : statements) {
+    public static void inference(@NotNull VariableDeclaration variableDeclaration, @NotNull Scope scope) {
+        for (var variableDeclarator : variableDeclaration.getDeclarators()) {
+            inference(variableDeclarator, scope);
+        }
+    }
+    
+    public static void inference(@NotNull Declaration declaration, @NotNull Scope scope) {
+        switch (declaration) {
+            case VariableDeclaration variableDeclaration -> inference(variableDeclaration, scope);
+            default -> throw new IllegalStateException("Unexpected declaration type: " + declaration.getClass());
+        }
+    }
 
-            switch (statement) {
+    public static void inference(@NotNull List<Node> nodes, @NotNull Scope scope) {
+
+        for (var node : nodes) {
+
+            switch (node) {
                 case ExpressionStatement expressionStatement -> inference(expressionStatement.getExpression(), scope);
                 case AssignmentStatement assignmentStatement -> inference(assignmentStatement, scope);
                 case CompoundStatement compoundStatement -> inference(compoundStatement, scope);
                 case IfStatement ifStatement -> inference(ifStatement, scope);
                 case SwitchStatement switchStatement -> inference(switchStatement, scope);
+                case VariableDeclaration variableDeclaration -> inference(variableDeclaration, scope);
+                case VariableDeclarator variableDeclarator -> inference(variableDeclarator, scope);
                 case null, default -> {
-                    List<Node> nodes = statement
+                    List<Node> nodes_ = node
                             .getChildren()
                             .values()
                             .stream()
                             .map(obj -> (Node) obj)
                             .toList();
 
-                    for (var node : nodes) {
+                    for (var node_ : nodes_) {
 
-                        if (node instanceof Expression expression) {
+                        if (node_ instanceof Expression expression) {
                             inference(expression, scope);
-                        } else if (node instanceof Statement s) {
+                        } else if (node_ instanceof Statement s) {
                             inference(s, scope);
+                        } else if (node_ instanceof Declaration d) {
+                            inference(d, scope);
                         } else {
-                            throw new IllegalArgumentException("Unsupported node type: " + node.getClass());
+                            throw new IllegalArgumentException("Unsupported node type: " + node_.getClass());
                         }
                     }
                 }

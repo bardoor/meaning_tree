@@ -642,9 +642,11 @@ public class JavaViewer extends Viewer {
 
         increaseIndentLevel();
         for (CaseBlock caseBlock : switchStatement.getCases()) {
-            builder
-                    .append(indent(toStringCaseBlock(caseBlock)))
-                    .append("\n");
+            if (caseBlock != null) {
+                builder
+                        .append(indent(toStringCaseBlock(caseBlock)))
+                        .append("\n");
+            }
         }
         decreaseIndentLevel();
 
