@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
@@ -12,27 +13,30 @@ public class SwitchStatement extends Statement {
     private final List<CaseBlock> _cases;
     private final DefaultCaseBlock _defaultCase;
 
-    public SwitchStatement(Expression targetExpression,
-                            List<CaseBlock> cases) {
+    public SwitchStatement(@NotNull Expression targetExpression,
+                           @NotNull List<CaseBlock> cases) {
         _targetExpression = targetExpression;
-        _cases = cases;
-        _defaultCase = findDefaultCase(_cases);
+
+        _defaultCase = findDefaultCase(cases);
+
+        _cases = new ArrayList<>(cases);
+        _cases.remove(_defaultCase);
     }
 
-    public SwitchStatement(Expression targetExpression,
-                           List<CaseBlock> cases,
-                           DefaultCaseBlock defaultCaseBlock) {
+    public SwitchStatement(@NotNull Expression targetExpression,
+                           @NotNull List<CaseBlock> cases,
+                           @Nullable DefaultCaseBlock defaultCaseBlock) {
         this(targetExpression, Stream.concat(cases.stream(), Stream.of(defaultCaseBlock)).toList());
     }
 
     @Nullable
-    public DefaultCaseBlock findDefaultCase(List<CaseBlock> cases) {
+    private DefaultCaseBlock findDefaultCase(@NotNull List<CaseBlock> cases) {
         DefaultCaseBlock defaultCaseBlock = null;
 
         boolean found = false;
         for (CaseBlock caseBlock : cases) {
             if (found && caseBlock instanceof DefaultCaseBlock) {
-                throw new IllegalArgumentException("Switch cannot have several default branches");
+                throw new IllegalArgumentException(this.getClass() + " cannot have several default branches");
             }
 
             if (caseBlock instanceof DefaultCaseBlock dcb) {
@@ -49,18 +53,18 @@ public class SwitchStatement extends Statement {
         throw new UnsupportedOperationException();
     }
 
+    @NotNull
     public Expression getTargetExpression() {
         return _targetExpression;
     }
 
+    @NotNull
     public List<CaseBlock> getCases() {
         return _cases;
     }
 
+    @Nullable
     public DefaultCaseBlock getDefaultCase() {
-        if (!hasDefaultCase()) {
-            throw new RuntimeException("Switch has not default case");
-        }
         return _defaultCase;
     }
 
