@@ -619,7 +619,25 @@ public class JavaLanguage extends Language {
         String variableName = getCodePiece(node.getChildByFieldName("left"));
         SimpleIdentifier identifier = new SimpleIdentifier(variableName);
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
-        return new AssignmentExpression(identifier, right);
+
+        String operatorType = node.getChildByFieldName("operator").getType();
+        AugmentedAssignmentOperator augmentedAssignmentOperator = switch (operatorType) {
+            case "=" -> AugmentedAssignmentOperator.NONE;
+            case "+=" -> AugmentedAssignmentOperator.ADD;
+            case "-=" -> AugmentedAssignmentOperator.SUB;
+            case "*=" -> AugmentedAssignmentOperator.MUL;
+            // Возможно тип AugmentedAssignmentOperator надо определять исходя из типа аргументов
+            case "/=" -> AugmentedAssignmentOperator.DIV;
+            case "&=" -> AugmentedAssignmentOperator.BITWISE_AND;
+            case "|=" -> AugmentedAssignmentOperator.BITWISE_OR;
+            case "^=" -> AugmentedAssignmentOperator.BITWISE_XOR;
+            case "<<=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_LEFT;
+            case ">>=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_RIGHT;
+            case "%=" -> AugmentedAssignmentOperator.MOD;
+            default -> throw new IllegalStateException("Unexpected augmented assignment type: " + operatorType);
+        };
+
+        return new AssignmentExpression(identifier, right, augmentedAssignmentOperator);
     }
 
     private List<TSNode> getChildrenByFieldName(TSNode node, String fieldName) {
