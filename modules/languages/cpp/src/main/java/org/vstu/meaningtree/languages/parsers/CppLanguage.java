@@ -104,14 +104,15 @@ public class CppLanguage extends Language {
         return new IntType(size, isUnsigned);
     }
 
-
     @NotNull
     private Type fromPrimitiveType(@NotNull TSNode node) {
         String typeName = getCodePiece(node);
         return switch (typeName) {
             case "int" -> new IntType();
-            case "double", "float" -> new FloatType();
-            case "char", "w_char" -> new CharacterType();
+            case "double" -> new FloatType(64);
+            case "float" -> new FloatType();
+            case "char" -> new CharacterType();
+            case "w_char" -> new CharacterType(16);
             case "bool" -> new BooleanType();
             case "void" -> new VoidType();
             default -> throw new UnsupportedOperationException(String.format("Can't parse type in %s this code:\n%s", node.getType(), getCodePiece(node)));
