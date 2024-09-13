@@ -1,14 +1,14 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.languages.parsers.Language;
-import org.vstu.meaningtree.languages.viewers.Viewer;
+import org.vstu.meaningtree.languages.parsers.LanguageParser;
+import org.vstu.meaningtree.languages.viewers.LanguageViewer;
 
-public abstract class Translator {
-    protected Language _language;
-    protected Viewer _viewer;
+public abstract class LanguageTranslator {
+    protected LanguageParser _language;
+    protected LanguageViewer _viewer;
 
-    protected Translator(Language language, Viewer viewer) {
+    protected LanguageTranslator(LanguageParser language, LanguageViewer viewer) {
         _language = language;
         _viewer = viewer;
     }

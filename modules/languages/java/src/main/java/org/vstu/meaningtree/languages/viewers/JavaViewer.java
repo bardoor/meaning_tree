@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 
 import static org.vstu.meaningtree.enums.AugmentedAssignmentOperator.POW;
 
-public class JavaViewer extends Viewer {
+public class JavaViewer extends LanguageViewer {
 
     private final String _indentation;
     private int _indentLevel;

@@ -59,7 +59,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class JavaLanguage extends Language {
+public class JavaLanguage extends LanguageParser {
     private final TSLanguage _language;
     private final TSParser _parser;
     private final Map<String, UserType> _userTypes;

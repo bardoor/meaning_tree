@@ -5,7 +5,7 @@ import org.treesitter.TSNode;
 
 import java.nio.charset.StandardCharsets;
 
-abstract public class Language {
+abstract public class LanguageParser {
     protected String _code = "";
 
     public abstract MeaningTree getMeaningTree(String code);

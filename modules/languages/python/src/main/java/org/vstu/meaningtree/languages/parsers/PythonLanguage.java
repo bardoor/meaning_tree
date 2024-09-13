@@ -71,7 +71,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class PythonLanguage extends Language {
+public class PythonLanguage extends LanguageParser {
 
     @Override
     public MeaningTree getMeaningTree(String code) {

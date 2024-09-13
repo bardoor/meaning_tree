@@ -52,7 +52,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-public class PythonViewer extends Viewer {
+public class PythonViewer extends LanguageViewer {
 
     @Override
     public String toString(Node node) {

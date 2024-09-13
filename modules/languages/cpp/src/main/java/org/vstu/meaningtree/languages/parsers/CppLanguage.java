@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class CppLanguage extends Language {
+public class CppLanguage extends LanguageParser {
     private final TSLanguage _language;
     private final TSParser _parser;
     private final Map<String, UserType> _userTypes;
