@@ -2,7 +2,7 @@ package org.vstu.meaningtree.nodes.io;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 
 import java.util.List;
 

@@ -1,10 +1,10 @@
 package org.vstu.meaningtree.nodes.types;
 
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.interfaces.Generic;
 
-public class GenericUserType extends UserType implements Generic{
+public class GenericUserType extends UserType implements Generic {
     private final Type[] _templateParameters;
 
     public GenericUserType(Identifier name, Type ... templateParameters) {

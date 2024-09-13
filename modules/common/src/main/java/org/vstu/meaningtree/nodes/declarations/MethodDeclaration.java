@@ -1,6 +1,8 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
+import org.vstu.meaningtree.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.types.UserType;
 
@@ -8,13 +10,13 @@ import java.util.List;
 
 public class MethodDeclaration extends FunctionDeclaration {
     private final UserType _owner;
-    private final List<Modifier> _modifiers;
+    private final List<DeclarationModifier> _modifiers;
 
     public MethodDeclaration(UserType owner,
                              Identifier name,
                              Type returnType,
                              List<Annotation> annotations,
-                             List<Modifier> modifiers,
+                             List<DeclarationModifier> modifiers,
                              DeclarationArgument... arguments
     ) {
         this(owner, name, returnType, annotations, modifiers, List.of(arguments));
@@ -24,7 +26,7 @@ public class MethodDeclaration extends FunctionDeclaration {
                              Identifier name,
                              Type returnType,
                              List<Annotation> annotations,
-                             List<Modifier> modifiers,
+                             List<DeclarationModifier> modifiers,
                              List<DeclarationArgument> arguments
     ) {
         super(name, returnType, annotations, arguments);
@@ -36,7 +38,7 @@ public class MethodDeclaration extends FunctionDeclaration {
         return _owner;
     }
 
-    public List<Modifier> getModifiers() {
+    public List<DeclarationModifier> getModifiers() {
         return _modifiers;
     }
 }

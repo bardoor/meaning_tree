@@ -1,30 +1,32 @@
 package org.vstu.meaningtree.nodes.declarations;
 
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
 import java.util.List;
 
 public class FieldDeclaration extends VariableDeclaration {
-    private final List<Modifier> _modifiers;
+    private final List<DeclarationModifier> _modifiers;
 
-    public FieldDeclaration(Type type, SimpleIdentifier name, List<Modifier> modifiers) {
+    public FieldDeclaration(Type type, SimpleIdentifier name, List<DeclarationModifier> modifiers) {
         super(type, name);
         _modifiers = List.copyOf(modifiers);
     }
 
-    public FieldDeclaration(Type type, SimpleIdentifier name, Expression value, List<Modifier> modifiers) {
+    public FieldDeclaration(Type type, SimpleIdentifier name, Expression value, List<DeclarationModifier> modifiers) {
         super(type, name, value);
         _modifiers = List.copyOf(modifiers);
     }
 
 
-    public FieldDeclaration(Type type, List<Modifier> modifiers, VariableDeclarator... declarators) {
+    public FieldDeclaration(Type type, List<DeclarationModifier> modifiers, VariableDeclarator... declarators) {
         this(type, modifiers, List.of(declarators));
     }
 
-    public FieldDeclaration(Type type, List<Modifier> modifiers, List<VariableDeclarator> declarators) {
+    public FieldDeclaration(Type type, List<DeclarationModifier> modifiers, List<VariableDeclarator> declarators) {
         super(type, declarators);
         _modifiers = List.copyOf(modifiers);
     }
@@ -42,7 +44,7 @@ public class FieldDeclaration extends VariableDeclaration {
         this(type, List.of(), fields);
     }
 
-    public List<Modifier> getModifiers() {
+    public List<DeclarationModifier> getModifiers() {
         return _modifiers;
     }
 }

@@ -2,32 +2,55 @@ package org.vstu.meaningtree.languages.viewers;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
-import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
-import org.vstu.meaningtree.nodes.identifiers.SelfReference;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
+import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
+import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.PrintValues;
-import org.vstu.meaningtree.nodes.literals.*;
-import org.vstu.meaningtree.nodes.logical.NotOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
-import org.vstu.meaningtree.nodes.math.*;
+import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.*;
+import org.vstu.meaningtree.nodes.statements.loops.*;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.unary.*;
+import org.vstu.meaningtree.nodes.types.containers.ArrayType;
+import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.vstu.meaningtree.nodes.AugmentedAssignmentOperator.POW;
+import static org.vstu.meaningtree.enums.AugmentedAssignmentOperator.POW;
 
 public class JavaViewer extends Viewer {
 
@@ -751,10 +774,10 @@ public class JavaViewer extends Viewer {
         return builder.toString();
     }
 
-    private String toString(List<Modifier> modifiers) {
+    private String toString(List<DeclarationModifier> modifiers) {
         StringBuilder builder = new StringBuilder();
 
-        for (Modifier modifier : modifiers) {
+        for (DeclarationModifier modifier : modifiers) {
             builder.append(
                     switch (modifier) {
                         case PUBLIC -> "public";

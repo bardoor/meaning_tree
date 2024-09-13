@@ -1,29 +1,52 @@
 package org.vstu.meaningtree.languages.viewers;
 
+import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.languages.PythonSpecialNodeTransformations;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.bitwise.*;
-import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.comprehensions.Comprehension;
-import org.vstu.meaningtree.nodes.comprehensions.ContainerBasedComprehension;
-import org.vstu.meaningtree.nodes.comprehensions.RangeBasedComprehension;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.expressions.*;
+import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
+import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
+import org.vstu.meaningtree.nodes.expressions.comprehensions.RangeBasedComprehension;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
-import org.vstu.meaningtree.nodes.definitions.Definition;
+import org.vstu.meaningtree.nodes.Definition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
-import org.vstu.meaningtree.nodes.identifiers.*;
-import org.vstu.meaningtree.nodes.literals.*;
-import org.vstu.meaningtree.nodes.logical.NotOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
-import org.vstu.meaningtree.nodes.math.*;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.identifiers.*;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.*;
+import org.vstu.meaningtree.nodes.statements.loops.*;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.unary.*;
+import org.vstu.meaningtree.nodes.types.containers.*;
+import org.vstu.meaningtree.nodes.types.builtin.BooleanType;
+import org.vstu.meaningtree.nodes.types.builtin.FloatType;
+import org.vstu.meaningtree.nodes.types.builtin.IntType;
+import org.vstu.meaningtree.nodes.types.builtin.StringType;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -215,7 +238,7 @@ public class PythonViewer extends Viewer {
         function.append("def ");
         function.append(toString(decl.getName()));
         function.append("(");
-        if (decl instanceof MethodDeclaration methodDecl && !methodDecl.getModifiers().contains(Modifier.STATIC)) {
+        if (decl instanceof MethodDeclaration methodDecl && !methodDecl.getModifiers().contains(DeclarationModifier.STATIC)) {
             function.append("self");
         }
         List<DeclarationArgument> declArgs = decl.getArguments();

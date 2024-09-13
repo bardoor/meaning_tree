@@ -1,9 +1,12 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.nodes.HasInitialization;
+import org.vstu.meaningtree.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.Declaration;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +38,7 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
         return _type;
     }
 
-    public FieldDeclaration makeField(List<Modifier> modifiers) {
+    public FieldDeclaration makeField(List<DeclarationModifier> modifiers) {
         return new FieldDeclaration(getType(), modifiers, getDeclarators());
     }
 

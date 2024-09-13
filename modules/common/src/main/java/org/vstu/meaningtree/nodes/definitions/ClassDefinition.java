@@ -1,16 +1,16 @@
 package org.vstu.meaningtree.nodes.definitions;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.nodes.Definition;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
-import org.vstu.meaningtree.nodes.declarations.Modifier;
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ClassDefinition extends Definition {
@@ -69,7 +69,7 @@ public class ClassDefinition extends Definition {
         return null;
     }
 
-    public List<Modifier> getModifiers() {
+    public List<DeclarationModifier> getModifiers() {
         return ((ClassDeclaration) getDeclaration()).getModifiers();
     }
 }

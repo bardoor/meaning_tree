@@ -2,19 +2,27 @@ package org.vstu.meaningtree.languages.viewers;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.comparison.BinaryComparison;
-import org.vstu.meaningtree.nodes.comparison.CompoundComparison;
-import org.vstu.meaningtree.nodes.declarations.Declaration;
+import org.vstu.meaningtree.nodes.expressions.*;
+import org.vstu.meaningtree.nodes.expressions.comparison.BinaryComparison;
+import org.vstu.meaningtree.nodes.expressions.comparison.CompoundComparison;
+import org.vstu.meaningtree.nodes.Declaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclarator;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.literals.*;
-import org.vstu.meaningtree.nodes.logical.*;
-import org.vstu.meaningtree.nodes.math.AddOp;
-import org.vstu.meaningtree.nodes.math.DivOp;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.logical.*;
+import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
+import org.vstu.meaningtree.nodes.expressions.other.Range;
+import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
+import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.expressions.math.AddOp;
+import org.vstu.meaningtree.nodes.expressions.math.DivOp;
 import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.unary.*;
+import org.vstu.meaningtree.nodes.types.builtin.*;
 
 import java.util.List;
 

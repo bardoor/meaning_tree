@@ -7,36 +7,63 @@ import org.treesitter.TSTree;
 import org.treesitter.TSParser;
 
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.languages.PythonSpecialNodeTransformations;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.bitwise.*;
-import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.comprehensions.Comprehension;
-import org.vstu.meaningtree.nodes.comprehensions.ContainerBasedComprehension;
-import org.vstu.meaningtree.nodes.comprehensions.RangeBasedComprehension;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
+import org.vstu.meaningtree.nodes.expressions.*;
+import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
+import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
+import org.vstu.meaningtree.nodes.expressions.comprehensions.RangeBasedComprehension;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.*;
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
-import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.io.PrintCommand;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.io.PrintValues;
-import org.vstu.meaningtree.nodes.literals.*;
-import org.vstu.meaningtree.nodes.logical.NotOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
-import org.vstu.meaningtree.nodes.math.*;
+import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.modules.Alias;
 import org.vstu.meaningtree.nodes.modules.Import;
 import org.vstu.meaningtree.nodes.modules.ImportAll;
 import org.vstu.meaningtree.nodes.modules.ImportMembers;
 import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
+import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
+import org.vstu.meaningtree.nodes.statements.loops.ForEachLoop;
+import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
+import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.types.Class;
-import org.vstu.meaningtree.nodes.unary.UnaryMinusOp;
-import org.vstu.meaningtree.nodes.unary.UnaryPlusOp;
+import org.vstu.meaningtree.nodes.types.user.Class;
+import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
+import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
+import org.vstu.meaningtree.nodes.types.builtin.FloatType;
+import org.vstu.meaningtree.nodes.types.builtin.IntType;
+import org.vstu.meaningtree.nodes.types.builtin.StringType;
+import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
+import org.vstu.meaningtree.nodes.types.containers.ListType;
+import org.vstu.meaningtree.nodes.types.containers.SetType;
+import org.vstu.meaningtree.nodes.types.containers.UnmodifiableListType;
 
 import java.io.File;
 import java.io.IOException;
@@ -378,7 +405,7 @@ public class PythonLanguage extends Language {
         List<Node> nodes = new ArrayList<>();
         for (Node bodyNode : body) {
             if (bodyNode instanceof VariableDeclaration var) {
-                nodes.add(var.makeField(List.of(Modifier.PUBLIC)));
+                nodes.add(var.makeField(List.of(DeclarationModifier.PUBLIC)));
             } else if (bodyNode instanceof FunctionDefinition func) {
                 boolean isStatic = false;
                 List<Annotation> anno = ((FunctionDeclaration) (func.getDeclaration())).getAnnotations();
@@ -386,11 +413,11 @@ public class PythonLanguage extends Language {
                     isStatic = annotation.hasName() && (annotation.getName().toString().equals("staticmethod") || annotation.getName().toString().equals("classmethod"));
                     if (isStatic) break;
                 }
-                List<Modifier> modifiers = new ArrayList<>();
+                List<DeclarationModifier> modifiers = new ArrayList<>();
                 if (isStatic) {
-                    modifiers.add(Modifier.STATIC);
+                    modifiers.add(DeclarationModifier.STATIC);
                 }
-                Modifier visibility = Modifier.PUBLIC;
+                DeclarationModifier visibility = DeclarationModifier.PUBLIC;
                 modifiers.add(visibility);
                 MethodDefinition method = func.makeMethod(type, modifiers);
                 MethodDeclaration decl = ((MethodDeclaration) method.getDeclaration());

@@ -4,7 +4,6 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
 public class ExpressionStatement extends Statement {
-
     protected final Expression _expr;
 
     public ExpressionStatement(Expression expr) {

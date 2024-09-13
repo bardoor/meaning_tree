@@ -1,7 +1,7 @@
 package org.vstu.meaningtree.nodes.modules;
 
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
 public class Alias extends Identifier {
     private final Identifier _realName;

@@ -1,16 +1,35 @@
 package org.vstu.meaningtree.languages;
 
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.languages.utils.ExpressionDAG;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.comparison.*;
 import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
-import org.vstu.meaningtree.nodes.identifiers.*;
-import org.vstu.meaningtree.nodes.literals.BoolLiteral;
-import org.vstu.meaningtree.nodes.logical.NotOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
+import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SuperClassReference;
+import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
+import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
+import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
+import org.vstu.meaningtree.nodes.statements.loops.DoWhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.ForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -221,7 +240,7 @@ public class PythonSpecialNodeTransformations {
     @SuppressWarnings("unchecked")
     public static MethodDefinition detectInstanceReferences(MethodDefinition def) {
         MethodDeclaration decl = (MethodDeclaration)def.getDeclaration();
-        if (decl.getArguments().isEmpty() || decl.getModifiers().contains(Modifier.STATIC)) {
+        if (decl.getArguments().isEmpty() || decl.getModifiers().contains(DeclarationModifier.STATIC)) {
             return def;
         }
         SimpleIdentifier instanceName = decl.getArguments().getFirst().getName();

@@ -4,32 +4,56 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.nodes.ParenthesizedExpression;
+import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.bitwise.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
-import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
-import org.vstu.meaningtree.nodes.identifiers.SelfReference;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
-import org.vstu.meaningtree.nodes.literals.*;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitAndOp;
-import org.vstu.meaningtree.nodes.logical.ShortCircuitOrOp;
-import org.vstu.meaningtree.nodes.math.*;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
-import org.vstu.meaningtree.nodes.comparison.*;
-import org.vstu.meaningtree.nodes.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
+import org.vstu.meaningtree.nodes.statements.loops.*;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.types.Class;
-import org.vstu.meaningtree.nodes.unary.*;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.nodes.types.user.Class;
+import org.vstu.meaningtree.nodes.types.containers.ArrayType;
+import org.vstu.meaningtree.nodes.types.builtin.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -132,7 +156,7 @@ public class JavaLanguage extends Language {
     }
 
     private Node fromConstructorDeclarationTSNode(TSNode node) {
-        List<Modifier> modifiers;
+        List<DeclarationModifier> modifiers;
         if (node.getNamedChild(0).getType().equals("modifiers"))
             { modifiers = fromModifiers(node.getNamedChild(0)); }
         else
@@ -444,7 +468,7 @@ public class JavaLanguage extends Language {
     }
 
     private MethodDefinition fromMethodDeclarationTSNode(TSNode node) {
-        List<Modifier> modifiers = new ArrayList<>();
+        List<DeclarationModifier> modifiers = new ArrayList<>();
         if (node.getChild(0).getType().equals("modifiers")) {
             modifiers.addAll(fromModifiers(node.getChild(0)));
         }
@@ -510,7 +534,7 @@ public class JavaLanguage extends Language {
     private FieldDeclaration fromFieldDeclarationTSNode(TSNode node) {
         int currentChildIndex = 0;
 
-        List<Modifier> modifiers = new ArrayList<>();
+        List<DeclarationModifier> modifiers = new ArrayList<>();
         if (node.getChild(currentChildIndex).getType().equals("modifiers")) {
             modifiers.addAll(fromModifiers(node.getChild(currentChildIndex)));
         }
@@ -519,21 +543,21 @@ public class JavaLanguage extends Language {
         return new FieldDeclaration(declaration.getType(), modifiers, declaration.getDeclarators());
     }
 
-    private List<Modifier> fromModifiers(TSNode node) {
+    private List<DeclarationModifier> fromModifiers(TSNode node) {
         // Внутри происходит считывание лишь модификаторов области видимости,
         // причем допускается всего лишь 1 или 0 идентификаторов (несмотря на список).
         // Должно ли так быть - неизвестно, нужно разобраться...
-        List<Modifier> modifiers = new ArrayList<>();
+        List<DeclarationModifier> modifiers = new ArrayList<>();
 
         for (int i = 0; i < node.getChildCount(); i++) {
             modifiers.add(
                     switch (node.getChild(i).getType()) {
-                        case "public" -> Modifier.PUBLIC;
-                        case "private" -> Modifier.PRIVATE;
-                        case "protected" -> Modifier.PROTECTED;
-                        case "abstract" -> Modifier.ABSTRACT;
-                        case "final" -> Modifier.CONST;
-                        case "static" -> Modifier.STATIC;
+                        case "public" -> DeclarationModifier.PUBLIC;
+                        case "private" -> DeclarationModifier.PRIVATE;
+                        case "protected" -> DeclarationModifier.PROTECTED;
+                        case "abstract" -> DeclarationModifier.ABSTRACT;
+                        case "final" -> DeclarationModifier.CONST;
+                        case "static" -> DeclarationModifier.STATIC;
                         default -> throw new IllegalArgumentException("Unknown identifier: %s".formatted(node.getChild(i).getType()));
                     }
             );
@@ -545,7 +569,7 @@ public class JavaLanguage extends Language {
     private ClassDefinition fromClassDeclarationTSNode(TSNode node) {
         int currentChildIndex = 0;
 
-        List<Modifier> modifiers = new ArrayList<>();
+        List<DeclarationModifier> modifiers = new ArrayList<>();
         if (node.getChild(currentChildIndex).getType().equals("modifiers")) {
             modifiers.addAll(fromModifiers(node.getChild(currentChildIndex)));
             currentChildIndex++;
@@ -659,9 +683,9 @@ public class JavaLanguage extends Language {
 
     @Nullable
     private RangeForLoop tryMakeRangeForLoop(HasInitialization init,
-                                                Expression condition,
-                                                Expression update,
-                                                Statement body) {
+                                             Expression condition,
+                                             Expression update,
+                                             Statement body) {
         SimpleIdentifier loopVariable = null;
         Expression start = null;
         Expression stop = null;
@@ -859,7 +883,7 @@ public class JavaLanguage extends Language {
     }
 
     private VariableDeclaration fromVariableDeclarationTSNode(TSNode node) {
-        List<Modifier> modifiers = new ArrayList<>();
+        List<DeclarationModifier> modifiers = new ArrayList<>();
         TSNode possibleModifiers = node.getChild(0);
         if (possibleModifiers.getType().equals("modifiers")) {
             modifiers.addAll(fromModifiers(possibleModifiers));
@@ -917,7 +941,7 @@ public class JavaLanguage extends Language {
             // Только один класс в файле может иметь модификатор public,
             // поэтому он и является главным классом
             if (n instanceof ClassDefinition classDefinition
-                    && classDefinition.getModifiers().contains(Modifier.PUBLIC)) {
+                    && classDefinition.getModifiers().contains(DeclarationModifier.PUBLIC)) {
                 mainClass = classDefinition;
 
                 MethodDefinition m = mainClass.findMethod("main");

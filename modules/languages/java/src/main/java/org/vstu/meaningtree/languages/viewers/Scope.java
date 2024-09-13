@@ -3,7 +3,7 @@ package org.vstu.meaningtree.languages.viewers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 
 import java.util.HashMap;

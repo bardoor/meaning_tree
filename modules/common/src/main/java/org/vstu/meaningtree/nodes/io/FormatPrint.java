@@ -1,7 +1,7 @@
 package org.vstu.meaningtree.nodes.io;
 
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
 
 import java.util.List;
 

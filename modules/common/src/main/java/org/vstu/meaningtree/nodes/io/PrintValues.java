@@ -3,7 +3,7 @@ package org.vstu.meaningtree.nodes.io;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
 
 import java.util.List;
 import java.util.Objects;

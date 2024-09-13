@@ -1,10 +1,10 @@
 package org.vstu.meaningtree.nodes.types;
 
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.identifiers.QualifiedIdentifier;
-import org.vstu.meaningtree.nodes.identifiers.ScopedIdentifier;
-import org.vstu.meaningtree.nodes.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
 import java.util.Objects;
 

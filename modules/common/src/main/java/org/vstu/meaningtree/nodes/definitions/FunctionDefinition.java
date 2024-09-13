@@ -1,13 +1,13 @@
 package org.vstu.meaningtree.nodes.definitions;
 
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
-import org.vstu.meaningtree.nodes.Statement;
-import org.vstu.meaningtree.nodes.declarations.DeclarationArgument;
+import org.vstu.meaningtree.nodes.Definition;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
-import org.vstu.meaningtree.nodes.declarations.Modifier;
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.nodes.statements.HasBodyStatement;
+import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
 import org.vstu.meaningtree.nodes.types.UserType;
 
 import java.util.List;
@@ -24,7 +24,7 @@ public class FunctionDefinition extends Definition implements HasBodyStatement {
         return ((FunctionDeclaration) getDeclaration()).getName();
     }
 
-    public MethodDefinition makeMethod(UserType owner, List<Modifier> modifiers) {
+    public MethodDefinition makeMethod(UserType owner, List<DeclarationModifier> modifiers) {
         FunctionDeclaration decl = (FunctionDeclaration) getDeclaration();
         return new MethodDefinition(
                 new MethodDeclaration(

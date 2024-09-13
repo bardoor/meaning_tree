@@ -1,7 +1,9 @@
 package org.vstu.meaningtree.nodes.definitions;
 
+import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.declarations.*;
-import org.vstu.meaningtree.nodes.identifiers.Identifier;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.types.UserType;
 
@@ -13,7 +15,7 @@ public class ObjectConstructorDefinition extends MethodDefinition {
             UserType owner,
             Identifier name,
             List<Annotation> annotations,
-            List<Modifier> modifiers,
+            List<DeclarationModifier> modifiers,
             List<DeclarationArgument> arguments,
             CompoundStatement body
     ) {
