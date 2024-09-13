@@ -1,9 +1,11 @@
-package org.vstu.meaningtree.languages.viewers;
+package org.vstu.meaningtree.languages;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.enums.DeclarationModifier;
+import org.vstu.meaningtree.languages.utils.HindleyMilner;
+import org.vstu.meaningtree.languages.utils.Scope;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;

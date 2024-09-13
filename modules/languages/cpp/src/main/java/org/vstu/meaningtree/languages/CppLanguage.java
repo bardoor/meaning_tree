@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.languages.parsers;
+package org.vstu.meaningtree.languages;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;

@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.languages.viewers;
+package org.vstu.meaningtree.languages.utils;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.*;
