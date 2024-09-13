@@ -37,12 +37,13 @@ public class PythonViewer extends Viewer {
         return toString(node, tab);
     }
 
-    public String toString(Node ... nodes) {
+    public String toString(Tab tab, Node ... nodes) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < nodes.length; i++) {
-            builder.append(toString(nodes[i]));
+            builder.append(toString(nodes[i], tab));
             if (i != nodes.length - 1) {
                 builder.append("\n");
+                builder.append(tab);
             }
         }
         return builder.toString();
@@ -324,7 +325,7 @@ public class PythonViewer extends Viewer {
             );
             builder.append(toString(rangeFor.getBody(), tab));
         } else if (stmt instanceof GeneralForLoop generalFor) {
-            return toString(PythonSpecialNodeTransformations.representGeneralFor(generalFor));
+            return toString(tab, PythonSpecialNodeTransformations.representGeneralFor(generalFor));
         } else if (stmt instanceof DoWhileLoop doWhile) {
             return toString(PythonSpecialNodeTransformations.representDoWhile(doWhile));
         } else if (stmt instanceof WhileLoop whileLoop) {
