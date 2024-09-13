@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.enums;
+package org.vstu.meaningtree.nodes.enums;
 
 public enum DeclarationModifier {
     PUBLIC,
