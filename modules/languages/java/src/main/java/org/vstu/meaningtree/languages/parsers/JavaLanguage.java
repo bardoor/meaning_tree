@@ -669,10 +669,9 @@ public class JavaLanguage extends Language {
         boolean isExcludingEnd = false;
 
         if (init instanceof AssignmentExpression assignmentExpression
-                && assignmentExpression.getLValue() instanceof SimpleIdentifier loopVariable_
-                && assignmentExpression.getRValue() instanceof IntegerLiteral start_) {
+                && assignmentExpression.getLValue() instanceof SimpleIdentifier loopVariable_) {
             loopVariable = loopVariable_;
-            start = start_;
+            start = assignmentExpression.getRValue();
         }
         // TODO: этот ужас нужно когда-нибудь переписать нормально
         else if (init instanceof VariableDeclaration variableDeclaration) {
@@ -692,9 +691,14 @@ public class JavaLanguage extends Language {
         }
 
         if (condition instanceof BinaryComparison binaryComparison
-            && binaryComparison.getLeft().equals(loopVariable)
-            && binaryComparison.getRight() instanceof IntegerLiteral stop_) {
-            stop = stop_;
+            && (binaryComparison.getLeft().equals(loopVariable) || binaryComparison.getRight().equals(loopVariable))) {
+
+            boolean isLoopVarLeft = binaryComparison.getLeft().equals(loopVariable);
+            if (isLoopVarLeft) {
+                stop = binaryComparison.getRight();
+            } else {
+                stop = binaryComparison.getLeft();
+            }
 
             if (binaryComparison instanceof LtOp || binaryComparison instanceof GtOp) {
                 isExcludingEnd = true;
@@ -714,6 +718,15 @@ public class JavaLanguage extends Language {
             case PostfixIncrementOp postfixIncrementOp -> new IntegerLiteral("1");
             case PrefixDecrementOp prefixDecrementOp -> new IntegerLiteral("-1");
             case PrefixIncrementOp prefixIncrementOp -> new IntegerLiteral("1");
+            case AssignmentExpression assignment -> {
+                if (assignment.getAugmentedOperator() == AugmentedAssignmentOperator.ADD) {
+                    yield assignment.getRValue();
+                } else if (assignment.getAugmentedOperator() == AugmentedAssignmentOperator.SUB) {
+                    yield new UnaryMinusOp(assignment.getRValue());
+                } else {
+                    yield null;
+                }
+            }
             default -> null;
         };
 
