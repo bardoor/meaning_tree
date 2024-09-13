@@ -13,6 +13,12 @@ public abstract class LanguageTranslator {
     protected LanguageViewer _viewer;
     private ArrayList<ConfigParameter> _declaredConfigParams = new ArrayList<>();
 
+    /**
+     * Создает транслятор языка
+     * @param language - parser языка
+     * @param viewer - viewer языка
+     * @param rawConfig - конфигурация в формате "название - значение" в виде строки (тип будет выведен автоматически из строки)
+     */
     protected LanguageTranslator(LanguageParser language, LanguageViewer viewer, Map<String, String> rawConfig) {
         _language = language;
         _viewer = viewer;
