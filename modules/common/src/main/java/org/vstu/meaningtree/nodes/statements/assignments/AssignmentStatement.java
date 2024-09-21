@@ -1,7 +1,8 @@
 package org.vstu.meaningtree.nodes.statements.assignments;
 
-import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
-import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Statement;
+import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 
 public class AssignmentStatement extends Statement implements HasInitialization {

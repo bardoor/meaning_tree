@@ -1,17 +1,19 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.enums.DeclarationModifier;
+import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Declaration;
-import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
-import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-public class VariableDeclaration extends Declaration implements HasInitialization {
+public class VariableDeclaration extends Declaration implements HasInitialization, Iterable<VariableDeclarator> {
     protected final Type _type;
     protected final List<VariableDeclarator> variableDeclaratorList;
 
@@ -49,5 +51,11 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @NotNull
+    @Override
+    public Iterator<VariableDeclarator> iterator() {
+        return variableDeclaratorList.iterator();
     }
 }

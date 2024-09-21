@@ -1,30 +1,38 @@
 package org.vstu.meaningtree.languages;
+
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
-import org.vstu.meaningtree.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
+import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
+import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
-import org.vstu.meaningtree.nodes.expressions.*;
-import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
+import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
-import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
-import org.vstu.meaningtree.nodes.expressions.literals.*;
-import org.vstu.meaningtree.nodes.expressions.math.*;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
+import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
@@ -32,12 +40,8 @@ import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
-import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
-import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.modules.*;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.*;
-import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
@@ -49,11 +53,14 @@ import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCa
 import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
-import org.vstu.meaningtree.nodes.types.*;
+import org.vstu.meaningtree.nodes.types.UnknownType;
+import org.vstu.meaningtree.nodes.types.UserType;
+import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.ArrayType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.nodes.types.user.Class;
-import org.vstu.meaningtree.nodes.types.containers.ArrayType;
-import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.utils.BodyBuilder;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,15 +70,17 @@ public class JavaLanguage extends LanguageParser {
     private final TSLanguage _language;
     private final TSParser _parser;
     private final Map<String, UserType> _userTypes;
+    private SymbolEnvironment currentContext;
 
     public JavaLanguage() {
         _language = new TreeSitterJava();
         _parser = new TSParser();
         _parser.setLanguage(_language);
         _userTypes = new HashMap<>();
+        currentContext = new SymbolEnvironment(null);
     }
 
-    public MeaningTree getMeaningTree(String code) {
+    public synchronized MeaningTree getMeaningTree(String code) {
         _code = code;
 
         TSTree tree = _parser.parseString(null, code);
@@ -80,6 +89,12 @@ public class JavaLanguage extends LanguageParser {
         } catch (IOException e) { }
 
         return new MeaningTree(fromTSNode(tree.getRootNode()));
+    }
+
+    private void rollbackContext() {
+        if (currentContext.getParent() != null) {
+            currentContext = currentContext.getParent();
+        }
     }
 
     private Node fromTSNode(TSNode node) {
@@ -92,7 +107,7 @@ public class JavaLanguage extends LanguageParser {
         String nodeType = node.getType();
         return switch (nodeType) {
             case "program" -> fromProgramTSNode(node);
-            case "block" -> fromBlockTSNode(node);
+            case "block" -> fromBlockTSNode(node, currentContext);
             case "statement" -> fromStatementTSNode(node);
             case "if_statement" -> fromIfStatementTSNode(node);
             case "condition" -> fromConditionTSNode(node);
@@ -163,7 +178,7 @@ public class JavaLanguage extends LanguageParser {
             { modifiers = List.of(); }
         Identifier name = fromIdentifierTSNode(node.getChildByFieldName("name"));
         List<DeclarationArgument> parameters = fromMethodParameters(node.getChildByFieldName("parameters"));
-        CompoundStatement body = fromBlockTSNode(node.getChildByFieldName("body"));
+        CompoundStatement body = fromBlockTSNode(node.getChildByFieldName("body"), currentContext);
         // TODO: определение класса, к которому принадлежит метод и считывание аннотаций
         return new ObjectConstructorDefinition(null, name, List.of(), modifiers, parameters, body);
     }
@@ -417,18 +432,18 @@ public class JavaLanguage extends LanguageParser {
         Expression matchValue =
                 (Expression) fromTSNode(switchGroup.getNamedChild(0).getNamedChild(0));
 
-        List<Node> statements = new ArrayList<>();
+        BodyBuilder builder = new BodyBuilder(currentContext);
         for (int i = 1; i < switchGroup.getNamedChildCount(); i++) {
-            statements.add(fromTSNode(switchGroup.getNamedChild(i)));
+            builder.put(fromTSNode(switchGroup.getNamedChild(i)));
         }
 
         CaseBlock caseBlock;
-        if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
-            statements.removeLast();
-            caseBlock = new BasicCaseBlock(matchValue, new CompoundStatement(statements));
+        if (!builder.isEmpty() && builder.getLast() instanceof BreakStatement) {
+            builder.removeLast();
+            caseBlock = new BasicCaseBlock(matchValue, builder.build());
         }
         else {
-            caseBlock = new FallthroughCaseBlock(matchValue, new CompoundStatement(statements));
+            caseBlock = new FallthroughCaseBlock(matchValue, builder.build());
         }
 
         return caseBlock;
@@ -444,24 +459,26 @@ public class JavaLanguage extends LanguageParser {
         TSNode switchBlock = switchNode.getChildByFieldName("body");
         for (int i = 0; i < switchBlock.getNamedChildCount(); i++) {
             TSNode switchGroup = switchBlock.getNamedChild(i);
+            currentContext = new SymbolEnvironment(currentContext);
 
             String labelName = getCodePiece(switchGroup.getNamedChild(0));
             if (labelName.equals("default")) {
-                List<Node> statements = new ArrayList<>();
+                BodyBuilder statements = new BodyBuilder(currentContext);
 
                 for (int j = 1; j < switchGroup.getNamedChildCount(); j++) {
-                    statements.add(fromTSNode(switchGroup.getNamedChild(j)));
+                    statements.put(fromTSNode(switchGroup.getNamedChild(j)));
                 }
 
                 if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
                     statements.removeLast();
                 }
-                defaultCaseBlock = new DefaultCaseBlock(new CompoundStatement(statements));
+                defaultCaseBlock = new DefaultCaseBlock(statements.build());
             }
             else {
                 CaseBlock caseBlock = fromSwitchGroupTSNode(switchGroup);
                 cases.add(caseBlock);
             }
+            rollbackContext();
         }
 
         return new SwitchStatement(matchValue, cases, defaultCaseBlock);
@@ -486,7 +503,7 @@ public class JavaLanguage extends LanguageParser {
                 parameters
         );
 
-        CompoundStatement body = fromBlockTSNode(node.getChildByFieldName("body"));
+        CompoundStatement body = fromBlockTSNode(node.getChildByFieldName("body"), currentContext);
 
         return new MethodDefinition(declaration, body);
     }
@@ -582,12 +599,14 @@ public class JavaLanguage extends LanguageParser {
         currentChildIndex++;
 
         // Парсим тело класса как блочное выражение... Правильно ли? Кто знает...
-        CompoundStatement classBody = fromBlockTSNode(node.getChild(currentChildIndex));
+        CompoundStatement classBody = fromBlockTSNode(node.getChild(currentChildIndex), currentContext);
         currentChildIndex++;
 
         ClassDeclaration decl = new ClassDeclaration(modifiers, className);
         // TODO: нужно поменять getNodes() у CompoundStatement, чтобы он не массив возвращал
-        return new ClassDefinition(decl, classBody);
+        ClassDefinition def = new ClassDefinition(decl, classBody);
+        classBody.getEnv().setOwner(def);
+        return def;
     }
 
     private ScopedIdentifier fromScopedIdentifierTSNode(TSNode node) {
@@ -913,6 +932,7 @@ public class JavaLanguage extends LanguageParser {
         return new VariableDeclaration(type, declarators);
     }
 
+    @Deprecated
     private ProgramEntryPoint _fromProgramTSNode(TSNode node) {
         if (node.getChildCount() == 0) {
             throw new IllegalArgumentException();
@@ -922,22 +942,27 @@ public class JavaLanguage extends LanguageParser {
 
         ClassDefinition classDefinition = fromClassDeclarationTSNode(node.getChild(1));
 
+        currentContext = new SymbolEnvironment(null);
+        BodyBuilder builder = new BodyBuilder(currentContext);
         List<Node> body = List.of(packageDeclaration, classDefinition);
+        for (Node bodyNode : body) {
+            builder.put(bodyNode);
+        }
 
         MethodDefinition mainMethod = classDefinition.findMethod("main");
-        return (mainMethod != null) ? new ProgramEntryPoint(body, classDefinition, mainMethod)
-                                    : new ProgramEntryPoint(body, classDefinition);
+        return (mainMethod != null) ? new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), classDefinition, mainMethod)
+                                    : new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), classDefinition);
     }
 
     private ProgramEntryPoint fromProgramTSNode(TSNode node) {
-        List<Node> nodes = new ArrayList<>();
+        BodyBuilder builder = new BodyBuilder();
         for (int i = 0; i < node.getNamedChildCount(); i++) {
-            nodes.add(fromTSNode(node.getNamedChild(i)));
+            builder.put(fromTSNode(node.getNamedChild(i)));
         }
 
         ClassDefinition mainClass = null;
         MethodDefinition mainMethod = null;
-        for (Node n : nodes) {
+        for (Node n : builder.getCurrentNodes()) {
             // Только один класс в файле может иметь модификатор public,
             // поэтому он и является главным классом
             if (n instanceof ClassDefinition classDefinition
@@ -951,7 +976,7 @@ public class JavaLanguage extends LanguageParser {
             }
         }
 
-        return new ProgramEntryPoint(nodes, mainClass, mainMethod);
+        return new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), mainClass, mainMethod);
     }
 
     private Loop fromWhileTSNode(TSNode node) {
@@ -968,13 +993,15 @@ public class JavaLanguage extends LanguageParser {
         return new WhileLoop(mtCond, mtBody);
     }
 
-    private CompoundStatement fromBlockTSNode(TSNode node) {
-        CompoundStatement compoundStatement = new CompoundStatement();
+    private CompoundStatement fromBlockTSNode(TSNode node, SymbolEnvironment parentEnv) {
+        currentContext = new SymbolEnvironment(parentEnv);
+        BodyBuilder builder = new BodyBuilder(currentContext);
         for (int i = 1; i < node.getChildCount() - 1; i++) {
             Node child = fromTSNode(node.getChild(i));
-            compoundStatement.add(child);
+            builder.put(child);
         }
-        return compoundStatement;
+        rollbackContext();
+        return builder.build();
     }
 
     private Node fromStatementTSNode(TSNode node) {

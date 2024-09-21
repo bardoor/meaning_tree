@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UserType;

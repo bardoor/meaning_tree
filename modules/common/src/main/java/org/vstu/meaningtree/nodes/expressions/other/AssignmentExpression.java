@@ -1,7 +1,7 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
-import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 
 import java.util.Objects;

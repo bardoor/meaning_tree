@@ -2,19 +2,21 @@ package org.vstu.meaningtree.nodes;
 
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
-import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
+import org.vstu.meaningtree.nodes.interfaces.HasSymbolScope;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
-public class ProgramEntryPoint extends Node {
+public class ProgramEntryPoint extends Node implements HasSymbolScope {
     /**
      * _body не содержит _entryPointNode, если только точка входа - не метод главного класса.
      * Однако _entryPointNode может отсутствовать, тогда точка входа - _body
      * Viewer должен сам подстроиться под эту ситуацию и адаптировать под особенности своего языка
      */
     private final List<Node> _body;
+    @Nullable
+    private final SymbolEnvironment _env;
 
     /**
      * Может быть функцией, методом главного класса, либо просто составным оператором (например, как в Python)
@@ -28,22 +30,23 @@ public class ProgramEntryPoint extends Node {
     @Nullable
     private final ClassDefinition _mainClass;
 
-    public ProgramEntryPoint(List<Node> body, ClassDefinition mainClass) {
-        this(body, mainClass, null);
+    public ProgramEntryPoint(@Nullable SymbolEnvironment env, List<Node> body, ClassDefinition mainClass) {
+        this(env, body, mainClass, null);
     }
 
-    public ProgramEntryPoint(List<Node> body) {
-        this(body, null, null);
+    public ProgramEntryPoint(@Nullable SymbolEnvironment env, List<Node> body) {
+        this(env, body, null, null);
     }
 
-    public ProgramEntryPoint(List<Node> body, Node entryPoint) {
-        this(body, null, entryPoint);
+    public ProgramEntryPoint(@Nullable SymbolEnvironment env, List<Node> body, Node entryPoint) {
+        this(env, body, null, entryPoint);
     }
 
-    public ProgramEntryPoint(List<Node> body, @Nullable ClassDefinition mainClass, @Nullable Node entryPoint) {
+    public ProgramEntryPoint(@Nullable SymbolEnvironment env, List<Node> body, @Nullable ClassDefinition mainClass, @Nullable Node entryPoint) {
         _body = body;
         _mainClass = mainClass;
         _entryPointNode = entryPoint;
+        _env = env;
     }
 
     public List<Node> getBody() {
@@ -77,5 +80,10 @@ public class ProgramEntryPoint extends Node {
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public SymbolEnvironment getEnv() {
+        return _env;
     }
 }

@@ -2,25 +2,24 @@ package org.vstu.meaningtree.nodes.statements;
 
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
+import org.vstu.meaningtree.nodes.interfaces.HasSymbolScope;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class CompoundStatement extends Statement implements Iterable<Node> {
+public class CompoundStatement extends Statement implements Iterable<Node>, HasSymbolScope {
     private final List<Node> _nodes;
+    private final SymbolEnvironment _env;
 
-    public CompoundStatement(Node... nodes) {
-        this(List.of(nodes));
+    public CompoundStatement(SymbolEnvironment env, Node... nodes) {
+        this(env, List.of(nodes));
     }
 
-    public CompoundStatement(List<Node> nodes) {
+    public CompoundStatement(SymbolEnvironment env, List<Node> nodes) {
+        _env = env;
         _nodes = new ArrayList<>(nodes);
-    }
-
-    public void add(Node node) {
-        _nodes.add(node);
     }
 
     @Override
@@ -43,6 +42,10 @@ public class CompoundStatement extends Statement implements Iterable<Node> {
         return _nodes.size();
     }
 
+    public Node[] getNodes() {
+        return _nodes.toArray(new Node[0]);
+    }
+
     public void substitute(int index, Node node) {
         _nodes.set(index, node);
     }
@@ -51,7 +54,8 @@ public class CompoundStatement extends Statement implements Iterable<Node> {
         _nodes.add(index, node);
     }
 
-    public Node[] getNodes() {
-        return _nodes.toArray(new Node[0]);
+    @Override
+    public SymbolEnvironment getEnv() {
+        return _env;
     }
 }

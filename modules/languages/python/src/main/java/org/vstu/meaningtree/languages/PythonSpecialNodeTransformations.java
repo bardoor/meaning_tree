@@ -1,25 +1,29 @@
 package org.vstu.meaningtree.languages;
 
-import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.languages.utils.ExpressionDAG;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
-import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.declarations.*;
+import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.Statement;
+import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
+import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
-import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SuperClassReference;
-import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
-import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
-import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
@@ -30,6 +34,8 @@ import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
 import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
+import org.vstu.meaningtree.utils.BodyBuilder;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -55,9 +61,11 @@ public class PythonSpecialNodeTransformations {
         Statement stmt = generalFor.getBody();
         CompoundStatement body;
         if (stmt instanceof CompoundStatement compound) {
-            body = new CompoundStatement(Arrays.asList(compound.getNodes()));
+            body = compound;
         } else {
-            body = new CompoundStatement(stmt);
+            BodyBuilder bb = new BodyBuilder();
+            bb.put(stmt);
+            body = bb.build();
         }
         _prepend_continue_with_expression(body, update);
         body.insert(body.getLength(), update);
@@ -88,7 +96,7 @@ public class PythonSpecialNodeTransformations {
             if (node instanceof ForLoop || node instanceof WhileLoop) {
                 return;
             } else if (node instanceof IfStatement ifStmt) {
-                ifStmt.makeBodyCompound();
+                ifStmt.makeCompoundBranches(compound.getEnv());
                 for (ConditionBranch branch : ifStmt.getBranches()) {
                     _prepend_continue_with_expression((CompoundStatement) branch.getBody(), update);
                 }
@@ -97,7 +105,7 @@ public class PythonSpecialNodeTransformations {
                 }
             } else if (node instanceof SwitchStatement switchStmt) {
                 //TODO: it is correct (continue usage) in programming languages?
-                switchStmt.makeBodyCompound();
+                switchStmt.makeCompoundBranches(compound.getEnv());
                 for (CaseBlock branch : switchStmt.getCases()) {
                     _prepend_continue_with_expression((CompoundStatement) branch.getBody(), update);
                 }
@@ -105,7 +113,7 @@ public class PythonSpecialNodeTransformations {
                     _prepend_continue_with_expression((CompoundStatement) switchStmt.getDefaultCase().getBody(), update);
                 }
             } else if (node instanceof HasBodyStatement hasBodyStmt) {
-                hasBodyStmt.makeBodyCompound();
+                hasBodyStmt.makeCompoundBody(compound.getEnv());
                 _prepend_continue_with_expression((CompoundStatement) hasBodyStmt.getBody(), update);
             }
         }
@@ -120,14 +128,16 @@ public class PythonSpecialNodeTransformations {
         }
         IfStatement breakCondition = new IfStatement(condition, new BreakStatement(), null);
         List<Node> body;
+        SymbolEnvironment env = null;
         if (doWhile.getBody() instanceof CompoundStatement compound) {
+            env = compound.getEnv();
             body = Arrays.asList(compound.getNodes());
         } else {
             body = new ArrayList<>();
             body.add(doWhile.getBody());
         }
         body.add(breakCondition);
-        return new WhileLoop(new BoolLiteral(true), new CompoundStatement(body));
+        return new WhileLoop(new BoolLiteral(true), new CompoundStatement(env, body));
     }
 
     public static Node detectCompoundComparison(Node expressionNode) {

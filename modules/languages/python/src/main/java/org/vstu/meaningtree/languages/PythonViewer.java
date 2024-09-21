@@ -1,34 +1,33 @@
 package org.vstu.meaningtree.languages;
 
-import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
-import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
+import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.RangeBasedComprehension;
-import org.vstu.meaningtree.nodes.declarations.*;
-import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
-import org.vstu.meaningtree.nodes.Definition;
-import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
-import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
-import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.identifiers.*;
 import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
-import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
-import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
-import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
@@ -39,15 +38,22 @@ import org.vstu.meaningtree.nodes.statements.conditions.components.*;
 import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
-import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.types.containers.*;
+import org.vstu.meaningtree.nodes.types.GenericUserType;
+import org.vstu.meaningtree.nodes.types.NoReturn;
+import org.vstu.meaningtree.nodes.types.UnknownType;
+import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.BooleanType;
 import org.vstu.meaningtree.nodes.types.builtin.FloatType;
 import org.vstu.meaningtree.nodes.types.builtin.IntType;
 import org.vstu.meaningtree.nodes.types.builtin.StringType;
+import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -203,9 +209,9 @@ public class PythonViewer extends LanguageViewer {
 
     private String functionDeclarationToString(FunctionDeclaration decl, Tab tab) {
         if (decl instanceof MethodDeclaration method) {
-            return functionToString(new MethodDefinition(method, new CompoundStatement()), tab);
+            return functionToString(new MethodDefinition(method, new CompoundStatement(new SymbolEnvironment(null))), tab);
         }
-        return functionToString(new FunctionDefinition(decl, new CompoundStatement()), tab);
+        return functionToString(new FunctionDefinition(decl, new CompoundStatement(new SymbolEnvironment(null))), tab);
     }
 
     private String classToString(ClassDefinition def, Tab tab) {
@@ -221,7 +227,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String classDeclToString(ClassDeclaration decl, Tab tab) {
-        return toString(new ClassDefinition(decl, new CompoundStatement()), tab);
+        return toString(new ClassDefinition(decl, new CompoundStatement(new SymbolEnvironment(null))), tab);
     }
 
     private String functionToString(Definition func, Tab tab) {
@@ -323,7 +329,7 @@ public class PythonViewer extends LanguageViewer {
                     }
                 }
                 FunctionCall funcCall = new FunctionCall(ident, nulls.toArray(new Expression[0]));
-                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), StringLiteral.fromUnescaped("__main__", StringLiteral.Type.NONE)), new CompoundStatement(funcCall),null);
+                entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), StringLiteral.fromUnescaped("__main__", StringLiteral.Type.NONE)), new CompoundStatement(new SymbolEnvironment(null), funcCall),null);
             } else if (entryPointNode instanceof CompoundStatement compound) {
                 entryPointIf = new IfStatement(new EqOp(new SimpleIdentifier("__name__"), StringLiteral.fromUnescaped("__main__", StringLiteral.Type.NONE)), compound,null);
             }

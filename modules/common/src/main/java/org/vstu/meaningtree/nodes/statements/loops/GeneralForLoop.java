@@ -1,10 +1,11 @@
 package org.vstu.meaningtree.nodes.statements.loops;
 
 import org.jetbrains.annotations.Nullable;
-import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 public class GeneralForLoop extends ForLoop {
     @Nullable
@@ -26,10 +27,11 @@ public class GeneralForLoop extends ForLoop {
     }
 
     @Override
-    public void makeBodyCompound() {
+    public CompoundStatement makeCompoundBody(SymbolEnvironment env) {
         if (!(_body instanceof CompoundStatement)) {
-            _body = new CompoundStatement(_body);
+            _body = new CompoundStatement(new SymbolEnvironment(env), getBody());
         }
+        return (CompoundStatement) _body;
     }
 
     public boolean hasInitializer() {

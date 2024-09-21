@@ -1,38 +1,37 @@
 package org.vstu.meaningtree.languages;
 
-import org.treesitter.TreeSitterPython;
-import org.treesitter.TSLanguage;
-import org.treesitter.TSNode;
-import org.treesitter.TSTree;
-import org.treesitter.TSParser;
-
+import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.enums.AugmentedAssignmentOperator;
-import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.definitions.*;
 import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
-import org.vstu.meaningtree.nodes.expressions.*;
+import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.RangeBasedComprehension;
-import org.vstu.meaningtree.nodes.declarations.*;
-import org.vstu.meaningtree.nodes.definitions.*;
-import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
-import org.vstu.meaningtree.nodes.expressions.literals.*;
-import org.vstu.meaningtree.nodes.expressions.math.*;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.other.*;
-import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
+import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
+import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.modules.Alias;
 import org.vstu.meaningtree.nodes.modules.Import;
 import org.vstu.meaningtree.nodes.modules.ImportAll;
@@ -52,10 +51,9 @@ import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
 import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
-import org.vstu.meaningtree.nodes.types.*;
-import org.vstu.meaningtree.nodes.types.user.Class;
-import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
-import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
+import org.vstu.meaningtree.nodes.types.GenericUserType;
+import org.vstu.meaningtree.nodes.types.UnknownType;
+import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.FloatType;
 import org.vstu.meaningtree.nodes.types.builtin.IntType;
 import org.vstu.meaningtree.nodes.types.builtin.StringType;
@@ -63,17 +61,25 @@ import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
 import org.vstu.meaningtree.nodes.types.containers.ListType;
 import org.vstu.meaningtree.nodes.types.containers.SetType;
 import org.vstu.meaningtree.nodes.types.containers.UnmodifiableListType;
+import org.vstu.meaningtree.nodes.types.user.Class;
+import org.vstu.meaningtree.utils.BodyBuilder;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class PythonLanguage extends LanguageParser {
+    private SymbolEnvironment currentContext;
 
     @Override
-    public MeaningTree getMeaningTree(String code) {
+    public synchronized MeaningTree getMeaningTree(String code) {
+        currentContext = new SymbolEnvironment(null);
         _code = code;
         TSParser parser = new TSParser();
         TSLanguage pyLanguage = new TreeSitterPython();
@@ -99,7 +105,7 @@ public class PythonLanguage extends LanguageParser {
         String nodeType = node.getType();
         return switch (nodeType) {
             case "module" -> createEntryPoint(node);
-            case "block" -> fromCompoundTSNode(node);
+            case "block" -> fromCompoundTSNode(node, currentContext);
             case "if_statement" -> fromIfStatementTSNode(node);
             case "expression_statement", "expression_list", "tuple_pattern" -> fromExpressionSequencesTSNode(node);
             case "parenthesized_expression" -> fromParenthesizedExpressionTSNode(node);
@@ -145,6 +151,12 @@ public class PythonLanguage extends LanguageParser {
             case "match_statement" -> fromMatchStatement(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+    }
+    
+    private void rollbackContext() {
+        if (currentContext.getParent() != null) {
+            currentContext = currentContext.getParent();
+        }
     }
 
     private Node fromComprehension(TSNode node) {
@@ -356,7 +368,10 @@ public class PythonLanguage extends LanguageParser {
             arguments.add(fromDeclarationArgument(node.getChildByFieldName("parameters").getNamedChild(i)));
         }
         Type returnType = determineType(node.getChildByFieldName("return_type"));
-        CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
+        currentContext = new SymbolEnvironment(currentContext);
+        CompoundStatement body = fromCompoundTSNode(node.getChildByFieldName("body"), currentContext);
+        assert body != null;
+        rollbackContext();
         return new FunctionDefinition(new FunctionDeclaration(name, returnType, anno, arguments.toArray(new DeclarationArgument[0])), body);
     }
 
@@ -400,11 +415,13 @@ public class PythonLanguage extends LanguageParser {
                 supertypes
         );
         UserType type = new Class((SimpleIdentifier) classDecl.getName());
-        CompoundStatement body = (CompoundStatement) fromTSNode(node.getChildByFieldName("body"));
-        List<Node> nodes = new ArrayList<>();
-        for (Node bodyNode : body) {
+        currentContext = new SymbolEnvironment(currentContext);
+        CompoundStatement body = fromCompoundTSNode(node.getChildByFieldName("body"), currentContext);
+        Node[] bodyNodes = body.getNodes();
+        for (int i = 0; i < body.getLength(); i++) {
+            Node bodyNode = bodyNodes[i];
             if (bodyNode instanceof VariableDeclaration var) {
-                nodes.add(var.makeField(List.of(DeclarationModifier.PUBLIC)));
+                body.substitute(i, var.makeField(List.of(DeclarationModifier.PUBLIC)));
             } else if (bodyNode instanceof FunctionDefinition func) {
                 boolean isStatic = false;
                 List<Annotation> anno = ((FunctionDeclaration) (func.getDeclaration())).getAnnotations();
@@ -425,12 +442,15 @@ public class PythonLanguage extends LanguageParser {
                 } else if (method.getName().toString().equals("__init__")) {
                     method = new ObjectConstructorDefinition(decl.getOwner(), decl.getName(), decl.getAnnotations(), decl.getModifiers(), decl.getArguments(), method.getBody());
                 }
-                nodes.add(PythonSpecialNodeTransformations.detectInstanceReferences(method));
+                body.substitute(i, PythonSpecialNodeTransformations.detectInstanceReferences(method));
             } else {
-                nodes.add(bodyNode);
+                body.substitute(i, bodyNode);
             }
         }
-        return new ClassDefinition(classDecl, nodes);
+        ClassDefinition def = new ClassDefinition(classDecl, body);
+        currentContext.setOwner(def);
+        rollbackContext();
+        return def;
     }
 
     private Statement fromForLoop(TSNode node) {
@@ -546,7 +566,8 @@ public class PythonLanguage extends LanguageParser {
 
     private Node createEntryPoint(TSNode node) {
         // detect if __name__ == __main__ construction
-        CompoundStatement compound = fromCompoundTSNode(node);
+        currentContext = new SymbolEnvironment(currentContext);
+        CompoundStatement compound = fromCompoundTSNode(node, currentContext);
         Node entryPointNode = null;
         IfStatement entryPointIf = null;
         for (Node programNode : compound) {
@@ -562,7 +583,7 @@ public class PythonLanguage extends LanguageParser {
         }
         List<Node> nodes = new ArrayList<>(List.of(compound.getNodes()));
         nodes.remove(entryPointIf);
-        return new ProgramEntryPoint(nodes, entryPointNode);
+        return new ProgramEntryPoint(currentContext, nodes, entryPointNode);
     }
 
     private Identifier fromIdentifier(TSNode node) {
@@ -755,30 +776,31 @@ public class PythonLanguage extends LanguageParser {
         };
     }
 
-    private CompoundStatement fromCompoundTSNode(TSNode node) {
-        ArrayList<Node> nodes = new ArrayList<>();
+    private CompoundStatement fromCompoundTSNode(TSNode node, SymbolEnvironment context) {
+        currentContext = context;
+        BodyBuilder builder = new BodyBuilder(currentContext);
         for (int i = 0; i < node.getChildCount(); i++) {
             Node treeNode = fromTSNode(node.getChild(i));
             if (treeNode instanceof PseudoCompoundStatement pcs) {
                 for (Node subnode : pcs) {
-                    nodes.add(subnode);
+                    builder.put(subnode);
                 }
             } else if (treeNode != null) {
-                nodes.add(treeNode);
+                builder.put(treeNode);
             }
         }
-        return new CompoundStatement(nodes.toArray(new Node[0]));
+        return builder.build();
     }
 
     private IfStatement fromIfStatementTSNode(TSNode node) {
         List<ConditionBranch> branches = new ArrayList<>();
-        branches.add(createConditionBranchTSNode(node));
+        branches.add(createConditionBranchTSNode(node, currentContext));
         Statement elseBranch = null;
         TSNode altNode = node.getChildByFieldName("alternative");
         while (!altNode.isNull() &&
                 (altNode.getType().equals("elif_clause") || altNode.getType().equals("else_clause"))) {
             if (altNode.getType().equals("elif_clause")) {
-                branches.add(createConditionBranchTSNode(altNode));
+                branches.add(createConditionBranchTSNode(altNode, currentContext));
             } else {
                 elseBranch = (Statement) fromTSNode(altNode.getChildByFieldName("body"));
             }
@@ -787,9 +809,10 @@ public class PythonLanguage extends LanguageParser {
         return new IfStatement(branches, elseBranch);
     }
 
-    private ConditionBranch createConditionBranchTSNode(TSNode node) {
+    private ConditionBranch createConditionBranchTSNode(TSNode node, SymbolEnvironment parentContext) {
         Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
         CompoundStatement consequence = (CompoundStatement) fromTSNode(node.getChildByFieldName("consequence"));
+        rollbackContext();
         return new ConditionBranch(condition, consequence);
     }
 

@@ -3,8 +3,8 @@ package org.vstu.meaningtree.nodes.statements.conditions;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,14 +63,9 @@ public class IfStatement extends Statement {
         return builder.toString();
     }
 
-    public void makeBodyCompound() {
-        if (hasElseBranch()) {
-            if (!(getElseBranch() instanceof CompoundStatement)) {
-                _elseBranch = new CompoundStatement(getElseBranch());
-            }
-        }
+    public void makeCompoundBranches(SymbolEnvironment env) {
         for (ConditionBranch branch : _branches) {
-            branch.makeBodyCompound();
+            branch.makeCompoundBody(env);
         }
     }
 }

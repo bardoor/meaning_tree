@@ -1,9 +1,9 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.enums.DeclarationModifier;
-import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.types.UserType;
 
 import java.util.List;

@@ -4,11 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
 import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
 import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
-import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class SwitchStatement extends Statement {
@@ -83,9 +85,9 @@ public class SwitchStatement extends Statement {
                 .toList();
     }
 
-    public void makeBodyCompound() {
-        for (CaseBlock caseBlock : _cases) {
-            caseBlock.makeBodyCompound();
+    public void makeCompoundBranches(SymbolEnvironment env) {
+        for (CaseBlock branch : _cases) {
+            branch.makeCompoundBody(env);
         }
     }
 }

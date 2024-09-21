@@ -1,19 +1,20 @@
 package org.vstu.meaningtree.nodes.definitions;
 
 import org.vstu.meaningtree.nodes.Definition;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
-import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
-import org.vstu.meaningtree.enums.DeclarationModifier;
-import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.types.UserType;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements HasBodyStatement {
-    private CompoundStatement _body;
+    protected CompoundStatement _body;
 
     public FunctionDefinition(FunctionDeclaration declaration, CompoundStatement body) {
         super(declaration);
@@ -44,5 +45,7 @@ public class FunctionDefinition extends Definition implements HasBodyStatement {
     }
 
     @Override
-    public void makeBodyCompound() {}
+    public CompoundStatement makeCompoundBody(SymbolEnvironment env) {
+        return _body;
+    }
 }

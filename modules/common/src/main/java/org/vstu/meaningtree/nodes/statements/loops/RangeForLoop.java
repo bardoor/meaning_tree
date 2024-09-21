@@ -1,10 +1,11 @@
 package org.vstu.meaningtree.nodes.statements.loops;
 
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.expressions.other.Range;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.other.Range;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 /**
  * Цикл по диапазону целых чисел (начало и конец являются частью диапазона) с заданным шагом.
@@ -77,19 +78,20 @@ public class RangeForLoop extends ForLoop {
         return _range.getStopValueAsLong();
     }
 
+    @Override
+    public CompoundStatement makeCompoundBody(SymbolEnvironment env) {
+        if (!(_body instanceof CompoundStatement)) {
+            _body = new CompoundStatement(new SymbolEnvironment(env), getBody());
+        }
+        return (CompoundStatement) _body;
+    }
+
     public long getStepValueAsLong() throws IllegalStateException {
         return _range.getStepValueAsLong();
     }
 
     public boolean isExcludingStop() {
         return _range.isExcludingEnd();
-    }
-
-    @Override
-    public void makeBodyCompound() {
-        if (!(_body instanceof CompoundStatement)) {
-            _body = new CompoundStatement(_body);
-        }
     }
 
     @Override

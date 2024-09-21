@@ -1,12 +1,12 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.vstu.meaningtree.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.Declaration;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
-import org.vstu.meaningtree.nodes.types.UserType;
 
 import java.util.List;
 
