@@ -87,8 +87,26 @@ public class CppLanguage extends LanguageParser {
             case "declaration" -> fromDeclaration(node);
             case "identifier" -> fromIdentifier(node);
             case "number_literal" -> fromNumberLiteral(node);
+            case "user_defined_literal" -> fromUserDefinedLiteral(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    @NotNull
+    private NumericLiteral fromUserDefinedLiteral(@NotNull TSNode node) {
+        String value = getCodePiece(node.getChildByFieldName("number_literal"));
+        String literalSuffix = getCodePiece(node.getChildByFieldName("literal_suffix"));
+
+        if (literalSuffix.equals("f") || literalSuffix.equals("F")) {
+            return new FloatLiteral(value, false);
+        }
+
+        throw new IllegalArgumentException(
+                "Can't parse user defined literal with \"%s\" value and \"%s\" literal suffix".formatted(
+                        value,
+                        literalSuffix
+                )
+        );
     }
 
     @NotNull
@@ -244,7 +262,7 @@ public class CppLanguage extends LanguageParser {
         }
 
         if (type.contains("long")) {
-            size *= StringUtils.countMatches(type, "long");
+            size *= (int) Math.pow(2, StringUtils.countMatches(type, "long"));
         } else if (type.contains("short")) {
             size = 16;
         }
