@@ -33,9 +33,6 @@ group: LiteralsTest
 
 
     case: LongLiteral
-        python:
-            345L
-
         java:
             345L;
 

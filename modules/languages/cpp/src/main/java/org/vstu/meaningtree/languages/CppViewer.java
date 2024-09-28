@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
@@ -50,6 +51,7 @@ public class CppViewer extends LanguageViewer {
     @Override
     public String toString(@NotNull Node node) {
         return switch (node) {
+            case ProgramEntryPoint entryPoint -> toStringEntryPoint(entryPoint);
             case VariableDeclarator variableDeclarator -> toStringVariableDeclarator(variableDeclarator);
             case ExpressionStatement expressionStatement -> toStringExpressionStatement(expressionStatement);
             case VariableDeclaration variableDeclaration -> toStringVariableDeclaration(variableDeclaration);
@@ -66,6 +68,16 @@ public class CppViewer extends LanguageViewer {
             case BinaryExpression binaryExpression -> toStringBinaryExpression(binaryExpression);
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
+    }
+
+    private String toStringEntryPoint(ProgramEntryPoint entryPoint) {
+        // TODO: required main function creation or expression mode
+        StringBuilder builder = new StringBuilder();
+        for (Node node : entryPoint.getBody()) {
+            builder.append(toString(node));
+            builder.append("\n");
+        }
+        return builder.toString();
     }
 
     @NotNull

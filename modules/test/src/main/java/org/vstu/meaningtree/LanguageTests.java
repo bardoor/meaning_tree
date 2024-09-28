@@ -1,15 +1,20 @@
 package org.vstu.meaningtree;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
 import org.vstu.meaningtree.languages.JavaTranslator;
 import org.vstu.meaningtree.languages.PythonTranslator;
 
 import java.io.*;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LanguageTests {
     private static final Map<String, TestGroup[]> _tests = new HashMap<>();
@@ -54,6 +59,7 @@ class LanguageTests {
 
         _config.addLanguageConfig(new TestLanguageConfig(new JavaTranslator(defaultConfig), "java", false));
         _config.addLanguageConfig(new TestLanguageConfig(new PythonTranslator(), "python", true));
+        //_config.addLanguageConfig(new TestLanguageConfig(new CppTranslator(defaultConfig), "c++", false));
         parseTestsFiles();
     }
 
