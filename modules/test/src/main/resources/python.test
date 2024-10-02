@@ -25,10 +25,10 @@ group: LiteralsTest
 
     case: LongLiteral
         python:
-            345L
+            5000000000
 
         python:
-            345L
+            5000000000
 
     case: ExponentialLiteral
         python:

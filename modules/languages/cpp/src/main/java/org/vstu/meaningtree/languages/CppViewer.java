@@ -291,12 +291,11 @@ public class CppViewer extends LanguageViewer {
     @NotNull
     private String toStringNumericLiteral(@NotNull NumericLiteral numericLiteral) {
         if (numericLiteral instanceof FloatLiteral floatLiteral) {
-            String repr = floatLiteral.getStringValue();
-            return floatLiteral.isDoublePrecision() ? repr : repr + "f";
+            return floatLiteral.getStringValue(true);
         }
 
         IntegerLiteral integerLiteral = (IntegerLiteral) numericLiteral;
-        return integerLiteral.getStringValue();
+        return integerLiteral.getStringValue(true);
     }
 
     @NotNull

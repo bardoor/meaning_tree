@@ -1,13 +1,15 @@
 package org.vstu.meaningtree.nodes.expressions.literals;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Objects;
 
 public class FloatLiteral extends NumericLiteral {
     private final double _value;
-    private final boolean _isDoublePrecision;
+    private boolean _isDoublePrecision;
 
     public FloatLiteral(String s, boolean isDoublePrecision) {
-        _value = Double.parseDouble(s);
+        _value = parseValue(s, false);
         _isDoublePrecision = isDoublePrecision;
     }
 
@@ -22,8 +24,15 @@ public class FloatLiteral extends NumericLiteral {
     }
 
     public FloatLiteral(String s) {
-        _value = Double.parseDouble(s);
-        _isDoublePrecision = !s.toLowerCase().endsWith("f");
+        _value = parseValue(s, true);
+    }
+
+    public double parseValue(String s, boolean parseModifiers) {
+        if (parseModifiers) {
+            _isDoublePrecision = !s.toLowerCase().endsWith("f");
+            s = StringUtils.remove(s.toLowerCase(), "f");
+        }
+        return Double.parseDouble(s);
     }
 
     @Override
@@ -34,8 +43,9 @@ public class FloatLiteral extends NumericLiteral {
     public double getDoubleValue() {return _value;}
 
     @Override
-    public String getStringValue() {
-        return Double.toString(_value);
+    public String getStringValue(boolean outputModifiers) {
+        String s = Double.toString(_value);
+        return s.concat(!isDoublePrecision() && outputModifiers ? "f" : "");
     }
 
     public boolean isDoublePrecision() {

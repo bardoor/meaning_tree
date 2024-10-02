@@ -12,20 +12,28 @@ public class IntegerLiteral extends NumericLiteral {
         OCTAL
     }
 
-    private boolean _isLongNumber;
-    private boolean _isUnsigned;
+    private boolean _isLongNumber = false;
+    private boolean _isUnsigned = false;
     private final long _value;
     private Representation _repr;
 
     public IntegerLiteral(String s) {
-        _value = parseValue(s);
+        _value = parseValue(s, true);
+    }
+
+    public IntegerLiteral(String s, boolean isLong, boolean isUnsigned) {
+        _isLongNumber = isLong;
+        _isUnsigned = isUnsigned;
+        _value = parseValue(s, false);
     }
 
     public IntegerLiteral(long value) {
-        _value = parseValue(Long.toString(value));
+        _value = parseValue(Long.toString(value), false);
+        _isLongNumber = true;
+        _isUnsigned = false;
     }
 
-    public long parseValue(String s) {
+    public long parseValue(String s, boolean parseModifiers) {
         int base = 10;
         s = s.toLowerCase();
         if (s.startsWith("0b")) {
@@ -44,12 +52,14 @@ public class IntegerLiteral extends NumericLiteral {
         s = StringUtils.removeStart(s, "0o");
         s = StringUtils.removeStart(s, "0x");
 
-        // В c++ литерал unsigned long может быть записан "75ul" или "75lu"
-        // Поэтому проверяем не окончание строки, а содержание
-        _isUnsigned = s.contains("u");
-        _isLongNumber = s.contains("l");
-        s = StringUtils.remove(s, "l");
-        s = StringUtils.remove(s, "u");
+        if (parseModifiers) {
+            // В c++ литерал unsigned long может быть записан "75ul" или "75lu"
+            // Поэтому проверяем не окончание строки, а содержание
+            _isUnsigned = s.contains("u");
+            _isLongNumber = s.contains("l");
+            s = StringUtils.remove(s, "l");
+            s = StringUtils.remove(s, "u");
+        }
 
         return Long.parseLong(s, base);
     }
@@ -64,7 +74,7 @@ public class IntegerLiteral extends NumericLiteral {
     }
 
     @Override
-    public String getStringValue() {
+    public String getStringValue(boolean outputModifiers) {
         StringBuilder builder = new StringBuilder();
         int base = switch (_repr) {
             case DECIMAL -> 10;
@@ -78,8 +88,10 @@ public class IntegerLiteral extends NumericLiteral {
             case 16 -> builder.append("0x");
         }
         builder.append(Long.toString(getLongValue(), base).toUpperCase());
-        if (_isLongNumber) {
-            builder.append("L");
+        if (outputModifiers) {
+            if (_isLongNumber) {
+                builder.append("L");
+            }
         }
         return builder.toString();
     }
@@ -109,6 +121,6 @@ public class IntegerLiteral extends NumericLiteral {
 
     @Override
     public String toString() {
-        return getStringValue();
+        return getStringValue(false);
     }
 }

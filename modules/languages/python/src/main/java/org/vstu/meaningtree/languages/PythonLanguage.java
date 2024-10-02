@@ -860,12 +860,12 @@ public class PythonLanguage extends LanguageParser {
 
     private IntegerLiteral fromIntegerLiteralTSNode(TSNode node) {
         String value = getCodePiece(node);
-        return new IntegerLiteral(value);
+        return new IntegerLiteral(value, false, false);
     }
 
     private FloatLiteral fromFloatLiteralTSNode(TSNode node) {
         String value = getCodePiece(node);
-        return new FloatLiteral(value);
+        return new FloatLiteral(value, true);
     }
 
     private Node fromComparisonTSNode(TSNode node) {

@@ -355,7 +355,7 @@ public class CppLanguage extends LanguageParser {
         if (value.contains(".")) {
             return new FloatLiteral(value);
         }
-        return new IntegerLiteral(value);
+        return new IntegerLiteral(value, false, false);
     }
 
     @NotNull

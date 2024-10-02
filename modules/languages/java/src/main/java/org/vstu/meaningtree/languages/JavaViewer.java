@@ -836,19 +836,27 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(FloatLiteral literal) {
-        return Double.toString(literal.getDoubleValue());
+        String s = Double.toString(literal.getDoubleValue());
+        if (!literal.isDoublePrecision()) {
+            s = s.concat("f");
+        }
+        return s;
     }
 
     public String toString(IntegerLiteral literal) {
-        return Long.toString((long) literal.getValue());
+        String s = literal.getStringValue(false);
+        if (literal.isLong()) {
+            s = s.concat("L");
+        }
+        return s;
     }
 
     public String toString(StringLiteral literal) {
         if (literal.isMultiline()) {
-            return "\"\"\"%s\"\"\"".formatted(literal.getUnescapedValue());
+            return "\"\"\"%s\"\"\"".formatted(literal.getEscapedValue());
         }
 
-        return "\"%s\"".formatted(literal.getUnescapedValue());
+        return "\"%s\"".formatted(literal.getEscapedValue());
     }
 
     private String toString(BinaryExpression expr, String sign) {

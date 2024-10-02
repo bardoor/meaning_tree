@@ -508,7 +508,7 @@ public class PythonViewer extends LanguageViewer {
 
     private String literalToString(Literal literal) {
         if (literal instanceof NumericLiteral numLiteral) {
-            return numLiteral.getStringValue();
+            return numLiteral.getStringValue(false);
         } else if (literal instanceof StringLiteral strLiteral) {
             String prefix;
             switch (strLiteral.getStringType()) {

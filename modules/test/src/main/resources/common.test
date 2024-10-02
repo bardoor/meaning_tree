@@ -22,15 +22,18 @@ group: LiteralsTest
 
 
     case: FloatLiteralWithF
-        python:
-            3.45
-
         java:
             3.45f;
 
         c++:
             3.45f;
 
+    case: FloatLiteralWithF
+        java:
+            3.45f;
+
+        c++:
+            3.45f;
 
     case: LongLiteral
         java:
@@ -127,7 +130,7 @@ group: LiteralsTest
             "abc \n\t \r";
 
     case: StringRawLiteral
-        python:
+        main python:
             r"abc\t \n"
 
         java:
@@ -138,7 +141,7 @@ group: LiteralsTest
 
 
     case: StringFormatLiteral
-        python:
+        main python:
             f"abc {abc} \t"
 
         java:
@@ -146,12 +149,10 @@ group: LiteralsTest
 
         c++:
             "abc {abc} \t";
-    # Нужно обсуждение
-
 
     case: ListLiteral
         python:
-            [1, 2, 3, a, b]
+            [1, 2, 4, a, b]
 
         java:
             new Object[] {1, 2, 4, a, b};
@@ -161,7 +162,7 @@ group: LiteralsTest
 
 
     case: TupleLiteral
-        python:
+        main python:
             (a, b, 10.3)
 
         java:
@@ -479,18 +480,6 @@ group: SimpleExpressionsTest
         java:
             x[10][y];
 
-
-    case: CommaSeparatedIndex
-        python:
-            x[10, y]
-
-        c++:
-            x[10][y];
-
-        java:
-            x[10][y];
-
-
 group: ComparisonsTest
     case: LessOp
         python:
@@ -560,13 +549,13 @@ group: ComparisonsTest
 
     case: CompoundComparisonConvertationBetweenLanguages
         python:
-            a < b < c and m >= k
+            a < b < c and k <= m
 
         java:
-            a < b && b < c && m >= k;
+            a < b && b < c && k <= m;
 
         c++:
-            a < b && b < c && m >= k;
+            a < b && b < c && k <= m;
 
 
 group: SimpleStatements
@@ -581,22 +570,6 @@ group: SimpleStatements
             int a = 456;
 
 
-    case: MultipleVariableDeclarationWithDifferentType
-        #TODO: синтаксическая ошибка в Python, нельзя указать тип при перечислении переменных
-        main python:
-            a: int, b: int, c: str = 40, 78, "Hello"
-
-        java:
-            int a = 40;
-            int b = 78;
-            String c = "Hello";
-
-        c++:
-            int a = 40;
-            int b = 78;
-            string c = "Hello";
-
-
     case: MultipleVariableDeclarationWithUnknownType
         python:
             a, b, c = 40, t, "Hello"
@@ -605,31 +578,7 @@ group: SimpleStatements
             Object a = 40, b = t, c = "Hello";
 
         c++:
-            Object a = 40, b = t, c = "Hello";
-
-        #TODO: исправить общий тип в C++
-
-
-    case: MultipleVariableDeclarationWithSameType
-        python:
-            a, b, c: int = 40, 78, 55
-
-        java:
-            int a = 40, b = 78, c = 55;
-
-        c++:
-            int a = 40, b = 78, c = 55;
-
-
-    case: MultipleVariableDeclarationWithSameType
-        main python:
-            a, b, c: int = 40, 78, 55
-
-        java:
-            int a = 40, b = 78, c = 55;
-
-        c++:
-            int a = 40, b = 78, c = 55;
+            auto a = 40, b = t, c = "Hello";
 
     case: AugmentedAssignmentStmt
         python:

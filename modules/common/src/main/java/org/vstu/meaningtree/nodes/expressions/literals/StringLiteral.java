@@ -41,7 +41,7 @@ public class StringLiteral extends Literal {
     }
 
     public boolean isMultiline() {
-        return getUnescapedValue().contains("\n");
+        return getEscapedValue().contains("\n");
     }
 
     public Type getStringType() {

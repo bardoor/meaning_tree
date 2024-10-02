@@ -537,15 +537,12 @@ public class JavaLanguage extends LanguageParser {
     private StringLiteral fromStringLiteralTSNode(TSNode node) {
         StringBuilder builder = new StringBuilder();
 
-        // Дети string_literal это либо string_fragment, либо escape_sequence,
-        // либо multiline_string_fragment поэтому ничего экранировать не нужно,
-        // они уже представлены так как надо
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             TSNode child = node.getNamedChild(i);
             builder.append(getCodePiece(child));
         }
 
-        return StringLiteral.fromUnescaped(builder.toString(), StringLiteral.Type.NONE);
+        return StringLiteral.fromEscaped(builder.toString(), StringLiteral.Type.NONE);
     }
 
     private FieldDeclaration fromFieldDeclarationTSNode(TSNode node) {
@@ -1042,7 +1039,7 @@ public class JavaLanguage extends LanguageParser {
 
     private IntegerLiteral fromIntegerLiteralTSNode(TSNode node) {
         String value = getCodePiece(node);
-        return new IntegerLiteral(value);
+        return new IntegerLiteral(value, false, false);
     }
 
     private FloatLiteral fromFloatLiteralTSNode(TSNode node) {
