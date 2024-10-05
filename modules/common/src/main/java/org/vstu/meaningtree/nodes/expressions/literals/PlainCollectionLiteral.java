@@ -3,15 +3,18 @@ package org.vstu.meaningtree.nodes.expressions.literals;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.Literal;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class PlainCollectionLiteral extends Literal {
+public abstract class PlainCollectionLiteral extends Literal {
     private final List<Expression> _content;
 
     public PlainCollectionLiteral(Expression ... content) {
         _content = List.of(content);
     }
+
+    public PlainCollectionLiteral(List<Expression> exprs) {_content = new ArrayList<>(exprs);}
 
     public List<Expression> getList() {
         return List.copyOf(_content);

@@ -14,6 +14,7 @@ public class StringLiteral extends Literal {
 
     protected final String value;
     protected final Type stringType;
+    protected int charSize;
 
     // Строка хранится в чистом виде, не экранированная. Т.е. представление как в памяти требуемого языка программирования
     // Интерполяция не поддерживается в этом классе
@@ -46,6 +47,14 @@ public class StringLiteral extends Literal {
 
     public Type getStringType() {
         return stringType;
+    }
+
+    public void setTypeCharSize(int charSize) {
+        this.charSize = Math.min(Math.max(charSize, 8), 32);
+    }
+
+    public int getTypeCharSize() {
+        return charSize;
     }
 
     @Override

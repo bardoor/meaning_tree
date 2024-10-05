@@ -104,8 +104,8 @@ public class SymbolEnvironment {
             ).toList().getFirst();
         } else if (identifier instanceof ScopedIdentifier scoped) {
             return resolveBySimpleIdentifierList(scoped.getScopeResolution(), preferredRecordType);
-        } else if (identifier instanceof QualifiedIdentifier qualified) {
-            UserTypeRecord record = (UserTypeRecord) resolveBySimpleIdentifierList(qualified.getScope().getScopeResolution(), UserTypeRecord.class);
+        } else if (identifier instanceof QualifiedIdentifier qualified && qualified.getScope() instanceof ScopedIdentifier scoped) {
+            UserTypeRecord record = (UserTypeRecord) resolveBySimpleIdentifierList(scoped.getScopeResolution(), UserTypeRecord.class);
             if (record != null) {
                 return record.getEnv().resolve(qualified.getMember(), preferredRecordType);
             } else {

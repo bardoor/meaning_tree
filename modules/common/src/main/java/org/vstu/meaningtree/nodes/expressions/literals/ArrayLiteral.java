@@ -4,12 +4,12 @@ import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.List;
 
-public class ListLiteral extends PlainCollectionLiteral {
-    public ListLiteral(Expression ... content) {
+public class ArrayLiteral extends PlainCollectionLiteral {
+    public ArrayLiteral(Expression ... content) {
         super(content);
     }
 
-    public ListLiteral(List<Expression> expressionList) {
+    public ArrayLiteral(List<Expression> expressionList) {
         super(expressionList);
     }
 }

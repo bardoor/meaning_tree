@@ -1,10 +1,11 @@
 package org.vstu.meaningtree.languages;
 
-import org.vstu.meaningtree.MeaningTree;
 import org.treesitter.TSNode;
+import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 abstract public class LanguageParser {
@@ -31,5 +32,24 @@ abstract public class LanguageParser {
             }
         }
         return null;
+    }
+
+    protected List<String> lookupErrors(TSNode node) {
+        ArrayList<String> result = new ArrayList<>();
+        _lookupErrors(node, result);
+        return result;
+    }
+
+    private void _lookupErrors(TSNode node, List<String> list) {
+        if (node.isNull()) {
+            return;
+        }
+        if (node.isError()) {
+            list.add(getCodePiece(node));
+            return;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            _lookupErrors(node.getChild(i), list);
+        }
     }
 }

@@ -5,15 +5,15 @@ import org.vstu.meaningtree.nodes.expressions.Identifier;
 import java.util.Objects;
 
 public class QualifiedIdentifier extends Identifier {
-    private final ScopedIdentifier _scope;
+    private final Identifier _scope;
     private final SimpleIdentifier _member;
 
-    public QualifiedIdentifier(ScopedIdentifier scope, SimpleIdentifier member) {
+    public QualifiedIdentifier(Identifier scope, SimpleIdentifier member) {
         _scope = scope;
         _member = member;
     }
 
-    public ScopedIdentifier getScope() {
+    public Identifier getScope() {
         return _scope;
     }
 

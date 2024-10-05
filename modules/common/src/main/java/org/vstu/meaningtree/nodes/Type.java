@@ -1,8 +1,10 @@
 package org.vstu.meaningtree.nodes;
 
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+
 import java.util.Objects;
 
-public abstract class Type extends Node {
+public abstract class Type extends Identifier {
     @Override
     public boolean equals(Object o) {
         return o.getClass().equals(this.getClass());
