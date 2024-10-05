@@ -87,15 +87,16 @@ public class PythonLanguage extends LanguageParser {
 
         TSTree tree = parser.parseString(null, code);
 
-        if (tree.getRootNode().hasError()) {
-            throw new RuntimeException("Code contains syntax errors\n" + code);
-        }
-
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
 
-        return new MeaningTree(fromTSNode(tree.getRootNode()));
+        TSNode rootNode = tree.getRootNode();
+        List<String> errors = lookupErrors(rootNode);
+        if (!errors.isEmpty()) {
+            throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
+        }
+        return new MeaningTree(fromTSNode(rootNode));
     }
 
     private Node fromTSNode(TSNode node) {

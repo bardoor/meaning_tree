@@ -34,6 +34,8 @@ import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.PrintValues;
@@ -50,6 +52,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.components.*;
 import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
+import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
@@ -205,6 +208,10 @@ public class JavaViewer extends LanguageViewer {
             case ExpressionSequence expressionSequence -> toString(expressionSequence);
             case CharacterLiteral characterLiteral -> toString(characterLiteral);
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
+            case PointerPackOp ptr -> toString(ptr.getArgument());
+            case PointerUnpackOp ptr -> toString(ptr.getArgument());
+            case PointerType ptr -> toString(ptr.getTargetType());
+            case ReferenceType ref -> toString(ref.getTargetType());
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -1003,7 +1010,7 @@ public class JavaViewer extends LanguageViewer {
             case IntType intType -> toString(intType);
             case BooleanType booleanType -> toString(booleanType);
             case StringType stringType -> toString(stringType);
-            case VoidType voidType -> toString(voidType);
+            case NoReturn voidType -> toString(voidType);
             case UnknownType unknownType -> toString(unknownType);
             case ArrayType arrayType -> toString(arrayType);
             case UserType userType -> toString(userType);
@@ -1028,7 +1035,7 @@ public class JavaViewer extends LanguageViewer {
         return "String";
     }
 
-    private String toString(VoidType type) {
+    private String toString(NoReturn type) {
         return "void";
     }
 

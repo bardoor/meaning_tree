@@ -27,6 +27,8 @@ import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.*;
@@ -42,10 +44,7 @@ import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
-import org.vstu.meaningtree.nodes.types.builtin.BooleanType;
-import org.vstu.meaningtree.nodes.types.builtin.FloatType;
-import org.vstu.meaningtree.nodes.types.builtin.IntType;
-import org.vstu.meaningtree.nodes.types.builtin.StringType;
+import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
@@ -86,8 +85,8 @@ public class PythonViewer extends LanguageViewer {
             case UnaryExpression exprNode -> unaryToString(exprNode);
             case CompoundStatement exprNode -> blockToString(exprNode, tab);
             case CompoundComparison compound -> compoundComparisonToString(compound);
-            case Identifier identifier -> identifierToString(identifier);
             case Type type -> typeToString(type);
+            case Identifier identifier -> identifierToString(identifier);
             case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
             case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
             case TernaryOperator ternary -> String.format("%s if %s else %s", toString(ternary.getThenExpr()), toString(ternary.getCondition()), toString(ternary.getElseExpr()));
@@ -97,6 +96,7 @@ public class PythonViewer extends LanguageViewer {
             case FunctionCall funcCall -> callsToString(funcCall);
             case BreakStatement breakStmt -> "break";
             case DeleteStatement delStmt -> String.format("del %s", toString(delStmt.getTarget()));
+            case DeleteExpression delExpr -> String.format("del %s", toString(delExpr.getTarget()));
             case Range range -> rangeToString(range);
             case ContinueStatement continueStatement -> "continue";
             case Comment comment -> commentToString(comment);
@@ -478,6 +478,10 @@ public class PythonViewer extends LanguageViewer {
             return userType.getName().toString();
         } else if (type instanceof NoReturn) {
             return "None";
+        } else if (type instanceof PointerType ptr) {
+            return typeToString(ptr.getTargetType());
+        } else if (type instanceof ReferenceType ref) {
+            return typeToString(ref.getTargetType());
         }
         return "object";
     }
@@ -548,6 +552,8 @@ public class PythonViewer extends LanguageViewer {
                return "False";
            }
         } else if (literal instanceof ListLiteral list) {
+            return String.format("[%s]", argumentsToString(list.getList()));
+        } else if (literal instanceof ArrayLiteral list) {
             return String.format("[%s]", argumentsToString(list.getList()));
         } else if (literal instanceof SetLiteral set) {
             return String.format("{%s}", argumentsToString(set.getList()));
@@ -752,6 +758,8 @@ public class PythonViewer extends LanguageViewer {
             pattern = "%s -= 1";
         } else if (node instanceof PostfixIncrementOp || node instanceof PrefixIncrementOp) {
             pattern = "%s += 1";
+        } else if (node instanceof PointerPackOp || node instanceof PointerUnpackOp) {
+            return toString(node.getArgument());
         }
         return String.format(pattern, toString(node.getArgument()));
     }

@@ -53,6 +53,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCa
 import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
+import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
@@ -88,7 +89,12 @@ public class JavaLanguage extends LanguageParser {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
 
-        return new MeaningTree(fromTSNode(tree.getRootNode()));
+        TSNode rootNode = tree.getRootNode();
+        List<String> errors = lookupErrors(rootNode);
+        if (!errors.isEmpty()) {
+            throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
+        }
+        return new MeaningTree(fromTSNode(rootNode));
     }
 
     private void rollbackContext() {
@@ -99,10 +105,6 @@ public class JavaLanguage extends LanguageParser {
 
     private Node fromTSNode(TSNode node) {
         Objects.requireNonNull(node);
-
-        if (node.hasError()) {
-            throw new IllegalArgumentException("Cannot parse code containing errors");
-        }
 
         String nodeType = node.getType();
         return switch (nodeType) {
@@ -875,7 +877,7 @@ public class JavaLanguage extends LanguageParser {
                 parsedType = new ArrayType(baseType, dimensionsCount);
                 break;
             case "void_type":
-                parsedType = new VoidType();
+                parsedType = new NoReturn();
                 break;
             case "type_identifier":
                 switch (typeName) {
