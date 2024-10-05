@@ -16,25 +16,37 @@ import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.NumericLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
-import org.vstu.meaningtree.nodes.expressions.math.AddOp;
-import org.vstu.meaningtree.nodes.expressions.math.DivOp;
-import org.vstu.meaningtree.nodes.expressions.math.MulOp;
-import org.vstu.meaningtree.nodes.expressions.math.SubOp;
-import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
-import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
-import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
+import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
+import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.types.GenericUserType;
+import org.vstu.meaningtree.nodes.types.NoReturn;
+import org.vstu.meaningtree.nodes.types.UnknownType;
+import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.ArrayType;
+import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
+import org.vstu.meaningtree.nodes.types.containers.ListType;
+import org.vstu.meaningtree.nodes.types.containers.SetType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
@@ -61,13 +73,105 @@ public class CppViewer extends LanguageViewer {
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
             case AssignmentExpression assignmentExpression -> toStringAssignmentExpression(assignmentExpression);
-            case Identifier identifier -> toStringIdentifier(identifier);
             case Type type -> toStringType(type);
+            case Identifier identifier -> toStringIdentifier(identifier);
             case NumericLiteral numericLiteral -> toStringNumericLiteral(numericLiteral);
+            case FloorDivOp floorDivOp -> toStringFloorDiv(floorDivOp);
             case UnaryExpression unaryExpression -> toStringUnaryExpression(unaryExpression);
             case BinaryExpression binaryExpression -> toStringBinaryExpression(binaryExpression);
+            case NullLiteral nullLit -> "NULL";
+            case StringLiteral sl -> toStringStringLiteral(sl);
+            case BoolLiteral bl -> bl.getValue() ? "true" : "false";
+            case PlainCollectionLiteral colLit -> toStringCollectionLiteral(colLit);
+            case CastTypeExpression cast -> toStringCast(cast);
+            case SizeofExpression sizeof -> toStringSizeof(sizeof);
+            case NewExpression new_ -> toStringNew(new_);
+            case DeleteExpression del -> toStringDelete(del);
+            case DeleteStatement del -> toStringDelete(del.toExpression()) + ";";
+            case MemberAccess memAccess -> toStringMemberAccess(memAccess);
+            case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
+    }
+
+    private String toStringMemberAccess(MemberAccess memAccess) {
+        String token = memAccess instanceof PointerMemberAccess ? "->" : ".";
+        return String.format("%s%s%s",toString(memAccess.getExpression()), token, toString(memAccess.getMember()));
+    }
+
+    private String fromInterpolatedString(InterpolatedStringLiteral interpolatedStringLiteral) {
+        StringBuilder builder = new StringBuilder("std::format(\"");
+        List<Expression> dynamicExprs = new ArrayList<>();
+        for (Expression expr : interpolatedStringLiteral) {
+            if (expr instanceof StringLiteral str) {
+                builder.append(str.getEscapedValue());
+            } else {
+                builder.append("{}");
+                dynamicExprs.add(expr);
+            }
+        }
+        builder.append('\"');
+        if (!dynamicExprs.isEmpty()) {
+            builder.append(", ");
+            builder.append(toStringArguments(dynamicExprs));
+        }
+        builder.append(")");
+        return builder.toString();
+    }
+
+    private String toStringDelete(DeleteExpression del) {
+        StringBuilder builder = new StringBuilder("delete");
+        if (del.isCollectionTarget()) {
+            builder.append("[]");
+        }
+        builder.append(' ');
+        builder.append(toString(del.getTarget()));
+        return builder.toString();
+    }
+
+    private String toStringNew(NewExpression _new) {
+        if (_new instanceof ArrayNewExpression arrayNew) {
+            StringBuilder newBuilder = new StringBuilder("new ");
+            newBuilder.append(toString(arrayNew.getType()));
+            for (int i = 0; i < arrayNew.getShape().getDimensionCount(); i++) {
+                newBuilder.append(String.format("[%s]", arrayNew.getShape().getDimension(i)));
+            }
+            if (arrayNew.getInitializer() != null) {
+                newBuilder.append(' ');
+                newBuilder.append(String.format("{%s}", toStringArguments(arrayNew.getInitializer().getValues())));
+            }
+            return newBuilder.toString();
+        } else if (_new instanceof PlacementNewExpression placementNew) {
+            return String.format("new(%s) %s", toStringArguments(placementNew.getConstructorArguments()), toString(placementNew.getType()));
+        } else if (_new instanceof ObjectNewExpression objectNew) {
+            return String.format("new %s(%s)", toString(objectNew.getType()), toStringArguments(objectNew.getConstructorArguments()));
+        } else {
+            throw new RuntimeException("Unknown new expression");
+        }
+    }
+
+    private String toStringSizeof(SizeofExpression sizeof) {
+        return String.format("sizeof(%s)", toString(sizeof.getExpression()));
+    }
+
+    private String toStringCast(CastTypeExpression cast) {
+        return String.format("(%s)%s", toString(cast.getCastType()), toString(cast.getValue()));
+    }
+
+    private String toStringCollectionLiteral(PlainCollectionLiteral colLit) {
+        return String.format("{%s}", toStringArguments(colLit.getList()));
+    }
+
+    private String toStringArguments(List<Expression> exprs) {
+        return String.join(", ", exprs.stream().map(this::toString).toList());
+    }
+
+    private String toStringStringLiteral(StringLiteral literal) {
+        return String.format("\"%s\"", literal.getEscapedValue());
+    }
+
+    private String toStringFloorDiv(FloorDivOp op) {
+        return String.format("(int)(%s / %s)", toString(op.getLeft()), toString(op.getRight()));
     }
 
     private String toStringEntryPoint(ProgramEntryPoint entryPoint) {
@@ -235,6 +339,8 @@ public class CppViewer extends LanguageViewer {
     private String toStringIdentifier(@NotNull Identifier identifier) {
         return switch (identifier) {
             case SimpleIdentifier simpleIdentifier -> simpleIdentifier.getName();
+            case ScopedIdentifier scopedIdentifier -> String.join(".", scopedIdentifier.getScopeResolution().stream().map(this::toStringIdentifier).toList());
+            case QualifiedIdentifier qualifiedIdentifier -> String.format("%s::%s", this.toStringIdentifier(qualifiedIdentifier.getScope()), this.toStringIdentifier(qualifiedIdentifier.getMember()));
             default -> throw new IllegalStateException("Unexpected value: " + identifier);
         };
     }
@@ -271,7 +377,7 @@ public class CppViewer extends LanguageViewer {
     private String toStringCharacterType(@NotNull CharacterType characterType) {
         return switch (characterType.size) {
             case 8 -> "char";
-            case 16 -> "w_char";
+            case 16 -> "char16_t";
             default -> throw new IllegalStateException("Unexpected value: " + characterType.size);
         };
     }
@@ -283,7 +389,22 @@ public class CppViewer extends LanguageViewer {
             case FloatType floatType -> toStringFloatType(floatType);
             case CharacterType characterType -> toStringCharacterType(characterType);
             case BooleanType booleanType -> "bool";
-            case VoidType voidType -> "void";
+            case NoReturn voidType -> "void";
+            case UnknownType unknown -> "auto";
+            case PointerType ptr -> {
+                if (ptr.getTargetType() instanceof UnknownType) {
+                    yield "void *";
+                }
+                yield String.format("%s *", toStringType(ptr.getTargetType()));
+            }
+            case ReferenceType ref ->  String.format("%s &", toStringType(ref.getTargetType()));
+            case DictionaryType dct -> String.format("std::map<%s, %s>", toStringType(dct.getKeyType()), toStringType(dct.getValueType()));
+            case ListType lst -> String.format("std::list<%s>", toStringType(lst.getItemType()));
+            case ArrayType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
+            case SetType set ->  String.format("std::set<%s>", toStringType(set.getItemType()));
+            case StringType str -> "std::string"; // TODO: пока нет способа хорошо представить юникод-строки
+            case GenericUserType gusr -> String.format("%s<%s>", toString(gusr.getQualifiedName()), toStringArguments(List.of(gusr.getTypeParameters())));
+            case UserType usr -> toString(usr.getQualifiedName());
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }
@@ -295,7 +416,14 @@ public class CppViewer extends LanguageViewer {
         }
 
         IntegerLiteral integerLiteral = (IntegerLiteral) numericLiteral;
-        return integerLiteral.getStringValue(true);
+        String result = integerLiteral.getStringValue(false);
+        if (integerLiteral.isUnsigned()) {
+            result = result.concat("U");
+        }
+        if (integerLiteral.isLong()) {
+            result = result.concat("L");
+        }
+        return result;
     }
 
     @NotNull
@@ -309,6 +437,8 @@ public class CppViewer extends LanguageViewer {
             case PrefixIncrementOp op -> "++";
             case PostfixDecrementOp op -> "--";
             case PrefixDecrementOp op -> "--";
+            case PointerPackOp op -> "&";
+            case PointerUnpackOp op -> "*";
             default -> throw new IllegalStateException("Unexpected value: " + unaryExpression);
         };
 
@@ -339,6 +469,9 @@ public class CppViewer extends LanguageViewer {
             case XorOp op -> "^";
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
+            case EqOp op -> "==";
+            case ModOp op -> "%";
+            case ThreeWayComparisonOp op -> "<=>";
             default -> throw new IllegalStateException("Unexpected value: " + binaryExpression);
         };
 

@@ -4,9 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Node;
-import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
@@ -17,22 +16,32 @@ import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.NumericLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
-import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
-import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
-import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
+import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.types.NoReturn;
+import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.nodes.types.user.Class;
+import org.vstu.meaningtree.nodes.types.user.GenericClass;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +60,7 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    public MeaningTree getMeaningTree(String code) {
+    public synchronized MeaningTree getMeaningTree(String code) {
         _code = code;
 
         TSTree tree = _parser.parseString(null, code);
@@ -59,20 +68,22 @@ public class CppLanguage extends LanguageParser {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
 
-        return new MeaningTree(fromTSNode(tree.getRootNode()));
+        TSNode rootNode = tree.getRootNode();
+        List<String> errors = lookupErrors(rootNode);
+        if (!errors.isEmpty()) {
+            throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
+        }
+        return new MeaningTree(fromTSNode(rootNode));
     }
 
     @NotNull
     private Node fromTSNode(@NotNull TSNode node) {
         Objects.requireNonNull(node);
 
-        if (node.hasError()) {
-            throw new IllegalArgumentException("Cannot parse code containing errors: " + node);
-        }
-
         return switch (node.getType()) {
             case "translation_unit" -> fromTranslationUnit(node);
-            case "expression_statement" -> fromExpressionStatement(node);
+            case "expression_statement"-> fromExpressionStatement(node);
+            case "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
             case "binary_expression" -> fromBinaryExpression(node);
             case "unary_expression" -> fromUnaryExpression(node);
             case "parenthesized_expression" -> fromParenthesizedExpression(node);
@@ -82,14 +93,222 @@ public class CppLanguage extends LanguageParser {
             case "comma_expression" -> fromCommaExpression(node);
             case "subscript_expression" -> fromSubscriptExpression(node);
             case "assignment_expression" -> fromAssignmentExpression(node);
-            case "primitive_type" -> fromPrimitiveType(node);
-            case "sized_type_specifier" -> fromSizedTypeSpecifier(node);
             case "declaration" -> fromDeclaration(node);
-            case "identifier" -> fromIdentifier(node);
+            case "identifier", "qualified_identifier", "field_expression", "namespace_identifier", "type_identifier", "field_identifier" -> fromIdentifier(node);
             case "number_literal" -> fromNumberLiteral(node);
+            case "string_literal" -> fromStringLiteral(node);
             case "user_defined_literal" -> fromUserDefinedLiteral(node);
+            case "null" -> new NullLiteral();
+            case "true" -> new BoolLiteral(true);
+            case "false" -> new BoolLiteral(false);
+            case "initializer_list" -> fromInitializerList(node);
+            case "primitive_type", "placeholder_type_specifier", "sized_type_specifier", "type_descriptor" -> fromType(node);
+            case "sizeof_expression" -> fromSizeOf(node);
+            case "new_expression" -> fromNewExpression(node);
+            case "delete_expression" -> fromDeleteExpression(node);
+            case "cast_expression" -> fromCastExpression(node);
+            case "pointer_expression" -> fromPointerExpression(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Node fromInitializerList(TSNode node) {
+        List<Expression> expressions = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            expressions.add((Expression) fromTSNode(node.getNamedChild(i)));
+        }
+        return new ArrayLiteral(expressions);
+    }
+
+    private Node fromPointerExpression(TSNode node) {
+        String op = getCodePiece(node);
+        Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
+        if (op.startsWith("&")) {
+            return new PointerPackOp(argument);
+        } else if (op.startsWith("*")) {
+            return new PointerUnpackOp(argument);
+        } else {
+            throw new RuntimeException("Unknown pointer expression: ".concat(op));
+        }
+    }
+
+    private Node fromCastExpression(TSNode node) {
+        Type type = fromType(node.getChildByFieldName("type"));
+        Expression value = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        if (value instanceof ParenthesizedExpression p && p.getExpression() instanceof DivOp div && type instanceof IntType) {
+            return new FloorDivOp(div.getLeft(), div.getRight());
+        }
+        return new CastTypeExpression(type, value);
+    }
+
+    private Node fromDeleteExpression(TSNode node) {
+        String line = getCodePiece(node);
+        return new DeleteExpression((Expression) fromTSNode(node.getNamedChild(0)), line.contains("[") && line.contains("]"));
+    }
+
+    private Node fromNewExpression(TSNode node) {
+        Type type = fromType(node.getChildByFieldName("type"));
+
+        TSNode placement = node.getChildByFieldName("placement");
+        TSNode declarator = node.getChildByFieldName("declarator");
+        TSNode arguments = node.getChildByFieldName("arguments");
+
+        List<Expression> args = new ArrayList<>();
+        TSNode childSource;
+        if (!placement.isNull()) {
+            childSource = placement;
+        } else if (!arguments.isNull()) {
+            childSource = arguments;
+        } else if (!declarator.isNull()) {
+            List<Expression> initList = new ArrayList<>();
+            if (!arguments.isNull()) {
+                for (int i = 0; i < arguments.getNamedChildCount(); i++) {
+                    initList.add((Expression) fromTSNode(arguments.getNamedChild(i)));
+                }
+            }
+            List<Expression> dimensions = new ArrayList<>();
+            dimensions.add((Expression) fromTSNode(declarator.getNamedChild(0)));
+            while (!declarator.getNamedChild(1).isNull()
+                    && declarator.getNamedChild(1).getType().equals("new_declarator")) {
+                dimensions.add((Expression) fromTSNode(declarator.getNamedChild(1).getNamedChild(0)));
+            }
+            ArrayInitializer initializer = !initList.isEmpty() ? new ArrayInitializer(initList) : null;
+            return new ArrayNewExpression(type, new Shape(dimensions.size(), dimensions.toArray(new Expression[0])), initializer);
+        } else {
+            throw new RuntimeException("No arguments for new expression");
+        }
+        for (int i = 0; i < childSource.getNamedChildCount(); i++) {
+            args.add((Expression) fromTSNode(childSource.getNamedChild(i)));
+        }
+        if (childSource == placement) {
+            return new PlacementNewExpression(type, args);
+        } else {
+            return new ObjectNewExpression(type, args);
+        }
+    }
+
+    private Node fromSizeOf(TSNode node) {
+        TSNode inner = node.getChildByFieldName("value");
+        if (inner.isNull()) {
+            inner = node.getChildByFieldName("type");
+        }
+        return new SizeofExpression((Expression) fromTSNode(inner));
+    }
+
+    private Type fromTypeByString(String type) {
+        return switch (type) {
+            case "int" -> new IntType();
+            case "int8_t" -> new IntType(8);
+            case "size_t" -> new IntType(32, true);
+            case "int16_t" -> new IntType(16);
+            case "int32_t", "time32_t" -> new IntType(32);
+            case "int64_t", "time64_t" -> new IntType(64);
+            case "double" -> new FloatType(64);
+            case "float" -> new FloatType(32);
+            case "char" -> new CharacterType(8);
+            case "wchar_t", "char16_t" -> new CharacterType(16);
+            case "bool" -> new BooleanType();
+            case "void" -> new NoReturn();
+            case "string" -> new StringType(8);
+            case "wstring", "u16string" -> new StringType(16);
+            case "u32string" -> new StringType(32);
+            // TODO: add support for symbol table
+            default -> new Class(new SimpleIdentifier(type));
+        };
+    }
+
+    private Type fromType(TSNode node) {
+        String type = getCodePiece(node);
+        if (node.getType().equals("type_identifier") || node.getType().equals("primitive_type")) {
+            return fromTypeByString(type);
+        }
+        else if (node.getType().equals("type_descriptor")) {
+            Type inner;
+            if (node.getChildByFieldName("type").getType().equals("sized_type_specifier")) {
+                inner = parseSizedTypeSpecifier(node.getChildByFieldName("type"));
+            } else {
+                inner = fromType(node.getChildByFieldName("type"));
+            }
+            if (!node.getChildByFieldName("declarator").isNull()
+                    && node.getChildByFieldName("declarator").getType().equals("abstract_pointer_declarator")) {
+                if (inner instanceof NoReturn) {
+                    return new PointerType(new UnknownType());
+                }
+                return new PointerType(inner);
+            } else if (!node.getChildByFieldName("declarator").isNull()
+                    && node.getChildByFieldName("declarator").getType().equals("abstract_pointer_declarator")) {
+                return new ReferenceType(inner);
+            }
+            return inner;
+        } else if (node.getType().equals("template_function")) {
+            // TODO: add support for symbol table
+            Identifier ident = (Identifier) fromIdentifier(node.getChildByFieldName("name"));
+            List<Type> subTypes = new ArrayList<>();
+            TSNode arguments = node.getChildByFieldName("arguments");
+            for (int i = 0; i < arguments.getNamedChildCount(); i++) {
+                subTypes.add(fromType(arguments.getNamedChild(i)));
+            }
+            return new GenericClass(ident, subTypes.toArray(new Type[0]));
+        } else if (node.getType().equals("qualified_identifier")) {
+            QualifiedIdentifier q;
+            List<Type> generic = new ArrayList<>();
+            if (node.getChildByFieldName("name").getType().equals("template_type")) {
+                TSNode template = node.getChildByFieldName("name");
+                SimpleIdentifier s = new SimpleIdentifier(getCodePiece(template.getChildByFieldName("name")));
+                TSNode arguments = template.getChildByFieldName("arguments");
+                for (int i = 0; i < arguments.getNamedChildCount(); i++) {
+                    generic.add(fromType(arguments.getNamedChild(i)));
+                }
+                q = new QualifiedIdentifier((Identifier) fromIdentifier(node.getChildByFieldName("scope")), s);
+            } else {
+                q = (QualifiedIdentifier) fromIdentifier(node);
+            }
+            // TODO: add support for symbol table
+            if (generic.isEmpty()) {
+                return new Class(q);
+            }
+            return new GenericClass(q, generic.toArray(new Type[0]));
+        } else {
+            return new UnknownType();
+        }
+    }
+
+    private Type parseSizedTypeSpecifier(TSNode node) {
+        String type = getCodePiece(node);
+        String subType = getCodePiece(node.getChildByFieldName("type"));
+        if (type.matches(".*(long|int|short|unsigned).*")) {
+            boolean isUnsigned = false;
+            int size = 32;
+            if (type.contains("unsigned")) {
+                isUnsigned = true;
+            }
+            if (type.contains("long")) {
+                size *= (int) Math.pow(2, StringUtils.countMatches(type, "long"));
+            } else if (type.contains("short")) {
+                size = 16;
+            }
+            if (size > 64) {
+                size = 64;
+            }
+            if (subType.equals("int")) {
+                return new IntType(size, isUnsigned);
+            } else {
+                return new FloatType(size);
+            }
+        } else {
+            throw new UnsupportedOperationException(String.format("Can't parse sized type %s this code:\n%s", node.getType(), getCodePiece(node)));
+        }
+    }
+
+    private Node fromStringLiteral(TSNode node) {
+        String strLiteral = getCodePiece(node);
+        boolean isWide = strLiteral.toLowerCase().startsWith("l");
+        strLiteral = strLiteral.substring(1, strLiteral.length() - 1);
+        StringLiteral literal = StringLiteral.fromEscaped(strLiteral, StringLiteral.Type.NONE);
+        if (isWide) {
+            literal.setTypeCharSize(32);
+        }
+        return literal;
     }
 
     @NotNull
@@ -177,10 +396,9 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private UnaryExpression fromUnaryExpression(@NotNull TSNode node) {
-        Expression argument = (Expression) fromTSNode(node.getChildByFieldName("operand"));
-        TSNode operation = node.getChildByFieldName("operator");
-        return switch (getCodePiece(operation)) {
-            case "!" -> new NotOp(argument);
+        Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
+        return switch (getCodePiece(node.getChild(0))) {
+            case "!", "not" -> new NotOp(argument);
             case "~" -> new InversionOp(argument);
             case "-" -> new UnaryMinusOp(argument);
             case "+" -> new UnaryPlusOp(argument);
@@ -230,97 +448,106 @@ public class CppLanguage extends LanguageParser {
             case "!=" -> new NotEqOp(left, right);
             case ">=" -> new GeOp(left, right);
             case "<=" -> new LeOp(left, right);
-            case "&&" -> new ShortCircuitAndOp(left, right);
-            case "||" -> new ShortCircuitOrOp(left, right);
+            case "&&", "and" -> new ShortCircuitAndOp(left, right);
+            case "||", "or" -> new ShortCircuitOrOp(left, right);
             case "&" -> new BitwiseAndOp(left, right);
             case "|" -> new BitwiseOrOp(left, right);
             case "^" -> new XorOp(left, right);
             case "<<" -> new LeftShiftOp(left, right);
             case ">>" -> new RightShiftOp(left, right);
+            case "<=>" -> new ThreeWayComparisonOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }
 
-    @NotNull
-    private Type fromSizedTypeSpecifier(@NotNull TSNode node) {
-        String type = getCodePiece(node);
 
-        if (type.matches(".*(long|int|short|unsigned).*")) {
-            return getNumericType(type);
-        } else {
-            throw new UnsupportedOperationException(String.format("Can't parse sized type %s this code:\n%s", node.getType(), getCodePiece(node)));
-        }
-    }
 
     @NotNull
-    private NumericType getNumericType(@NotNull String type) {
-        boolean isUnsigned = false;
-        int size = 32;
+    private Declaration fromDeclaration(@NotNull TSNode node) {
+        Type mainType = (Type) fromTSNode(node.getChildByFieldName("type"));
 
-        if (type.contains("unsigned")) {
-            isUnsigned = true;
-        }
-
-        if (type.contains("long")) {
-            size *= (int) Math.pow(2, StringUtils.countMatches(type, "long"));
-        } else if (type.contains("short")) {
-            size = 16;
-        }
-
-        return new IntType(size, isUnsigned);
-    }
-
-    @NotNull
-    private Type fromPrimitiveType(@NotNull TSNode node) {
-        String typeName = getCodePiece(node);
-        return switch (typeName) {
-            case "int" -> new IntType();
-            case "double" -> new FloatType(64);
-            case "float" -> new FloatType();
-            case "char" -> new CharacterType();
-            case "w_char" -> new CharacterType(16);
-            case "bool" -> new BooleanType();
-            case "void" -> new VoidType();
-            default -> throw new UnsupportedOperationException(String.format("Can't parse type in %s this code:\n%s", node.getType(), getCodePiece(node)));
-        };
-    }
-
-    @NotNull
-    private VariableDeclarator fromVariableDeclarator(@NotNull TSNode node) {
-        TSNode tsVariableName = node.getChildByFieldName("declarator");
-        TSNode tsValue = node.getChildByFieldName("value");
-
-        SimpleIdentifier variableName = (SimpleIdentifier) fromTSNode(tsVariableName);
-        Expression value = (Expression) fromTSNode(tsValue);
-
-        return new VariableDeclarator(variableName, value);
-    }
-
-    @NotNull
-    private VariableDeclaration fromDeclaration(@NotNull TSNode node) {
-        Type type = (Type) fromTSNode(node.getChildByFieldName("type"));
-
-        var declarators = new ArrayList<VariableDeclarator>();
+        var declarators = new ArrayList<VariableDeclaration>();
         // Пропускаем узел type, поэтому i = 1
         for (int i = 1; i < node.getNamedChildCount(); i++) {
             TSNode tsDeclarator = node.getNamedChild(i);
 
-            if (!tsDeclarator.getType().equals("init_declarator")) {
-                throw new IllegalArgumentException(
-                        "Unsupported type of node in declaration: " + tsDeclarator.getType()
-                );
-            }
+            if (tsDeclarator.getType().equals("init_declarator")) {
+                TSNode tsVariableName = tsDeclarator.getChildByFieldName("declarator");
+                Type type = mainType;
 
-            var declarator = fromVariableDeclarator(tsDeclarator);
-            declarators.add(declarator);
+                if (tsVariableName.getType().equals("pointer_declaration")) {
+                    type = new PointerType(mainType);
+                    if (mainType instanceof NoReturn) {
+                        type = new PointerType(new UnknownType());
+                    }
+                } else if (tsVariableName.getType().equals("reference_declaration")) {
+                    type = new ReferenceType(mainType);
+                }
+                TSNode tsValue = tsDeclarator.getChildByFieldName("value");
+
+                SimpleIdentifier variableName = (SimpleIdentifier) fromTSNode(tsVariableName);
+                Expression value = (Expression) fromTSNode(tsValue);
+
+                VariableDeclarator declarator = new VariableDeclarator(variableName, value);
+                declarators.add(new VariableDeclaration(type, declarator));
+            } else {
+                Type type = mainType;
+
+                if (tsDeclarator.getType().equals("pointer_declaration")) {
+                    type = new PointerType(mainType);
+                    if (mainType instanceof NoReturn) {
+                        type = new PointerType(new UnknownType());
+                    }
+                } else if (tsDeclarator.getType().equals("reference_declaration")) {
+                    type = new ReferenceType(mainType);
+                }
+                declarators.add(new VariableDeclaration(type, new VariableDeclarator((SimpleIdentifier) fromIdentifier(tsDeclarator))));
+            }
         }
 
-        return new VariableDeclaration(type, declarators);
+        SeparatedVariableDeclaration sepDecl = new SeparatedVariableDeclaration(declarators);
+        if (sepDecl.canBeReduced()) {
+            return sepDecl.reduce();
+        }
+        return sepDecl;
     }
 
     @NotNull
-    private Identifier fromIdentifier(@NotNull TSNode node) {
-        return new SimpleIdentifier(getCodePiece(node));
+    private Node fromIdentifier(@NotNull TSNode node) {
+        if (node.getType().equals("identifier") || node.getType().equals("field_identifier") || node.getType().equals("namespace_identifier")) {
+            return new SimpleIdentifier(getCodePiece(node));
+        } else if (node.getType().equals("type_identifier")) {
+            return fromType(node);
+        } else if (node.getType().equals("qualified_identifier")) {
+            return new QualifiedIdentifier(
+                    (Identifier) fromIdentifier(node.getChildByFieldName("scope")),
+                    (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("name"))
+                    );
+        } else if (node.getType().equals("field_expression")) {
+            Node treeNode = fromTSNode(node.getChildByFieldName("argument"));
+            boolean isPointer = node.getChild(1).getType().equals("->");
+            if (treeNode instanceof SimpleIdentifier ident && !isPointer) {
+                return new ScopedIdentifier(ident, (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("field")));
+            } else if (treeNode instanceof ScopedIdentifier ident && !isPointer) {
+                List<SimpleIdentifier> identList = new ArrayList<>(ident.getScopeResolution());
+                Identifier fieldIdent = (Identifier) fromIdentifier(node.getChildByFieldName("field"));
+                if (fieldIdent instanceof SimpleIdentifier sIdent) {
+                    identList.add(sIdent);
+                } else if (fieldIdent instanceof ScopedIdentifier scopedIdent) {
+                    identList.addAll(scopedIdent.getScopeResolution());
+                } else if (fieldIdent instanceof QualifiedIdentifier) {
+                    throw new RuntimeException("Unsupported scoped and qualified identifier combination");
+                }
+                return new ScopedIdentifier(identList);
+            } else {
+                if (isPointer) {
+                    return new PointerMemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));
+                }
+                return new MemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));
+            }
+        } else {
+            throw new RuntimeException("Unknown identifier");
+        }
     }
 
     @NotNull
@@ -355,12 +582,22 @@ public class CppLanguage extends LanguageParser {
         if (value.contains(".")) {
             return new FloatLiteral(value);
         }
-        return new IntegerLiteral(value, false, false);
+        return new IntegerLiteral(value);
     }
 
     @NotNull
     private Node fromTranslationUnit(@NotNull TSNode node) {
-        return fromTSNode(node.getChild(0));
+        // TODO: Temporary solution
+        if (node.getNamedChildCount() == 1) {
+            return fromTSNode(node.getNamedChild(0));
+        } else {
+            List<Node> nodes = new ArrayList<>();
+            for (int i = 0; i < node.getNamedChildCount(); i++) {
+                nodes.add(fromTSNode(node.getNamedChild(i)));
+            }
+            SymbolEnvironment context = new SymbolEnvironment(null);
+            return new ProgramEntryPoint(context, nodes);
+        }
     }
 
     @NotNull
