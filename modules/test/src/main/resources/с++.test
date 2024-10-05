@@ -1,0 +1,480 @@
+group: LiteralTest
+    case: Identifier
+        c++:
+            _my_ident123;
+
+        c++:
+            _my_ident123;
+
+    case: String
+        c++:
+            "abc";
+
+        c++:
+            "abc";
+
+    case: EscapedString
+        c++:
+            "abc\n\r\t";
+
+        c++:
+            "abc\n\r\t";
+
+    case: Integer
+        c++:
+            12345;
+
+        c++:
+            12345;
+
+    case: LongInteger
+        c++:
+            12345L;
+
+        c++:
+            12345L;
+
+    case: UnsignedInteger
+        c++:
+            123U;
+
+        c++:
+            123U;
+
+    case: Float
+        c++:
+            123456.78f;
+
+        c++:
+            123456.78f;
+
+    case: Double
+        c++:
+            1234.78;
+
+        c++:
+            1234.78;
+
+    case: Null
+        main c++:
+            NULL;
+
+        c++:
+            NULL;
+
+    case: NullPtr
+        main c++:
+            nullptr;
+
+        c++:
+            NULL;
+
+    case: True
+        c++:
+            true;
+
+        c++:
+            true;
+
+    case: False
+        c++:
+            false;
+
+        c++:
+            false;
+
+group: Operators
+    case: Plus
+        c++:
+            x = a + b;
+
+        c++:
+            x = a + b;
+
+    case: Sub
+        c++:
+            x = a - b;
+
+        c++:
+            x = a - b;
+
+    case: Mul
+        c++:
+            x = a * b;
+
+        c++:
+            x = a * b;
+
+    case: Div
+        c++:
+            x = a / b;
+
+        c++:
+            x = a / b;
+
+    case: Mod
+        c++:
+            x = a % b;
+
+        c++:
+            x = a % b;
+
+    case: FloorDiv
+        c++:
+            x = (int)(a / b);
+
+        c++:
+            x = (int)(a / b);
+
+    case: Pow
+        c++:
+            pow(a, b);
+
+        c++:
+            pow(a, b);
+
+    case: UnaryMinus
+        c++:
+            x = -abc;
+
+        c++:
+            x = -abc;
+
+    case: UnaryPlus
+        c++:
+            x = +abc;
+
+        c++:
+            x = +abc;
+
+    case: RightShift
+        c++:
+            x = a >> b;
+
+        c++:
+            x = a >> b;
+
+    case: LeftShift
+        c++:
+            x = a << b;
+
+        c++:
+            x = a << b;
+
+    case: BitwiseOr:
+        c++:
+            x = a | b;
+
+        c++:
+            x = a | b;
+
+    case: BitwiseXor
+        c++:
+            x = a ^ b;
+
+        c++:
+            x = a ^ b;
+
+    case: BitwiseAnd
+        c++:
+            x = a & b;
+
+        c++:
+            x = a & b;
+
+    case: BitwiseNot
+        c++:
+           x = ~a;
+
+        c++:
+           x = ~a;
+
+    case: LogicalAnd
+        c++:
+            x = a && b;
+
+        c++:
+            x = a && b;
+
+    case: LogicalOr:
+        c++:
+            x = a || b;
+
+        c++:
+            x = a || b;
+
+    case: LogicalNot
+        c++:
+            x = !a;
+
+        c++:
+            x = !a;
+
+    case: Comparsion
+        c++:
+           x = (a < b) && (a > b) && (a != b) && (a == b) && (a >= b) && (a <= b);
+
+        c++:
+           x = (a < b) && (a > b) && (a != b) && (a == b) && (a >= b) && (a <= b);
+
+group: OtherExpression
+
+    case: Ternary
+        c++:
+            a ? b : c;
+
+        c++:
+            a ? b : c;
+
+    case: Subscript
+        c++:
+            a[i];
+
+        c++:
+            a[i];
+
+    case: Identifiers
+        c++:
+            a.b.c;
+            c::b::a.c;
+
+        c++:
+            a.b.c;
+            c::b::a.c;
+
+    case: AugmentedAssignments
+        c++:
+            int a = 456;
+            a = 3;
+            a += 3;
+            a -= 3;
+            a *= b;
+            a >>= b;
+            a <<= b;
+            a /= 5;
+            a /= 6;
+            a %= t;
+            a &= b;
+            c |= t;
+            v ^= m;
+
+        c++:
+            int a = 456;
+            a = 3;
+            a += 3;
+            a -= 3;
+            a *= b;
+            a >>= b;
+            a <<= b;
+            a /= 5;
+            a /= 6;
+            a %= t;
+            a &= b;
+            c |= t;
+            v ^= m;
+
+    case: VariableDeclaration
+        c++:
+            auto a, b;
+            int a, b;
+            std::string a, b;
+            long long int a, b;
+            long double a, b;
+
+        c++:
+            auto a, b;
+            int a, b;
+            std::string a, b;
+            long long int a, b;
+            long double a, b;
+
+    case: VariableDefinition
+        c++:
+            auto a = 456;
+            bool c = true;
+
+        c++:
+            auto a = 456;
+            bool c = true;
+
+    case: Sizeof
+        main c++:
+            sizeof abc;
+        c++:
+            sizeof(abc);
+
+    case: SizeofType
+        c++:
+            sizeof(int);
+
+        c++:
+            sizeof(int);
+
+    case: NewArray
+        c++:
+            new int[120];
+
+        c++:
+            new int[120];
+
+    case: DeleteArray
+        c++:
+            delete[] a;
+
+        c++:
+            delete[] a;
+
+    case: Delete
+        c++:
+            delete a;
+
+        c++:
+            delete a;
+
+    case: NewObject
+        c++:
+            new MyClass(a, b, c);
+
+        c++:
+            new MyClass(a, b, c);
+
+    case: FunctionCall
+        c++:
+            func(a, b, 1234, 4556);
+
+        c++:
+            func(a, b, 1234, 4556);
+
+    case: ParenthesizedExpr
+        c++:
+            x = (a + b) * c + ((b));
+
+        c++:
+            x = (a + b) * c + ((b));
+
+    case: CommaOperator
+        c++:
+            t = a + d, b, c;
+
+        c++:
+            t = a + d, b, c;
+
+    case: Spaceship
+        c++:
+            t = a <=> b;
+
+        c++:
+            t = a <=> b;
+
+group: Pointers
+    case: PointerType
+        c++:
+            int * a = b;
+            std::string * b = "abc";
+            sizeof(long int *);
+
+        c++:
+            int * a = b;
+            std::string * b = "abc";
+            sizeof(long int *);
+
+    case: ReferenceType
+        c++:
+            int & a = b;
+            sizeof(int &);
+
+        c++:
+            int & a = b;
+            sizeof(int &);
+
+    case: AddressOf
+        c++:
+            &a + &(x.a + b);
+
+        c++:
+            &a + &(x.a + b);
+
+    case: PointerIndirection
+        c++:
+            *(a).b + *(expression) * *(a ^ b);
+
+        c++:
+            *(a).b + *(expression) * *(a ^ b);
+
+    case: PointerAccess
+        c++:
+            a->b;
+
+        c++:
+            a->b;
+
+group: ComplexExpressionTest
+    case: ComplexTest1:
+        c++:
+            *(a).b + *(expression) * *(a ^ b);
+
+        c++:
+            *(a).b + *(expression) * *(a ^ b);
+
+    case: ComplexTest2:
+        c++:
+            a + b * (c - d / e);
+
+        c++:
+            a + b * (c - d / e);
+
+    case: ComplexTest3:
+        c++:
+            int x = a + (b ? c : d) * e;
+
+        c++:
+            int x = a + (b ? c : d) * e;
+
+    case: ComplexTest4:
+        c++:
+            ++(*(p->field) + *(q->member));
+
+        c++:
+            ++(*(p->field) + *(q->member));
+
+    case: ComplexTest5:
+        c++:
+            a.b.c + (d[e] * f) - g.h;
+
+        c++:
+            a.b.c + (d[e] * f) - g.h;
+
+    case: ComplexTest6:
+        c++:
+            int y = (a & b) | (c ^ d);
+
+        c++:
+            int y = (a & b) | (c ^ d);
+
+    case: ComplexTest7:
+        c++:
+            (a->*(p1)) + ((b + c)->*(p2));
+
+        c++:
+            (a->*(p1)) + ((b + c)->*(p2));
+
+    case: ComplexTest8:
+        c++:
+            f(g(h(i))) + j * k;
+
+        c++:
+            f(g(h(i))) + j * k;
+
+    case: ComplexTest9:
+        c++:
+            (x ? y : z) + ((a++) * (--b));
+
+        c++:
+            (x ? y : z) + ((a++) * (--b));
+
+    case: ComplexTest10:
+        c++:
+            x = (a + b) * (c - d) / e;
+
+        c++:
+            x = (a + b) * (c - d) / e;

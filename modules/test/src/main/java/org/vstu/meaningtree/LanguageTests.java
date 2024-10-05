@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import org.vstu.meaningtree.languages.CppTranslator;
 import org.vstu.meaningtree.languages.JavaTranslator;
 import org.vstu.meaningtree.languages.PythonTranslator;
 
@@ -59,7 +60,7 @@ class LanguageTests {
 
         _config.addLanguageConfig(new TestLanguageConfig(new JavaTranslator(defaultConfig), "java", false));
         _config.addLanguageConfig(new TestLanguageConfig(new PythonTranslator(), "python", true));
-        //_config.addLanguageConfig(new TestLanguageConfig(new CppTranslator(defaultConfig), "c++", false));
+        _config.addLanguageConfig(new TestLanguageConfig(new CppTranslator(defaultConfig), "c++", false));
         parseTestsFiles();
     }
 
