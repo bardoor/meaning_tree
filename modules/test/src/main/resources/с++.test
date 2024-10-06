@@ -274,7 +274,7 @@ group: OtherExpression
             v ^= m;
 
     case: VariableDeclaration
-        c++:
+        main c++:
             auto a, b;
             int a, b;
             std::string a, b;
@@ -285,8 +285,8 @@ group: OtherExpression
             auto a, b;
             int a, b;
             std::string a, b;
-            long long int a, b;
-            long double a, b;
+            long a, b;
+            double a, b;
 
     case: VariableDefinition
         c++:
@@ -354,10 +354,10 @@ group: OtherExpression
 
     case: CommaOperator
         c++:
-            t = a + d, b, c;
+            (a, b, c);
 
         c++:
-            t = a + d, b, c;
+            (a, b, c);
 
     case: Spaceship
         c++:
@@ -371,12 +371,25 @@ group: Pointers
         c++:
             int * a = b;
             std::string * b = "abc";
-            sizeof(long int *);
+            sizeof(long *);
 
         c++:
             int * a = b;
             std::string * b = "abc";
-            sizeof(long int *);
+            sizeof(long *);
+
+    case: ConstVariableDeclaration
+        main c++:
+            const char * a = "abc";
+            const char * const const b = "test";
+            char const * c = "test";
+            char * const d = "test";
+
+        c++:
+            const char * a = "abc";
+            const char * const b = "test";
+            const char * c = "test";
+            char * const d = "test";
 
     case: ReferenceType
         c++:

@@ -384,7 +384,7 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringType(@NotNull Type type) {
-        return switch (type) {
+        String initialType = switch (type) {
             case IntType intType -> toStringIntType(intType);
             case FloatType floatType -> toStringFloatType(floatType);
             case CharacterType characterType -> toStringCharacterType(characterType);
@@ -395,9 +395,17 @@ public class CppViewer extends LanguageViewer {
                 if (ptr.getTargetType() instanceof UnknownType) {
                     yield "void *";
                 }
+                if (type.isConst()) {
+                    yield String.format("%s * const", toStringType(ptr.getTargetType()));
+                }
                 yield String.format("%s *", toStringType(ptr.getTargetType()));
             }
-            case ReferenceType ref ->  String.format("%s &", toStringType(ref.getTargetType()));
+            case ReferenceType ref ->  {
+                if (type.isConst()) {
+                    yield String.format("%s & const", toStringType(ref.getTargetType()));
+                }
+                yield String.format("%s &", toStringType(ref.getTargetType()));
+            }
             case DictionaryType dct -> String.format("std::map<%s, %s>", toStringType(dct.getKeyType()), toStringType(dct.getValueType()));
             case ListType lst -> String.format("std::list<%s>", toStringType(lst.getItemType()));
             case ArrayType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
@@ -407,6 +415,10 @@ public class CppViewer extends LanguageViewer {
             case UserType usr -> toString(usr.getQualifiedName());
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
+        if (type.isConst() && !(type instanceof ReferenceType) && !(type instanceof PointerType)) {
+            return "const ".concat(initialType);
+        }
+        return initialType;
     }
 
     @NotNull

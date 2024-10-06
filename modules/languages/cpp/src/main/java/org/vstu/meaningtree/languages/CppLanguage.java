@@ -38,6 +38,9 @@ import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
+import org.vstu.meaningtree.nodes.types.containers.ListType;
+import org.vstu.meaningtree.nodes.types.containers.SetType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
@@ -217,10 +220,23 @@ public class CppLanguage extends LanguageParser {
         };
     }
 
+    private String reprQualifiedIdentifier(QualifiedIdentifier ident) {
+        if (ident.getScope() instanceof QualifiedIdentifier leftQualified) {
+            return String.format("%s::%s", reprQualifiedIdentifier(leftQualified), ident.getMember().toString());
+        } else if (ident.getScope() instanceof ScopedIdentifier scoped) {
+            return String.format("%s::%s", String.join(".",
+                    scoped.getScopeResolution().stream().map(Expression::toString).toList()), ident.getMember().toString());
+        }
+        return String.format("%s::%s", ident.getScope().toString(), ident.getMember().toString());
+    }
+
     private Type fromType(TSNode node) {
         String type = getCodePiece(node);
         if (node.getType().equals("type_identifier") || node.getType().equals("primitive_type")) {
             return fromTypeByString(type);
+        }
+        else if (node.getType().equals("sized_type_specifier")) {
+            return parseSizedTypeSpecifier(node);
         }
         else if (node.getType().equals("type_descriptor")) {
             Type inner;
@@ -236,7 +252,7 @@ public class CppLanguage extends LanguageParser {
                 }
                 return new PointerType(inner);
             } else if (!node.getChildByFieldName("declarator").isNull()
-                    && node.getChildByFieldName("declarator").getType().equals("abstract_pointer_declarator")) {
+                    && node.getChildByFieldName("declarator").getType().equals("abstract_reference_declarator")) {
                 return new ReferenceType(inner);
             }
             return inner;
@@ -263,11 +279,24 @@ public class CppLanguage extends LanguageParser {
             } else {
                 q = (QualifiedIdentifier) fromIdentifier(node);
             }
-            // TODO: add support for symbol table
-            if (generic.isEmpty()) {
-                return new Class(q);
-            }
-            return new GenericClass(q, generic.toArray(new Type[0]));
+            Type type1 = !generic.isEmpty() ? generic.getFirst() : new UnknownType();
+            Type type2 = generic.size() > 1 ? generic.get(1) : new UnknownType();
+            return switch (reprQualifiedIdentifier(q)) {
+                case "std::map" -> new DictionaryType(type1, type2);
+                case "std::list", "std::vector", "std::array" -> new ListType(type1);
+                case "std::set" -> new SetType(type1);
+                case "std::string", "std::wstring" -> new StringType(8);
+                case "std::u16string" -> new StringType(16);
+                case "std::u32string" -> new StringType(32);
+                default -> {
+                    // TODO: add support for symbol table
+                    if (generic.isEmpty()) {
+                        yield new Class(q);
+                    }
+                    yield new GenericClass(q, generic.toArray(new Type[0]));
+                }
+            };
+
         } else {
             return new UnknownType();
         }
@@ -275,7 +304,7 @@ public class CppLanguage extends LanguageParser {
 
     private Type parseSizedTypeSpecifier(TSNode node) {
         String type = getCodePiece(node);
-        String subType = getCodePiece(node.getChildByFieldName("type"));
+        String subType = node.getChildByFieldName("type").isNull() ? "int" : getCodePiece(node.getChildByFieldName("type"));
         if (type.matches(".*(long|int|short|unsigned).*")) {
             boolean isUnsigned = false;
             int size = 32;
@@ -464,24 +493,43 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Declaration fromDeclaration(@NotNull TSNode node) {
-        Type mainType = (Type) fromTSNode(node.getChildByFieldName("type"));
+        TSNode typeNode = node.getChildByFieldName("type");
+        Type mainType = fromType(typeNode);
+
+        int i = 0;
+
+        while (!"type".equals(node.getFieldNameForChild(i))) {
+            TSNode currentNode = node.getNamedChild(i);
+            if (currentNode.getType().equals("type_qualifier") && getCodePiece(currentNode).equals("const")) {
+                mainType.setConst(true);
+            }
+            i++;
+        }
 
         var declarators = new ArrayList<VariableDeclaration>();
-        // Пропускаем узел type, поэтому i = 1
-        for (int i = 1; i < node.getNamedChildCount(); i++) {
+        for (i += 1; i < node.getNamedChildCount(); i++) {
             TSNode tsDeclarator = node.getNamedChild(i);
 
-            if (tsDeclarator.getType().equals("init_declarator")) {
+            if (tsDeclarator.getType().equals("type_qualifier") && getCodePiece(tsDeclarator).equals("const")) {
+                mainType.setConst(true);
+            } else if (tsDeclarator.getType().equals("init_declarator")) {
                 TSNode tsVariableName = tsDeclarator.getChildByFieldName("declarator");
                 Type type = mainType;
 
-                if (tsVariableName.getType().equals("pointer_declaration")) {
+                if (tsVariableName.getType().equals("pointer_declarator")) {
                     type = new PointerType(mainType);
                     if (mainType instanceof NoReturn) {
                         type = new PointerType(new UnknownType());
                     }
-                } else if (tsVariableName.getType().equals("reference_declaration")) {
+                    if ((tsVariableName.getNamedChild(0).getType().equals("type_qualifier") &&
+                            getCodePiece(tsVariableName.getNamedChild(0)).equals("const"))
+                    ) {
+                        type.setConst(true);
+                    }
+                    tsVariableName = tsVariableName.getChildByFieldName("declarator");
+                } else if (tsVariableName.getType().equals("reference_declarator")) {
                     type = new ReferenceType(mainType);
+                    tsVariableName = tsVariableName.getNamedChild(0);
                 }
                 TSNode tsValue = tsDeclarator.getChildByFieldName("value");
 
@@ -512,17 +560,23 @@ public class CppLanguage extends LanguageParser {
         return sepDecl;
     }
 
+    private QualifiedIdentifier rightToLeftQualified(Identifier left, Identifier right) {
+        if (right instanceof QualifiedIdentifier rightQualified) {
+            SimpleIdentifier ident = (SimpleIdentifier) rightQualified.getScope();
+            QualifiedIdentifier newLeft = new QualifiedIdentifier(left, ident);
+            return rightToLeftQualified(newLeft, rightQualified.getMember());
+        }
+        return new QualifiedIdentifier(left, (SimpleIdentifier) right);
+    }
+
     @NotNull
     private Node fromIdentifier(@NotNull TSNode node) {
-        if (node.getType().equals("identifier") || node.getType().equals("field_identifier") || node.getType().equals("namespace_identifier")) {
+        if (node.getType().equals("identifier") || node.getType().equals("field_identifier") || node.getType().equals("namespace_identifier") || node.getType().equals("type_identifier")) {
             return new SimpleIdentifier(getCodePiece(node));
-        } else if (node.getType().equals("type_identifier")) {
-            return fromType(node);
         } else if (node.getType().equals("qualified_identifier")) {
-            return new QualifiedIdentifier(
-                    (Identifier) fromIdentifier(node.getChildByFieldName("scope")),
-                    (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("name"))
-                    );
+            Identifier right = (Identifier) fromIdentifier(node.getChildByFieldName("name"));
+            SimpleIdentifier left = (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("scope"));
+            return rightToLeftQualified(left, right);
         } else if (node.getType().equals("field_expression")) {
             Node treeNode = fromTSNode(node.getChildByFieldName("argument"));
             boolean isPointer = node.getChild(1).getType().equals("->");
