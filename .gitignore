@@ -40,5 +40,3 @@ build/
 
 TSTree.dot
 *.png
-
-modules/application/src/main/java/org/vstu/meaningtree/Main.java

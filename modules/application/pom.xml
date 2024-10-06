@@ -14,6 +14,7 @@
     </properties>
 
     <dependencies>
+        <!-- LANGUAGE SCOPE -->
         <dependency>
             <groupId>org.vstu.meaningtree</groupId>
             <artifactId>java-language</artifactId>
@@ -26,6 +27,15 @@
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.vstu.meaningtree</groupId>
+            <artifactId>cpp-language</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- END LANGUAGE SCOPE -->
+
+
         <dependency>
             <groupId>guru.nidi</groupId>
             <artifactId>graphviz-java</artifactId>
@@ -43,11 +53,11 @@
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.beust/jcommander -->
         <dependency>
-            <groupId>org.vstu.meaningtree</groupId>
-            <artifactId>cpp-language</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+            <version>1.82</version>
         </dependency>
     </dependencies>
 
