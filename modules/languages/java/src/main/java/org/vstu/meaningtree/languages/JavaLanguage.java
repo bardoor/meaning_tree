@@ -46,10 +46,7 @@ import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
-import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBlock;
-import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
-import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
-import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.*;
 import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
@@ -981,6 +978,9 @@ public class JavaLanguage extends LanguageParser {
     private Loop fromWhileTSNode(TSNode node) {
         TSNode tsCond = node.getChildByFieldName("condition");
         Expression mtCond = (Expression) fromTSNode(tsCond);
+        if (mtCond instanceof ParenthesizedExpression parenthesizedExpression) {
+            mtCond = parenthesizedExpression.getExpression();
+        }
 
         TSNode tsBody = node.getChildByFieldName("body");
         Statement mtBody = (Statement) fromTSNode(tsBody);
@@ -1029,8 +1029,12 @@ public class JavaLanguage extends LanguageParser {
         return fromTSNode(node.getChild(1));
     }
 
-    private ExpressionStatement fromExpressionStatementTSNode(TSNode node) {
+    private Statement fromExpressionStatementTSNode(TSNode node) {
         Expression expr = (Expression) fromTSNode(node.getChild(0));
+        if (expr instanceof AssignmentExpression assignmentExpression) {
+            return new AssignmentStatement(assignmentExpression.getLValue(), assignmentExpression.getRValue());
+        }
+
         return new ExpressionStatement(expr);
     }
 

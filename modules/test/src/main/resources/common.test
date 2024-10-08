@@ -145,7 +145,7 @@ group: LiteralsTest
             f"abc {abc} \t"
 
         java:
-            "abc {abc} \t";
+            String.format("abc %s \t", abc);
 
         c++:
             "abc {abc} \t";
@@ -233,10 +233,10 @@ group: SimpleExpressionsTest
             x // y
 
         java:
-            (int)(x / y);
+            (int) (x / y);
 
         c++:
-            (int)(x / y);
+            (int) (x / y);
 
 
     case: IncrementOp
@@ -730,16 +730,16 @@ group: Conditions
         java:
             if (a > 0) {
                 if (k) {
-                    print("a")
-                    print("b")
+                    print("a");
+                    print("b");
                 }
             }
 
         c++:
             if (a > 0) {
                 if (k) {
-                    print("a")
-                    print("b")
+                    print("a");
+                    print("b");
                 }
             }
 
@@ -909,7 +909,7 @@ group: Conditions
 group: ForLoop
     case: RangeForLoop
         python:
-            for i in range(1, 10, c):
+            for i in range(0, 10, c):
                 func(a)
 
         java:
@@ -1013,7 +1013,7 @@ group: ForLoop
             for (int a = x; a != m;) {
                 func(a, b);
                 if (a == k) {
-                    continue
+                    continue;
                 }
             }
 

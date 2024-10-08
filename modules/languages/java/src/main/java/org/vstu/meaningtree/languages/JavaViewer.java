@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages;
 
+import com.sun.jdi.IntegerType;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.languages.utils.HindleyMilner;
@@ -129,6 +130,9 @@ public class JavaViewer extends LanguageViewer {
         }
 
         return switch (node) {
+            case UnmodifiableListLiteral unmodifiableListLiteral -> toString(unmodifiableListLiteral);
+            case ListLiteral listLiteral -> toString(listLiteral);
+            case InterpolatedStringLiteral interpolatedStringLiteral -> toString(interpolatedStringLiteral);
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
             case StringLiteral l -> toString(l);
@@ -214,6 +218,81 @@ public class JavaViewer extends LanguageViewer {
             case ReferenceType ref -> toString(ref.getTargetType());
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    public String toString(UnmodifiableListLiteral unmodifiableListLiteral) {
+        var builder = new StringBuilder();
+        builder.append("new Object[] {");
+
+        for (Expression expression : unmodifiableListLiteral.getList()) {
+            builder.append(toString(expression)).append(", ");
+        }
+
+        if (builder.length() > 2) {
+            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        builder.append("}");
+        return builder.toString();
+    }
+
+    public String toString(ListLiteral listLiteral) {
+        var builder = new StringBuilder();
+        builder.append("new Object[] {");
+
+        for (Expression expression : listLiteral.getList()) {
+            builder.append(toString(expression)).append(", ");
+        }
+
+        if (builder.length() > 2) {
+            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        builder.append("}");
+        return builder.toString();
+    }
+
+    public String toString(InterpolatedStringLiteral interpolatedStringLiteral) {
+        var builder = new StringBuilder();
+        var argumentsBuilder = new StringBuilder();
+
+        builder.append("String.format(\"");
+        for (Expression stringPart : interpolatedStringLiteral) {
+            Type exprType = HindleyMilner.inference(stringPart, _typeScope);
+            switch (exprType) {
+                case StringType stringType -> {
+                    var string = toString(stringPart);
+                    builder.append(string, 1, string.length() - 1);
+                }
+                case IntType integerType -> {
+                    builder.append("%d");
+                    argumentsBuilder.append(toString(stringPart)).append(", ");
+                }
+                case FloatType floatType -> {
+                    builder.append("%f");
+                    argumentsBuilder.append(toString(stringPart)).append(", ");
+                }
+                default -> {
+                    builder.append("%s");
+                    argumentsBuilder.append(toString(stringPart)).append(", ");
+                }
+            }
+        }
+        builder.append("\"");
+
+        if (argumentsBuilder.length() > 2) {
+            argumentsBuilder.deleteCharAt(argumentsBuilder.length() - 1);
+            argumentsBuilder.deleteCharAt(argumentsBuilder.length() - 1);
+
+            builder
+                    .append(", ")
+                    .append(argumentsBuilder.toString());
+        }
+
+        builder.append(")");
+        return builder.toString();
     }
 
     public String toString(PrintValues printValues) {
@@ -891,7 +970,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(FloorDivOp op) {
-        return toString(op, "/");
+        return "(int) " + toString(op, "/");
     }
 
     public String toString(EqOp op) {

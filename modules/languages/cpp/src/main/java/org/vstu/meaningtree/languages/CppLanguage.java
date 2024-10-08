@@ -600,7 +600,7 @@ public class CppLanguage extends LanguageParser {
                 return new MemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));
             }
         } else {
-            throw new RuntimeException("Unknown identifier");
+            throw new RuntimeException("Unknown identifier: " + node.getType());
         }
     }
 

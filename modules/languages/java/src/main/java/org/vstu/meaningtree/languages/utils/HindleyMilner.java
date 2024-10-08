@@ -23,6 +23,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.types.*;
 import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.ListType;
 
 import java.util.List;
 
@@ -43,7 +44,9 @@ public class HindleyMilner {
             case NumericLiteral numericLiteral -> inference(numericLiteral);
             case BoolLiteral boolLiteral -> new BooleanType();
             case StringLiteral stringLiteral -> new StringType();
-            default -> throw new IllegalStateException("Unexpected type: " + literal);
+            case InterpolatedStringLiteral interpolatedStringLiteral -> new StringType();
+            case NullLiteral nullLiteral -> new UnknownType();
+            default -> new UnknownType();
         };
     }
 
@@ -259,6 +262,11 @@ public class HindleyMilner {
             default -> new UnknownType();
             //default -> throw new IllegalStateException("Unexpected expression type: " + expression.getClass());
         };
+    }
+
+    @NotNull
+    public static Type inference(@NotNull Expression expression) {
+        return inference(expression, new Scope());
     }
 
     public static void inference(@NotNull AssignmentStatement assignmentStatement, @NotNull Scope scope) {
