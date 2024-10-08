@@ -662,7 +662,9 @@ public class JavaViewer extends LanguageViewer {
         }
 
         // Удаляем последний символ перевода строки
-        builder.deleteCharAt(builder.length() - 1);
+        if (!importMembers.getMembers().isEmpty()) {
+            builder.deleteCharAt(builder.length() - 1);
+        }
 
         return builder.toString();
     }

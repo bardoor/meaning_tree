@@ -1572,7 +1572,7 @@ group: Other
         java:
             import a.b.c;
 
-        c++
+        c++:
             #include "a.b.c"
 
 
@@ -1583,7 +1583,7 @@ group: Other
         java:
             import a.b.c;
 
-        c++
+        c++:
             #include "a.b.c"
 
 
@@ -1594,7 +1594,7 @@ group: Other
         java:
             import a.b.c;
 
-        c++
+        c++:
             #include "a.b.c"
 
 
@@ -1631,18 +1631,18 @@ group: Other
 
     case: CastTypePrimitive
         java:
-            (int)a;
+            (int) a;
         c++:
-            (int)a;
+            (int) a;
         isolated python:
             int(a)
 
 
     case: CastTypeCustom
         java:
-            (MyClass)a;
+            (MyClass) a;
         c++:
-            (int)a;
+            (int) a;
         isolated python:
             MyClass(a)
 
@@ -1777,10 +1777,10 @@ group: Other
             (a + b * c) + 6 * (a := 3)
 
         c++:
-            (a + b * c) + 6 * (a = 3)
+            (a + b * c) + 6 * (a = 3);
 
         java:
-            (a + b * c) + 6 * (a = 3)
+            (a + b * c) + 6 * (a = 3);
 
 
     case: EntryPointConflictingWithC++
