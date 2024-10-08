@@ -24,7 +24,7 @@ public class IntegerLiteral extends NumericLiteral {
     public IntegerLiteral(String s, boolean isLong, boolean isUnsigned) {
         _isLongNumber = isLong;
         _isUnsigned = isUnsigned;
-        _value = parseValue(s, false);
+        _value = parseValue(s, true);
     }
 
     public IntegerLiteral(long value) {
