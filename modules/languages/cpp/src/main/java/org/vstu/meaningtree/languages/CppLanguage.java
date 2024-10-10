@@ -403,7 +403,7 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    private FunctionCall fromCallExpression(@NotNull TSNode node) {
+    private Node fromCallExpression(@NotNull TSNode node) {
         Identifier functionName = (Identifier) fromTSNode(node.getChildByFieldName("function"));
 
         TSNode tsArguments = node.getChildByFieldName("arguments");
@@ -412,6 +412,10 @@ public class CppLanguage extends LanguageParser {
             TSNode tsArgument = tsArguments.getNamedChild(i);
             Expression argument = (Expression) fromTSNode(tsArgument);
             arguments.add(argument);
+        }
+
+        if (functionName.toString().equals("pow") && arguments.size() == 2) {
+            return new PowOp(arguments.getFirst(), arguments.getLast());
         }
 
         return new FunctionCall(functionName, arguments);

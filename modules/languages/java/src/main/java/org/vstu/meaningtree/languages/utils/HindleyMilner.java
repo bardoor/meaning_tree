@@ -2,28 +2,31 @@ package org.vstu.meaningtree.languages.utils;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.expressions.*;
-import org.vstu.meaningtree.nodes.expressions.comparison.BinaryComparison;
-import org.vstu.meaningtree.nodes.expressions.comparison.CompoundComparison;
-import org.vstu.meaningtree.nodes.Declaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
+import org.vstu.meaningtree.nodes.expressions.Literal;
+import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
+import org.vstu.meaningtree.nodes.expressions.bitwise.InversionOp;
+import org.vstu.meaningtree.nodes.expressions.comparison.BinaryComparison;
+import org.vstu.meaningtree.nodes.expressions.comparison.CompoundComparison;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.*;
+import org.vstu.meaningtree.nodes.expressions.math.AddOp;
+import org.vstu.meaningtree.nodes.expressions.math.DivOp;
 import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
 import org.vstu.meaningtree.nodes.expressions.other.Range;
 import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
-import org.vstu.meaningtree.nodes.expressions.math.AddOp;
-import org.vstu.meaningtree.nodes.expressions.math.DivOp;
-import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
-import org.vstu.meaningtree.nodes.types.*;
+import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
-import org.vstu.meaningtree.nodes.types.containers.ListType;
 
 import java.util.List;
 
@@ -199,7 +202,9 @@ public class HindleyMilner {
                 || unaryExpression instanceof PrefixDecrementOp
                 || unaryExpression instanceof PrefixIncrementOp
                 || unaryExpression instanceof UnaryMinusOp
-                || unaryExpression instanceof UnaryPlusOp) {
+                || unaryExpression instanceof UnaryPlusOp
+                || unaryExpression instanceof InversionOp
+        ) {
             if (operandType instanceof UnknownType) {
                 Type expressionType = new FloatType();
                 backwardVariableTypeSet(argument, scope, expressionType);

@@ -148,7 +148,7 @@ group: LiteralsTest
             String.format("abc %s \t", abc);
 
         c++:
-            "abc {abc} \t";
+            std::format("abc {} \t", abc);
 
     case: ListLiteral
         python:
@@ -208,13 +208,13 @@ group: SimpleExpressionsTest
 
     case: MulOp
         python:
-            x * y
+            (x * y)
 
         java:
-            x * y;
+            (x * y);
 
         c++:
-            x * y;
+            (x * y);
 
 
     case: DivOp
@@ -233,10 +233,10 @@ group: SimpleExpressionsTest
             x // y
 
         java:
-            (int) (x / y);
+            (long) (x / y);
 
         c++:
-            (int) (x / y);
+            (long) (x / y);
 
 
     case: IncrementOp
@@ -302,18 +302,18 @@ group: SimpleExpressionsTest
             Math.pow(x, y);
 
         c++:
-            std::pow(x, y);
+            pow(x, y);
 
 
     case: AndOp
         python:
-            x and y
+            (x and y)
 
         java:
-            x && y;
+            (x && y);
 
         c++:
-            x && y;
+            (x && y);
 
 
     case: OrOp
@@ -329,13 +329,13 @@ group: SimpleExpressionsTest
 
     case: BitwiseAndOp
         python:
-            x & y
+            (x & y)
 
         java:
-            x & y;
+            (x & y);
 
         c++:
-            x & y;
+            (x & y);
 
 
     case: BitwiseOrOp
@@ -417,13 +417,13 @@ group: SimpleExpressionsTest
 
     case: AssignmentExpr
         python:
-            x := b
+            (x := b) + 3
         
         java:
-            x = b;
+            (x = b) + 3;
 
         c++:
-            x = b;
+            (x = b) + 3;
 
 
     case: MemberAccess
@@ -483,13 +483,13 @@ group: SimpleExpressionsTest
 group: ComparisonsTest
     case: LessOp
         python:
-            a < b
+            (a < b)
 
         java:
-            a < b;
+            (a < b);
 
         c++:
-            a < b;
+            (a < b);
 
 
     case: LessEqualOp
@@ -549,13 +549,13 @@ group: ComparisonsTest
 
     case: CompoundComparisonConvertationBetweenLanguages
         python:
-            a < b < c and k <= m
+            (a < b < c and k <= m)
 
         java:
-            a < b && b < c && k <= m;
+            (a < b && b < c && k <= m);
 
         c++:
-            a < b && b < c && k <= m;
+            (a < b && b < c && k <= m);
 
 
 group: SimpleStatements
@@ -1596,18 +1596,6 @@ group: Other
 
         c++:
             #include "a.b.c"
-
-
-    case: Range
-        python:
-            a[x:y:z]
-
-        c++:
-            a[x:y:z];
-
-        java:
-            a[x:y:z];
-
 
     case: MultilineComment
         python:

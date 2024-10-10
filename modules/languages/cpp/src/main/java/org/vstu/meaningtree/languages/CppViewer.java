@@ -36,6 +36,7 @@ import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
@@ -73,6 +74,7 @@ public class CppViewer extends LanguageViewer {
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
             case AssignmentExpression assignmentExpression -> toStringAssignmentExpression(assignmentExpression);
+            case AssignmentStatement assignmentStatement -> toStringAssignmentExpression(assignmentStatement.toExpression()).concat(";");
             case Type type -> toStringType(type);
             case Identifier identifier -> toStringIdentifier(identifier);
             case NumericLiteral numericLiteral -> toStringNumericLiteral(numericLiteral);
@@ -89,9 +91,19 @@ public class CppViewer extends LanguageViewer {
             case DeleteExpression del -> toStringDelete(del);
             case DeleteStatement del -> toStringDelete(del.toExpression()) + ";";
             case MemberAccess memAccess -> toStringMemberAccess(memAccess);
+            case CompoundComparison cmpCmp -> toStringCompoundComparison(cmpCmp);
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
+    }
+
+    private String toStringCompoundComparison(CompoundComparison cmpCmp) {
+        StringBuilder expr = new StringBuilder();
+        for (BinaryComparison cmp : cmpCmp.getComparisons()) {
+            expr.append(toStringBinaryExpression(cmp));
+            expr.append(" && ");
+        }
+        return expr.substring(0, expr.length() - 4);
     }
 
     private String toStringMemberAccess(MemberAccess memAccess) {
@@ -131,14 +143,24 @@ public class CppViewer extends LanguageViewer {
 
     private String toStringNew(NewExpression _new) {
         if (_new instanceof ArrayNewExpression arrayNew) {
+            StringBuilder newBuilder = new StringBuilder();
+            // DISABLED DUE TO RARE SYNTAX
+            /*
             StringBuilder newBuilder = new StringBuilder("new ");
             newBuilder.append(toString(arrayNew.getType()));
             for (int i = 0; i < arrayNew.getShape().getDimensionCount(); i++) {
                 newBuilder.append(String.format("[%s]", arrayNew.getShape().getDimension(i)));
             }
+            */
             if (arrayNew.getInitializer() != null) {
-                newBuilder.append(' ');
+                // newBuilder.append(' ');
                 newBuilder.append(String.format("{%s}", toStringArguments(arrayNew.getInitializer().getValues())));
+            } else {
+                newBuilder.append("new ");
+                newBuilder.append(toString(arrayNew.getType()));
+                for (int i = 0; i < arrayNew.getShape().getDimensionCount(); i++) {
+                    newBuilder.append(String.format("[%s]", arrayNew.getShape().getDimension(i)));
+                }
             }
             return newBuilder.toString();
         } else if (_new instanceof PlacementNewExpression placementNew) {
@@ -171,7 +193,7 @@ public class CppViewer extends LanguageViewer {
     }
 
     private String toStringFloorDiv(FloorDivOp op) {
-        return String.format("(int)(%s / %s)", toString(op.getLeft()), toString(op.getRight()));
+        return String.format("(long) (%s / %s)", toString(op.getLeft()), toString(op.getRight()));
     }
 
     private String toStringEntryPoint(ProgramEntryPoint entryPoint) {
@@ -464,6 +486,9 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringBinaryExpression(@NotNull BinaryExpression binaryExpression) {
+        if (binaryExpression instanceof PowOp) {
+            return String.format("pow(%s, %s)", toString(binaryExpression.getLeft()), toString(binaryExpression.getRight()));
+        }
         String operator = switch (binaryExpression) {
             case AddOp op -> "+";
             case SubOp op -> "-";

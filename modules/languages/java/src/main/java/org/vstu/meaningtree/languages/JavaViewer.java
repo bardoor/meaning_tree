@@ -1,6 +1,5 @@
 package org.vstu.meaningtree.languages;
 
-import com.sun.jdi.IntegerType;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.languages.utils.HindleyMilner;
@@ -972,7 +971,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(FloorDivOp op) {
-        return "(int) " + toString(op, "/");
+        return String.format("(long) (%s)", toString(op, "/"));
     }
 
     public String toString(EqOp op) {

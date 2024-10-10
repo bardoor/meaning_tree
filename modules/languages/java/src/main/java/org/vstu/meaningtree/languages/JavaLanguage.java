@@ -46,7 +46,10 @@ import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
-import org.vstu.meaningtree.nodes.statements.conditions.components.*;
+import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
 import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
@@ -198,6 +201,10 @@ public class JavaLanguage extends LanguageParser {
     private Node fromCastExpressionTSNode(TSNode node) {
         Type castType = fromTypeTSNode(node.getChildByFieldName("type"));
         Expression value = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        if (castType instanceof IntType && value instanceof ParenthesizedExpression p
+                && p.getExpression() instanceof DivOp div) {
+            return new FloorDivOp(div.getLeft(), div.getRight());
+        }
         return new CastTypeExpression(castType, value);
     }
 
@@ -341,18 +348,31 @@ public class JavaLanguage extends LanguageParser {
     }
 
     @NotNull
-    private FunctionCall fromMethodInvocation(@NotNull TSNode methodInvocation) {
+    private Node fromMethodInvocation(@NotNull TSNode methodInvocation) {
         TSNode objectNode = methodInvocation.getChildByFieldName("object");
         TSNode nameNode = methodInvocation.getChildByFieldName("name");
         TSNode argumentsNode = methodInvocation.getChildByFieldName("arguments");
 
+        String objectMethodName = getCodePiece(nameNode);
         if (!objectNode.isNull()) {
             String objectName = getCodePiece(objectNode);
-            String objectMethodName = getCodePiece(nameNode);
             if (objectName.equals("System.out")
                     && (objectMethodName.equals("println") || objectMethodName.equals("print"))) {
                 return makePrintCall(objectMethodName, argumentsNode);
             }
+            if (objectName.equals("Math") && objectMethodName.equals("pow") && argumentsNode.getNamedChildCount() == 2) {
+                return new PowOp(
+                        (Expression) fromTSNode(argumentsNode.getNamedChild(0)),
+                        (Expression) fromTSNode(argumentsNode.getNamedChild(1))
+                );
+            }
+        }
+
+        if (objectNode.isNull() && objectMethodName.equals("pow") && argumentsNode.getNamedChildCount() == 2) {
+            return new PowOp(
+                    (Expression) fromTSNode(argumentsNode.getNamedChild(0)),
+                    (Expression) fromTSNode(argumentsNode.getNamedChild(1))
+            );
         }
 
         Identifier methodName = fromIdentifierTSNode(nameNode);

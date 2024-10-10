@@ -121,10 +121,10 @@ group: Operators
 
     case: FloorDiv
         c++:
-            x = (int)(a / b);
+            x = (long) (a / b);
 
         c++:
-            x = (int)(a / b);
+            x = (long) (a / b);
 
     case: Pow
         c++:
