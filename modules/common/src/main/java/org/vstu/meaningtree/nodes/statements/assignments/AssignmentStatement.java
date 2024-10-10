@@ -3,6 +3,7 @@ package org.vstu.meaningtree.nodes.statements.assignments;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 
 public class AssignmentStatement extends Statement implements HasInitialization {
@@ -30,6 +31,10 @@ public class AssignmentStatement extends Statement implements HasInitialization 
 
     public Expression getRValue() {
         return _rvalue;
+    }
+
+    public AssignmentExpression toExpression() {
+        return new AssignmentExpression(_lvalue, _rvalue, _op);
     }
 
     @Override

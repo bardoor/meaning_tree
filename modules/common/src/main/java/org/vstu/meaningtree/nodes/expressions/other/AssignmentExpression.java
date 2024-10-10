@@ -3,6 +3,7 @@ package org.vstu.meaningtree.nodes.expressions.other;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 
 import java.util.Objects;
 
@@ -15,6 +16,10 @@ public class AssignmentExpression extends Expression implements HasInitializatio
         _lvalue = id;
         _rvalue = value;
         _op = op;
+    }
+
+    public AssignmentStatement toStatement() {
+        return new AssignmentStatement(_lvalue, _rvalue, _op);
     }
 
     public AssignmentExpression(Expression id, Expression value) {
