@@ -20,6 +20,7 @@ import org.vstu.meaningtree.nodes.expressions.identifiers.SuperClassReference;
 import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
 import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
@@ -54,9 +55,12 @@ public class PythonSpecialNodeTransformations {
         if (generalFor.hasCondition()) {
             condition = generalFor.getCondition();
         }
-        Expression update = null;
+        Node update = null;
         if (generalFor.hasUpdate()) {
             update = generalFor.getUpdate();
+            if (update instanceof AssignmentExpression a) {
+                update = a.toStatement();
+            }
         }
         Statement stmt = generalFor.getBody();
         CompoundStatement body;
@@ -81,7 +85,7 @@ public class PythonSpecialNodeTransformations {
         return new Node[] {(Node)initializer, new WhileLoop(condition, body)};
     }
 
-    private static void _prepend_continue_with_expression(CompoundStatement compound, Expression update) {
+    private static void _prepend_continue_with_expression(CompoundStatement compound, Node update) {
         int found = -1;
         Node[] nodes = compound.getNodes();
         for (int i = 0; i < nodes.length; i++) {
