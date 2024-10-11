@@ -105,7 +105,8 @@ public class PythonLanguage extends LanguageParser {
     }
 
     @Override
-    public LanguageTokenizer getTokenizer() {
+    public LanguageTokenizer getTokenizer(String code) {
+        _code = code;
         return new PythonTokenizer(_code, this);
     }
 

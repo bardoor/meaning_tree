@@ -57,5 +57,5 @@ abstract public class LanguageParser {
         }
     }
 
-    public abstract LanguageTokenizer getTokenizer();
+    public abstract LanguageTokenizer getTokenizer(String code);
 }

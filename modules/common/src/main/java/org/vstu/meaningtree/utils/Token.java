@@ -8,5 +8,10 @@ public class Token {
         this.value = value;
         this.type = type;
     }
+
+    @Override
+    public String toString() {
+        return String.format("token[value=\"%s\",type=%s]", value, type);
+    }
 }
 

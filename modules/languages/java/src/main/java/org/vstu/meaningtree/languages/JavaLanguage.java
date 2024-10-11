@@ -102,7 +102,8 @@ public class JavaLanguage extends LanguageParser {
     }
 
     @Override
-    public LanguageTokenizer getTokenizer() {
+    public LanguageTokenizer getTokenizer(String code) {
+        _code = code;
         return new JavaTokenizer(_code, this);
     }
 

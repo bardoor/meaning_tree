@@ -145,12 +145,12 @@ public class JavaTokenizer extends LanguageTokenizer {
         }
 
         if (node.getParent().getType().equals("update_expression") &&
-                TreeSitterUtils.getCodePiece(code, node.getParent()).startsWith("++")) {
+                TreeSitterUtils.getCodePiece(code, node.getParent()).startsWith("++") && tokenValue.equals("++")) {
             return prec.get("++U");
         }
 
         if (node.getParent().getType().equals("update_expression") &&
-                TreeSitterUtils.getCodePiece(code, node.getParent()).startsWith("--")) {
+                TreeSitterUtils.getCodePiece(code, node.getParent()).startsWith("--")  && tokenValue.equals("--")) {
             return prec.get("--U");
         }
 

@@ -84,7 +84,8 @@ public class CppLanguage extends LanguageParser {
     }
 
     @Override
-    public LanguageTokenizer getTokenizer() {
+    public LanguageTokenizer getTokenizer(String code) {
+        _code = code;
         return new CppTokenizer(_code, this);
     }
 

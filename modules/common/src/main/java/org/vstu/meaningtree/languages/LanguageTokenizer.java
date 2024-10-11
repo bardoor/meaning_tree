@@ -39,8 +39,11 @@ public abstract class LanguageTokenizer {
         if (node.getChildCount() == 0 || List.of(getStopNodes()).contains(node.getType())) {
             TokenType type = recognizeTokenType(node);
             String value = TreeSitterUtils.getCodePiece(code, node);
+            if (value.trim().isEmpty()) {
+                return;
+            }
             if (getOperatorPrecedence(value, node) != -1) {
-                tokens.add(new OperatorToken(value, getOperatorPrecedence(value, node), getOperatorAssociativity(value, node)));
+                tokens.add(new OperatorToken(value, type, getOperatorPrecedence(value, node), getOperatorAssociativity(value, node)));
             } else {
                 tokens.add(new Token(TreeSitterUtils.getCodePiece(code, node), type));
             }
