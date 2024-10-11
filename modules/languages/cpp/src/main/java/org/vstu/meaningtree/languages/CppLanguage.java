@@ -62,21 +62,29 @@ public class CppLanguage extends LanguageParser {
         _userTypes = new HashMap<>();
     }
 
-    @NotNull
-    public synchronized MeaningTree getMeaningTree(String code) {
-        _code = code;
-
-        TSTree tree = _parser.parseString(null, code);
+    @Override
+    public TSTree getTSTree() {
+        TSTree tree = _parser.parseString(null, _code);
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+        return tree;
+    }
 
-        TSNode rootNode = tree.getRootNode();
+    @NotNull
+    public synchronized MeaningTree getMeaningTree(String code) {
+        _code = code;
+        TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty()) {
             throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
+    }
+
+    @Override
+    public LanguageTokenizer getTokenizer() {
+        return new CppTokenizer(_code, this);
     }
 
     @NotNull

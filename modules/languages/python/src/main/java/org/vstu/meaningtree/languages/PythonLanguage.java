@@ -78,25 +78,33 @@ public class PythonLanguage extends LanguageParser {
     private SymbolEnvironment currentContext;
 
     @Override
-    public synchronized MeaningTree getMeaningTree(String code) {
-        currentContext = new SymbolEnvironment(null);
-        _code = code;
+    public TSTree getTSTree() {
         TSParser parser = new TSParser();
         TSLanguage pyLanguage = new TreeSitterPython();
         parser.setLanguage(pyLanguage);
 
-        TSTree tree = parser.parseString(null, code);
+        TSTree tree = parser.parseString(null, _code);
 
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+    }
 
-        TSNode rootNode = tree.getRootNode();
+    @Override
+    public synchronized MeaningTree getMeaningTree(String code) {
+        currentContext = new SymbolEnvironment(null);
+        _code = code;
+        TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty()) {
             throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
+    }
+
+    @Override
+    public LanguageTokenizer getTokenizer() {
+        return new PythonTokenizer(_code, this);
     }
 
     private Node fromTSNode(TSNode node) {

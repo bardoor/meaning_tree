@@ -81,20 +81,28 @@ public class JavaLanguage extends LanguageParser {
         currentContext = new SymbolEnvironment(null);
     }
 
-    public synchronized MeaningTree getMeaningTree(String code) {
-        _code = code;
-
-        TSTree tree = _parser.parseString(null, code);
+    @Override
+    public TSTree getTSTree() {
+        TSTree tree = _parser.parseString(null, _code);
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+        return tree;
+    }
 
-        TSNode rootNode = tree.getRootNode();
+    public synchronized MeaningTree getMeaningTree(String code) {
+        _code = code;
+        TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty()) {
             throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
+    }
+
+    @Override
+    public LanguageTokenizer getTokenizer() {
+        return new JavaTokenizer(_code, this);
     }
 
     private void rollbackContext() {
