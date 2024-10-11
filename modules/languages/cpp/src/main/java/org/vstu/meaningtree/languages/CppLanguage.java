@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
@@ -77,7 +78,7 @@ public class CppLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty()) {
-            throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
+            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
     }
@@ -139,7 +140,7 @@ public class CppLanguage extends LanguageParser {
         } else if (op.startsWith("*")) {
             return new PointerUnpackOp(argument);
         } else {
-            throw new RuntimeException("Unknown pointer expression: ".concat(op));
+            throw new MeaningTreeException("Unknown pointer expression: ".concat(op));
         }
     }
 
@@ -186,7 +187,7 @@ public class CppLanguage extends LanguageParser {
             ArrayInitializer initializer = !initList.isEmpty() ? new ArrayInitializer(initList) : null;
             return new ArrayNewExpression(type, new Shape(dimensions.size(), dimensions.toArray(new Expression[0])), initializer);
         } else {
-            throw new RuntimeException("No arguments for new expression");
+            throw new MeaningTreeException("No arguments for new expression");
         }
         for (int i = 0; i < childSource.getNamedChildCount(); i++) {
             args.add((Expression) fromTSNode(childSource.getNamedChild(i)));
@@ -602,7 +603,7 @@ public class CppLanguage extends LanguageParser {
                 } else if (fieldIdent instanceof ScopedIdentifier scopedIdent) {
                     identList.addAll(scopedIdent.getScopeResolution());
                 } else if (fieldIdent instanceof QualifiedIdentifier) {
-                    throw new RuntimeException("Unsupported scoped and qualified identifier combination");
+                    throw new MeaningTreeException("Unsupported scoped and qualified identifier combination");
                 }
                 return new ScopedIdentifier(identList);
             } else {
@@ -612,7 +613,7 @@ public class CppLanguage extends LanguageParser {
                 return new MemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));
             }
         } else {
-            throw new RuntimeException("Unknown identifier: " + node.getType());
+            throw new MeaningTreeException("Unknown identifier: " + node.getType());
         }
     }
 

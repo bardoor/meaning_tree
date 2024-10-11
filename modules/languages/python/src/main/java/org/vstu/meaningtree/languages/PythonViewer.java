@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
@@ -124,8 +125,8 @@ public class PythonViewer extends LanguageViewer {
             case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
             case CastTypeExpression cast -> callsToString(cast);
             case Comprehension compr -> comprehensionToString(compr);
-            case null -> throw new RuntimeException("Null node detected");
-            default -> throw new RuntimeException("Unsupported tree element: " + node.getClass().getName());
+            case null -> throw new MeaningTreeException("Null node detected");
+            default -> throw new MeaningTreeException("Unsupported tree element: " + node.getClass().getName());
         };
     }
 
@@ -146,7 +147,7 @@ public class PythonViewer extends LanguageViewer {
         } else if (compr.getItem() instanceof Comprehension.ListItem item) {
             comprehension.append(toString(item.value()));
         } else {
-            throw new RuntimeException("Неизвестный тип comprehension");
+            throw new MeaningTreeException("Неизвестный тип comprehension");
         }
         comprehension.append(' ');
         if (compr instanceof RangeBasedComprehension rangeBased) {
@@ -621,7 +622,7 @@ public class PythonViewer extends LanguageViewer {
         boolean isStepDefault = range.getStep() instanceof IntegerLiteral intLit && intLit.getLongValue() == 1;
 
         if (stop == null) {
-            throw new RuntimeException("Range must contain stop condition at least");
+            throw new MeaningTreeException("Range must contain stop condition at least");
         }
 
         if ((start == null || isStartDefault) && (step == null || isStepDefault)) {
@@ -708,7 +709,7 @@ public class PythonViewer extends LanguageViewer {
             case CastTypeExpression cast -> {
                 return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));
             }
-            case null, default -> throw new RuntimeException("Not a callable object");
+            case null, default -> throw new MeaningTreeException("Not a callable object");
         }
     }
 

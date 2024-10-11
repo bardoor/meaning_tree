@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions.calls;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 
@@ -37,7 +38,7 @@ public class FunctionCall extends Expression {
             return (Identifier) _function;
         }
 
-        throw new RuntimeException("Function does not have identifier of call");
+        throw new MeaningTreeException("Function does not have identifier of call");
     }
 
     @Override

@@ -1,11 +1,11 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 public abstract class LanguageTranslator {
@@ -33,7 +33,7 @@ public abstract class LanguageTranslator {
             if (cfg != null) {
                 cfg.inferValueFrom(rawConfig.get(paramName));
             } else {
-                throw new RuntimeException("Missing config parameter: ".concat(paramName));
+                throw new MeaningTreeException("Missing config parameter: ".concat(paramName));
             }
         }
 

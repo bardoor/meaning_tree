@@ -2,6 +2,7 @@ package org.vstu.meaningtree.languages;
 
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
@@ -88,6 +89,7 @@ public class PythonLanguage extends LanguageParser {
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+        return tree;
     }
 
     @Override
@@ -97,7 +99,7 @@ public class PythonLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty()) {
-            throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
+            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
     }
@@ -750,7 +752,7 @@ public class PythonLanguage extends LanguageParser {
                 exprs.add(new NullLiteral());
             }
             if (idents.size() < exprs.size()) {
-                throw new RuntimeException("Invalid using of unpacking construction");
+                throw new MeaningTreeException("Invalid using of unpacking construction");
             }
 
             List<AssignmentStatement> stmts = new ArrayList<>();
@@ -856,7 +858,7 @@ public class PythonLanguage extends LanguageParser {
                 if (n instanceof Expression expr) {
                     exprs[i] = expr;
                 } else {
-                    throw new RuntimeException("Invalid type in expression statement, not expression");
+                    throw new MeaningTreeException("Invalid type in expression statement, not expression");
                 }
             }
             return new ExpressionSequence(exprs);
@@ -917,7 +919,7 @@ public class PythonLanguage extends LanguageParser {
                     comparisons.add(object);
                 } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
                          NoSuchMethodException e) {
-                    throw new RuntimeException(e);
+                    throw new MeaningTreeException(e);
                 }
                 operands.add(secondNode);
             }

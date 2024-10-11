@@ -1,5 +1,7 @@
 package org.vstu.meaningtree;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
@@ -48,7 +50,7 @@ public class SingleTestCode {
         String indent = lines.getFirst().replace(lines.getFirst().strip(), "");
 
         if (lines.isEmpty()) {
-            throw new RuntimeException("Нет кода: " + testCode);
+            throw new MeaningTreeException("Нет кода: " + testCode);
         }
 
         // Удалить комментарии с конца

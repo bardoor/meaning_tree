@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.nodes.statements.loops;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
@@ -40,7 +41,7 @@ public class GeneralForLoop extends ForLoop {
 
     public HasInitialization getInitializer() {
         if (!hasInitializer()) {
-            throw new RuntimeException("No initializer");
+            throw new MeaningTreeException("No initializer");
         }
 
         return _initializer;
@@ -52,7 +53,7 @@ public class GeneralForLoop extends ForLoop {
 
     public Expression getCondition() {
         if (!hasCondition()) {
-            throw new RuntimeException("No condition");
+            throw new MeaningTreeException("No condition");
         }
 
         return _condition;
@@ -64,7 +65,7 @@ public class GeneralForLoop extends ForLoop {
 
     public Expression getUpdate() {
         if (!hasUpdate()) {
-            throw new RuntimeException("No update");
+            throw new MeaningTreeException("No update");
         }
 
         return _update;

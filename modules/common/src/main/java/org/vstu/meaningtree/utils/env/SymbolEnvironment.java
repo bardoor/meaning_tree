@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.utils.env;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Definition;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
@@ -109,10 +110,10 @@ public class SymbolEnvironment {
             if (record != null) {
                 return record.getEnv().resolve(qualified.getMember(), preferredRecordType);
             } else {
-                throw new RuntimeException("Not found:".concat(qualified.getMember().toString()));
+                throw new MeaningTreeException("Not found:".concat(qualified.getMember().toString()));
             }
         }
-        throw new RuntimeException("Unknown identifier type");
+        throw new MeaningTreeException("Unknown identifier type");
     }
 
     private SymbolRecord resolveBySimpleIdentifierList(List<SimpleIdentifier> resolution, Class<? extends SymbolRecord> preferredRecordType) {
@@ -124,7 +125,7 @@ public class SymbolEnvironment {
             type = (UserTypeRecord) type.getEnv().resolve(resolution.get(i), UserTypeRecord.class);
         }
         if (type == null) {
-            throw new RuntimeException("Unexpected identifier end, no such element: ".concat(resolution.get(i).toString()));
+            throw new MeaningTreeException("Unexpected identifier end, no such element: ".concat(resolution.get(i).toString()));
         }
         return type.getEnv().resolve(last, preferredRecordType);
     }

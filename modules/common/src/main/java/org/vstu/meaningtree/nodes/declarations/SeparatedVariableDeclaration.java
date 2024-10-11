@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.declarations;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Declaration;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
@@ -23,7 +24,7 @@ public class SeparatedVariableDeclaration extends Declaration {
 
     public SeparatedVariableDeclaration(List<VariableDeclaration> decl) {
         if (decl == null || decl.isEmpty()) {
-            throw new RuntimeException("Required at least one argument at separate variable declaration");
+            throw new MeaningTreeException("Required at least one argument at separate variable declaration");
         }
         _decls = new ArrayList<>(decl);
     }

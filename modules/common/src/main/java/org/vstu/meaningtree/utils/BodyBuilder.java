@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.utils;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
@@ -48,7 +49,7 @@ public class BodyBuilder {
         int position = _nodes.size();
         if (node instanceof CompoundStatement compound) {
             if (!compound.getEnv().equals(getEnv())) {
-                throw new RuntimeException("Compound statement belongs to other symbol env");
+                throw new MeaningTreeException("Compound statement belongs to other symbol env");
             }
             _env.putNestedScope((HasSymbolScope) node, position);
         } else if (node instanceof VariableDeclaration declaration) {

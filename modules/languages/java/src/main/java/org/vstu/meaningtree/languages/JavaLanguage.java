@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
@@ -95,7 +96,7 @@ public class JavaLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty()) {
-            throw new RuntimeException(String.format("Given code has syntax errors: %s", errors));
+            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
     }

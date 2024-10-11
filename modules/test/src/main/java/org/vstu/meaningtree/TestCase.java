@@ -1,11 +1,15 @@
 package org.vstu.meaningtree;
 
-import java.util.*;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TestCase {
     private final String _name;
@@ -52,7 +56,7 @@ public class TestCase {
             String code = testCase.substring(codesStarts.get(i), codesStarts.get(i + 1));
             SingleTestCode testCode = new SingleTestCode(code);
             if (mainCode != null && testCode.getType().equals(TestCodeType.MAIN)) {
-                throw new RuntimeException("В тест кейсе несколько главных кодов:\n" + testCase);
+                throw new MeaningTreeException("В тест кейсе несколько главных кодов:\n" + testCase);
             }
             if (testCode.getType().equals(TestCodeType.MAIN)) {
                 mainCode = testCode;
@@ -64,7 +68,7 @@ public class TestCase {
                 }
             } else {
                 if (alternatives.containsKey(testCode.getLanguage())) {
-                    throw new RuntimeException("В тест кейсе язык " + testCode.getLanguage() + " должен состоять только из альтернатив");
+                    throw new MeaningTreeException("В тест кейсе язык " + testCode.getLanguage() + " должен состоять только из альтернатив");
                 }
                 codes.add(testCode);
             }

@@ -2,6 +2,7 @@ package org.vstu.meaningtree.languages;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.utils.HindleyMilner;
 import org.vstu.meaningtree.languages.utils.Scope;
 import org.vstu.meaningtree.nodes.*;
@@ -87,7 +88,7 @@ public class JavaViewer extends LanguageViewer {
         Scope parentScope = _currentScope.getParentScope();
         Scope parentTypeScope = _typeScope.getParentScope();
         if (parentScope == null) {
-            throw new RuntimeException("No parent scope found");
+            throw new MeaningTreeException("No parent scope found");
         }
         _currentScope = parentScope;
         _typeScope = parentTypeScope;
@@ -1208,7 +1209,7 @@ public class JavaViewer extends LanguageViewer {
         _indentLevel--;
 
         if (_indentLevel < 0) {
-            throw new RuntimeException("Indentation level can't be less than zero");
+            throw new MeaningTreeException("Indentation level can't be less than zero");
         }
     }
 
@@ -1473,7 +1474,7 @@ public class JavaViewer extends LanguageViewer {
             }
         }
 
-        throw new RuntimeException("Can't determine range type in for loop");
+        throw new MeaningTreeException("Can't determine range type in for loop");
     }
 
     private String getForRangeHeader(RangeForLoop forRangeLoop) {
@@ -1502,7 +1503,7 @@ public class JavaViewer extends LanguageViewer {
             );
         }
 
-        throw new RuntimeException("Can't determine range type in for loop");
+        throw new MeaningTreeException("Can't determine range type in for loop");
     }
 
     public String toString(RangeForLoop forRangeLoop) {

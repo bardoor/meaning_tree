@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.languages.configs;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
+
 import java.util.List;
 
 public class ConfigParameter {
@@ -22,7 +24,7 @@ public class ConfigParameter {
 
     private ConfigParameter(String name, Object value, Scope scope) {
         if (!isInAllowedTypes(value)) {
-            throw new RuntimeException("Unsupported for config value type");
+            throw new MeaningTreeException("Unsupported for config value type");
         }
         this.name = name;
         this.scope = scope;
@@ -92,7 +94,7 @@ public class ConfigParameter {
 
     public void setValue(Object newValue) {
         if (!newValue.getClass().equals(type)) {
-            throw new RuntimeException("Invalid config value type. You cannot redefine type of value");
+            throw new MeaningTreeException("Invalid config value type. You cannot redefine type of value");
         }
         this.value = newValue;
     }

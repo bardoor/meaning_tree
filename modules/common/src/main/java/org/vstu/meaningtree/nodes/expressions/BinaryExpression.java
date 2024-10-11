@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.lang.reflect.InvocationTargetException;
@@ -55,7 +56,7 @@ abstract public class BinaryExpression extends Expression {
         try {
             return whatClassNeeded.getConstructor(Expression.class, Expression.class).newInstance(array[startIndex], fromManyOperands(array, startIndex + 1, whatClassNeeded));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new MeaningTreeException(e);
         }
     }
 }

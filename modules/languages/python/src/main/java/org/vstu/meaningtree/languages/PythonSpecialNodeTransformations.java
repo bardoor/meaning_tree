@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.languages;
 
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.utils.ExpressionDAG;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.Expression;
@@ -222,7 +223,7 @@ public class PythonSpecialNodeTransformations {
                             result.add(new CompoundComparison(compound.toArray(new BinaryComparison[0])));
                         }
                     } else if (!cyclic) {
-                        throw new RuntimeException("Something bad in DAG longest path");
+                        throw new MeaningTreeException("Something bad in DAG longest path");
                     }
                     // Убираем ненужные вершины, которые ни с чем не связаны
                     dag.removeOrphanedVertices();
