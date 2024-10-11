@@ -45,7 +45,7 @@ public class Main {
     @Parameters(commandDescription = "List all supported languages")
     public static class ListLangsCommand {}
 
-    public static Map<String, Class<? extends LanguageTranslator>> translators = SupportedLanguages.getMap();
+    public static Map<String, Class<? extends LanguageTranslator>> translators = SupportedLanguage.getStringMap();
 
     public static void main(String[] args) throws Exception {
         TranslateCommand translateCommand = new TranslateCommand();
