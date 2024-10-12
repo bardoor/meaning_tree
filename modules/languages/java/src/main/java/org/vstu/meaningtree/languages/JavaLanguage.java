@@ -59,8 +59,12 @@ import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.ArrayType;
+import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
+import org.vstu.meaningtree.nodes.types.containers.ListType;
+import org.vstu.meaningtree.nodes.types.containers.SetType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.nodes.types.user.Class;
+import org.vstu.meaningtree.nodes.types.user.GenericClass;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
@@ -865,12 +869,15 @@ public class JavaLanguage extends LanguageParser {
         return new GeneralForLoop(init, condition, update, body);
     }
 
-    private VariableDeclarator fromVariableDeclarator(TSNode node) {
+    private VariableDeclarator fromVariableDeclarator(TSNode node, Type type) {
         String name = getCodePiece(node.getChildByFieldName("name"));
         SimpleIdentifier ident = new SimpleIdentifier(name);
 
         if (!node.getChildByFieldName("value").isNull()) {
             Expression value = (Expression) fromTSNode(node.getChildByFieldName("value"));
+            if (value instanceof PlainCollectionLiteral col) {
+                col.setTypeHint(type);
+            }
             return new VariableDeclarator(ident, value);
         }
         else {
@@ -892,7 +899,7 @@ public class JavaLanguage extends LanguageParser {
                 };
                 break;
             case "floating_point_type":
-                parsedType = new FloatType();
+                parsedType = new FloatType(typeName.equals("double") ? 64 : 32);
                 break;
             case "boolean_type":
                 parsedType = new BooleanType();
@@ -918,13 +925,61 @@ public class JavaLanguage extends LanguageParser {
                     }
                 }
                 break;
+            case "generic_type":
+                TSNode typeNode = node.getNamedChild(0);
+                TSNode arguments = node.getNamedChild(1);
+
+                ArrayList<Type> subTypes = new ArrayList<>();
+                for (int i = 0; i < arguments.getNamedChildCount(); i++) {
+                    subTypes.add(fromTypeTSNode(arguments.getNamedChild(i)));
+                }
+
+                Type subType = fromTypeTSNode(typeNode);
+                if (subType instanceof ListType) {
+                    parsedType = new ListType(!subTypes.isEmpty() ? subTypes.getFirst() : new UnknownType());
+                } else if (subType instanceof DictionaryType) {
+                    parsedType = new DictionaryType(
+                            !subTypes.isEmpty() ? subTypes.getFirst() : new UnknownType(),
+                            subTypes.size() > 1 ? subTypes.get(1) : new UnknownType()
+                    );
+                } else if (subType instanceof SetType) {
+                    parsedType = new SetType(!subTypes.isEmpty() ? subTypes.getFirst() : new UnknownType());
+                } else if (subType instanceof Class cls) {
+                    parsedType = new GenericClass(cls.getQualifiedName(), subTypes.toArray(new Type[0]));
+                }
+                break;
             case "scoped_type_identifier":
-                throw new IllegalStateException("Scoped type identifiers are not supported yet");
+                ScopedIdentifier idents = fromScopedTypeIdentifier(node);
+                parsedType = switch (idents.getScopeResolution().getLast().toString()) {
+                    case "ArrayList", "List" -> new ListType(new UnknownType());
+                    case "TreeMap", "HashMap", "Map", "OrderedMap" -> new DictionaryType(new UnknownType(), new UnknownType());
+                    case "Set", "HashSet" -> new SetType(new UnknownType());
+                    default -> {
+                        UserType t = new Class(idents);
+                        if (!_userTypes.containsKey(typeName)) {
+                            _userTypes.put(typeName, t);
+                        }
+                        yield t;
+                    }
+                };
+                break;
             default:
                 throw new IllegalStateException("Unexpected type: " + typeName);
         }
 
         return parsedType;
+    }
+
+    private ScopedIdentifier fromScopedTypeIdentifier(TSNode node) {
+        ArrayList<SimpleIdentifier> idents = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            if (node.getNamedChild(i).getType().equals("scoped_type_identifier")) {
+                idents.addAll(fromScopedTypeIdentifier(node.getNamedChild(i)).getScopeResolution());
+            } else {
+                idents.add((SimpleIdentifier) fromTSNode(node.getNamedChild(i)));
+            }
+        }
+        return new ScopedIdentifier(idents);
     }
 
     private VariableDeclaration fromVariableDeclarationTSNode(TSNode node) {
@@ -936,6 +991,10 @@ public class JavaLanguage extends LanguageParser {
 
         Type type = fromTypeTSNode(node.getChildByFieldName("type"));
 
+        if (modifiers.contains(DeclarationModifier.CONST)) {
+            type.setConst(true);
+        }
+
         List<VariableDeclarator> declarators = new ArrayList<>();
 
         TSQuery all_declarators = new TSQuery(_language, "(variable_declarator) @decls");
@@ -944,7 +1003,7 @@ public class JavaLanguage extends LanguageParser {
         TSQueryMatch match = new TSQueryMatch();
         while (cursor.nextMatch(match)) {
             TSQueryCapture capture = match.getCaptures()[0];
-            VariableDeclarator decl = fromVariableDeclarator(capture.getNode());
+            VariableDeclarator decl = fromVariableDeclarator(capture.getNode(), type);
             declarators.add(decl);
         }
         //while (cursor.nextMatch(match)) {
@@ -1062,7 +1121,7 @@ public class JavaLanguage extends LanguageParser {
     private Statement fromExpressionStatementTSNode(TSNode node) {
         Expression expr = (Expression) fromTSNode(node.getChild(0));
         if (expr instanceof AssignmentExpression assignmentExpression) {
-            return new AssignmentStatement(assignmentExpression.getLValue(), assignmentExpression.getRValue());
+            return assignmentExpression.toStatement();
         }
 
         return new ExpressionStatement(expr);

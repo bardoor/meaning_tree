@@ -50,6 +50,7 @@ import org.vstu.meaningtree.nodes.types.containers.SetType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
@@ -66,7 +67,6 @@ public class CppViewer extends LanguageViewer {
     public String toString(@NotNull Node node) {
         return switch (node) {
             case ProgramEntryPoint entryPoint -> toStringEntryPoint(entryPoint);
-            case VariableDeclarator variableDeclarator -> toStringVariableDeclarator(variableDeclarator);
             case ExpressionStatement expressionStatement -> toStringExpressionStatement(expressionStatement);
             case VariableDeclaration variableDeclaration -> toStringVariableDeclaration(variableDeclaration);
             case IndexExpression indexExpression -> toStringIndexExpression(indexExpression);
@@ -86,6 +86,7 @@ public class CppViewer extends LanguageViewer {
             case StringLiteral sl -> toStringStringLiteral(sl);
             case BoolLiteral bl -> bl.getValue() ? "true" : "false";
             case PlainCollectionLiteral colLit -> toStringCollectionLiteral(colLit);
+            case DictionaryLiteral dLit -> toStringDictionaryLiteral(dLit);
             case CastTypeExpression cast -> toStringCast(cast);
             case SizeofExpression sizeof -> toStringSizeof(sizeof);
             case NewExpression new_ -> toStringNew(new_);
@@ -185,6 +186,16 @@ public class CppViewer extends LanguageViewer {
         return String.format("{%s}", toStringArguments(colLit.getList()));
     }
 
+    private String toStringDictionaryLiteral(DictionaryLiteral dLit) {
+        StringBuilder builder = new StringBuilder("{");
+        for (Map.Entry<Expression, Expression> entry : dLit.getDictionary().entrySet()) {
+            builder.append(String.format("{%s, %s}", toString(entry.getKey()), toString(entry.getValue())));
+            builder.append(", ");
+        }
+        String result = builder.substring(0, builder.length() - 2);
+        return result.concat("}");
+    }
+
     private String toStringArguments(List<Expression> exprs) {
         return String.join(", ", exprs.stream().map(this::toString).toList());
     }
@@ -213,15 +224,28 @@ public class CppViewer extends LanguageViewer {
     }
 
     @NotNull
-    private String toStringVariableDeclarator(@NotNull VariableDeclarator variableDeclarator) {
+    private String toStringVariableDeclarator(@NotNull VariableDeclarator variableDeclarator, Type type) {
         String variableName = toString(variableDeclarator.getIdentifier());
+
+        String arrayDeclarator = "";
+        if (type instanceof ArrayType array) {
+            StringBuilder builder = new StringBuilder();
+            for (Expression expr : array.getShape().getDimensions()) {
+                if (expr != null) {
+                    builder.append(String.format("[%s]", toString(expr)));
+                } else {
+                    builder.append("[]");
+                }
+            }
+            arrayDeclarator = builder.toString();
+        }
 
         Expression rValue = variableDeclarator.getRValue();
         if (rValue == null) {
-            return variableName;
+            return variableName.concat(arrayDeclarator);
         }
 
-        return "%s = %s".formatted(variableName, toString(rValue));
+        return "%s%s = %s".formatted(variableName, arrayDeclarator, toString(rValue));
     }
 
     @NotNull
@@ -230,12 +254,15 @@ public class CppViewer extends LanguageViewer {
 
         Type declarationType = variableDeclaration.getType();
         String type = toString(declarationType);
+        if (declarationType instanceof ArrayType array) {
+            type = toString(array.getItemType());
+        }
         builder
                 .append(type)
                 .append(" ");
 
         for (VariableDeclarator variableDeclarator : variableDeclaration.getDeclarators()) {
-            builder.append(toString(variableDeclarator)).append(", ");
+            builder.append(toStringVariableDeclarator(variableDeclarator, declarationType)).append(", ");
         }
         // Чтобы избежать лишней головной боли на проверки "а последняя ли это декларация",
         // я автоматически после каждой декларации добавляю запятую и пробел,

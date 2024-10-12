@@ -24,6 +24,7 @@ import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
@@ -60,10 +61,7 @@ import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.ArrayType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
@@ -130,8 +128,10 @@ public class JavaViewer extends LanguageViewer {
         }
 
         return switch (node) {
-            case UnmodifiableListLiteral unmodifiableListLiteral -> toString(unmodifiableListLiteral);
             case ListLiteral listLiteral -> toString(listLiteral);
+            case SetLiteral setLiteral -> toString(setLiteral);
+            case DictionaryLiteral dictionaryLiteral -> toString(dictionaryLiteral);
+            case PlainCollectionLiteral unmodifiableListLiteral -> toString(unmodifiableListLiteral);
             case InterpolatedStringLiteral interpolatedStringLiteral -> toString(interpolatedStringLiteral);
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
@@ -220,28 +220,46 @@ public class JavaViewer extends LanguageViewer {
         };
     }
 
-    public String toString(UnmodifiableListLiteral unmodifiableListLiteral) {
+    public String toString(ListLiteral list) {
         var builder = new StringBuilder();
-        builder.append("new Object[] {");
-
-        for (Expression expression : unmodifiableListLiteral.getList()) {
-            builder.append(toString(expression)).append(", ");
+        String typeHint = list.getTypeHint() == null ? "" : toString(list.getTypeHint());
+        builder.append(String.format("new java.util.ArrayList<%s>() {{", typeHint));
+        for (Expression expression : list.getList()) {
+            builder.append(String.format("add(%s);", toString(expression)));
         }
-
-        if (builder.length() > 2) {
-            builder.deleteCharAt(builder.length() - 1);
-            builder.deleteCharAt(builder.length() - 1);
-        }
-
-        builder.append("}");
+        builder.append("}}");
         return builder.toString();
     }
 
-    public String toString(ListLiteral listLiteral) {
+    public String toString(SetLiteral list) {
         var builder = new StringBuilder();
-        builder.append("new Object[] {");
+        String typeHint = list.getTypeHint() == null ? "" : toString(list.getTypeHint());
+        builder.append(String.format("new java.util.HashSet<%s>() {{", typeHint));
+        for (Expression expression : list.getList()) {
+            builder.append(String.format("add(%s);", toString(expression)));
+        }
+        builder.append("}}");
+        return builder.toString();
+    }
 
-        for (Expression expression : listLiteral.getList()) {
+    public String toString(DictionaryLiteral list) {
+        var builder = new StringBuilder();
+        String keyTypeHint = list.getKeyTypeHint() == null ? "" : toString(list.getKeyTypeHint());
+        String valueTypeHint = list.getValueTypeHint() == null || keyTypeHint.isEmpty() ? "" : ", ".concat(toString(list.getValueTypeHint()));
+        builder.append(String.format("new java.util.TreeMap<%s%s>() {{", keyTypeHint, valueTypeHint));
+        for (Map.Entry<Expression, Expression> entry : list.getDictionary().entrySet()) {
+            builder.append(String.format("put(%s, %s);", toString(entry.getKey()), toString(entry.getValue())));
+        }
+        builder.append("}}");
+        return builder.toString();
+    }
+
+    public String toString(PlainCollectionLiteral unmodifiableListLiteral) {
+        var builder = new StringBuilder();
+        String typeHint = unmodifiableListLiteral.getTypeHint() == null ? "Object" : toString(unmodifiableListLiteral.getTypeHint());
+        builder.append(String.format("new %s[] {", typeHint));
+
+        for (Expression expression : unmodifiableListLiteral.getList()) {
             builder.append(toString(expression)).append(", ");
         }
 
@@ -1101,7 +1119,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(FloatType type) {
-        return "double";
+        return type.size == 64 ? "double" : "float";
     }
 
     private String toString(IntType type) {
@@ -1183,6 +1201,9 @@ public class JavaViewer extends LanguageViewer {
 
         Type declarationType = stmt.getType();
         String type = toString(declarationType);
+        if (declarationType.isConst()) {
+            builder.append("final ");
+        }
         builder
                 .append(type)
                 .append(" ");
@@ -1591,6 +1612,14 @@ public class JavaViewer extends LanguageViewer {
         }
         builder.deleteCharAt(builder.length() - 1); // Удаляем последнюю точку
 
+        return builder.toString();
+    }
+
+    public String toString(QualifiedIdentifier scopedIdent) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(toString(scopedIdent.getScope()));
+        builder.append("::");
+        builder.append(toString(scopedIdent.getMember()));
         return builder.toString();
     }
 

@@ -155,11 +155,14 @@ group: LiteralsTest
             [1, 2, 4, a, b]
 
         java:
-            new Object[] {1, 2, 4, a, b};
+            new java.util.ArrayList<>() {{add(1);add(2);add(4);add(a);add(b);}};
 
-        c++:
-            {1, 2, 4, a, b};
+    case: SetLiteral
+        python:
+            {1, 2, 3}
 
+        java:
+            new java.util.HashSet<>() {{add(1);add(2);add(3)}};
 
     case: TupleLiteral
         main python:
@@ -174,13 +177,13 @@ group: LiteralsTest
 
     case: DictLiteral
         python:
-            {"a": b, "x": y}
+            x = {"a": b, "x": y}
 
         java:
-            TreeMap<String, Object> product = new TreeMap<>() {{put("a", b); put("x", y);}};
+            x = new java.util.TreeMap<String, Object>() {{put("a", b); put("x", y);}};
 
         c++:
-            std::map<std::string, void*> products {{"a", b}, {"x", y}};
+            x = {{"a", b}, {"x", y}};
 
 
 group: SimpleExpressionsTest
@@ -583,13 +586,14 @@ group: SimpleStatements
     case: AugmentedAssignmentStmt
         python:
             a: int = 456
+            a = 3
             a += 3
             a -= 3
             a *= b
             a >>= b
             a <<= b
             a /= 5
-            a //= 6
+            a /= 6
             a %= t
             a &= b
             c |= t
@@ -639,6 +643,39 @@ group: SimpleStatements
             int a = 456;
             a = 3;
 
+    case: ArrayDeclaration
+        c++:
+            int x[] = {1, 2, 3, 4, a};
+
+        java:
+            int[] x = new int[] {1, 2, 3, 4, a};
+
+    case: ListDeclaration
+        c++:
+            std::list<int> a = {1, 2, 3};
+
+        java:
+            java.util.ArrayList<Integer> alist = new java.util.ArrayList<Integer>() {{add(1);add(2);add(3);}}
+
+        python:
+            a: list[int] = [1, 2, 3]
+
+    case: MultidimensionalArrayDeclaration
+        main c++:
+            int a[][20][] = new int[30][30][10];
+
+        java:
+            int[][][] a = new int[30][30][10];
+
+    case: ConstDeclaration
+        main c++:
+            const float PI = 3.14f;
+
+        python:
+            PI: float = 3.14
+
+        java:
+            final float PI = 3.14f;
 
     case: PassStatement
         python:
@@ -656,7 +693,7 @@ group: SimpleStatements
 
 
     case: MultipleAssignment
-        python:
+        main python:
             a, b = 3, 45
 
         java:

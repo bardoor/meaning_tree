@@ -39,9 +39,7 @@ import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
-import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
-import org.vstu.meaningtree.nodes.types.containers.ListType;
-import org.vstu.meaningtree.nodes.types.containers.SetType;
+import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
@@ -183,7 +181,8 @@ public class CppLanguage extends LanguageParser {
             dimensions.add((Expression) fromTSNode(declarator.getNamedChild(0)));
             while (!declarator.getNamedChild(1).isNull()
                     && declarator.getNamedChild(1).getType().equals("new_declarator")) {
-                dimensions.add((Expression) fromTSNode(declarator.getNamedChild(1).getNamedChild(0)));
+                declarator = declarator.getNamedChild(1);
+                dimensions.add((Expression) fromTSNode(declarator.getNamedChild(0)));
             }
             ArrayInitializer initializer = !initList.isEmpty() ? new ArrayInitializer(initList) : null;
             return new ArrayNewExpression(type, new Shape(dimensions.size(), dimensions.toArray(new Expression[0])), initializer);
@@ -526,6 +525,19 @@ public class CppLanguage extends LanguageParser {
 
             if (tsDeclarator.getType().equals("type_qualifier") && getCodePiece(tsDeclarator).equals("const")) {
                 mainType.setConst(true);
+            } else if (tsDeclarator.getType().equals("array_declarator")) {
+                List<Expression> dimensions = new ArrayList<>();
+                TSNode arrayDimension = tsDeclarator;
+                while (!arrayDimension.isNull() && arrayDimension.getType().equals("array_declarator")) {
+                    if (!arrayDimension.getChildByFieldName("value").isNull()) {
+                        dimensions.add((Expression) fromTSNode(arrayDimension.getChildByFieldName("value")));
+                    } else {
+                        dimensions.add(null);
+                    }
+                    arrayDimension = arrayDimension.getChildByFieldName("declarator");
+                }
+                mainType = new ArrayType(mainType, dimensions.size(), dimensions);
+                declarators.add(new VariableDeclaration(mainType, new VariableDeclarator((SimpleIdentifier) fromTSNode(arrayDimension))));
             } else if (tsDeclarator.getType().equals("init_declarator")) {
                 TSNode tsVariableName = tsDeclarator.getChildByFieldName("declarator");
                 Type type = mainType;
@@ -544,11 +556,31 @@ public class CppLanguage extends LanguageParser {
                 } else if (tsVariableName.getType().equals("reference_declarator")) {
                     type = new ReferenceType(mainType);
                     tsVariableName = tsVariableName.getNamedChild(0);
+                } else if (tsVariableName.getType().equals("array_declarator")) {
+                    List<Expression> dimensions = new ArrayList<>();
+                    TSNode arrayDimension = tsVariableName;
+                    while (!arrayDimension.isNull() && arrayDimension.getType().equals("array_declarator")) {
+                        if (!arrayDimension.getChildByFieldName("value").isNull()) {
+                            dimensions.add((Expression) fromTSNode(arrayDimension.getChildByFieldName("value")));
+                        } else {
+                            dimensions.add(null);
+                        }
+                        arrayDimension = arrayDimension.getChildByFieldName("declarator");
+                    }
+                    type = new ArrayType(mainType, dimensions.size(), dimensions);
+                    tsVariableName = arrayDimension;
                 }
                 TSNode tsValue = tsDeclarator.getChildByFieldName("value");
 
                 SimpleIdentifier variableName = (SimpleIdentifier) fromTSNode(tsVariableName);
                 Expression value = (Expression) fromTSNode(tsValue);
+                if (value instanceof PlainCollectionLiteral col) {
+                    if (mainType instanceof PlainCollectionType arrayType) {
+                        col.setTypeHint(arrayType.getItemType());
+                    } else {
+                        col.setTypeHint(mainType);
+                    }
+                }
 
                 VariableDeclarator declarator = new VariableDeclarator(variableName, value);
                 declarators.add(new VariableDeclaration(type, declarator));
@@ -669,8 +701,11 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    private ExpressionStatement fromExpressionStatement(@NotNull TSNode node) {
+    private Node fromExpressionStatement(@NotNull TSNode node) {
         Expression expr = (Expression) fromTSNode(node.getChild(0));
+        if (expr instanceof AssignmentExpression assignmentExpression) {
+            return assignmentExpression.toStatement();
+        }
         return new ExpressionStatement(expr);
     }
 }

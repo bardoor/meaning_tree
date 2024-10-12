@@ -16,7 +16,10 @@ public class Shape extends Node {
 
     public Shape(int dimensionCount) {
         _dimensionCount = dimensionCount;
-        _dimensions = List.of();
+        _dimensions = new ArrayList<>();
+        for (int i = 0; i < dimensionCount; i++) {
+            _dimensions.add(null);
+        };
     }
 
     public Shape(int dimensionCount, Expression... dimensions) {

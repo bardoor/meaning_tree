@@ -58,10 +58,7 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.FloatType;
 import org.vstu.meaningtree.nodes.types.builtin.IntType;
 import org.vstu.meaningtree.nodes.types.builtin.StringType;
-import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
-import org.vstu.meaningtree.nodes.types.containers.ListType;
-import org.vstu.meaningtree.nodes.types.containers.SetType;
-import org.vstu.meaningtree.nodes.types.containers.UnmodifiableListType;
+import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
@@ -768,6 +765,13 @@ public class PythonLanguage extends LanguageParser {
 
         if (!node.getChildByFieldName("type").isNull()) {
             Type type = determineType(node.getChildByFieldName("type"));
+            if (right instanceof PlainCollectionLiteral pl) {
+                if (type instanceof PlainCollectionType arrayType) {
+                    pl.setTypeHint(arrayType.getItemType());
+                } else {
+                    pl.setTypeHint(type);
+                }
+            }
             return new VariableDeclaration(type, (SimpleIdentifier) left, right);
         }
 

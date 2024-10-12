@@ -310,10 +310,10 @@ group: SimpleExpressionsTest
 
     case: AssignmentExpr
         python:
-            x := b
+            a + (x := b)
 
         python:
-            x := b
+            a + (x := b)
 
 
     case: MemberAccess

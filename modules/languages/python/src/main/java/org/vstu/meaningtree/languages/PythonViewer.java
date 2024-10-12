@@ -116,7 +116,7 @@ public class PythonViewer extends LanguageViewer {
             case ClassDefinition classDef -> classToString(classDef, tab);
             case FunctionDeclaration funcDecl -> functionDeclarationToString(funcDecl, tab);
             case Import importStmt -> importToString(importStmt);
-            case ExpressionStatement exprStmt -> toString(exprStmt.getExpression());
+            case ExpressionStatement exprStmt -> toString(exprStmt);
             case ReturnStatement returnStmt -> returnToString(returnStmt);
             case ArrayInitializer arrayInit -> arrayInitializerToString(arrayInit);
             case Include incl -> String.format("import %s", toString(incl.getFileName()));
@@ -128,6 +128,13 @@ public class PythonViewer extends LanguageViewer {
             case null -> throw new MeaningTreeException("Null node detected");
             default -> throw new MeaningTreeException("Unsupported tree element: " + node.getClass().getName());
         };
+    }
+
+    private String toString(ExpressionStatement stmt) {
+        if (stmt.getExpression() instanceof AssignmentExpression assignment) {
+            return toString(assignment.toStatement());
+        }
+        return toString(stmt.getExpression());
     }
 
     private String comprehensionToString(Comprehension compr) {
