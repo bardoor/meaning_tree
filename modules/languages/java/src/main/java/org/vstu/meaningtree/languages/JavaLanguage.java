@@ -917,6 +917,14 @@ public class JavaLanguage extends LanguageParser {
                 switch (typeName) {
                     case "String" -> parsedType = new StringType();
                     case "Object" -> parsedType = new UnknownType();
+                    case "Integer" -> new IntType(32);
+                    case "Byte" -> new IntType(8);
+                    case "Short" -> new IntType(16);
+                    case "Long" -> new IntType(64);
+                    case "Float" -> new FloatType(32);
+                    case "Double" -> new FloatType(64);
+                    case "Boolean" -> new BooleanType();
+                    case "Character" -> new CharacterType();
                     default -> {
                         if (!_userTypes.containsKey(typeName)) {
                             _userTypes.put(typeName, new Class(new SimpleIdentifier(typeName)));
@@ -954,6 +962,13 @@ public class JavaLanguage extends LanguageParser {
                     case "ArrayList", "List" -> new ListType(new UnknownType());
                     case "TreeMap", "HashMap", "Map", "OrderedMap" -> new DictionaryType(new UnknownType(), new UnknownType());
                     case "Set", "HashSet" -> new SetType(new UnknownType());
+                    case "Integer" -> new IntType(32);
+                    case "Byte" -> new IntType(8);
+                    case "Short" -> new IntType(16);
+                    case "Long" -> new IntType(64);
+                    case "Float" -> new FloatType(32);
+                    case "Double" -> new FloatType(64);
+                    case "Boolean" -> new BooleanType();
                     default -> {
                         UserType t = new Class(idents);
                         if (!_userTypes.containsKey(typeName)) {
@@ -975,6 +990,8 @@ public class JavaLanguage extends LanguageParser {
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             if (node.getNamedChild(i).getType().equals("scoped_type_identifier")) {
                 idents.addAll(fromScopedTypeIdentifier(node.getNamedChild(i)).getScopeResolution());
+            } else if (node.getNamedChild(i).getType().equals("type_identifier")){
+                idents.add(new SimpleIdentifier(getCodePiece(node.getNamedChild(i))));
             } else {
                 idents.add((SimpleIdentifier) fromTSNode(node.getNamedChild(i)));
             }

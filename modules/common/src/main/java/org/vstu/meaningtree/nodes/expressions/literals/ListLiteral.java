@@ -12,4 +12,8 @@ public class ListLiteral extends PlainCollectionLiteral {
     public ListLiteral(List<Expression> expressionList) {
         super(expressionList);
     }
+
+    public ArrayLiteral toArrayLiteral() {
+        return new ArrayLiteral(getList());
+    }
 }

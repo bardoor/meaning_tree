@@ -59,6 +59,9 @@ import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.ArrayType;
+import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
+import org.vstu.meaningtree.nodes.types.containers.PlainCollectionType;
+import org.vstu.meaningtree.nodes.types.containers.SetType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 
 import java.util.*;
@@ -1114,8 +1117,23 @@ public class JavaViewer extends LanguageViewer {
             case ArrayType arrayType -> toString(arrayType);
             case UserType userType -> toString(userType);
             case CharacterType characterType -> toString(characterType);
+            case SetType setType -> toString(setType);
+            case DictionaryType dictType -> toString(dictType);
+            case PlainCollectionType plain -> toString(plain);
             default -> throw new IllegalStateException("Unexpected value: " + type.getClass());
         };
+    }
+
+    public String toString(SetType type) {
+        return String.format("java.util.HashSet<%s>", toString(type.getItemType()));
+    }
+
+    public String toString(PlainCollectionType type) {
+        return String.format("java.util.ArrayList<%s>", toString(type.getItemType()));
+    }
+
+    public String toString(DictionaryType type) {
+        return String.format("java.util.TreeMap<%s, %s>", toString(type.getKeyType()), toString(type.getValueType()));
     }
 
     private String toString(FloatType type) {
