@@ -38,6 +38,7 @@ import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
@@ -95,8 +96,18 @@ public class CppViewer extends LanguageViewer {
             case MemberAccess memAccess -> toStringMemberAccess(memAccess);
             case CompoundComparison cmpCmp -> toStringCompoundComparison(cmpCmp);
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
+            case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
+    }
+
+    private String fromMultipleAssignmentStatement(MultipleAssignmentStatement mas) {
+        StringBuilder builder = new StringBuilder();
+        for (AssignmentStatement s : mas.getStatements()) {
+            builder.append(toString(s));
+            builder.append("\n");
+        }
+        return builder.substring(0, builder.length() - 1);
     }
 
     private String toStringCompoundComparison(CompoundComparison cmpCmp) {
