@@ -49,6 +49,10 @@ public abstract class LanguageTranslator {
         return _language.getMeaningTree(code);
     }
 
+    public LanguageTokenizer getTokenizer(String code) {
+        return _language.getTokenizer(code);
+    }
+
     public String getCode(MeaningTree mt) {
         return _viewer.toString(mt);
     }
