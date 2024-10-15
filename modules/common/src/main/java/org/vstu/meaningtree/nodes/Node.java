@@ -9,6 +9,13 @@ abstract public class Node implements Serializable {
     protected static AtomicInteger _id_generator = new AtomicInteger();
     protected Integer _id = _id_generator.incrementAndGet();
 
+    // TODO: в будущем нужно сделать возможность пройтись итератором по дереву и получить такую информацию
+    /**
+     * @param oneOfMany признак того, что поле, в котором он находится - массив или коллекция
+     */
+    public record NodeInfo(Node node, Node parent, boolean oneOfMany, String fieldName) {
+    }
+
     public String generateDot() {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
@@ -27,6 +34,42 @@ abstract public class Node implements Serializable {
         return _id;
     }
 
+    // TODO: Функция добавлена для необходимости получить всех детей узла без разбора.
+    // По факту в будущем нужен итератор, который будет ленивым и выдавать больше информации
+    // например через NodeInfo. Пока времени это реализовать нет
+    public List<Node> walkAllNodes() {
+        ArrayList<Node> nodes = new ArrayList<>();
+        appendWalkNode(nodes, this);
+        return nodes;
+    }
+
+    private void appendWalkNode(List<Node> nodes, Node node) {
+        for (Object obj : node.getChildren().values()) {
+            if (obj instanceof List<?> list) {
+                for (Object lstChild : list) {
+                    Node childNode = (Node) lstChild;
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            } else if (obj instanceof Map<?, ?> map) {
+                for (Object lstChild : map.values()) {
+                    Node childNode = (Node) lstChild;
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            } else if (obj instanceof Node childNode) {
+                nodes.add(childNode);
+                appendWalkNode(nodes, childNode);
+            } else if (obj instanceof Optional<?> optional) {
+                if (optional.isPresent()) {
+                    Node childNode = (Node) optional.get();
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            }
+        }
+    }
+
     /**
      * @return словарь дочерних узлов или контейнеров, состоящих из узлов данного узла. Возможные типы значений: Map, List, Node
      */
@@ -40,7 +83,8 @@ abstract public class Node implements Serializable {
                 Object child = field.get(this);
                 if (child instanceof Node ||
                         (child instanceof List collection && collection.stream().allMatch((Object obj) -> obj instanceof Node)) ||
-                        (child instanceof Map childMap && childMap.values().stream().allMatch((Object obj) -> obj instanceof Node))
+                        (child instanceof Map childMap && childMap.values().stream().allMatch((Object obj) -> obj instanceof Node)) ||
+                        (child instanceof Node[])
                 ) {
                     map.put(field.getName(), child);
                 } else if (child instanceof Optional<?> optional) {
