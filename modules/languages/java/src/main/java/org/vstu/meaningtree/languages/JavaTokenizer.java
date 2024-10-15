@@ -9,10 +9,11 @@ import java.util.Map;
 
 public class JavaTokenizer extends LanguageTokenizer {
     private static final Map<String, OperatorToken> operators = new HashMap<>() {{
-        put("CALL_(", new OperatorToken("(", TokenType.CALL_OPEN_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("CALL_)", new OperatorToken(")", TokenType.CALL_CLOSE_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("[", new OperatorToken("[", TokenType.SUBSCRIPT_OPEN_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("]", new OperatorToken("[", TokenType.SUBSCRIPT_CLOSE_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("CALL_(", new OperatorToken("(", TokenType.CALL_OPENING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("CALL_)", new OperatorToken(")", TokenType.CALL_CLOSING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("[", new OperatorToken("[", TokenType.SUBSCRIPT_OPENING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("]", new OperatorToken("[", TokenType.SUBSCRIPT_CLOSING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(".", new OperatorToken(".", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));   // Постфиксный инкремент
         put("--", new OperatorToken("--", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));   // Постфиксный декремент
@@ -79,7 +80,7 @@ public class JavaTokenizer extends LanguageTokenizer {
     }
 
     @Override
-    protected OperatorToken getOperatorByTokenName(String tokenName) {
+    public OperatorToken getOperatorByTokenName(String tokenName) {
         return operators.getOrDefault(tokenName, null);
     }
 
@@ -127,13 +128,21 @@ public class JavaTokenizer extends LanguageTokenizer {
         TokenType tokenType;
 
         if (type.equals("{")) {
-            tokenType = TokenType.COMPOUND_OPEN_BRACE;
+            if (parent.getType().equals("array_initializer")) {
+                tokenType = TokenType.INITIALIZER_LIST_OPENING_BRACE;
+            } else {
+                tokenType = TokenType.COMPOUND_OPENING_BRACE;
+            }
         } else if (type.equals("}")) {
-            tokenType = TokenType.COMPOUND_CLOSE_BRACE;
+            if (parent.getType().equals("array_initializer")) {
+                tokenType = TokenType.INITIALIZER_LIST_CLOSING_BRACE;
+            } else {
+                tokenType = TokenType.COMPOUND_CLOSING_BRACE;
+            }
         } else if (type.equals("(")) {
-            tokenType = TokenType.OPEN_BRACE;
+            tokenType = TokenType.OPENING_BRACE;
         } else if (type.equals(")")) {
-            tokenType = TokenType.CLOSE_BRACE;
+            tokenType = TokenType.CLOSING_BRACE;
         } else if (type.equals(";")) {
             tokenType = TokenType.SEPARATOR;
         } else if (List.of("type_identifier", "identifier",

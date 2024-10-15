@@ -30,7 +30,7 @@ public abstract class LanguageTokenizer {
     }
 
     protected abstract OperatorToken getOperator(String tokenValue, TSNode node);
-    protected abstract OperatorToken getOperatorByTokenName(String tokenName);
+    public abstract OperatorToken getOperatorByTokenName(String tokenName);
 
     public LanguageTokenizer(String code, LanguageParser parser) {
         this.code = code;

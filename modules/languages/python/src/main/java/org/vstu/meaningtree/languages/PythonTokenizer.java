@@ -9,10 +9,10 @@ import java.util.Map;
 
 public class PythonTokenizer extends LanguageTokenizer {
     private final Map<String, OperatorToken> operators = new HashMap<>() {{
-        put("CALL_(", new OperatorToken("(", TokenType.CALL_OPEN_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("CALL_)", new OperatorToken(")", TokenType.CALL_CLOSE_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("[", new OperatorToken("[", TokenType.SUBSCRIPT_OPEN_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("]", new OperatorToken("[", TokenType.SUBSCRIPT_CLOSE_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("CALL_(", new OperatorToken("(", TokenType.CALL_OPENING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("CALL_)", new OperatorToken(")", TokenType.CALL_CLOSING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("[", new OperatorToken("[", TokenType.SUBSCRIPT_OPENING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("]", new OperatorToken("[", TokenType.SUBSCRIPT_CLOSING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put("**", new OperatorToken("**", TokenType.OPERATOR, 4, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Возведение в степень
         put("~", new OperatorToken("~", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.UNARY, false)); // Побитовая инверсия
@@ -77,7 +77,7 @@ public class PythonTokenizer extends LanguageTokenizer {
     }
 
     @Override
-    protected OperatorToken getOperatorByTokenName(String tokenName) {
+    public OperatorToken getOperatorByTokenName(String tokenName) {
         return operators.getOrDefault(tokenName, null);
     }
 
@@ -87,20 +87,25 @@ public class PythonTokenizer extends LanguageTokenizer {
         TSNode parent = node.getParent();
         OperatorToken recognizedOperator = getOperator(type, node);
 
-        if (recognizedOperator != null) {
+        TokenType tokenType;
+
+        if (recognizedOperator != null
+                && !((type.equals("[") || type.equals("]")) && parent.getType().equals("list"))) {
             return recognizedOperator;
         }
 
-        TokenType tokenType;
-
-        if (type.equals("{")) {
-            tokenType = TokenType.COMPOUND_OPEN_BRACE;
-        } else if (type.equals("}")) {
-            tokenType = TokenType.COMPOUND_CLOSE_BRACE;
+        if (type.equals("{") && List.of("set", "dictionary").contains(parent.getType())) {
+            tokenType = TokenType.INITIALIZER_LIST_OPENING_BRACE;
+        } else if (type.equals("}") && List.of("set", "dictionary").contains(parent.getType())) {
+            tokenType = TokenType.INITIALIZER_LIST_CLOSING_BRACE;
+        } else if (type.equals("(") && parent.getType().equals("tuple")) {
+            tokenType = TokenType.INITIALIZER_LIST_OPENING_BRACE;
+        } else if (type.equals(")") && parent.getType().equals("tuple")) {
+            tokenType = TokenType.INITIALIZER_LIST_CLOSING_BRACE;
         } else if (type.equals("(")) {
-            tokenType = TokenType.OPEN_BRACE;
+            tokenType = TokenType.OPENING_BRACE;
         } else if (type.equals(")")) {
-            tokenType = TokenType.CLOSE_BRACE;
+            tokenType = TokenType.CLOSING_BRACE;
         } else if (List.of(";", ":").contains(type)) {
             tokenType = TokenType.SEPARATOR;
         } else if (List.of("type_identifier", "identifier",
@@ -119,6 +124,10 @@ public class PythonTokenizer extends LanguageTokenizer {
             tokenType = TokenType.KEYWORD;
         } else if (List.of("=", "+=", "-=", "*=", "/=", "//=", "%=", "&=", "|=", "^=", ">>=", "<<=").contains(type)) {
             tokenType = TokenType.STATEMENT_TOKEN;
+        } else if (type.equals("[") && parent.getType().equals("list")) {
+            tokenType = TokenType.INITIALIZER_LIST_OPENING_BRACE;
+        } else if (type.equals("]") && parent.getType().equals("list")) {
+            tokenType = TokenType.INITIALIZER_LIST_CLOSING_BRACE;
         }
         else {
             tokenType = TokenType.UNKNOWN;
