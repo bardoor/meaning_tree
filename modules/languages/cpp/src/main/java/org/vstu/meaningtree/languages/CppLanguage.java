@@ -10,7 +10,6 @@ import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
-import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
@@ -35,6 +34,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
@@ -113,7 +113,7 @@ public class CppLanguage extends LanguageParser {
             case "true" -> new BoolLiteral(true);
             case "false" -> new BoolLiteral(false);
             case "initializer_list" -> fromInitializerList(node);
-            case "primitive_type", "placeholder_type_specifier", "sized_type_specifier", "type_descriptor" -> fromType(node);
+            case "primitive_type", "template_function", "placeholder_type_specifier", "sized_type_specifier", "type_descriptor" -> fromType(node);
             case "sizeof_expression" -> fromSizeOf(node);
             case "new_expression" -> fromNewExpression(node);
             case "delete_expression" -> fromDeleteExpression(node);
@@ -473,7 +473,7 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    private BinaryExpression fromBinaryExpression(@NotNull TSNode node) {
+    private Node fromBinaryExpression(@NotNull TSNode node) {
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
         TSNode operator = node.getChildByFieldName("operator");
@@ -486,8 +486,32 @@ public class CppLanguage extends LanguageParser {
             case "%" -> new ModOp(left, right);
             case "<" -> new LtOp(left, right);
             case ">" -> new GtOp(left, right);
-            case "==" -> new EqOp(left, right);
-            case "!=" -> new NotEqOp(left, right);
+            case "==" -> {
+                EqOp eq = new EqOp(left, right);
+                if (eq.getLeft() instanceof FunctionCall call
+                        && call.getArguments().size() == 1
+                        && call.getFunction() instanceof GenericUserType type
+                        && type.getTypeParameters().length == 1
+                        && type.getName().toString().equals("dynamic_cast")
+                        && right instanceof NullLiteral
+                ) {
+                    yield new NotOp(new ParenthesizedExpression(new InstanceOfOp(call.getArguments().getFirst(), type.getTypeParameters()[0])));
+                }
+                yield eq;
+            }
+            case "!=" -> {
+                NotEqOp neq = new NotEqOp(left, right);
+                if (neq.getLeft() instanceof FunctionCall call
+                        && call.getArguments().size() == 1
+                        && call.getFunction() instanceof GenericUserType type
+                        && type.getTypeParameters().length == 1
+                        && type.getName().toString().equals("dynamic_cast")
+                        && right instanceof NullLiteral
+                ) {
+                    yield new InstanceOfOp(call.getArguments().getFirst(), type.getTypeParameters()[0]);
+                }
+                yield neq;
+            }
             case ">=" -> new GeOp(left, right);
             case "<=" -> new LeOp(left, right);
             case "&&", "and" -> new ShortCircuitAndOp(left, right);

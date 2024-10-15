@@ -54,6 +54,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.components.*;
 import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
+import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
@@ -139,6 +140,10 @@ public class JavaViewer extends LanguageViewer {
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
             case StringLiteral l -> toString(l);
+            case UserType userType -> toString(userType);
+            case ReferenceType ref -> toString(ref.getTargetType());
+            case PointerType ptr -> toString(ptr.getTargetType());
+            case Type type -> toString(type, true);
             case SelfReference selfReference -> toString(selfReference);
             case UnaryMinusOp unaryMinusOp -> toString(unaryMinusOp);
             case UnaryPlusOp unaryPlusOp -> toString(unaryPlusOp);
@@ -147,12 +152,14 @@ public class JavaViewer extends LanguageViewer {
             case MulOp op -> toString(op);
             case DivOp op -> toString(op);
             case ModOp op -> toString(op);
+            case MatMulOp op -> toString(op);
             case FloorDivOp op -> toString(op);
             case EqOp op -> toString(op);
             case GeOp op -> toString(op);
             case GtOp op -> toString(op);
             case LeOp op -> toString(op);
             case LtOp op -> toString(op);
+            case InstanceOfOp op -> toString(op);
             case NotEqOp op -> toString(op);
             case ShortCircuitAndOp op -> toString(op);
             case ShortCircuitOrOp op -> toString(op);
@@ -194,7 +201,6 @@ public class JavaViewer extends LanguageViewer {
             case StaticImportMembers staticImportMembers -> toString(staticImportMembers);
             case ImportAll importAll -> toString(importAll);
             case ImportMembers importMembers -> toString(importMembers);
-            case UserType userType -> toString(userType);
             case ObjectNewExpression objectNewExpression -> toString(objectNewExpression);
             case BoolLiteral boolLiteral -> toString(boolLiteral);
             case MemberAccess memberAccess -> toString(memberAccess);
@@ -217,8 +223,8 @@ public class JavaViewer extends LanguageViewer {
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
             case PointerPackOp ptr -> toString(ptr.getArgument());
             case PointerUnpackOp ptr -> toString(ptr.getArgument());
-            case PointerType ptr -> toString(ptr.getTargetType());
-            case ReferenceType ref -> toString(ref.getTargetType());
+            case ContainsOp op -> toString(op);
+            case ReferenceEqOp op -> toString(op);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
@@ -631,6 +637,10 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(UserType userType) {
+        if (userType instanceof GenericUserType generic) {
+            String args = Arrays.stream(generic.getTypeParameters()).map(this::toString).collect(Collectors.joining(", "));
+            return String.format("%s<%s>", toString(generic.getName()), args);
+        }
         return toString(userType.getName());
     }
 
@@ -1016,6 +1026,10 @@ public class JavaViewer extends LanguageViewer {
         return toString(op, "<");
     }
 
+    public String toString(InstanceOfOp op) {
+        return toString(op, "instanceof");
+    }
+
     public String toString(NotEqOp op) {
         return toString(op, "!=");
     }
@@ -1030,6 +1044,10 @@ public class JavaViewer extends LanguageViewer {
 
     public String toString(NotOp op) {
         return String.format("!%s", toString(op.getArgument()));
+    }
+
+    public String toString(MatMulOp op) {
+        return String.format("matmul(%s, %s)", toString(op.getLeft()), toString(op.getRight()));
     }
 
     public String toString(ParenthesizedExpression expr) {
@@ -1107,16 +1125,20 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(Type type) {
+        return toString(type, true);
+    }
+
+    private String toString(Type type, boolean isPrimitiveWrapper) {
         return switch (type) {
-            case FloatType floatType -> toString(floatType);
-            case IntType intType -> toString(intType);
-            case BooleanType booleanType -> toString(booleanType);
+            case FloatType floatType -> toString(floatType, isPrimitiveWrapper);
+            case IntType intType -> toString(intType, isPrimitiveWrapper);
+            case BooleanType booleanType -> toString(booleanType, isPrimitiveWrapper);
             case StringType stringType -> toString(stringType);
             case NoReturn voidType -> toString(voidType);
             case UnknownType unknownType -> toString(unknownType);
             case ArrayType arrayType -> toString(arrayType);
             case UserType userType -> toString(userType);
-            case CharacterType characterType -> toString(characterType);
+            case CharacterType characterType -> toString(characterType, isPrimitiveWrapper);
             case SetType setType -> toString(setType);
             case DictionaryType dictType -> toString(dictType);
             case PlainCollectionType plain -> toString(plain);
@@ -1136,16 +1158,26 @@ public class JavaViewer extends LanguageViewer {
         return String.format("java.util.TreeMap<%s, %s>", toString(type.getKeyType()), toString(type.getValueType()));
     }
 
-    private String toString(FloatType type) {
-        return type.size == 64 ? "double" : "float";
+    private String toString(FloatType type, boolean isPrimitiveWrapper) {
+        if (isPrimitiveWrapper) {
+            return type.size == 64 ? "Double" : "Float";
+        } else {
+            return type.size == 64 ? "double" : "float";
+        }
     }
 
-    private String toString(IntType type) {
-        return "int";
+    private String toString(IntType type, boolean isPrimitiveWrapper) {
+        if (type.size == 16) {
+            return isPrimitiveWrapper ? "Short" : "short";
+        } else if (type.size == 32) {
+            return isPrimitiveWrapper ? "Integer" : "int";
+        } else {
+            return isPrimitiveWrapper ? "Long" : "long";
+        }
     }
 
-    private String toString(BooleanType type) {
-        return "boolean";
+    private String toString(BooleanType type, boolean isPrimitiveWrapper) {
+        return isPrimitiveWrapper ? "Boolean" : "boolean";
     }
 
     private String toString(StringType type) {
@@ -1160,8 +1192,8 @@ public class JavaViewer extends LanguageViewer {
         return "Object";
     }
 
-    private String toString(CharacterType type) {
-        return "char";
+    private String toString(CharacterType type, boolean isPrimitiveWrapper) {
+        return isPrimitiveWrapper ? "Character" : "char";
     }
 
     private String toString(Shape shape) {
@@ -1218,7 +1250,7 @@ public class JavaViewer extends LanguageViewer {
         StringBuilder builder = new StringBuilder();
 
         Type declarationType = stmt.getType();
-        String type = toString(declarationType);
+        String type = toString(declarationType, false);
         if (declarationType.isConst()) {
             builder.append("final ");
         }
@@ -1336,8 +1368,24 @@ public class JavaViewer extends LanguageViewer {
             case LeOp op -> toString(op);
             case LtOp op -> toString(op);
             case NotEqOp op -> toString(op);
+            case ContainsOp op -> toString(op);
+            case ReferenceEqOp op -> toString(op);
             default -> throw new IllegalStateException("Unexpected value: " + binComp);
         };
+    }
+
+    private String toString(ContainsOp op) {
+        String neg = op.isNegative() ? "!" : "";
+        String left = toString(op.getRight());
+        if (!(op.getRight() instanceof Identifier)) {
+            left = "(".concat(left).concat(")");
+        }
+        return neg.concat(String.format("%s.contains(%s)", left, toString(op.getLeft())));
+    }
+
+    private String toString(ReferenceEqOp op) {
+        String neg = op.isNegative() ? "!=" : "==";
+        return String.format("%s %s %s", toString(op.getLeft()), neg, toString(op.getRight()));
     }
 
     public String toString(CompoundComparison cmp) {

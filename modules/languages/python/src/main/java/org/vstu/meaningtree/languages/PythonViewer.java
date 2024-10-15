@@ -680,6 +680,8 @@ public class PythonViewer extends LanguageViewer {
             }
         } else if (node instanceof ShortCircuitOrOp) {
             pattern = "%s or %s";
+        } else if (node instanceof InstanceOfOp) {
+            pattern = "isinstance(%s, %s)";
         }
         return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
     }
@@ -754,11 +756,15 @@ public class PythonViewer extends LanguageViewer {
 
     private String unaryToString(UnaryExpression node) {
         String pattern = "";
+        Expression expr = node.getArgument();
         if (node instanceof UnaryPlusOp) {
             pattern = "+%s";
         } else if (node instanceof UnaryMinusOp) {
             pattern = "-%s";
         } else if (node instanceof NotOp) {
+            if (expr instanceof ParenthesizedExpression p && p.getExpression() instanceof InstanceOfOp op) {
+                expr = op;
+            }
             pattern = "not %s";
         } else if (node instanceof InversionOp) {
             pattern = "~%s";
@@ -769,7 +775,7 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof PointerPackOp || node instanceof PointerUnpackOp) {
             return toString(node.getArgument());
         }
-        return String.format(pattern, toString(node.getArgument()));
+        return String.format(pattern, toString(expr));
     }
 
     private String blockToString(CompoundStatement node, Tab tab) {
@@ -823,6 +829,18 @@ public class PythonViewer extends LanguageViewer {
             pattern = "%s > %s";
         } else if (node instanceof LtOp) {
             pattern = "%s < %s";
+        } else if (node instanceof ReferenceEqOp eq) {
+            if (eq.isNegative()) {
+                pattern = "%s is not %s";
+            } else {
+                pattern = "%s is %s";
+            }
+        } else if (node instanceof ContainsOp cnt) {
+            if (cnt.isNegative()) {
+                pattern = "%s not in %s";
+            } else {
+                pattern = "%s in %s";
+            }
         }
         return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
     }

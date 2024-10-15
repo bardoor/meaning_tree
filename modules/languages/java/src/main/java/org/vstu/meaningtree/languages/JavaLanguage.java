@@ -165,8 +165,13 @@ public class JavaLanguage extends LanguageParser {
             case "this" -> fromThisTSNode(node);
             case "character_literal" -> fromCharacterLiteralTSNode(node);
             case "do_statement" -> fromDoStatementTSNode(node);
+            case "instanceof_expression" -> fromInstanceOfTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+    }
+
+    private Node fromInstanceOfTSNode(TSNode node) {
+        return new InstanceOfOp((Expression) fromTSNode(node.getChildByFieldName("left")), fromTypeTSNode(node.getChildByFieldName("right")));
     }
 
     private Node fromDoStatementTSNode(TSNode node) {
@@ -917,14 +922,14 @@ public class JavaLanguage extends LanguageParser {
                 switch (typeName) {
                     case "String" -> parsedType = new StringType();
                     case "Object" -> parsedType = new UnknownType();
-                    case "Integer" -> new IntType(32);
-                    case "Byte" -> new IntType(8);
-                    case "Short" -> new IntType(16);
-                    case "Long" -> new IntType(64);
-                    case "Float" -> new FloatType(32);
-                    case "Double" -> new FloatType(64);
-                    case "Boolean" -> new BooleanType();
-                    case "Character" -> new CharacterType();
+                    case "Integer" -> parsedType = new IntType(32);
+                    case "Byte" -> parsedType = new IntType(8);
+                    case "Short" -> parsedType = new IntType(16);
+                    case "Long" -> parsedType =  new IntType(64);
+                    case "Float" -> parsedType = new FloatType(32);
+                    case "Double" -> parsedType = new FloatType(64);
+                    case "Boolean" -> parsedType = new BooleanType();
+                    case "Character" -> parsedType = new CharacterType();
                     default -> {
                         if (!_userTypes.containsKey(typeName)) {
                             _userTypes.put(typeName, new Class(new SimpleIdentifier(typeName)));

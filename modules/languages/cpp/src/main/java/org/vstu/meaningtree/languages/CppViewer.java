@@ -501,6 +501,12 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringUnaryExpression(@NotNull UnaryExpression unaryExpression) {
+        if (unaryExpression instanceof NotOp notOp
+                && notOp.getArgument() instanceof ParenthesizedExpression p
+                && p.getExpression() instanceof InstanceOfOp op) {
+            return String.format("dynamic_cast<%s>(%s) == nullptr", toString(op.getRight()), toString(op.getLeft()));
+        }
+
         String operator = switch (unaryExpression) {
             case NotOp op -> "!";
             case InversionOp op -> "~";
@@ -527,6 +533,20 @@ public class CppViewer extends LanguageViewer {
     private String toStringBinaryExpression(@NotNull BinaryExpression binaryExpression) {
         if (binaryExpression instanceof PowOp) {
             return String.format("pow(%s, %s)", toString(binaryExpression.getLeft()), toString(binaryExpression.getRight()));
+        } else if (binaryExpression instanceof MatMulOp) {
+            return String.format("matmul(%s, %s)", toString(binaryExpression.getLeft()), toString(binaryExpression.getRight()));
+        } else if (binaryExpression instanceof ContainsOp op) {
+            String neg = op.isNegative() ? "!" : "";
+            String left = toString(op.getRight());
+            if (!(op.getRight() instanceof Identifier)) {
+                left = "(".concat(left).concat(")");
+            }
+            return neg.concat(String.format("%s.contains(%s)", left, toString(op.getLeft())));
+        } else if (binaryExpression instanceof ReferenceEqOp op) {
+            String neg = op.isNegative() ? "!=" : "==";
+            return String.format("%s %s %s", toString(op.getLeft()), neg, toString(op.getRight()));
+        } else if (binaryExpression instanceof InstanceOfOp op) {
+            return String.format("dynamic_cast<%s>(%s) != nullptr", toString(op.getType()), toString(op.getLeft()));
         }
         String operator = switch (binaryExpression) {
             case AddOp op -> "+";

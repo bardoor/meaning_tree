@@ -318,7 +318,7 @@ public class PythonLanguage extends LanguageParser {
         return null;
     }
 
-    private FunctionCall fromFunctionCall(TSNode node) {
+    private Node fromFunctionCall(TSNode node) {
         TSNode tsNode = node.getChildByFieldName("function");
         Expression ident = (Expression) fromTSNode(tsNode);
         if (ident instanceof MemberAccess memAccess) {
@@ -343,14 +343,25 @@ public class PythonLanguage extends LanguageParser {
                     .build();
         }
 
+        if (getCodePiece(tsNode).equals("isinstance") && exprs.size() == 2) {
+            Type type = determineType(arguments.getNamedChild(1));
+            return new InstanceOfOp(exprs.getFirst(), type);
+        } else if (getCodePiece(tsNode).equals("matmul") && exprs.size() == 2) {
+            return new MatMulOp(exprs.getFirst(), exprs.get(1));
+        }
+
         return new FunctionCall(ident, exprs);
     }
 
     private Annotation fromDecorator(TSNode node) {
         TSNode child = node.getNamedChild(0);
         if (child.getType().equals("call")) {
-            FunctionCall call = fromFunctionCall(node);
-            return new Annotation(PythonSpecificFeatures.getFunctionName(call), call.getArguments().toArray(new Expression[0]));
+            Node unknownCall = fromFunctionCall(node);
+            if (unknownCall instanceof FunctionCall call) {
+                return new Annotation(PythonSpecificFeatures.getFunctionName(call), call.getArguments().toArray(new Expression[0]));
+            } else {
+                throw new RuntimeException("Decorator call conflicting with operation node");
+            }
         } else {
             Node ident = fromTSNode(node.getNamedChild(0));
             if (ident instanceof MemberAccess memAccess) {
@@ -845,6 +856,9 @@ public class PythonLanguage extends LanguageParser {
 
     private NotOp fromNotOperatorTSNode(TSNode node) {
         Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
+        if (argument instanceof InstanceOfOp op) {
+            argument = new ParenthesizedExpression(op);
+        }
         return new NotOp(argument);
     }
 
@@ -890,6 +904,7 @@ public class PythonLanguage extends LanguageParser {
 
         List<BinaryComparison> comparisons = new ArrayList<>();
 
+        boolean notFlag = false;
         for (int i = 0; i < node.getChildCount(); i++) {
             TSNode children = node.getChild(i);
 
@@ -912,6 +927,20 @@ public class PythonLanguage extends LanguageParser {
                 case "!=":
                     operator = NotEqOp.class;
                     break;
+                case "not in":
+                    operator = ContainsOp.class;
+                    notFlag = true;
+                    break;
+                case "is not":
+                    operator = ReferenceEqOp.class;
+                    notFlag = true;
+                    break;
+                case "is":
+                    operator = ReferenceEqOp.class;
+                    break;
+                case "in":
+                    operator = ContainsOp.class;
+                    break;
                 default:
                     operands.add(children);
             }
@@ -919,12 +948,20 @@ public class PythonLanguage extends LanguageParser {
                 Expression firstOp = (Expression) fromTSNode(operands.removeFirst());
                 TSNode secondNode = operands.removeFirst();
                 Expression secondOp = (Expression) fromTSNode(secondNode);
-                try {
-                    BinaryComparison object = operator.getDeclaredConstructor(Expression.class, Expression.class).newInstance(firstOp, secondOp);
-                    comparisons.add(object);
-                } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
-                         NoSuchMethodException e) {
-                    throw new MeaningTreeException(e);
+                if (operator == ContainsOp.class) {
+                    comparisons.add(new ContainsOp(firstOp, secondOp, notFlag));
+                    notFlag = false;
+                } else if (operator == ReferenceEqOp.class) {
+                    comparisons.add(new ReferenceEqOp(firstOp, secondOp, notFlag));
+                    notFlag = false;
+                } else {
+                    try {
+                        BinaryComparison object = operator.getDeclaredConstructor(Expression.class, Expression.class).newInstance(firstOp, secondOp);
+                        comparisons.add(object);
+                    } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
+                             NoSuchMethodException e) {
+                        throw new MeaningTreeException(e);
+                    }
                 }
                 operands.add(secondNode);
             }
@@ -957,6 +994,7 @@ public class PythonLanguage extends LanguageParser {
             case "+" -> new AddOp(left, right);
             case "-" -> new SubOp(left, right);
             case "*" -> new MulOp(left, right);
+            case "@" -> new MatMulOp(left, right);
             case "**" -> new PowOp(left, right);
             case "/" -> new DivOp(left, right);
             case "//" -> new FloorDivOp(left, right);
