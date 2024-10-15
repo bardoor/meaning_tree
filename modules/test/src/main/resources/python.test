@@ -315,6 +315,40 @@ group: SimpleExpressionsTest
         python:
             a + (x := b)
 
+    case: ContainsOp
+        python:
+            x in list
+
+        python:
+            x in list
+
+    case: ContainsNegativeOp
+        python:
+            x not in list
+
+        python:
+            x not in list
+
+    case: ReferenceEqualOp
+        python:
+            a is b
+
+        python:
+            a is b
+
+    case: ReferenceNotEqualOp
+        main python:
+            a is not b
+
+        python:
+            a is not b
+
+    case: InstanceOf
+        python:
+            isinstance(a, int)
+
+        python:
+            isinstance(a, int)
 
     case: MemberAccess
         python:

@@ -274,6 +274,65 @@ group: SimpleExpressionsTest
         c++:
             -x;
 
+    case: ContainsOp
+        main python:
+            x in list
+
+        java:
+            list.contains(x);
+
+        c++:
+            list.contains(x);
+
+    case: ContainsNegativeOp
+        main python:
+            x not in list
+
+        java:
+            !list.contains(x);
+
+        c++:
+            !list.contains(x);
+
+    case: ReferenceEqualOp
+        main python:
+            a is b
+
+        java:
+            a == b;
+
+        c++:
+            a == b;
+
+    case: ReferenceNotEqualOp
+        main python:
+            a is not b
+
+        java:
+            a != b;
+
+        c++:
+            a != b;
+
+    case: NotInstanceOf
+        python:
+            not isinstance(a, int)
+
+        java:
+            !(a instanceof Integer);
+
+        c++:
+            dynamic_cast<int>(a) == nullptr;
+
+    case: InstanceOf
+        python:
+            isinstance(a, int)
+
+        java:
+            a instanceof Integer;
+
+        c++:
+            dynamic_cast<int>(a) != nullptr;
 
     case: UnaryPlusOp
         python:
