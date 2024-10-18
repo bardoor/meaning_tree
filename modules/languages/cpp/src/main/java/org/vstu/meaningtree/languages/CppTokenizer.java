@@ -1,7 +1,8 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
-import org.vstu.meaningtree.utils.*;
+import org.vstu.meaningtree.utils.TreeSitterUtils;
+import org.vstu.meaningtree.utils.tokens.*;
 
 import java.util.HashMap;
 import java.util.List;

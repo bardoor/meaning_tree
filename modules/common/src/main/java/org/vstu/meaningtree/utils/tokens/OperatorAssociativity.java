@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.utils;
+package org.vstu.meaningtree.utils.tokens;
 
 public enum OperatorAssociativity {
     LEFT,

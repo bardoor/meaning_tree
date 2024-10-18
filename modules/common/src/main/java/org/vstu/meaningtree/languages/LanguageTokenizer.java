@@ -1,10 +1,10 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
-import org.vstu.meaningtree.utils.OperatorAssociativity;
-import org.vstu.meaningtree.utils.OperatorToken;
-import org.vstu.meaningtree.utils.Token;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
+import org.vstu.meaningtree.utils.tokens.OperatorAssociativity;
+import org.vstu.meaningtree.utils.tokens.OperatorToken;
+import org.vstu.meaningtree.utils.tokens.Token;
 
 import java.util.ArrayList;
 import java.util.List;
