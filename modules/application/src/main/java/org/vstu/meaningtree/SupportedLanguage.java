@@ -37,6 +37,15 @@ public enum SupportedLanguage {
         return translators;
     }
 
+    public static SupportedLanguage fromString(String s) {
+        for (SupportedLanguage lang : translators.keySet()) {
+            if (lang.toString().equals(s)) {
+                return lang;
+            }
+        }
+        return null;
+    }
+
     public static Map<String, Class<? extends LanguageTranslator>> getStringMap() {
         HashMap<String, Class<? extends LanguageTranslator>> map = new HashMap<>();
         for (SupportedLanguage lang : translators.keySet()) {
