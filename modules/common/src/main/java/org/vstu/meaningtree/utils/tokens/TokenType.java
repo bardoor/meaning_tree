@@ -22,5 +22,21 @@ public enum TokenType {
     STATEMENT_TOKEN,
     SEPARATOR,
     COMMA,
-    UNKNOWN
+    UNKNOWN;
+
+    public boolean isBrace() {
+        return toString().endsWith("BRACE");
+    }
+
+    public boolean isOpeningBrace() {
+        return toString().endsWith("OPENING_BRACE");
+    }
+
+    public boolean isClosingBrace() {
+        return toString().endsWith("CLOSING_BRACE");
+    }
+
+    public boolean isOnlyGroupingBrace() {
+        return this.equals(OPENING_BRACE) || this.equals(CLOSING_BRACE);
+    }
 }
