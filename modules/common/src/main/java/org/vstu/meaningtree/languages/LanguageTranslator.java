@@ -13,6 +13,18 @@ public abstract class LanguageTranslator {
     protected LanguageViewer _viewer;
     private ArrayList<ConfigParameter> _declaredConfigParams = new ArrayList<>();
 
+    private static ConfigParameter[] getPredefinedCommonConfig() {
+        return new ConfigParameter[] {
+                // Если translationUnitMode установлен в true, то выводится сразу полный текст программы,
+                // а не её часть (например, только выражение)
+                new ConfigParameter("translationUnitMode", true, ConfigParameter.Scope.VIEWER),
+                // Вывод только одного выражения
+                new ConfigParameter("expressionMode", false, ConfigParameter.Scope.PARSER),
+                // Попытаться сгенерировать дерево, несмотря на ошибки
+                new ConfigParameter("skipErrors", false, ConfigParameter.Scope.PARSER)
+        };
+    }
+
     /**
      * Создает транслятор языка
      * @param language - parser языка
@@ -23,9 +35,8 @@ public abstract class LanguageTranslator {
         _language = language;
         _viewer = viewer;
 
-        // Если translationUnitMode установлен в true, то выводится сразу полный текст программы,
-        // а не её часть (например, только выражение)
-        _declaredConfigParams.add(new ConfigParameter("translationUnitMode", true, ConfigParameter.Scope.VIEWER));
+
+        _declaredConfigParams.addAll(Arrays.asList(getPredefinedCommonConfig()));
         // Загрузка конфигов, специфических для конкретного языка
         _declaredConfigParams.addAll(Arrays.asList(getDeclaredConfigParameters()));
         for (String paramName : rawConfig.keySet()) {
