@@ -3,9 +3,14 @@ package org.vstu.meaningtree.languages;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.utils.tokens.Token;
+import org.vstu.meaningtree.utils.tokens.TokenGroup;
+import org.vstu.meaningtree.utils.tokens.TokenList;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class LanguageTranslator {
@@ -60,12 +65,45 @@ public abstract class LanguageTranslator {
         return _language.getMeaningTree(code);
     }
 
-    public LanguageTokenizer getTokenizer(String code) {
-        return _language.getTokenizer(code);
+    protected MeaningTree getMeaningTree(String code, HashMap<int[], Object> values) {
+        return _language.getMeaningTree(code, values);
     }
+
+    public MeaningTree getMeaningTree(TokenList tokenList) {
+        return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
+    }
+
+    public MeaningTree getMeaningTree(TokenList tokenList, Map<TokenGroup, Object> tokenValueTags) {
+        HashMap<int[], Object> codeValueTag = new HashMap<>();
+        for (TokenGroup grp : tokenValueTags.keySet()) {
+            assert grp.source == tokenList;
+            int start = 0;
+            for (int i = 0; i < grp.start; i++) {
+                start += grp.source.get(i).value.getBytes(StandardCharsets.UTF_8).length;
+                if (i != grp.start - 1) {
+                    start += 1;
+                }
+            }
+            int stop = start;
+            for (int i = grp.start + 1; i < grp.stop; i++) {
+                stop += grp.source.get(i).value.getBytes(StandardCharsets.UTF_8).length;
+                if (i != grp.stop - 1) {
+                    stop += 1;
+                }
+            }
+            codeValueTag.put(new int[] {start, stop}, tokenValueTags.get(grp));
+        }
+        return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()), codeValueTag);
+    }
+
+    public abstract LanguageTokenizer getTokenizer();
 
     public String getCode(MeaningTree mt) {
         return _viewer.toString(mt);
+    }
+
+    public TokenList getCodeAsTokens(MeaningTree mt) {
+        return getTokenizer().tokenizeExtended(mt);
     }
 
     public ConfigParameter getConfigParameter(String name) {

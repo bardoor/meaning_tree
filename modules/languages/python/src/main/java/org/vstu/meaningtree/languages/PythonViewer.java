@@ -673,7 +673,8 @@ public class PythonViewer extends LanguageViewer {
             pattern = "%s ^ %s";
         } else if (node instanceof ShortCircuitAndOp) {
             Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
-            if (result instanceof CompoundComparison) {
+            if (result instanceof CompoundComparison
+                    && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
                 return compoundComparisonToString((CompoundComparison) result);
             } else {
                 return preferExplicitAndOpToString(result);

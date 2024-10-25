@@ -15,7 +15,15 @@ public class PythonTranslator extends LanguageTranslator {
     }
 
     @Override
+    public LanguageTokenizer getTokenizer() {
+        return new PythonTokenizer((PythonLanguage) _language, (PythonViewer) _viewer);
+    }
+
+    @Override
     protected ConfigParameter[] getDeclaredConfigParameters() {
-        return new ConfigParameter[0];
+        return new ConfigParameter[] {
+                // Отключает распознавание составных сравнений и их преобразование из нескольких соединенных "И"
+                new ConfigParameter("disableCompoundComparisonConversion", false, ConfigParameter.Scope.PARSER)
+        };
     }
 }

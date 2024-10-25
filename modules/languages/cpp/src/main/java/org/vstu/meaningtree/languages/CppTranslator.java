@@ -14,6 +14,11 @@ public class CppTranslator extends LanguageTranslator {
     }
 
     @Override
+    public LanguageTokenizer getTokenizer() {
+        return new CppTokenizer((CppLanguage) _language, (CppViewer) _viewer);
+    }
+
+    @Override
     protected ConfigParameter[] getDeclaredConfigParameters() {
         return new ConfigParameter[0];
     }

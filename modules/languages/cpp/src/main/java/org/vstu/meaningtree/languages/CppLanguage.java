@@ -75,23 +75,18 @@ public class CppLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty()) {
+        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
-    }
-
-    @Override
-    public LanguageTokenizer getTokenizer(String code) {
-        _code = code;
-        return new CppTokenizer(_code, this);
     }
 
     @NotNull
     private Node fromTSNode(@NotNull TSNode node) {
         Objects.requireNonNull(node);
 
-        return switch (node.getType()) {
+        Node createdNode = switch (node.getType()) {
+            case "ERROR" -> fromTSNode(node.getChild(0));
             case "translation_unit" -> fromTranslationUnit(node);
             case "expression_statement"-> fromExpressionStatement(node);
             case "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
@@ -121,6 +116,8 @@ public class CppLanguage extends LanguageParser {
             case "pointer_expression" -> fromPointerExpression(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+        assignValue(node, createdNode);
+        return createdNode;
     }
 
     private Node fromInitializerList(TSNode node) {

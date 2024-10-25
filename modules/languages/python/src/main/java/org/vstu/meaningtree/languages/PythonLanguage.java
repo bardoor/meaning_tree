@@ -95,16 +95,10 @@ public class PythonLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty()) {
+        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
-    }
-
-    @Override
-    public LanguageTokenizer getTokenizer(String code) {
-        _code = code;
-        return new PythonTokenizer(_code, this);
     }
 
     private Node fromTSNode(TSNode node) {
@@ -112,7 +106,8 @@ public class PythonLanguage extends LanguageParser {
             return null;
         }
         String nodeType = node.getType();
-        return switch (nodeType) {
+        Node createdNode = switch (nodeType) {
+            case "ERROR" -> fromTSNode(node.getChild(0));
             case "module" -> createEntryPoint(node);
             case "block" -> fromCompoundTSNode(node, currentContext);
             case "if_statement" -> fromIfStatementTSNode(node);
@@ -160,6 +155,8 @@ public class PythonLanguage extends LanguageParser {
             case "match_statement" -> fromMatchStatement(node);
             case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
         };
+        assignValue(node, createdNode);
+        return createdNode;
     }
     
     private void rollbackContext() {
@@ -603,6 +600,16 @@ public class PythonLanguage extends LanguageParser {
         }
         List<Node> nodes = new ArrayList<>(List.of(compound.getNodes()));
         nodes.remove(entryPointIf);
+        if (
+                (nodes.size() > 1 && getConfigParameter("expressionMode").getBooleanValue())
+                || (!nodes.isEmpty() && !(nodes.getFirst() instanceof ExpressionStatement) &&
+                        !(nodes.getFirst() instanceof Expression))
+        ) {
+            throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
+        }
+        if (getConfigParameter("expressionMode").getBooleanValue() && !nodes.isEmpty()) {
+            return nodes.getFirst();
+        }
         return new ProgramEntryPoint(currentContext, nodes, entryPointNode);
     }
 

@@ -99,16 +99,10 @@ public class JavaLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty()) {
+        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
-    }
-
-    @Override
-    public LanguageTokenizer getTokenizer(String code) {
-        _code = code;
-        return new JavaTokenizer(_code, this);
     }
 
     private void rollbackContext() {
@@ -121,7 +115,8 @@ public class JavaLanguage extends LanguageParser {
         Objects.requireNonNull(node);
 
         String nodeType = node.getType();
-        return switch (nodeType) {
+        Node createdNode = switch (nodeType) {
+            case "ERROR" -> fromTSNode(node.getChild(0));
             case "program" -> fromProgramTSNode(node);
             case "block" -> fromBlockTSNode(node, currentContext);
             case "statement" -> fromStatementTSNode(node);
@@ -168,6 +163,8 @@ public class JavaLanguage extends LanguageParser {
             case "instanceof_expression" -> fromInstanceOfTSNode(node);
             default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
+        assignValue(node, createdNode);
+        return createdNode;
     }
 
     private Node fromInstanceOfTSNode(TSNode node) {
@@ -1061,7 +1058,7 @@ public class JavaLanguage extends LanguageParser {
                                     : new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), classDefinition);
     }
 
-    private ProgramEntryPoint fromProgramTSNode(TSNode node) {
+    private Node fromProgramTSNode(TSNode node) {
         BodyBuilder builder = new BodyBuilder();
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             builder.put(fromTSNode(node.getNamedChild(i)));
@@ -1081,6 +1078,19 @@ public class JavaLanguage extends LanguageParser {
                     mainMethod = m;
                 }
             }
+        }
+
+        Node[] nodes = builder.getCurrentNodes();
+        if (
+                (nodes.length > 1 && getConfigParameter("expressionMode").getBooleanValue())
+                        || (nodes.length > 0 && !(nodes[0] instanceof ExpressionStatement) &&
+                        !(nodes[0] instanceof Expression)
+                        )
+        ) {
+            throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
+        }
+        if (getConfigParameter("expressionMode").getBooleanValue() && nodes.length > 0) {
+            return nodes[0];
         }
 
         return new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), mainClass, mainMethod);

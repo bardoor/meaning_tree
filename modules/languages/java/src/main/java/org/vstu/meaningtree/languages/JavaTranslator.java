@@ -14,6 +14,11 @@ public class JavaTranslator extends LanguageTranslator {
     }
 
     @Override
+    public LanguageTokenizer getTokenizer() {
+        return new JavaTokenizer((JavaLanguage) _language, (JavaViewer) _viewer);
+    }
+
+    @Override
     protected ConfigParameter[] getDeclaredConfigParameters() {
         return new ConfigParameter[0];
     }
