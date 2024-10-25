@@ -1,8 +1,11 @@
 package org.vstu.meaningtree.utils.tokens;
 
+import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 
-public class TokenGroup {
+import java.util.Iterator;
+
+public class TokenGroup implements Iterable<Token> {
     public final int start;
     public final int stop;
     public final TokenList source;
@@ -18,6 +21,34 @@ public class TokenGroup {
 
     public TokenList toList() {
         return new TokenList(source.subList(start, stop));
+    }
+
+    @NotNull
+    public Iterator<Token> iterator() {
+        return source.subList(start, stop).iterator();
+    }
+
+    public int length() {
+        return stop - start;
+    }
+
+    public void setMetadata(OperatorToken token, OperandPosition pos) {
+        for (int i = start; i < stop; i++) {
+            Token t = source.get(i);
+            if (!(t instanceof OperandToken)) {
+                source.set(i, new OperandToken(t.value, t.type));
+            }
+            OperandToken op = ((OperandToken)source.get(i));
+            if (op.operandOf() == null) {
+                op.setMetadata(token, pos);
+            }
+        }
+    }
+
+    public void assignValue(Object tag) {
+        for (Token t : this) {
+            t.assignValue(tag);
+        }
     }
 
     public String toString() {
