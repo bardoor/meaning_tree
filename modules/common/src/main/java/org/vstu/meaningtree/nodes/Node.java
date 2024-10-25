@@ -9,6 +9,8 @@ abstract public class Node implements Serializable {
     protected static AtomicInteger _id_generator = new AtomicInteger();
     protected Integer _id = _id_generator.incrementAndGet();
 
+    protected Object assignedValueTag = null;
+
     // TODO: в будущем нужно сделать возможность пройтись итератором по дереву и получить такую информацию
     /**
      * @param oneOfMany признак того, что поле, в котором он находится - массив или коллекция
@@ -147,6 +149,14 @@ abstract public class Node implements Serializable {
             }
         }
         return null;
+    }
+
+    public void setAssignedValueTag(Object obj) {
+        assignedValueTag = obj;
+    }
+
+    public Object getAssignedValueTag() {
+        return assignedValueTag;
     }
 
 }
