@@ -159,4 +159,7 @@ abstract public class Node implements Serializable {
         return assignedValueTag;
     }
 
+    public String getNodeUniqueName() {
+        return this.getClass().getName();
+    }
 }
