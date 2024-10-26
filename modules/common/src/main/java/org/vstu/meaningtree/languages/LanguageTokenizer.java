@@ -34,6 +34,7 @@ public abstract class LanguageTokenizer {
 
     /**
      * Токенизирует узлы из дерева MeaningTree, с возможностью выведения привязанных к узлам значений
+     * На данный момент расширенные токены генерируются только для выражений (используйте в конфигурации языка expressionMode=true и skipErrors=true)
      * @param mt - общее дерево
      * @return
      */
