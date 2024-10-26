@@ -80,12 +80,10 @@ public abstract class LanguageTranslator {
             int start = 0;
             for (int i = 0; i < grp.start; i++) {
                 start += grp.source.get(i).value.getBytes(StandardCharsets.UTF_8).length;
-                if (i != grp.start - 1) {
-                    start += 1;
-                }
+                start += 1;
             }
-            int stop = start;
-            for (int i = grp.start + 1; i < grp.stop; i++) {
+            int stop = start + 1;
+            for (int i = start; i < grp.stop; i++) {
                 stop += grp.source.get(i).value.getBytes(StandardCharsets.UTF_8).length;
                 if (i != grp.stop - 1) {
                     stop += 1;

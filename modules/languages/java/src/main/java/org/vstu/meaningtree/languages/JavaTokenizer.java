@@ -23,12 +23,11 @@ import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class JavaTokenizer extends LanguageTokenizer {
     private static final List<String> stopNodes = List.of("string_literal");
+    private Set<Integer> valueSetNodes = new HashSet<>();
 
     private static final Map<String, OperatorToken> operators = new HashMap<>() {{
         put("CALL_(", new OperatorToken("(", TokenType.CALL_OPENING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
@@ -270,7 +269,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             case ExpressionSequence sequence -> {
                 for (Expression expr : sequence.getExpressions()) {
                     tokenize(expr, result);
-                    result.add(getOperatorByTokenName(","));
+                    result.add(new Token(",", TokenType.COMMA));
                 }
                 if (!sequence.getExpressions().isEmpty()) result.removeLast();
             }
@@ -284,8 +283,9 @@ public class JavaTokenizer extends LanguageTokenizer {
         }
         int posStop = result.size();
         TokenGroup resultGroup = new TokenGroup(posStart, posStop, result);
-        if (node.getAssignedValueTag() != null) {
+        if (node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
             resultGroup.assignValue(node.getAssignedValueTag());
+            valueSetNodes.add(node.getId());
         }
         return resultGroup;
     }
@@ -301,7 +301,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         int i = 0;
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenize(expr, result);
-            result.add(getOperatorByTokenName(","));
+            result.add(new Token(",", TokenType.COMMA));
             if (i == 0) {
                 operand.setMetadata(tok, OperandPosition.LEFT);
             } else if (i == call.getArguments().size() - 1) {
@@ -313,6 +313,10 @@ public class JavaTokenizer extends LanguageTokenizer {
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
         result.add(getOperatorByTokenName("CALL_)"));
+        if (call.getAssignedValueTag() != null) {
+            tok.assignValue(call.getAssignedValueTag());
+            valueSetNodes.add(call.getId());
+        }
     }
 
     private void tokenizeUnary(UnaryExpression unaryOp, TokenList result) {
@@ -344,6 +348,10 @@ public class JavaTokenizer extends LanguageTokenizer {
             result.add(token);
             op = tokenize(unaryOp.getArgument(), result);
             op.setMetadata(token, OperandPosition.RIGHT);
+        }
+        if (unaryOp.getAssignedValueTag() != null) {
+            token.assignValue(unaryOp.getAssignedValueTag());
+            valueSetNodes.add(unaryOp.getId());
         }
     }
 
@@ -381,6 +389,10 @@ public class JavaTokenizer extends LanguageTokenizer {
         TokenGroup right = tokenize(binOp.getRight(), result);
         left.setMetadata(token, OperandPosition.LEFT);
         right.setMetadata(token, OperandPosition.RIGHT);
+        if (binOp.getAssignedValueTag() != null) {
+            token.assignValue(binOp.getAssignedValueTag());
+            valueSetNodes.add(binOp.getId());
+        }
     }
 
     private void tokenizeFieldOp(MemberAccess access, TokenList result) {
@@ -390,6 +402,10 @@ public class JavaTokenizer extends LanguageTokenizer {
         TokenGroup member = tokenize(access.getMember(), result);
         base.setMetadata(dot, OperandPosition.LEFT);
         member.setMetadata(dot, OperandPosition.RIGHT);
+        if (access.getAssignedValueTag() != null) {
+            dot.assignValue(access.getAssignedValueTag());
+            valueSetNodes.add(access.getId());
+        }
     }
 
     private void tokenizeTernary(TernaryOperator ternary, TokenList result) {
@@ -403,6 +419,10 @@ public class JavaTokenizer extends LanguageTokenizer {
         result.add(op2);
         TokenGroup alt2 = tokenize(ternary.getElseExpr(), result);
         alt2.setMetadata(op2, OperandPosition.RIGHT);
+        if (ternary.getAssignedValueTag() != null) {
+            op1.assignValue(ternary.getAssignedValueTag());
+            valueSetNodes.add(ternary.getId());
+        }
     }
 
     private void tokenizeCompoundComparison(CompoundComparison comparison, TokenList result) {
@@ -414,6 +434,9 @@ public class JavaTokenizer extends LanguageTokenizer {
                 comparison.getComparisons().get(1));
         for (int i = 2; i < comparison.getComparisons().size(); i++) {
             op = new ShortCircuitAndOp(op, comparison.getComparisons().get(i));
+        }
+        if (comparison.getAssignedValueTag() != null) {
+            op.setAssignedValueTag(comparison.getAssignedValueTag());
         }
         tokenize(op, result);
     }

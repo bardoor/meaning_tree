@@ -19,7 +19,7 @@ public class TokenGroup implements Iterable<Token> {
         }
     }
 
-    public TokenList toList() {
+    public TokenList copyToList() {
         return new TokenList(source.subList(start, stop));
     }
 
@@ -37,6 +37,7 @@ public class TokenGroup implements Iterable<Token> {
             Token t = source.get(i);
             if (!(t instanceof OperandToken)) {
                 source.set(i, new OperandToken(t.value, t.type));
+                source.get(i).assignValue(t.getAssignedValue());
             }
             OperandToken op = ((OperandToken)source.get(i));
             if (op.operandOf() == null) {
@@ -47,11 +48,12 @@ public class TokenGroup implements Iterable<Token> {
 
     public void assignValue(Object tag) {
         for (Token t : this) {
-            t.assignValue(tag);
+            if (t.getAssignedValue() == null)
+                t.assignValue(tag);
         }
     }
 
     public String toString() {
-        return String.format("group%s", toList().stream().map((Token t) -> t.value).toList());
+        return String.format("group%s", copyToList().stream().map((Token t) -> "\"" + t.value + "\"").toList());
     }
 }

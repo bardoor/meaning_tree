@@ -34,7 +34,7 @@ abstract public class LanguageParser {
         int start = originNode.getStartByte();
         int end = originNode.getEndByte();
         for (int[] indexes : _byteValueTags.keySet()) {
-            if (indexes[0] > start && indexes[1] < end) {
+            if (indexes[0] >= start && indexes[1] <= end) {
                 createdNode.setAssignedValueTag(_byteValueTags.get(indexes));
                 _byteValueTags.remove(indexes);
             }

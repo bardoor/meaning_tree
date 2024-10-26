@@ -26,6 +26,26 @@ public class TokenList extends ArrayList<Token> {
         int reversedResult = reversed().stream().map((Token t) -> t.value).toList().indexOf(value);
         return reversedResult >= size() ? -1 : size() - reversedResult;
     }
+
+    public void setMetadata(OperatorToken token, OperandPosition pos) {
+        for (int i = 0; i < size(); i++) {
+            Token t = get(i);
+            if (!(t instanceof OperandToken)) {
+                set(i, new OperandToken(t.value, t.type));
+            }
+            OperandToken op = ((OperandToken)get(i));
+            if (op.operandOf() == null) {
+                op.setMetadata(token, pos);
+            }
+        }
+    }
+
+    public void assignValue(Object tag) {
+        for (Token t : this) {
+            if (t.getAssignedValue() == null)
+                t.assignValue(tag);
+        }
+    }
     
     public TokenList clone() {
         return (TokenList) super.clone();

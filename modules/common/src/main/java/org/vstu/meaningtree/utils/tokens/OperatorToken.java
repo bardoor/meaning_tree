@@ -53,7 +53,7 @@ public class OperatorToken extends OperandToken {
 
     @Override
     public String toString() {
-        return String.format("token[value=\"%s\",type=%s,prec=%s,assoc=%s,arity=%s,strictOrder=%s]",
-                value, type, precedence, assoc, arity, isStrictOrder);
+        return String.format("token[\"%s\",%s%s,prec=%s,assoc=%s,arity=%s,strictOrder=%s]",
+                value, type, getAssignedValue() == null ? "" : ",tag=".concat(getAssignedValue().toString()), precedence, assoc, arity, isStrictOrder);
     }
 }

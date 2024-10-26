@@ -13,7 +13,7 @@ public class Token {
 
     @Override
     public String toString() {
-        return String.format("token[value=\"%s\",type=%s]", value, type);
+        return String.format("token[\"%s\",%s%s]", value, type, assignedValue == null ? "" : ",tag=".concat(assignedValue.toString()));
     }
 
     public void assignValue(Object tag) {
