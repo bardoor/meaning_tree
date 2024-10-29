@@ -92,10 +92,10 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
 
     private Node deserializeLiteral(SerializedNode serialized) {
         return switch (serialized.nodeName) {
-            case "Integer" -> new IntegerLiteral((String) serialized.values.get("stringValue"));
-            case "Float" -> new FloatLiteral((String) serialized.values.get("stringValue"));
-            case "String" -> StringLiteral.fromEscaped((String) serialized.values.get("escapedValue"), StringLiteral.Type.NONE);
-            case "Boolean" -> new BoolLiteral((boolean) serialized.values.get("value"));
+            case "Integer" -> new IntegerLiteral((String) serialized.values.get("text"));
+            case "Float" -> new FloatLiteral((String) serialized.values.get("text"));
+            case "String" -> StringLiteral.fromEscaped((String) serialized.values.get("text"), StringLiteral.Type.NONE);
+            case "Boolean" -> new BoolLiteral((boolean) serialized.values.get("text"));
             default -> throw new MeaningTreeException("Unsupported literal in universal deserializer");
         };
     }
@@ -121,7 +121,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                     (Identifier) deserialize(serialized.fields.get("scope")),
                     (SimpleIdentifier) deserialize(serialized.fields.get("member"))
                     );
-            case "SimpleIdentifier" -> new SimpleIdentifier((String) serialized.values.get("name"));
+            case "SimpleIdentifier" -> new SimpleIdentifier((String) serialized.values.get("text"));
             case "ScopedIdentifier" -> new ScopedIdentifier((List<SimpleIdentifier>) deserializeList((SerializedListNode) serialized.fields.get("members")));
             default -> throw new MeaningTreeException("Unknown identifier in universal deserializer");
         };

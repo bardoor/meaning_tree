@@ -7,12 +7,19 @@ import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.serializers.model.*;
 
 public class RDFSerializer implements Serializer<Model> {
-    private static final String NS = "http://vstu.ru/poas/";
+    public static final String NS = "http://vstu.ru/poas/code#";
+    public static final String NS_base = "http://vstu.ru/poas/code";
     private int ptr = -1;
 
     public Model serialize(AbstractSerializedNode node) {
         Model model = ModelFactory.createDefaultModel();
         model.setNsPrefix("", NS);
+        model.setNsPrefix("owl", "http://www.w3.org/2002/07/owl#");
+        model.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+        model.setNsPrefix("xml", "http://www.w3.org/XML/1998/namespace");
+        model.setNsPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
+        model.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+
         Resource root = model.createResource(NS + "MeaningTree");
         serializeNode(node, model, root, "root");
         ptr = 0;

@@ -99,7 +99,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     public SerializedNode serialize(Identifier ident) {
         return switch (ident) {
             case SimpleIdentifier simple -> new SerializedNode("SimpleIdentifier", new HashMap<>(), new HashMap<>() {{
-                put("name", simple.toString());
+                put("text", simple.toString());
             }});
             case QualifiedIdentifier qualified -> new SerializedNode("QualifiedIdentifier", new HashMap<>() {{
                 put("scope", serialize(qualified.getScope()));
@@ -115,18 +115,18 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     public SerializedNode serialize(Literal literal) {
         return switch (literal) {
             case IntegerLiteral number -> new SerializedNode("Integer", new HashMap<>(), new HashMap<>() {{
-                put("stringValue", number.getStringValue(true));
+                put("text", number.getStringValue(true));
                 put("value", number.getLongValue());
             }});
             case FloatLiteral number -> new SerializedNode("Float", new HashMap<>(), new HashMap<>() {{
-                put("stringValue", number.getStringValue(true));
+                put("text", number.getStringValue(true));
                 put("value", number.getDoubleValue());
             }});
             case StringLiteral str -> new SerializedNode("String", new HashMap<>(), new HashMap<>() {{
-                put("escapedValue", str.getEscapedValue());
+                put("text", str.getEscapedValue());
             }});
             case BoolLiteral bool -> new SerializedNode("Boolean", new HashMap<>(), new HashMap<>() {{
-                put("value", bool.getValue());
+                put("text", bool.getValue());
             }});
             default -> serializeDefault(literal);
         };

@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public class RDFDeserializer implements Deserializer<Model> {
-    private static final String NS = "http://vstu.ru/poas/";
+    public static final String NS = "http://vstu.ru/poas/code#";
+    public static final String NS_base = "http://vstu.ru/poas/code";
 
     public AbstractSerializedNode deserialize(Model model, Resource rootResource) {
         return deserializeNode(model, rootResource);
