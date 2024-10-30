@@ -21,6 +21,13 @@ public class Token {
         return String.format("token[\"%s\",%s%s]", value, type, assignedValue == null ? "" : ",tag=".concat(assignedValue.toString()));
     }
 
+    public boolean contentEquals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Token token = (Token) o;
+        return Objects.equals(value, token.value) && type == token.type && Objects.equals(assignedValue, token.assignedValue);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -16,6 +16,15 @@ public class TernaryOperatorToken extends OperatorToken {
         return Objects.hash(super.hashCode(), operatorTokenPosition);
     }
 
+    @Override
+    public boolean contentEquals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.contentEquals(o)) return false;
+        TernaryOperatorToken that = (TernaryOperatorToken) o;
+        return operatorTokenPosition == that.operatorTokenPosition;
+    }
+
     public TernaryOperatorToken clone() {
         TernaryOperatorToken copy = new TernaryOperatorToken(value, operatorTokenPosition, precedence, assoc, isStrictOrder);
         copy.assignValue(assignedValue);

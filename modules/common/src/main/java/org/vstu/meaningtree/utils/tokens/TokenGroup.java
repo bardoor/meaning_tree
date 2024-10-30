@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class TokenGroup implements Iterable<Token> {
     public final int start;
@@ -21,6 +23,10 @@ public class TokenGroup implements Iterable<Token> {
 
     public TokenList copyToList() {
         return new TokenList(source.subList(start, stop));
+    }
+
+    public List<Token> asSublist() {
+        return source.subList(start, stop);
     }
 
     @NotNull
@@ -55,5 +61,9 @@ public class TokenGroup implements Iterable<Token> {
 
     public String toString() {
         return String.format("group%s", copyToList().stream().map((Token t) -> "\"" + t.value + "\"").toList());
+    }
+
+    public Map<OperandPosition, TokenGroup> findOperands(int opIndexToken) {
+        return source.findOperands(opIndexToken);
     }
 }

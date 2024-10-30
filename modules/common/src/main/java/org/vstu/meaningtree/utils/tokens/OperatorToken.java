@@ -34,6 +34,15 @@ public class OperatorToken extends OperandToken {
         this.isStrictOrder = isStrictOrder;
     }
 
+    @Override
+    public boolean contentEquals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.contentEquals(o)) return false;
+        OperatorToken that = (OperatorToken) o;
+        return precedence == that.precedence && isStrictOrder == that.isStrictOrder && assoc == that.assoc && arity == that.arity && tokenPos == that.tokenPos;
+    }
+
     public OperatorToken(String value,
                          TokenType type,
                          int precedence,

@@ -6,6 +6,16 @@ import java.util.Objects;
 
 public class OperandToken extends Token {
     protected OperatorToken operandOf;
+
+    @Override
+    public boolean contentEquals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.contentEquals(o)) return false;
+        OperandToken that = (OperandToken) o;
+        return Objects.equals(operandOf, that.operandOf) && operandPos == that.operandPos;
+    }
+
     protected OperandPosition operandPos;
 
     public OperandToken(String value, TokenType type) {
