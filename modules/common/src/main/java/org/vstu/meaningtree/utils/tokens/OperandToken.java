@@ -1,7 +1,5 @@
 package org.vstu.meaningtree.utils.tokens;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
 
 public class OperandToken extends Token {
@@ -27,7 +25,7 @@ public class OperandToken extends Token {
         return Objects.hash(super.hashCode(), operandOf, operandPos);
     }
 
-    public void setMetadata(@NotNull OperatorToken operator, @NotNull OperandPosition pos) {
+    public void setMetadata(OperatorToken operator, OperandPosition pos) {
         this.operandOf = operator;
         this.operandPos = pos;
     }

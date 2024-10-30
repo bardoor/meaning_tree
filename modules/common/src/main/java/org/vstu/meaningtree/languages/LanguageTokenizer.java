@@ -103,7 +103,10 @@ public abstract class LanguageTokenizer {
                     if (!(tokens.get(i) instanceof OperandToken)) {
                         tokens.set(i, new OperandToken(tokens.get(i).value, tokens.get(i).type));
                     }
-                    ((OperandToken)tokens.get(i)).setMetadata(token, pos);
+                    OperandToken opTok = (OperandToken)tokens.get(i);
+                    if (opTok.operandOf() == null) {
+                        opTok.setMetadata(token, pos);
+                    }
                 }
             }
             skipChildren = true;

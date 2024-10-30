@@ -33,11 +33,15 @@ abstract public class LanguageParser {
     protected void assignValue(TSNode originNode, Node createdNode) {
         int start = originNode.getStartByte();
         int end = originNode.getEndByte();
+        List<int[]> toDelete = new ArrayList<>();
         for (int[] indexes : _byteValueTags.keySet()) {
             if (indexes[0] >= start && indexes[1] <= end) {
                 createdNode.setAssignedValueTag(_byteValueTags.get(indexes));
-                _byteValueTags.remove(indexes);
+                toDelete.add(indexes);
             }
+        }
+        for (int[] indexes : toDelete) {
+            _byteValueTags.remove(indexes);
         }
     }
 

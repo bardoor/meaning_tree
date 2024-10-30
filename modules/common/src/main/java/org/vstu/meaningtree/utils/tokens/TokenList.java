@@ -57,17 +57,26 @@ public class TokenList extends ArrayList<Token> {
         OperandToken op = (OperandToken) get(opIndexToken);
         Map<OperandPosition, TokenGroup> result = new HashMap<>();
         int i = 0;
+        int start = -1;
+        int stop = -1;
+        OperandPosition oldPos = null;
         while (i < size()) {
-            if (get(i) instanceof OperandToken operand && operand.operandOf().equals(op)) {
-                int start = i;
-                int stop = i + 1;
+            if (get(i) instanceof OperandToken operand && operand.operandOf() != null && operand.operandOf().equals(op)) {
                 OperandPosition pos = operand.operandPosition();
-                while (stop < size() && ((OperandToken)get(stop)).operandOf().equals(op)
+                if (oldPos != null && !oldPos.equals(pos)) {
+                    start = i;
+                }
+                if (start == -1) {
+                    start = i;
+                }
+                stop = i + 1;
+                while (stop < size() && ((OperandToken)get(stop)).operandOf() != null && ((OperandToken)get(stop)).operandOf().equals(op)
                         && ((OperandToken)get(stop)).operandPosition().equals(pos)) {
                     stop = i + 1;
                     i++;
                 }
                 result.put(pos, new TokenGroup(start, stop, this));
+                oldPos = pos;
             }
             i++;
         }

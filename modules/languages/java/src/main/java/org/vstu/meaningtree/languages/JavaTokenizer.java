@@ -103,7 +103,7 @@ public class JavaTokenizer extends LanguageTokenizer {
 
     @Override
     public OperatorToken getOperatorByTokenName(String tokenName) {
-        return operators.getOrDefault(tokenName, null);
+        return operators.getOrDefault(tokenName, null).clone();
     }
 
     @Override
