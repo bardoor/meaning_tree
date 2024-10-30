@@ -86,19 +86,20 @@ public class PythonTokenizer extends LanguageTokenizer {
     protected OperatorToken getOperator(String tokenValue, TSNode node) {
         if (!node.getParent().isNull() && node.getParent().getType().equals("unary_operator") && List.of("+", "-").contains(tokenValue)) {
             if (tokenValue.equals("+")) {
-                return operators.get("UPLUS");
+                return operators.get("UPLUS").clone();
             } else if (tokenValue.equals("-")) {
-                return operators.get("UMINUS");
+                return operators.get("UMINUS").clone();
             }
         }
         if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().isNull() && node.getParent().getType().equals("call")) {
-            return operators.get("CALL_(");
+            return operators.get("CALL_(").clone();
         }
 
         if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().isNull() && node.getParent().getType().equals("call")) {
-            return operators.get("CALL_)");
+            return operators.get("CALL_)").clone();
         }
-        return operators.getOrDefault(tokenValue, null);
+        OperatorToken tok = operators.getOrDefault(tokenValue, null);
+        return tok == null ? null : tok.clone();
     }
 
     @Override

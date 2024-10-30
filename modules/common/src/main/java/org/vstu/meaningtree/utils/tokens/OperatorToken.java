@@ -4,6 +4,7 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class OperatorToken extends OperandToken {
     public final int precedence;
@@ -11,6 +12,11 @@ public class OperatorToken extends OperandToken {
     public final OperatorArity arity;
     public final boolean isStrictOrder;
     public final OperatorTokenPosition tokenPos;
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), precedence, assoc, arity, isStrictOrder, tokenPos);
+    }
 
     public OperatorToken(String value,
                          TokenType type,
@@ -55,5 +61,12 @@ public class OperatorToken extends OperandToken {
     public String toString() {
         return String.format("token[\"%s\",%s%s,prec=%s,assoc=%s,arity=%s,strictOrder=%s]",
                 value, type, getAssignedValue() == null ? "" : ",tag=".concat(getAssignedValue().toString()), precedence, assoc, arity, isStrictOrder);
+    }
+
+    public OperatorToken clone() {
+        OperatorToken copy = new OperatorToken(value, type, precedence, assoc, arity, isStrictOrder, tokenPos);
+        copy.assignValue(assignedValue);
+        copy.setMetadata(operandOf, operandPos);
+        return copy;
     }
 }

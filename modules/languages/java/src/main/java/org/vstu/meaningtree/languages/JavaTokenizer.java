@@ -110,31 +110,32 @@ public class JavaTokenizer extends LanguageTokenizer {
     protected OperatorToken getOperator(String tokenValue, TSNode node) {
         if (!node.getParent().isNull() && node.getParent().getType().equals("unary_expression") && List.of("+", "-").contains(tokenValue)) {
             if (tokenValue.equals("+")) {
-                return operators.get("UPLUS");
+                return operators.get("UPLUS").clone();
             } else if (tokenValue.equals("-")) {
-                return operators.get("UMINUS");
+                return operators.get("UMINUS").clone();
             }
         }
 
         if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().isNull() && node.getParent().getType().equals("method_invocation")) {
-            return operators.get("CALL_(");
+            return operators.get("CALL_(").clone();
         }
 
         if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().isNull() && node.getParent().getType().equals("method_invocation")) {
-            return operators.get("CALL_)");
+            return operators.get("CALL_)").clone();
         }
 
         if (!node.getParent().isNull() && node.getParent().getType().equals("update_expression") &&
                 TreeSitterUtils.getCodePiece(code, node.getParent()).startsWith("++") && tokenValue.equals("++")) {
-            return operators.get("++U");
+            return operators.get("++U").clone();
         }
 
         if (!node.getParent().isNull() && node.getParent().getType().equals("update_expression") &&
                 TreeSitterUtils.getCodePiece(code, node.getParent()).startsWith("--")  && tokenValue.equals("--")) {
-            return operators.get("--U");
+            return operators.get("--U").clone();
         }
 
-        return operators.getOrDefault(tokenValue, null);
+        OperatorToken tok = operators.getOrDefault(tokenValue, null);
+        return tok == null ? null : tok.clone();
     }
 
     @Override
