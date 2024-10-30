@@ -31,7 +31,7 @@ import java.util.List;
 public class UniversalDeserializer implements Deserializer<AbstractSerializedNode> {
     public Node deserialize(AbstractSerializedNode abstractSerialized) {
         SerializedNode serialized = (SerializedNode) abstractSerialized;
-        return switch (serialized.nodeName) {
+        Node node = switch (serialized.nodeName) {
             case "ParenthesizedExpression" -> deserializeParen(serialized);
             case "TernaryOperator" -> deserializeTernary(serialized);
             case "SimpleIdentifier", "QualifiedIdentifier", "ScopedIdentifier" -> deserializeIdentifier(serialized);
@@ -47,6 +47,10 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
             default -> deserializeOther(serialized);
         };
+        if (abstractSerialized.values.containsKey("assignedValueTag")) {
+            node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
+        }
+        return node;
     }
 
     private Node deserializeMemberAccess(SerializedNode serialized) {

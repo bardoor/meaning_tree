@@ -26,7 +26,7 @@ import java.util.*;
 public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     @Override
     public SerializedNode serialize(Node node) {
-        return switch (node) {
+        SerializedNode result =  switch (node) {
             case BinaryExpression expr -> serialize(expr);
             case UnaryExpression expr -> serialize(expr);
             case ParenthesizedExpression expr -> serialize(expr);
@@ -44,6 +44,10 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case MemberAccess member -> serialize(member);
             default -> serializeDefault(node);
         };
+        if (node.getAssignedValueTag() != null) {
+            result.values.put("assignedValueTag", node.getAssignedValueTag());
+        }
+        return result;
     }
 
     public SerializedListNode serialize(List<? extends Node> nodes) {
