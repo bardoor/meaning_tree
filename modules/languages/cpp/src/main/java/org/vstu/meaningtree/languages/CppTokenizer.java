@@ -34,10 +34,25 @@ public class CppTokenizer extends LanguageTokenizer {
 
     private static final Map<String, OperatorToken> operators = new HashMap<>() {{
         put("::", new OperatorToken("::", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("CALL_(", new OperatorToken("(", TokenType.CALL_OPENING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("CALL_)", new OperatorToken(")", TokenType.CALL_CLOSING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("[", new OperatorToken("[", TokenType.SUBSCRIPT_OPENING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("]", new OperatorToken("]", TokenType.SUBSCRIPT_CLOSING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+
+        List<OperatorToken> braces = OperatorToken.makeComplex(2,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"(", ")"},
+                new TokenType[] {TokenType.CALL_OPENING_BRACE, TokenType.CALL_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("CALL_(", braces.getFirst());
+        put("CALL_)", braces.getLast());
+
+        List<OperatorToken> subscript = OperatorToken.makeComplex(2,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"[", "]"},
+                new TokenType[] {TokenType.SUBSCRIPT_OPENING_BRACE, TokenType.SUBSCRIPT_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("[", subscript.getFirst());
+        put("]", subscript.getLast());
+
         put("->", new OperatorToken("->", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
@@ -78,11 +93,14 @@ public class CppTokenizer extends LanguageTokenizer {
 
         put("|", new OperatorToken("|", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true));
+        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));
 
-        put("||", new OperatorToken("||", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true));
+        put("||", new OperatorToken("||", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));
 
-        List<OperatorToken> ternary = OperatorToken.makeTernary(15, OperatorAssociativity.RIGHT, true, "?", ":");
+        List<OperatorToken> ternary = OperatorToken.makeComplex(14, OperatorArity.TERNARY,
+                OperatorAssociativity.RIGHT, true, new String[] {"?", ":"},
+                new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
+        );
         put("?", ternary.getFirst());  // Тернарный оператор
         put(":", ternary.getLast());
 

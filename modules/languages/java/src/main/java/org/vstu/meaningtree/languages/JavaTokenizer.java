@@ -30,10 +30,24 @@ public class JavaTokenizer extends LanguageTokenizer {
     private Set<Integer> valueSetNodes = new HashSet<>();
 
     private static final Map<String, OperatorToken> operators = new HashMap<>() {{
-        put("CALL_(", new OperatorToken("(", TokenType.CALL_OPENING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("CALL_)", new OperatorToken(")", TokenType.CALL_CLOSING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("[", new OperatorToken("[", TokenType.SUBSCRIPT_OPENING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("]", new OperatorToken("]", TokenType.SUBSCRIPT_CLOSING_BRACE, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        List<OperatorToken> braces = OperatorToken.makeComplex(1,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"(", ")"},
+                new TokenType[] {TokenType.CALL_OPENING_BRACE, TokenType.CALL_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("CALL_(", braces.getFirst());
+        put("CALL_)", braces.getLast());
+
+        List<OperatorToken> subscript = OperatorToken.makeComplex(1,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"[", "]"},
+                new TokenType[] {TokenType.SUBSCRIPT_OPENING_BRACE, TokenType.SUBSCRIPT_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("[", subscript.getFirst());
+        put("]", subscript.getLast());
+
         put(".", new OperatorToken(".", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));   // Постфиксный инкремент
@@ -70,10 +84,13 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("^", new OperatorToken("^", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));    // Побитовое исключающее ИЛИ
         put("|", new OperatorToken("|", TokenType.OPERATOR, 11, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));    // Побитовое ИЛИ
 
-        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, true));  // Логическое И
-        put("||", new OperatorToken("||", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true));  // Логическое ИЛИ
+        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));  // Логическое И
+        put("||", new OperatorToken("||", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));  // Логическое ИЛИ
 
-        List<OperatorToken> ternary = OperatorToken.makeTernary(14, OperatorAssociativity.RIGHT, true, "?", ":");
+        List<OperatorToken> ternary = OperatorToken.makeComplex(14, OperatorArity.TERNARY,
+                OperatorAssociativity.RIGHT, true, new String[] {"?", ":"},
+                new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
+        );
         put("?", ternary.getFirst());  // Тернарный оператор
         put(":", ternary.getLast());
 

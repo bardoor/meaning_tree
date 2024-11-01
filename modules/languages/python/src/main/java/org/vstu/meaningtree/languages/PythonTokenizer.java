@@ -31,10 +31,24 @@ public class PythonTokenizer extends LanguageTokenizer {
     private Set<Integer> valueSetNodes = new HashSet<>();
 
     private final Map<String, OperatorToken> operators = new HashMap<>() {{
-        put("CALL_(", new OperatorToken("(", TokenType.CALL_OPENING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false, OperatorTokenPosition.AROUND));
-        put("CALL_)", new OperatorToken(")", TokenType.CALL_CLOSING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false, OperatorTokenPosition.AROUND));
-        put("[", new OperatorToken("[", TokenType.SUBSCRIPT_OPENING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false, OperatorTokenPosition.AROUND));
-        put("]", new OperatorToken("]", TokenType.SUBSCRIPT_CLOSING_BRACE, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false, OperatorTokenPosition.AROUND));
+        List<OperatorToken> braces = OperatorToken.makeComplex(2,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"(", ")"},
+                new TokenType[] {TokenType.CALL_OPENING_BRACE, TokenType.CALL_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("CALL_(", braces.getFirst());
+        put("CALL_)", braces.getLast());
+
+        List<OperatorToken> subscript = OperatorToken.makeComplex(2,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"[", "]"},
+                new TokenType[] {TokenType.SUBSCRIPT_OPENING_BRACE, TokenType.SUBSCRIPT_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("[", subscript.getFirst());
+        put("]", subscript.getLast());
+
         put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put("**", new OperatorToken("**", TokenType.OPERATOR, 4, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Возведение в степень
         put("~", new OperatorToken("~", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.UNARY, false)); // Побитовая инверсия
@@ -61,10 +75,13 @@ public class PythonTokenizer extends LanguageTokenizer {
         put("in", new OperatorToken("in", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Оператор in
         put("is", new OperatorToken("is", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Оператор is
         put("not", new OperatorToken("not", TokenType.OPERATOR, 13, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Логическое НЕ
-        put("and", new OperatorToken("and", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true)); // Логическое И
-        put("or", new OperatorToken("or", TokenType.OPERATOR, 15, OperatorAssociativity.LEFT, OperatorArity.BINARY, true)); // Логическое ИЛИ
+        put("and", new OperatorToken("and", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND)); // Логическое И
+        put("or", new OperatorToken("or", TokenType.OPERATOR, 15, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR)); // Логическое ИЛИ
 
-        List<OperatorToken> ternary = OperatorToken.makeTernary(16, OperatorAssociativity.RIGHT, true, "if", "else");
+        List<OperatorToken> ternary = OperatorToken.makeComplex(16, OperatorArity.TERNARY,
+                OperatorAssociativity.RIGHT, true, new String[] {"if", "else"},
+                new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
+        );
         put("if", ternary.getFirst()); // Условные выражения
         put("else", ternary.getLast()); // Условные выражения
 

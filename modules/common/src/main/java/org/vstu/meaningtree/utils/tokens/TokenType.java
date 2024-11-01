@@ -1,6 +1,10 @@
 package org.vstu.meaningtree.utils.tokens;
 
 public enum TokenType {
+    /**
+     * Не нужно полагаться в этом перечислении на тип токена - OPERATOR. В данном случае он покрывает не все виды операторов
+     * Вместо этого стоит выполнять проверку на тип OperatorToken
+     */
     OPERATOR,
 
     CONST,
