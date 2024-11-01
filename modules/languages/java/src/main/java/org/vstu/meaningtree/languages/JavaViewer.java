@@ -1658,7 +1658,8 @@ public class JavaViewer extends LanguageViewer {
         }
 
         if (!entryPoint.hasMainClass()
-                && getConfigParameter("translationUnitMode").getBooleanValue()) {
+                //&& getConfigParameter("translationUnitMode").getBooleanValue()
+        ) {
             return makeSimpleJavaProgram(nodes);
         }
 

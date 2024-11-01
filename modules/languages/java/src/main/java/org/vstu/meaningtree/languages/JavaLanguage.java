@@ -1080,6 +1080,7 @@ public class JavaLanguage extends LanguageParser {
             }
         }
 
+        /*
         Node[] nodes = builder.getCurrentNodes();
         if (
                 (nodes.length > 1 && getConfigParameter("expressionMode").getBooleanValue())
@@ -1092,6 +1093,8 @@ public class JavaLanguage extends LanguageParser {
         if (getConfigParameter("expressionMode").getBooleanValue() && nodes.length > 0) {
             return nodes[0];
         }
+
+        */
 
         return new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), mainClass, mainMethod);
     }
