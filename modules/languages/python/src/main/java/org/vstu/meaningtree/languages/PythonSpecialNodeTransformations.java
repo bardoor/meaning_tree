@@ -136,7 +136,7 @@ public class PythonSpecialNodeTransformations {
         SymbolEnvironment env = null;
         if (doWhile.getBody() instanceof CompoundStatement compound) {
             env = compound.getEnv();
-            body = Arrays.asList(compound.getNodes());
+            body = new ArrayList<>(List.of(compound.getNodes()));
         } else {
             body = new ArrayList<>();
             body.add(doWhile.getBody());
