@@ -116,6 +116,6 @@ public class AugletsRefactorProblemsGenerator {
             return new EqOp(notEqOp.getLeft(), notEqOp.getRight());
         }
 
-        return new NotOp(new ParenthesizedExpression(condition));
+        return new NotOp(condition);
     }
 }
