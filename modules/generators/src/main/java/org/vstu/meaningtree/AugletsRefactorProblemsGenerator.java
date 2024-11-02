@@ -9,6 +9,8 @@ import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
+import org.vstu.meaningtree.nodes.statements.loops.DoWhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
@@ -28,24 +30,19 @@ public class AugletsRefactorProblemsGenerator {
         boolean hasModified = false;
         var body = new ArrayList<Node>();
         for (var node : ((ProgramEntryPoint) rootNode).getBody()) {
-            if (node instanceof IfStatement ifStatement) {
-                if (!modifyAll && hasModified) {
-                    body.add(node);
-                }
-                else {
-                    var modifiedIf = generate(ifStatement, problemType);
-                    if (modifiedIf != null) {
-                        body.add(modifiedIf);
-                        hasModified = true;
-                    }
-                    else {
-                        body.add(ifStatement);
-                    }
-                }
-            }
-            else {
-                body.add(node);
-            }
+           if (!modifyAll && hasModified) {
+               body.add(node);
+           }
+           else {
+               var modifiedIf = generate(node, problemType);
+               if (modifiedIf != null) {
+                   body.add(modifiedIf);
+                   hasModified = true;
+               }
+               else {
+                   body.add(node);
+               }
+           }
         }
 
         return new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), body));
@@ -55,6 +52,7 @@ public class AugletsRefactorProblemsGenerator {
         return switch (problemType) {
             case ADD_DANGLING_ELSE -> addDanglingEmptyElse((IfStatement) node);
             case ADD_USELESS_CONDITION_CHECKING_IN_ELSE -> addUselessConditionCheckingInElse((IfStatement) node);
+            case WRAP_WHILE_LOOP_AND_REPLACE_IT_WITH_DO_WHILE -> wrapWhileLoopAndReplaceItWithDoWhile((WhileLoop) node);
         };
     }
 
@@ -117,5 +115,17 @@ public class AugletsRefactorProblemsGenerator {
         }
 
         return new NotOp(condition);
+    }
+
+    public static IfStatement wrapWhileLoopAndReplaceItWithDoWhile(WhileLoop whileLoop) {
+        var condition = whileLoop.getCondition();
+        var doWhile = new DoWhileLoop(condition, whileLoop.getBody());
+        return new IfStatement(
+                condition,
+                new CompoundStatement(
+                        new SymbolEnvironment(null),
+                        doWhile
+                )
+        );
     }
 }
