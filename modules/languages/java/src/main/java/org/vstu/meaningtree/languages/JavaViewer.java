@@ -402,14 +402,27 @@ public class JavaViewer extends LanguageViewer {
         decreaseIndentLevel();
 
         if (_openBracketOnSameLine) {
-            builder.append("} ");
+            builder
+                    .append(indent("} "))
+                    .append(
+                            "while (%s);".formatted(
+                                    toString(doWhileLoop.getCondition())
+                            )
+                    );
         }
         else {
-            builder.append("}\n");
+            builder
+                    .append(indent("}\n"))
+                    .append(
+                            indent("while (%s);".formatted(
+                                        toString(doWhileLoop.getCondition())
+                                    )
+                            )
+                    );;
         }
 
         builder.append(
-                "while %s;".formatted(
+                "while (%s);".formatted(
                         toString(doWhileLoop.getCondition())
                 )
         );
