@@ -19,6 +19,7 @@ import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.Literal;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
@@ -1043,7 +1044,11 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(NotOp op) {
-        return String.format("!%s", toString(op.getArgument()));
+        var arg = op.getArgument();
+        if (arg instanceof ParenthesizedExpression || arg instanceof FunctionCall || arg instanceof Literal) {
+            return String.format("!%s", toString(arg));
+        }
+        return String.format("!(%s)", toString(arg));
     }
 
     public String toString(MatMulOp op) {
