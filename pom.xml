@@ -18,6 +18,7 @@
         <module>modules/languages/cpp</module>
         <module>modules/test</module>
         <module>modules/utils</module>
+        <module>modules/generators</module>
     </modules>
 
     <properties>
