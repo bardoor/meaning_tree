@@ -421,12 +421,6 @@ public class JavaViewer extends LanguageViewer {
                     );;
         }
 
-        builder.append(
-                "while (%s);".formatted(
-                        toString(doWhileLoop.getCondition())
-                )
-        );
-
         return builder.toString();
     }
 

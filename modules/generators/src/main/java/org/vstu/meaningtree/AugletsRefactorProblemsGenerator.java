@@ -49,11 +49,17 @@ public class AugletsRefactorProblemsGenerator {
     }
 
     private static Node generate(Node node, AugletsRefactorProblemsType problemType) {
-        return switch (problemType) {
-            case ADD_DANGLING_ELSE -> addDanglingEmptyElse((IfStatement) node);
-            case ADD_USELESS_CONDITION_CHECKING_IN_ELSE -> addUselessConditionCheckingInElse((IfStatement) node);
-            case WRAP_WHILE_LOOP_AND_REPLACE_IT_WITH_DO_WHILE -> wrapWhileLoopAndReplaceItWithDoWhile((WhileLoop) node);
-        };
+        try {
+            return switch (problemType) {
+                case ADD_DANGLING_ELSE -> addDanglingEmptyElse((IfStatement) node);
+                case ADD_USELESS_CONDITION_CHECKING_IN_ELSE -> addUselessConditionCheckingInElse((IfStatement) node);
+                case WRAP_WHILE_LOOP_AND_REPLACE_IT_WITH_DO_WHILE ->
+                        wrapWhileLoopAndReplaceItWithDoWhile((WhileLoop) node);
+            };
+        }
+        catch (ClassCastException castException) {
+            return node;
+        }
     }
 
     /**
