@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.utils.tokens;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ComplexOperatorToken extends OperatorToken {
     public final int positionOfToken;
@@ -27,6 +28,20 @@ public class ComplexOperatorToken extends OperatorToken {
         return positionOfToken == complexTokenValues.size() - 1;
     }
 
+    @Override
+    public boolean contentEquals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ComplexOperatorToken that = (ComplexOperatorToken) o;
+        return positionOfToken == that.positionOfToken && Objects.equals(complexTokenValues, that.complexTokenValues);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), positionOfToken, complexTokenValues);
+    }
+
     public boolean isEqualComplex(ComplexOperatorToken that) {
         return that.complexTokenValues.equals(this.complexTokenValues) && precedence == that.precedence
                 && isStrictOrder == that.isStrictOrder && assoc == that.assoc
@@ -35,5 +50,14 @@ public class ComplexOperatorToken extends OperatorToken {
 
     public int getClosingPosition() {
         return complexTokenValues.size() - 1;
+    }
+
+    public ComplexOperatorToken clone() {
+        ComplexOperatorToken copy = new ComplexOperatorToken(positionOfToken,
+                value, type, tokenPos, precedence, assoc, arity, isStrictOrder, complexTokenValues.toArray(new String[0])
+        );
+        copy.assignValue(assignedValue);
+        copy.setMetadata(operandOf, operandPos);
+        return copy;
     }
 }
