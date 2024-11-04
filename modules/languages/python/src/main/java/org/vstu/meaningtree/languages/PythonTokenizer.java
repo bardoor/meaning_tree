@@ -230,12 +230,12 @@ public class PythonTokenizer extends LanguageTokenizer {
             }
             case AssignmentExpression assignment -> {
                 tokenize(assignment.getLValue(), result);
-                result.add(getOperatorByTokenName("="));
+                result.add(getOperatorByTokenName(":="));
                 tokenize(assignment.getRValue(), result);
             }
             case AssignmentStatement assignment -> {
                 tokenize(assignment.getLValue(), result);
-                result.add(getOperatorByTokenName("="));
+                result.add(new Token("=", TokenType.STATEMENT_TOKEN));
                 tokenize(assignment.getRValue(), result);
             }
             case ExpressionSequence sequence -> {
