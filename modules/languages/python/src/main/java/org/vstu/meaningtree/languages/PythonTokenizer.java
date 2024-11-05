@@ -207,13 +207,13 @@ public class PythonTokenizer extends LanguageTokenizer {
     }
 
     @Override
-    public TokenList tokenize(Node node) {
+    public TokenList tokenizeExtended(Node node) {
         TokenList result = new TokenList();
-        tokenize(node, result);
+        tokenizeExtended(node, result);
         return result;
     }
 
-    public TokenGroup tokenize(Node node, TokenList result) {
+    public TokenGroup tokenizeExtended(Node node, TokenList result) {
         int posStart = result.size();
         switch (node) {
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
@@ -225,28 +225,28 @@ public class PythonTokenizer extends LanguageTokenizer {
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case ParenthesizedExpression paren -> {
                 result.add(new Token("(", TokenType.OPENING_BRACE));
-                tokenize(paren.getExpression(), result);
+                tokenizeExtended(paren.getExpression(), result);
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
             case AssignmentExpression assignment -> {
-                tokenize(assignment.getLValue(), result);
+                tokenizeExtended(assignment.getLValue(), result);
                 result.add(getOperatorByTokenName(":="));
-                tokenize(assignment.getRValue(), result);
+                tokenizeExtended(assignment.getRValue(), result);
             }
             case AssignmentStatement assignment -> {
-                tokenize(assignment.getLValue(), result);
+                tokenizeExtended(assignment.getLValue(), result);
                 result.add(new Token("=", TokenType.STATEMENT_TOKEN));
-                tokenize(assignment.getRValue(), result);
+                tokenizeExtended(assignment.getRValue(), result);
             }
             case ExpressionSequence sequence -> {
                 for (Expression expr : sequence.getExpressions()) {
-                    tokenize(expr, result);
+                    tokenizeExtended(expr, result);
                     result.add(new Token(",", TokenType.COMMA));
                 }
                 if (!sequence.getExpressions().isEmpty()) result.removeLast();
             }
             case ExpressionStatement exprStmt -> {
-                tokenize(exprStmt.getExpression(), result);
+                tokenizeExtended(exprStmt.getExpression(), result);
             }
             default ->  {
                 String s = viewer.toString(node);
@@ -264,15 +264,15 @@ public class PythonTokenizer extends LanguageTokenizer {
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
         if (call instanceof MethodCall method) {
-            tokenize(new MemberAccess(method.getObject(), (SimpleIdentifier) method.getFunction()), result);
+            tokenizeExtended(new MemberAccess(method.getObject(), (SimpleIdentifier) method.getFunction()), result);
         } else {
-            tokenize(call.getFunction(), result);
+            tokenizeExtended(call.getFunction(), result);
         }
         OperatorToken tok = getOperatorByTokenName("CALL_(");
         result.add(tok);
         int i = 0;
         for (Expression expr : call.getArguments()) {
-            TokenGroup operand = tokenize(expr, result);
+            TokenGroup operand = tokenizeExtended(expr, result);
             result.add(new Token(",", TokenType.COMMA));
             if (i == 0) {
                 operand.setMetadata(tok, OperandPosition.LEFT);
@@ -307,7 +307,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         TokenGroup op;
         OperatorToken token = getOperatorByTokenName(operator);
         result.add(token);
-        op = tokenize(unaryOp.getArgument(), result);
+        op = tokenizeExtended(unaryOp.getArgument(), result);
         op.setMetadata(token, OperandPosition.RIGHT);
         if (unaryOp.getAssignedValueTag() != null) {
             token.assignValue(unaryOp.getAssignedValueTag());
@@ -346,10 +346,10 @@ public class PythonTokenizer extends LanguageTokenizer {
             result.addAll(tokenize(s));
             return;
         }
-        TokenGroup left = tokenize(binOp.getLeft(), result);
+        TokenGroup left = tokenizeExtended(binOp.getLeft(), result);
         OperatorToken token = getOperatorByTokenName(operator);
         result.add(token);
-        TokenGroup right = tokenize(binOp.getRight(), result);
+        TokenGroup right = tokenizeExtended(binOp.getRight(), result);
         left.setMetadata(token, OperandPosition.LEFT);
         right.setMetadata(token, OperandPosition.RIGHT);
         if (binOp.getAssignedValueTag() != null) {
@@ -359,10 +359,10 @@ public class PythonTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeFieldOp(MemberAccess access, TokenList result) {
-        TokenGroup base = tokenize(access.getExpression(), result);
+        TokenGroup base = tokenizeExtended(access.getExpression(), result);
         OperatorToken dot = getOperatorByTokenName(".");
         result.add(dot);
-        TokenGroup member = tokenize(access.getMember(), result);
+        TokenGroup member = tokenizeExtended(access.getMember(), result);
         base.setMetadata(dot, OperandPosition.LEFT);
         member.setMetadata(dot, OperandPosition.RIGHT);
         if (access.getAssignedValueTag() != null) {
@@ -372,16 +372,16 @@ public class PythonTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeTernary(TernaryOperator ternary, TokenList result) {
-        TokenGroup alt1 = tokenize(ternary.getThenExpr(), result);
+        TokenGroup alt1 = tokenizeExtended(ternary.getThenExpr(), result);
         OperatorToken op1 = getOperatorByTokenName("if");
         alt1.setMetadata(op1, OperandPosition.CENTER);
         result.add(op1);
-        TokenGroup cond = tokenize(ternary.getCondition(), result);
+        TokenGroup cond = tokenizeExtended(ternary.getCondition(), result);
         cond.setMetadata(op1, OperandPosition.LEFT);
         OperatorToken op2 = getOperatorByTokenName("else");
         result.add(op2);
-        TokenGroup alt2 = tokenize(ternary.getElseExpr(), result);
-        alt2.setMetadata(op2, OperandPosition.RIGHT);
+        TokenGroup alt2 = tokenizeExtended(ternary.getElseExpr(), result);
+        alt2.setMetadata(op1, OperandPosition.RIGHT);
         if (ternary.getAssignedValueTag() != null) {
             op1.assignValue(ternary.getAssignedValueTag());
             valueSetNodes.add(ternary.getId());
@@ -390,11 +390,11 @@ public class PythonTokenizer extends LanguageTokenizer {
 
     private void tokenizeCompoundComparison(CompoundComparison comparison, TokenList result) {
         if (comparison.getComparisons().size() == 1) {
-            tokenize(comparison.getComparisons().getFirst(), result);
+            tokenizeExtended(comparison.getComparisons().getFirst(), result);
             return;
         }
         for (int i = 0; i < comparison.getComparisons().size(); i++) {
-            TokenGroup operand = tokenize(comparison.getComparisons().get(i).getLeft(), result);
+            TokenGroup operand = tokenizeExtended(comparison.getComparisons().get(i).getLeft(), result);
             String operator = switch (comparison.getComparisons().get(i)) {
                 case LtOp op -> "<";
                 case GtOp op -> ">";
@@ -417,18 +417,18 @@ public class PythonTokenizer extends LanguageTokenizer {
                 valueSetNodes.add(comparison.getComparisons().get(i).getId());
             }
             if (i == comparison.getComparisons().size() - 1) {
-                TokenGroup lastOperand = tokenize(comparison.getComparisons().get(i).getRight(), result);
+                TokenGroup lastOperand = tokenizeExtended(comparison.getComparisons().get(i).getRight(), result);
                 lastOperand.setMetadata(token, OperandPosition.RIGHT);
             }
         }
     }
 
     private void tokenizeSubscript(IndexExpression subscript, TokenList result) {
-        TokenGroup leftOperand = tokenize(subscript.getExpr(), result);
+        TokenGroup leftOperand = tokenizeExtended(subscript.getExpr(), result);
         OperatorToken open = getOperatorByTokenName("[");
         result.add(open);
         leftOperand.setMetadata(open, OperandPosition.LEFT);
-        TokenGroup centerOperand = tokenize(subscript.getIndex(), result);
+        TokenGroup centerOperand = tokenizeExtended(subscript.getIndex(), result);
         centerOperand.setMetadata(open, OperandPosition.CENTER);
         result.add(getOperatorByTokenName("]"));
     }

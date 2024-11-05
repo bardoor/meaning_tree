@@ -7,6 +7,7 @@ import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.BinaryComparison;
@@ -160,6 +161,18 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                      NoSuchMethodException e) {
             }
         }
+
+        if (clazz.getGenericSuperclass().equals(UnaryExpression.class)) {
+            try {
+                return (Node) clazz.getDeclaredConstructor(Expression.class).newInstance(
+                        deserialize(serialized.fields.get("arg"))
+                );
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+            }
+        }
+
+
         throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
     }
 
