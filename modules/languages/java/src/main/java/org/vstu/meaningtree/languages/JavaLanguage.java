@@ -1084,6 +1084,7 @@ public class JavaLanguage extends LanguageParser {
         if (
                 (nodes.length > 1 && getConfigParameter("expressionMode").getBooleanValue())
                         || (nodes.length > 0 && !(nodes[0] instanceof ExpressionStatement) &&
+                        !(nodes[0] instanceof AssignmentStatement) &&
                         !(nodes[0] instanceof Expression)
                         )
         ) {

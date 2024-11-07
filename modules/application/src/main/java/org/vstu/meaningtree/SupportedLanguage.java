@@ -58,6 +58,10 @@ public enum SupportedLanguage {
         return translators.get(this).getConstructor().newInstance();
     }
 
+    public LanguageTranslator createTranslator(Map<String, String> config) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        return translators.get(this).getConstructor(Map.class).newInstance(config);
+    }
+
     public Class<? extends LanguageTranslator> getTranslatorClass() {
         return translators.get(this);
     }

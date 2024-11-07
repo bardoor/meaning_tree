@@ -180,23 +180,23 @@ public class PythonTokenizer extends LanguageTokenizer {
     @Override
     protected List<String> getOperatorNodes(OperatorArity arity) {
         return switch (arity) {
-            case UNARY -> List.of("unary_operator");
-            case BINARY -> List.of("binary_operator", "attribute");
-            case TERNARY -> List.of(); //ternary nodes is unsupported
+            case UNARY -> List.of("unary_operator", "not_operator");
+            case BINARY -> List.of("binary_operator", "attribute", "boolean_operator");
+            case TERNARY -> List.of(); //ternary nodes is unsupported due to children field indexes, not names
         };
     }
 
     @Override
     protected String getFieldNameByOperandPos(OperandPosition pos, String operatorNode) {
-        if (List.of("unary_operator").contains(operatorNode)) {
+        if (List.of("unary_operator", "not_operator").contains(operatorNode)) {
             return "argument";
-        } else if (operatorNode.equals("binary_operator")) {
+        } else if (List.of("binary_operator", "boolean_operator").contains(operatorNode)) {
             if (pos == OperandPosition.LEFT) {
                 return "left";
             } else if (pos == OperandPosition.RIGHT) {
                 return "right";
             }
-        } else if (operatorNode.equals("field_access")) {
+        } else if (operatorNode.equals("attribute")) {
             if (pos == OperandPosition.LEFT) {
                 return "object";
             } else if (pos == OperandPosition.RIGHT) {

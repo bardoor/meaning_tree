@@ -3,9 +3,10 @@ package org.vstu.meaningtree.languages;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class CppTranslator extends LanguageTranslator {
-    public CppTranslator(HashMap<String, String> rawConfig) {
+    public CppTranslator(Map<String, String> rawConfig) {
         super(new CppLanguage(), new CppViewer(), rawConfig);
     }
 

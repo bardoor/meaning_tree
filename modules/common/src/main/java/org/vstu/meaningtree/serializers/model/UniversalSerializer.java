@@ -2,6 +2,7 @@ package org.vstu.meaningtree.serializers.model;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -42,6 +43,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case ExpressionSequence sequence -> serialize(sequence);
             case ExpressionStatement stmt -> serialize(stmt);
             case MemberAccess member -> serialize(member);
+            case ProgramEntryPoint entryPoint -> serialize(entryPoint);
             default -> serializeDefault(node);
         };
         if (node.getAssignedValueTag() != null) {
@@ -65,6 +67,12 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
                     put("right", serialize(binOp.getRight()));
                 }}
                 );
+    }
+
+    public SerializedNode serialize(ProgramEntryPoint entryPoint) {
+        return new SerializedNode("ProgramEntryPoint", new HashMap<>() {{
+            put("body", serialize(entryPoint.getBody()));
+        }});
     }
 
     public SerializedNode serialize(TernaryOperator ternaryOp) {
