@@ -297,6 +297,7 @@ public class CppTokenizer extends LanguageTokenizer {
                 tokenizeExtended(assignment.getLValue(), result);
                 result.add(getOperatorByTokenName("="));
                 tokenizeExtended(assignment.getRValue(), result);
+                result.add(new Token(";", TokenType.SEPARATOR));
             }
             case ExpressionSequence sequence -> {
                 for (Expression expr : sequence.getExpressions()) {
@@ -307,6 +308,7 @@ public class CppTokenizer extends LanguageTokenizer {
             }
             case ExpressionStatement exprStmt -> {
                 tokenizeExtended(exprStmt.getExpression(), result);
+                result.add(new Token(";", TokenType.SEPARATOR));
             }
             default ->  {
                 String s = viewer.toString(node);

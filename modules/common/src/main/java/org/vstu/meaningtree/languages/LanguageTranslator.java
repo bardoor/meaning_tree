@@ -113,6 +113,10 @@ public abstract class LanguageTranslator {
         return null;
     }
 
+    public abstract String prepareCode(String code);
+
+    public abstract TokenList prepareCode(TokenList list);
+
     /**
      * Внимательно следите за тем, чтобы название параметра не пересекалось с уже предопределенными
      * @return специфические параметры конфигурации языка
