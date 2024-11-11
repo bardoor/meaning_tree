@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.utils.tokens.TokenList;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,16 @@ public class PythonTranslator extends LanguageTranslator {
     @Override
     public LanguageTokenizer getTokenizer() {
         return new PythonTokenizer((PythonLanguage) _language, (PythonViewer) _viewer);
+    }
+
+    @Override
+    public String prepareCode(String code) {
+        return code;
+    }
+
+    @Override
+    public TokenList prepareCode(TokenList list) {
+        return list;
     }
 
     @Override

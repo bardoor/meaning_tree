@@ -20,8 +20,7 @@ public enum AugmentedAssignmentOperator {
         _op = op;
     }
 
-    @Override
-    public String toString(){
+    public String getValue(){
         return _op;
     }
 }

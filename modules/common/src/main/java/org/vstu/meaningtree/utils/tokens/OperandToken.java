@@ -14,6 +14,17 @@ public class OperandToken extends Token {
         return Objects.equals(operandOf, that.operandOf) && operandPos == that.operandPos;
     }
 
+    /***
+     * Сравнивает объекты только по базовому содержимому: типу и значению токена
+     * @param o - другой токен
+     * @return
+     */
+    public boolean baseEquals(OperandToken o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return super.contentEquals(o);
+    }
+
     protected OperandPosition operandPos;
 
     public OperandToken(String value, TokenType type) {

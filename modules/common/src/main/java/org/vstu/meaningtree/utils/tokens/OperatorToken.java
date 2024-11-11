@@ -100,7 +100,7 @@ public class OperatorToken extends OperandToken {
     }
 
     public OperatorToken clone() {
-        OperatorToken copy = new OperatorToken(value, type, precedence, assoc, arity, isStrictOrder, tokenPos);
+        OperatorToken copy = new OperatorToken(value, type, precedence, assoc, arity, isStrictOrder, tokenPos, additionalOpType);
         copy.assignValue(assignedValue);
         copy.setMetadata(operandOf, operandPos);
         return copy;

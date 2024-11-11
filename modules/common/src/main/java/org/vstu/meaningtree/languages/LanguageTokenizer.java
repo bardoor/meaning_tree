@@ -26,11 +26,11 @@ public abstract class LanguageTokenizer {
         parser.getMeaningTree(code);
         TokenList list = new TokenList();
         //TODO: update grammars для языков, так как ошибочный код плохо поддерживается
-        collectTokens(parser.getRootNode(), list);
+        collectTokens(parser.getRootNode(), list, true);
         return list;
     }
 
-    public abstract TokenList tokenize(Node node);
+    public abstract TokenList tokenizeExtended(Node node);
 
     /**
      * Токенизирует узлы из дерева MeaningTree, с возможностью выведения привязанных к узлам значений
@@ -39,7 +39,7 @@ public abstract class LanguageTokenizer {
      * @return
      */
     public TokenList tokenizeExtended(MeaningTree mt) {
-        return tokenize(mt.getRootNode());
+        return tokenizeExtended(mt.getRootNode());
     }
 
     public TokenList tokenizeExtended(String code) {
@@ -66,7 +66,7 @@ public abstract class LanguageTokenizer {
         this.viewer = viewer;
     }
 
-    protected TokenGroup collectTokens(TSNode node, TokenList tokens) {
+    protected TokenGroup collectTokens(TSNode node, TokenList tokens, boolean detectOperator) {
         int start = tokens.size();
         boolean skipChildren = false;
         if (node.getChildCount() == 0 || getStopNodes().contains(node.getType())) {
@@ -76,13 +76,13 @@ public abstract class LanguageTokenizer {
             }
             tokens.add(recognizeToken(node));
         } else if (
-                getOperatorNodes(OperatorArity.BINARY).contains(node.getType())
-                || getOperatorNodes(OperatorArity.TERNARY).contains(node.getType())
+                (getOperatorNodes(OperatorArity.BINARY).contains(node.getType())
+                || getOperatorNodes(OperatorArity.TERNARY).contains(node.getType())) && detectOperator
         ) {
             OperatorToken token = null;
             Map<OperandPosition, TokenGroup> operands = new HashMap<>();
             for (int i = 0; i < node.getChildCount(); i++) {
-                TokenGroup group = collectTokens(node.getChild(i), tokens);
+                TokenGroup group = collectTokens(node.getChild(i), tokens, true);
                 if (node.getFieldNameForChild(i) != null) {
                     if (node.getFieldNameForChild(i).equals(getFieldNameByOperandPos(OperandPosition.LEFT, node.getType()))) {
                         operands.put(OperandPosition.LEFT, group);
@@ -110,8 +110,8 @@ public abstract class LanguageTokenizer {
                 }
             }
             skipChildren = true;
-        } else if (getOperatorNodes(OperatorArity.UNARY).contains(node.getType())) {
-            TokenGroup group = collectTokens(node, tokens);
+        } else if (getOperatorNodes(OperatorArity.UNARY).contains(node.getType()) && detectOperator) {
+            TokenGroup group = collectTokens(node, tokens, false);
             int unaryStart = group.start;
             int unaryStop = group.stop;
             OperatorToken token;
@@ -133,7 +133,7 @@ public abstract class LanguageTokenizer {
             skipChildren = true;
         }
         for (int i = 0; i < node.getChildCount() && !skipChildren; i++) {
-            collectTokens(node.getChild(i), tokens);
+            collectTokens(node.getChild(i), tokens, true);
         }
         int stop = tokens.size();
         return new TokenGroup(start, stop, tokens);

@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.utils.tokens;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 
@@ -27,6 +29,24 @@ public class TokenGroup implements Iterable<Token> {
 
     public List<Token> asSublist() {
         return source.subList(start, stop);
+    }
+
+    public Pair<Integer, Token> getLeftmostToken(String target) {
+        for (int i = start; i < stop; i++) {
+            if (source.get(i).value.equals(target)) {
+                return new ImmutablePair<>(i, source.get(i));
+            }
+        }
+        return null;
+    }
+
+    public Pair<Integer, Token> getRightmostToken(String target) {
+        for (int i = stop; i > start; i--) {
+            if (source.get(i).value.equals(target)) {
+                return new ImmutablePair<>(i, source.get(i));
+            }
+        }
+        return null;
     }
 
     @NotNull

@@ -1,5 +1,8 @@
 package org.vstu.meaningtree.utils.tokens;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,13 +23,29 @@ public class TokenList extends ArrayList<Token> {
         return copy;
     }
 
-    public int findLeftmostToken(String value) {
-        return stream().map((Token t) -> t.value).toList().indexOf(value);
+    public TokenList replace(TokenGroup group, Token value) {
+        TokenList copy = clone();
+        for (int i = group.start; i < group.stop; i++) {
+            copy.set(i, value);
+        }
+        return copy;
     }
 
-    public int findRightmostToken(String value) {
+    public void setAll(int start, List<? extends Token> tokens) {
+        for (int i = start; i < start + tokens.size(); i++) {
+            set(i, tokens.get(i - start));
+        }
+    }
+
+    public Pair<Integer, Token> findLeftmostToken(String value) {
+        int index = stream().map((Token t) -> t.value).toList().indexOf(value);
+        return new ImmutablePair<>(index, get(index));
+    }
+
+    public Pair<Integer, Token> findRightmostToken(String value) {
         int reversedResult = reversed().stream().map((Token t) -> t.value).toList().indexOf(value);
-        return reversedResult >= size() ? -1 : size() - reversedResult;
+        int index = reversedResult >= size() ? -1 : size() - reversedResult;
+        return new ImmutablePair<>(index, get(index));
     }
 
     public void setMetadata(OperatorToken token, OperandPosition pos) {
@@ -53,13 +72,13 @@ public class TokenList extends ArrayList<Token> {
         assert get(tokenIndex) instanceof ComplexOperatorToken;
         ComplexOperatorToken complex = (ComplexOperatorToken) get(tokenIndex);
         int nesting = 0;
-        int start = complex.positionOfToken > complexPos ? complexPos : size() - 1;
-        int stop = complex.positionOfToken > complexPos ? size() - 1 : complexPos;
-        int step = complex.positionOfToken > complexPos ? 1 : -1;
+        int start = complex.positionOfToken <= complexPos ? tokenIndex + 1 : size() - 1;
+        int stop = complex.positionOfToken <= complexPos ? size() - 1 : tokenIndex;
+        int step = complex.positionOfToken <= complexPos ? 1 : -1;
         for (int i = start; i < stop; i += step){
             if (get(i) instanceof ComplexOperatorToken currentComplex) {
-                boolean increaseCondition = currentComplex.positionOfToken == complexPos;
-                boolean decreaseCondition = currentComplex.positionOfToken != complexPos;
+                boolean increaseCondition = currentComplex.positionOfToken != complexPos;
+                boolean decreaseCondition = currentComplex.positionOfToken == complexPos;
 
                 if (currentComplex.isEqualComplex(complex) &&
                         increaseCondition
@@ -91,6 +110,23 @@ public class TokenList extends ArrayList<Token> {
         return (TokenList) super.clone();
     }
 
+    public OperandPosition isTransitiveOperator(int operandPos, int operatorPos) {
+        assert get(operandPos) instanceof OperandToken;
+        assert get(operatorPos) instanceof OperatorToken;
+        OperandToken operand = (OperandToken) get(operandPos);
+        OperandPosition pos = null;
+        boolean flag = false;
+        while (operand.operandOf() != null) {
+            if (operand.operandOf().equals(get(operatorPos))) {
+                flag = true;
+                pos = operand.operandPosition();
+                break;
+            }
+            operand = operand.operandOf();
+        }
+        return flag ? pos : null;
+    }
+
     public Map<OperandPosition, TokenGroup> findOperands(int opIndexToken) {
         OperandToken op = (OperandToken) get(opIndexToken);
         Map<OperandPosition, TokenGroup> result = new HashMap<>();
@@ -99,8 +135,8 @@ public class TokenList extends ArrayList<Token> {
         int stop = -1;
         OperandPosition oldPos = null;
         while (i < size()) {
-            if (get(i) instanceof OperandToken operand && operand.operandOf() != null && operand.operandOf().equals(op)) {
-                OperandPosition pos = operand.operandPosition();
+            OperandPosition pos;
+            if (get(i) instanceof OperandToken operand && (pos = isTransitiveOperator(i, opIndexToken)) != null) {
                 if (oldPos != null && !oldPos.equals(pos)) {
                     start = i;
                 }
@@ -108,8 +144,7 @@ public class TokenList extends ArrayList<Token> {
                     start = i;
                 }
                 stop = i + 1;
-                while (stop < size() && ((OperandToken)get(stop)).operandOf() != null && ((OperandToken)get(stop)).operandOf().equals(op)
-                        && ((OperandToken)get(stop)).operandPosition().equals(pos)) {
+                while (stop < size() && isTransitiveOperator(stop, opIndexToken) == pos) {
                     stop = i + 1;
                     i++;
                 }

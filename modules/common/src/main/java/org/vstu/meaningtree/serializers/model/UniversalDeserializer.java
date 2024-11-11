@@ -3,10 +3,12 @@ package org.vstu.meaningtree.serializers.model;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.BinaryComparison;
@@ -24,6 +26,7 @@ import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
 import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -32,6 +35,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     public Node deserialize(AbstractSerializedNode abstractSerialized) {
         SerializedNode serialized = (SerializedNode) abstractSerialized;
         Node node = switch (serialized.nodeName) {
+            case "ProgramEntryPoint" -> deserializeEntryPoint(serialized);
             case "ParenthesizedExpression" -> deserializeParen(serialized);
             case "TernaryOperator" -> deserializeTernary(serialized);
             case "SimpleIdentifier", "QualifiedIdentifier", "ScopedIdentifier" -> deserializeIdentifier(serialized);
@@ -51,6 +55,12 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    private Node deserializeEntryPoint(SerializedNode serialized) {
+        return new ProgramEntryPoint(new SymbolEnvironment(null), (List<Node>) deserializeList(
+                (SerializedListNode) serialized.fields.get("body"))
+        );
     }
 
     private Node deserializeMemberAccess(SerializedNode serialized) {
@@ -160,6 +170,17 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                      NoSuchMethodException e) {
             }
         }
+
+        if (clazz.getGenericSuperclass().equals(UnaryExpression.class)) {
+            try {
+                return (Node) clazz.getDeclaredConstructor(Expression.class).newInstance(
+                        deserialize(serialized.fields.get("arg"))
+                );
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+            }
+        }
+
         throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
     }
 
