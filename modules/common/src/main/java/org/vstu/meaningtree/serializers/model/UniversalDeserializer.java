@@ -156,7 +156,10 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     private Node deserializeOther(SerializedNode serialized) {
         Class clazz = null;
         try {
-            clazz = Class.forName(serialized.nodeName);
+            clazz = Class.forName(
+                    serialized.nodeName.startsWith("org.vstu.meaningtree.nodes.") ? serialized.nodeName :
+                    "org.vstu.meaningtree.nodes.".concat(serialized.nodeName)
+            );
         } catch (ClassNotFoundException e) {
             throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
         }

@@ -61,7 +61,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     }
 
     public SerializedNode serialize(BinaryExpression binOp) {
-        return new SerializedNode(binOp.getNodeUniqueName(),
+        return new SerializedNode(binOp.getNodeUniqueName().replace("org.vstu.meaningtree.nodes.", ""),
                 new HashMap<>() {{
                     put("left", serialize(binOp.getLeft()));
                     put("right", serialize(binOp.getRight()));
@@ -86,7 +86,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     }
 
     public SerializedNode serialize(UnaryExpression unaryOp) {
-        return new SerializedNode(unaryOp.getNodeUniqueName(),
+        return new SerializedNode(unaryOp.getNodeUniqueName().replace("org.vstu.meaningtree.nodes.", ""),
                 new HashMap<>() {{
                     put("arg", serialize(unaryOp.getArgument()));
                 }}
