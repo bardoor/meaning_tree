@@ -10,6 +10,8 @@ import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
@@ -223,6 +225,23 @@ public class PythonTokenizer extends LanguageTokenizer {
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
+            case SimpleIdentifier ident -> {
+                result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
+            }
+            case QualifiedIdentifier ident -> {
+                tokenizeExtended(ident.getScope());
+                result.add(getOperatorByTokenName("."));
+                tokenizeExtended(ident.getMember());
+            }
+            case ScopedIdentifier ident -> {
+                for (SimpleIdentifier simple : ident.getScopeResolution()) {
+                    tokenizeExtended(simple);
+                    result.add(getOperatorByTokenName("."));
+                }
+                if (!ident.getScopeResolution().isEmpty()) {
+                    result.removeLast();
+                }
+            }
             case ParenthesizedExpression paren -> {
                 result.add(new Token("(", TokenType.OPENING_BRACE));
                 tokenizeExtended(paren.getExpression(), result);
