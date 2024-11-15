@@ -81,25 +81,27 @@ public class CppTokenizer extends LanguageTokenizer {
         put("<<", new OperatorToken("<<", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put(">>", new OperatorToken(">>", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("<", new OperatorToken("<", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("<=", new OperatorToken("<=", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put(">", new OperatorToken(">", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put(">=", new OperatorToken(">=", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<=>", new OperatorToken("<=>", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("==", new OperatorToken("==", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("!=", new OperatorToken("!=", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<", new OperatorToken("<", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<=", new OperatorToken("<=", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(">", new OperatorToken(">", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(">=", new OperatorToken(">=", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("&", new OperatorToken("&", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("==", new OperatorToken("==", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("!=", new OperatorToken("!=", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("^", new OperatorToken("^", TokenType.OPERATOR, 11, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("&", new OperatorToken("&", TokenType.OPERATOR, 11, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("|", new OperatorToken("|", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("^", new OperatorToken("^", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));
+        put("|", new OperatorToken("|", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("||", new OperatorToken("||", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));
+        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));
 
-        List<OperatorToken> ternary = OperatorToken.makeComplex(14, OperatorArity.TERNARY,
+        put("||", new OperatorToken("||", TokenType.OPERATOR, 15, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));
+
+        List<OperatorToken> ternary = OperatorToken.makeComplex(16, OperatorArity.TERNARY,
                 OperatorAssociativity.RIGHT, true, new String[] {"?", ":"},
                 new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
         );
