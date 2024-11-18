@@ -47,6 +47,6 @@ public abstract class PlainCollectionLiteral extends Literal {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_content);
+        return Objects.hash(super.hashCode(), _content);
     }
 }

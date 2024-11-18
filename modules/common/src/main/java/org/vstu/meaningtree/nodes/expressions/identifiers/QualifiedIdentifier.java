@@ -36,6 +36,6 @@ public class QualifiedIdentifier extends Identifier {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_scope, _member);
+        return Objects.hash(super.hashCode(), _scope, _member);
     }
 }

@@ -15,19 +15,6 @@ abstract public class BinaryExpression extends Expression {
         _right = right;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BinaryExpression that = (BinaryExpression) o;
-        return Objects.equals(_left, that._left) && Objects.equals(_right, that._right);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(_left, _right);
-    }
-
     public Expression getLeft() {
         return _left;
     }
@@ -58,5 +45,18 @@ abstract public class BinaryExpression extends Expression {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new MeaningTreeException(e);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        BinaryExpression that = (BinaryExpression) o;
+        return Objects.equals(_left, that._left) && Objects.equals(_right, that._right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _left, _right);
     }
 }

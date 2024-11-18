@@ -26,6 +26,6 @@ public abstract class NewExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_type);
+        return Objects.hash(super.hashCode(), _type);
     }
 }

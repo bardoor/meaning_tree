@@ -21,7 +21,7 @@ public class BoolLiteral extends Literal {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_state);
+        return Objects.hash(super.hashCode(), _state);
     }
 
     public boolean getValue() {

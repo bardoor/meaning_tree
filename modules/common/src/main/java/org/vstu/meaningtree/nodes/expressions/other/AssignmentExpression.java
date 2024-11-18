@@ -63,6 +63,6 @@ public class AssignmentExpression extends Expression implements HasInitializatio
 
     @Override
     public int hashCode() {
-        return Objects.hash(_lvalue, _rvalue, _op);
+        return Objects.hash(super.hashCode(), _lvalue, _rvalue, _op);
     }
 }

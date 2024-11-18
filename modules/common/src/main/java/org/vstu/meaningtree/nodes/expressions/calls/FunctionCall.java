@@ -48,14 +48,14 @@ public class FunctionCall extends Expression {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         FunctionCall that = (FunctionCall) o;
         return Objects.equals(_function, that._function) && Objects.equals(_arguments, that._arguments);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_function, _arguments);
+        return Objects.hash(super.hashCode(), _function, _arguments);
     }
 }

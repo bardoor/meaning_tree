@@ -32,6 +32,6 @@ public class CastTypeExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_castType, _value);
+        return Objects.hash(super.hashCode(), _castType, _value);
     }
 }

@@ -42,6 +42,6 @@ public class TernaryOperator extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_condition, _thenExpr, _elseExpr);
+        return Objects.hash(super.hashCode(), _condition, _thenExpr, _elseExpr);
     }
 }

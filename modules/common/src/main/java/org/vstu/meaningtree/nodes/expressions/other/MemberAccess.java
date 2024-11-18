@@ -4,7 +4,10 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class MemberAccess extends Expression {
     protected final Expression _expr;
@@ -63,6 +66,6 @@ public class MemberAccess extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_expr, _member);
+        return Objects.hash(super.hashCode(), _expr, _member);
     }
 }

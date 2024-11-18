@@ -86,4 +86,17 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
     public SymbolEnvironment getEnv() {
         return _env;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ProgramEntryPoint that = (ProgramEntryPoint) o;
+        return Objects.equals(_body, that._body) && Objects.equals(_entryPointNode, that._entryPointNode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _body, _entryPointNode);
+    }
 }

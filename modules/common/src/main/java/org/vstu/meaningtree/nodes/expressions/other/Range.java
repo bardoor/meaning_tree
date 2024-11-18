@@ -155,6 +155,6 @@ public class Range extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_start, _stop, _step);
+        return Objects.hash(super.hashCode(), _start, _stop, _step);
     }
 }

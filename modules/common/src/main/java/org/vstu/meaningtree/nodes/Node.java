@@ -7,9 +7,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 abstract public class Node implements Serializable {
     protected static AtomicInteger _id_generator = new AtomicInteger();
-    protected Integer _id = _id_generator.incrementAndGet();
+    protected int _id = _id_generator.incrementAndGet();
 
     protected Object assignedValueTag = null;
+
+    /**
+     * Проверяет значение узлов по значению
+     * @param o другой объект
+     * @return результат эквивалентности
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return Objects.equals(assignedValueTag, node.assignedValueTag);
+    }
+
+    /**
+     * Уникальный хэш-код узла, исходя из его содержимого и типа
+     * @return хэш-код
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(assignedValueTag, getClass().getSimpleName().hashCode());
+    }
 
     // TODO: в будущем нужно сделать возможность пройтись итератором по дереву и получить такую информацию
     /**
@@ -32,7 +53,7 @@ abstract public class Node implements Serializable {
         return builder.toString();
     }
 
-    public Integer getId() {
+    public int getId() {
         return _id;
     }
 

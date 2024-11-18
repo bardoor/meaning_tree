@@ -30,6 +30,6 @@ public class ArrayInitializer extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_values);
+        return Objects.hash(super.hashCode(), _values);
     }
 }

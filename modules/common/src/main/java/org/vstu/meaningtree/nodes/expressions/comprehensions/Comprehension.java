@@ -41,7 +41,7 @@ public abstract class Comprehension extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_item, _condition);
+        return Objects.hash(super.hashCode(), _item, _condition);
     }
 
     @NotNull

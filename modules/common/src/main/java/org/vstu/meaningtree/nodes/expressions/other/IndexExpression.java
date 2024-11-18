@@ -37,6 +37,6 @@ public class IndexExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_expr, _index);
+        return Objects.hash(super.hashCode(), _expr, _index);
     }
 }

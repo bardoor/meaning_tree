@@ -12,6 +12,7 @@ import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 public class VariableDeclaration extends Declaration implements HasInitialization, Iterable<VariableDeclarator> {
     protected final Type _type;
@@ -57,5 +58,18 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
     @Override
     public Iterator<VariableDeclarator> iterator() {
         return variableDeclaratorList.iterator();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        VariableDeclaration that = (VariableDeclaration) o;
+        return Objects.equals(_type, that._type) && Objects.equals(variableDeclaratorList, that.variableDeclaratorList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _type, variableDeclaratorList);
     }
 }

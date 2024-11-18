@@ -6,6 +6,8 @@ import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 
+import java.util.Objects;
+
 public class AssignmentStatement extends Statement implements HasInitialization {
     private final Expression _lvalue;
     private final Expression _rvalue;
@@ -50,5 +52,18 @@ public class AssignmentStatement extends Statement implements HasInitialization 
         builder.append(String.format("%s -- %s;\n", _id, _rvalue.getId()));
 
         return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AssignmentStatement that = (AssignmentStatement) o;
+        return Objects.equals(_lvalue, that._lvalue) && Objects.equals(_rvalue, that._rvalue) && _op == that._op;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _lvalue, _rvalue, _op);
     }
 }

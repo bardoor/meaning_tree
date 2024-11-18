@@ -35,6 +35,6 @@ public class ScopedIdentifier extends Identifier {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_scopeResolutionList);
+        return Objects.hash(super.hashCode(), _scopeResolutionList);
     }
 }

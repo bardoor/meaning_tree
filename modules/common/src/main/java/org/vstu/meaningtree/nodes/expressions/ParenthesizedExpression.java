@@ -30,6 +30,6 @@ public class ParenthesizedExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_expr);
+        return Objects.hash(super.hashCode(), _expr);
     }
 }
