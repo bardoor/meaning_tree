@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.nodes.types.builtin;
 
+import java.util.Objects;
+
 public class IntType extends NumericType {
     public final boolean isUnsigned;
     public final int size;
@@ -40,5 +42,18 @@ public class IntType extends NumericType {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        IntType intType = (IntType) o;
+        return isUnsigned == intType.isUnsigned && size == intType.size;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), isUnsigned, size);
     }
 }

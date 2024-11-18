@@ -63,6 +63,6 @@ public class Shape extends Node {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_dimensionCount, _dimensions);
+        return Objects.hash(super.hashCode(), _dimensionCount, _dimensions);
     }
 }

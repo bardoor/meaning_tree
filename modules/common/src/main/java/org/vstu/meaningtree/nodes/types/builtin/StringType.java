@@ -2,6 +2,8 @@ package org.vstu.meaningtree.nodes.types.builtin;
 
 import org.vstu.meaningtree.nodes.Type;
 
+import java.util.Objects;
+
 public class StringType extends Type {
     public final int charSize;
 
@@ -24,5 +26,18 @@ public class StringType extends Type {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        StringType that = (StringType) o;
+        return charSize == that.charSize;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), charSize);
     }
 }

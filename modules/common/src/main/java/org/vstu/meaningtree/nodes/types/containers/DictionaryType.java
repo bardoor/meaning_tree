@@ -34,8 +34,8 @@ public class DictionaryType extends Type implements Generic {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         DictionaryType that = (DictionaryType) o;
         return Objects.equals(_keyType, that._keyType) && Objects.equals(_valueType, that._valueType);
     }
