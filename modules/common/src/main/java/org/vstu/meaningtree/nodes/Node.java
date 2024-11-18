@@ -57,6 +57,10 @@ abstract public class Node implements Serializable {
         return _id;
     }
 
+    public boolean uniquenessEquals(Node other) {
+        return this.getId() == other.getId();
+    }
+
     // TODO: Функция добавлена для необходимости получить всех детей узла без разбора.
     // По факту в будущем нужен итератор, который будет ленивым и выдавать больше информации
     // например через NodeInfo. Пока времени это реализовать нет
