@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions.literals;
 
+import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.Literal;
 
@@ -27,6 +28,7 @@ public class InterpolatedStringLiteral extends Literal implements Iterable<Expre
         return _type;
     }
 
+    @NotNull
     @Override
     public Iterator<Expression> iterator() {
         return _components.iterator();
