@@ -5,7 +5,7 @@ import org.vstu.meaningtree.nodes.Expression;
 import java.util.Objects;
 
 abstract public class UnaryExpression extends Expression {
-    private final Expression _argument;
+    private Expression _argument;
 
     public UnaryExpression(Expression argument) {
         _argument = argument;
@@ -33,5 +33,12 @@ abstract public class UnaryExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _argument);
+    }
+
+    @Override
+    public UnaryExpression clone() {
+        UnaryExpression obj = (UnaryExpression) super.clone();
+        obj._argument = _argument.clone();
+        return obj;
     }
 }

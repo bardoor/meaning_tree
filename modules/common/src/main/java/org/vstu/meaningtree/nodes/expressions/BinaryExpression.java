@@ -7,8 +7,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 abstract public class BinaryExpression extends Expression {
-    protected final Expression _left;
-    protected final Expression _right;
+    protected Expression _left;
+    protected Expression _right;
 
     public BinaryExpression(Expression left, Expression right) {
         _left = left;
@@ -58,5 +58,13 @@ abstract public class BinaryExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _left, _right);
+    }
+
+    @Override
+    public BinaryExpression clone() {
+        BinaryExpression obj = (BinaryExpression) super.clone();
+        obj._left = _left.clone();
+        obj._right = _right.clone();
+        return obj;
     }
 }

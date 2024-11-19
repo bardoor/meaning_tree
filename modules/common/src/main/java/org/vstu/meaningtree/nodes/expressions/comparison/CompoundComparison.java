@@ -4,6 +4,7 @@ import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CompoundComparison extends Expression {
     private final List<BinaryComparison> _comparisons;
@@ -40,5 +41,18 @@ public class CompoundComparison extends Expression {
 
     public List<BinaryComparison> getComparisons() {
         return new ArrayList<>(_comparisons);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CompoundComparison that = (CompoundComparison) o;
+        return Objects.equals(_comparisons, that._comparisons);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _comparisons);
     }
 }

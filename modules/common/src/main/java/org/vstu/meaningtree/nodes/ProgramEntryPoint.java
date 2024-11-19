@@ -5,6 +5,7 @@ import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.interfaces.HasSymbolScope;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,7 +15,7 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
      * Однако _entryPointNode может отсутствовать, тогда точка входа - _body
      * Viewer должен сам подстроиться под эту ситуацию и адаптировать под особенности своего языка
      */
-    private final List<Node> _body;
+    private List<Node> _body;
     @Nullable
     private final SymbolEnvironment _env;
 
@@ -22,13 +23,13 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
      * Может быть функцией, методом главного класса, либо просто составным оператором (например, как в Python)
      */
     @Nullable
-    private final Node _entryPointNode;
+    private Node _entryPointNode;
 
     /**
      * Ссылка на главный класс. Он не исключается из body, нужен для удобства разработчиков поддержки для языков
      */
     @Nullable
-    private final ClassDefinition _mainClass;
+    private ClassDefinition _mainClass;
 
     public ProgramEntryPoint(@Nullable SymbolEnvironment env, List<Node> body, ClassDefinition mainClass) {
         this(env, body, mainClass, null);
@@ -98,5 +99,19 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _body, _entryPointNode);
+    }
+
+    @Override
+    public ProgramEntryPoint clone() {
+        ProgramEntryPoint obj = (ProgramEntryPoint) super.clone();
+        obj._body = new ArrayList<>(_body.stream().map(Node::clone).toList());
+        for (Node node : obj._body) {
+            if (_mainClass != null && node.getId() == obj._mainClass.getId()) {
+                obj._mainClass = (ClassDefinition) node;
+            } else if (_entryPointNode != null && node.getId() == _entryPointNode.getId()) {
+                obj._entryPointNode = node;
+            }
+        }
+        return obj;
     }
 }

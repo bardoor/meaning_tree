@@ -8,13 +8,13 @@ import java.util.Objects;
 
 public class Range extends Expression {
     @Nullable
-    private final Expression _start;
+    private Expression _start;
 
     @Nullable
-    private final Expression _stop;
+    private Expression _stop;
 
     @Nullable
-    private final Expression _step;
+    private Expression _step;
 
     private final boolean _isExcludingStart;
     private final boolean _isExcludingEnd;
@@ -156,5 +156,14 @@ public class Range extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _start, _stop, _step);
+    }
+
+    @Override
+    public Range clone() {
+        Range obj = (Range) super.clone();
+        if (_start != null) obj._start = _start.clone();
+        if (_stop != null) obj._stop = _stop.clone();
+        if (_step != null) obj._step = _step.clone();
+        return obj;
     }
 }

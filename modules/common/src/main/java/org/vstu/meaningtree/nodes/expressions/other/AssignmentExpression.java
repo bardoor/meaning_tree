@@ -8,8 +8,8 @@ import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import java.util.Objects;
 
 public class AssignmentExpression extends Expression implements HasInitialization {
-    private final Expression _lvalue;
-    private final Expression _rvalue;
+    private Expression _lvalue;
+    private Expression _rvalue;
     private final AugmentedAssignmentOperator _op;
 
     public AssignmentExpression(Expression id, Expression value, AugmentedAssignmentOperator op) {
@@ -64,5 +64,13 @@ public class AssignmentExpression extends Expression implements HasInitializatio
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _lvalue, _rvalue, _op);
+    }
+
+    @Override
+    public AssignmentExpression clone() {
+        AssignmentExpression obj = (AssignmentExpression) super.clone();
+        obj._lvalue = _lvalue.clone();
+        obj._rvalue = _rvalue.clone();
+        return obj;
     }
 }

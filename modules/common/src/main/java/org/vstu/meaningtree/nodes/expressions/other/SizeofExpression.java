@@ -27,4 +27,11 @@ public class SizeofExpression extends Expression {
     public int hashCode() {
         return Objects.hash(super.hashCode(), internalValue);
     }
+
+    @Override
+    public SizeofExpression clone() {
+        SizeofExpression obj = (SizeofExpression) super.clone();
+        obj.internalValue = internalValue.clone();
+        return obj;
+    }
 }

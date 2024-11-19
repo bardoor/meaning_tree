@@ -6,7 +6,7 @@ import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import java.util.Objects;
 
 public class DeleteExpression extends Expression {
-    private final Expression _target;
+    private Expression _target;
     private final boolean _isCollection;
 
     public DeleteExpression(Expression target, boolean isCollection) {
@@ -41,5 +41,12 @@ public class DeleteExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _target, _isCollection);
+    }
+
+    @Override
+    public DeleteExpression clone() {
+        DeleteExpression obj = (DeleteExpression) super.clone();
+        obj._target = _target.clone();
+        return obj;
     }
 }

@@ -3,12 +3,13 @@ package org.vstu.meaningtree.nodes.expressions.calls;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class ConstructorCall extends Expression {
-    protected final List<Expression> _arguments;
-    protected final Type constructorOwner;
+    protected List<Expression> _arguments;
+    protected Type constructorOwner;
 
     public ConstructorCall(Type constructorOwner, List<Expression> arguments) {
         _arguments = arguments;
@@ -38,5 +39,13 @@ public class ConstructorCall extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _arguments, constructorOwner);
+    }
+
+    @Override
+    public ConstructorCall clone() {
+        ConstructorCall obj = (ConstructorCall) super.clone();
+        obj._arguments = new ArrayList<>(_arguments.stream().map(Expression::clone).toList());
+        obj.constructorOwner = constructorOwner.clone();
+        return obj;
     }
 }

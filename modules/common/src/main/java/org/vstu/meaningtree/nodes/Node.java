@@ -5,7 +5,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-abstract public class Node implements Serializable {
+abstract public class Node implements Serializable, Cloneable {
     protected static AtomicInteger _id_generator = new AtomicInteger();
     protected int _id = _id_generator.incrementAndGet();
 
@@ -30,6 +30,17 @@ abstract public class Node implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(assignedValueTag, getClass().getSimpleName().hashCode());
+    }
+
+    @Override
+    public Node clone() {
+        try {
+            Node clone = (Node) super.clone();
+            clone._id = getId();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
     // TODO: в будущем нужно сделать возможность пройтись итератором по дереву и получить такую информацию

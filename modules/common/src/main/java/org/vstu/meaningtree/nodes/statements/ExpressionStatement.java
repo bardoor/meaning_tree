@@ -6,7 +6,7 @@ import org.vstu.meaningtree.nodes.Statement;
 import java.util.Objects;
 
 public class ExpressionStatement extends Statement {
-    protected final Expression _expr;
+    protected Expression _expr;
 
     public ExpressionStatement(Expression expr) {
         _expr = expr;
@@ -34,5 +34,12 @@ public class ExpressionStatement extends Statement {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _expr);
+    }
+
+    @Override
+    public ExpressionStatement clone() {
+        ExpressionStatement obj = (ExpressionStatement) super.clone();
+        obj._expr = _expr.clone();
+        return obj;
     }
 }

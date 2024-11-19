@@ -12,7 +12,7 @@ public class StringLiteral extends Literal {
         // т.е. например \n представляется в памяти как \\n, а не как символ новой строки
     }
 
-    protected final String value;
+    protected String value;
     protected final Type stringType;
     protected int charSize;
 
@@ -74,4 +74,5 @@ public class StringLiteral extends Literal {
     public int hashCode() {
         return Objects.hashCode(value);
     }
+
 }

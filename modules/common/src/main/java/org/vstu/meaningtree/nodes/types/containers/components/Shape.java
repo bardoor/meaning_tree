@@ -12,7 +12,7 @@ public class Shape extends Node {
     // Количество измерений
     private final int _dimensionCount;
     // Размер каждого измерения
-    private final List<Expression> _dimensions;
+    private List<Expression> _dimensions;
 
     public Shape(int dimensionCount) {
         _dimensionCount = dimensionCount;
@@ -64,5 +64,12 @@ public class Shape extends Node {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _dimensionCount, _dimensions);
+    }
+
+    @Override
+    public Shape clone() {
+        Shape obj = (Shape) super.clone();
+        obj._dimensions = new ArrayList<>(_dimensions.stream().map(Expression::clone).toList());
+        return obj;
     }
 }

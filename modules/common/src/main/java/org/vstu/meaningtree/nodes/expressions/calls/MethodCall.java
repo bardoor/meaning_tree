@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class MethodCall extends FunctionCall {
-    private final Expression _object;
+    private Expression _object;
 
     public MethodCall(Expression object, Identifier methodName, Expression... arguments) {
         super(methodName, arguments);
@@ -34,5 +34,12 @@ public class MethodCall extends FunctionCall {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _object);
+    }
+
+    @Override
+    public MethodCall clone() {
+        MethodCall obj = (MethodCall) super.clone();
+        obj._object = _object.clone();
+        return obj;
     }
 }

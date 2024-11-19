@@ -5,9 +5,9 @@ import org.vstu.meaningtree.nodes.Expression;
 import java.util.Objects;
 
 public class IndexExpression extends Expression {
-    private final Expression _expr;
+    private Expression _expr;
     // index может содержать ExpressionSequence
-    private final Expression _index;
+    private Expression _index;
 
     public IndexExpression(Expression expr, Expression index) {
         _expr = expr;
@@ -38,5 +38,13 @@ public class IndexExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _expr, _index);
+    }
+
+    @Override
+    public IndexExpression clone() {
+        IndexExpression obj = (IndexExpression) super.clone();
+        obj._expr = _expr.clone();
+        obj._index = _index.clone();
+        return obj;
     }
 }

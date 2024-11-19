@@ -37,4 +37,9 @@ public class SimpleIdentifier extends Identifier {
     public int hashCode() {
         return Objects.hash(super.hashCode(), name);
     }
+
+    @Override
+    public SimpleIdentifier clone() {
+        return (SimpleIdentifier) super.clone();
+    }
 }

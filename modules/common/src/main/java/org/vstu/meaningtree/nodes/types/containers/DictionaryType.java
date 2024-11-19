@@ -6,8 +6,8 @@ import org.vstu.meaningtree.nodes.interfaces.Generic;
 import java.util.Objects;
 
 public class DictionaryType extends Type implements Generic {
-    private final Type _keyType;
-    private final Type _valueType;
+    private Type _keyType;
+    private Type _valueType;
 
     public DictionaryType(Type keyType, Type valueType) {
         _keyType = keyType;
@@ -43,5 +43,13 @@ public class DictionaryType extends Type implements Generic {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _keyType, _valueType);
+    }
+
+    @Override
+    public DictionaryType clone() {
+        DictionaryType obj = (DictionaryType) super.clone();
+        obj._keyType = _keyType.clone();
+        obj._valueType = _valueType.clone();
+        return obj;
     }
 }

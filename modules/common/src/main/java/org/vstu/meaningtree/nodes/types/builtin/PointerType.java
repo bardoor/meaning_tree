@@ -5,7 +5,7 @@ import org.vstu.meaningtree.nodes.Type;
 import java.util.Objects;
 
 public class PointerType extends Type {
-    private final Type _targetType;
+    private Type _targetType;
 
     public PointerType(Type target) {
         _targetType = target;
@@ -26,5 +26,12 @@ public class PointerType extends Type {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _targetType);
+    }
+
+    @Override
+    public PointerType clone() {
+        PointerType obj = (PointerType) super.clone();
+        obj._targetType = _targetType.clone();
+        return obj;
     }
 }

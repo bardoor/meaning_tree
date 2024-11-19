@@ -6,7 +6,7 @@ import org.vstu.meaningtree.nodes.interfaces.Generic;
 import java.util.Objects;
 
 public class PlainCollectionType extends Type implements Generic {
-    private final Type _itemType;
+    private Type _itemType;
 
     public PlainCollectionType(Type itemType) {
         _itemType = itemType;
@@ -37,5 +37,12 @@ public class PlainCollectionType extends Type implements Generic {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _itemType);
+    }
+
+    @Override
+    public PlainCollectionType clone() {
+        PlainCollectionType obj = (PlainCollectionType) super.clone();
+        obj._itemType = _itemType.clone();
+        return obj;
     }
 }

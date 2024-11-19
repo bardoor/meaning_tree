@@ -8,20 +8,37 @@ import java.util.Objects;
 
 public abstract class Comprehension extends Expression {
     @NotNull
-    protected final ComprehensionItem _item;
+    protected ComprehensionItem _item;
 
     @Nullable
-    protected final Expression _condition;
+    protected Expression _condition;
 
     protected Comprehension(@NotNull ComprehensionItem item, @Nullable Expression condition) {
         _item = item;
         _condition = condition;
     }
 
-    public interface ComprehensionItem {}
-    public record KeyValuePair(Expression key, Expression value) implements ComprehensionItem {};
-    public record ListItem(Expression value) implements ComprehensionItem {};
-    public record SetItem(Expression value) implements ComprehensionItem {};
+    public interface ComprehensionItem extends Cloneable {
+        ComprehensionItem clone();
+    }
+
+    public record KeyValuePair(Expression key, Expression value) implements ComprehensionItem {
+        public KeyValuePair clone() {
+            return new KeyValuePair(key.clone(), value.clone());
+        }
+    };
+
+    public record ListItem(Expression value) implements ComprehensionItem {
+        public ListItem clone() {
+            return new ListItem(value.clone());
+        }
+    };
+
+    public record SetItem(Expression value) implements ComprehensionItem {
+        public SetItem clone() {
+            return new SetItem(value.clone());
+        }
+    };
 
     public ComprehensionItem getItem() {
         return _item;
@@ -47,5 +64,13 @@ public abstract class Comprehension extends Expression {
     @NotNull
     public Expression getCondition() {
         return Objects.requireNonNull(_condition, "Comprehension does not have condition");
+    }
+
+    @Override
+    public Comprehension clone() {
+        Comprehension obj = (Comprehension) super.clone();
+        obj._condition = _condition.clone();
+        obj._item = _item.clone();
+        return obj;
     }
 }
