@@ -3,11 +3,12 @@ package org.vstu.meaningtree.nodes.expressions.newexpr;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class ObjectNewExpression extends NewExpression {
-    private final List<Expression> _constructorArguments;
+    private List<Expression> _constructorArguments;
 
     public ObjectNewExpression(Type type, Expression... constructorArguments) {
         this(type, List.of(constructorArguments));
@@ -41,5 +42,12 @@ public class ObjectNewExpression extends NewExpression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _constructorArguments);
+    }
+
+    @Override
+    public ObjectNewExpression clone() {
+        ObjectNewExpression obj = (ObjectNewExpression) super.clone();
+        obj._constructorArguments = new ArrayList<>(_constructorArguments.stream().map(Expression::clone).toList());
+        return obj;
     }
 }

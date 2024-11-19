@@ -5,9 +5,9 @@ import org.vstu.meaningtree.nodes.Expression;
 import java.util.Objects;
 
 public class TernaryOperator extends Expression {
-    private final Expression _condition;
-    private final Expression _thenExpr;
-    private final Expression _elseExpr;
+    private Expression _condition;
+    private Expression _thenExpr;
+    private Expression _elseExpr;
 
     public TernaryOperator(Expression condition, Expression thenExpr, Expression elseExpr) {
         _condition = condition;
@@ -42,6 +42,15 @@ public class TernaryOperator extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_condition, _thenExpr, _elseExpr);
+        return Objects.hash(super.hashCode(), _condition, _thenExpr, _elseExpr);
+    }
+
+    @Override
+    public TernaryOperator clone() {
+        TernaryOperator obj = (TernaryOperator) super.clone();
+        obj._condition = _condition.clone();
+        obj._elseExpr = _elseExpr.clone();
+        obj._thenExpr = _thenExpr.clone();
+        return obj;
     }
 }

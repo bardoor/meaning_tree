@@ -2,8 +2,8 @@ package org.vstu.meaningtree.nodes.declarations.components;
 
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Declaration;
-import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
 import java.util.Objects;
@@ -47,5 +47,18 @@ public class DeclarationArgument extends Declaration {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeclarationArgument that = (DeclarationArgument) o;
+        return _isListUnpacking == that._isListUnpacking && Objects.equals(_type, that._type) && Objects.equals(_name, that._name) && Objects.equals(_initial, that._initial);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _type, _isListUnpacking, _name, _initial);
     }
 }

@@ -4,11 +4,14 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class MemberAccess extends Expression {
-    protected final Expression _expr;
-    protected final SimpleIdentifier _member;
+    protected Expression _expr;
+    protected SimpleIdentifier _member;
 
     public MemberAccess(Expression expr, SimpleIdentifier member) {
         this._expr = expr;
@@ -63,6 +66,14 @@ public class MemberAccess extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_expr, _member);
+        return Objects.hash(super.hashCode(), _expr, _member);
+    }
+
+    @Override
+    public MemberAccess clone() {
+        MemberAccess obj = (MemberAccess) super.clone();
+        obj._expr = _expr.clone();
+        obj._member = _member.clone();
+        return obj;
     }
 }

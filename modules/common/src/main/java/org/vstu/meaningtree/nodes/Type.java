@@ -25,4 +25,9 @@ public abstract class Type extends Identifier {
     public int hashCode() {
         return Objects.hash(this.getClass().getName().hashCode(), "meaning_tree_type_node");
     }
+
+    @Override
+    public Type clone() {
+        return (Type) super.clone();
+    }
 }

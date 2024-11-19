@@ -37,6 +37,19 @@ public class PrintValues extends PrintCommand {
         return valuesCount() > 0;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        PrintValues that = (PrintValues) o;
+        return Objects.equals(separator, that.separator) && Objects.equals(end, that.end);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), separator, end);
+    }
+
     public static class PrintValuesBuilder {
         @Nullable
         private StringLiteral _separator = null;

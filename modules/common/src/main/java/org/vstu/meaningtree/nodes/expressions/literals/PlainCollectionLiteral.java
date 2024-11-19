@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 
 public abstract class PlainCollectionLiteral extends Literal {
-    private final List<Expression> _content;
+    private List<Expression> _content;
     private @Nullable Type typeHint;
 
     public PlainCollectionLiteral(Expression ... content) {
@@ -47,6 +47,14 @@ public abstract class PlainCollectionLiteral extends Literal {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_content);
+        return Objects.hash(super.hashCode(), _content);
+    }
+
+    @Override
+    public PlainCollectionLiteral clone() {
+        PlainCollectionLiteral obj = (PlainCollectionLiteral) super.clone();
+        if (typeHint != null) obj.typeHint = typeHint.clone();
+        obj._content = new ArrayList<>(_content.stream().map(Expression::clone).toList());
+        return obj;
     }
 }

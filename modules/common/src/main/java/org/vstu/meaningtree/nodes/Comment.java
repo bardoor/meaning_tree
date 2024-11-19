@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes;
 
-import org.apache.commons.text.StringEscapeUtils;
+import java.util.Objects;
 
 public class Comment extends Node {
     protected final String _content;
@@ -25,5 +25,18 @@ public class Comment extends Node {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        Comment comment = (Comment) o;
+        return Objects.equals(_content, comment._content);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _content);
     }
 }

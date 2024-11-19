@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.interfaces.HasSymbolScope;
@@ -33,6 +34,7 @@ public class CompoundStatement extends Statement implements Iterable<Node>, HasS
         return builder.toString();
     }
 
+    @NotNull
     @Override
     public Iterator<Node> iterator() {
         return _nodes.iterator();

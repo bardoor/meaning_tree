@@ -8,20 +8,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class ArrayType extends PlainCollectionType {
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ArrayType arrayType = (ArrayType) o;
-        return Objects.equals(_shape, arrayType._shape);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), _shape);
-    }
-
-    private final Shape _shape;
+    private Shape _shape;
 
     public ArrayType(Type itemType, int dimensionCount) {
         super(itemType);
@@ -53,5 +41,25 @@ public class ArrayType extends PlainCollectionType {
     @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ArrayType arrayType = (ArrayType) o;
+        return Objects.equals(_shape, arrayType._shape);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _shape);
+    }
+
+    @Override
+    public ArrayType clone() {
+        ArrayType obj = (ArrayType) super.clone();
+        obj._shape = _shape.clone();
+        return obj;
     }
 }

@@ -5,6 +5,8 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
+import java.util.Objects;
+
 public class VariableDeclarator extends Node {
     private final SimpleIdentifier _identifier;
 
@@ -31,5 +33,18 @@ public class VariableDeclarator extends Node {
 
     public SimpleIdentifier getIdentifier() {
         return _identifier;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        VariableDeclarator that = (VariableDeclarator) o;
+        return Objects.equals(_identifier, that._identifier) && Objects.equals(_rvalue, that._rvalue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _identifier, _rvalue);
     }
 }

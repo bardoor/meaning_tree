@@ -20,10 +20,10 @@ import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.expressions.other.ExpressionSequence;
 import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
 import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
 import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
-import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
@@ -156,7 +156,10 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     private Node deserializeOther(SerializedNode serialized) {
         Class clazz = null;
         try {
-            clazz = Class.forName(serialized.nodeName);
+            clazz = Class.forName(
+                    serialized.nodeName.startsWith("org.vstu.meaningtree.nodes.") ? serialized.nodeName :
+                    "org.vstu.meaningtree.nodes.".concat(serialized.nodeName)
+            );
         } catch (ClassNotFoundException e) {
             throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
         }

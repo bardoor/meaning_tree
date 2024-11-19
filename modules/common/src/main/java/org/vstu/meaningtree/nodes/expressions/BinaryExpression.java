@@ -7,25 +7,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 abstract public class BinaryExpression extends Expression {
-    protected final Expression _left;
-    protected final Expression _right;
+    protected Expression _left;
+    protected Expression _right;
 
     public BinaryExpression(Expression left, Expression right) {
         _left = left;
         _right = right;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BinaryExpression that = (BinaryExpression) o;
-        return Objects.equals(_left, that._left) && Objects.equals(_right, that._right);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(_left, _right);
     }
 
     public Expression getLeft() {
@@ -58,5 +45,26 @@ abstract public class BinaryExpression extends Expression {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new MeaningTreeException(e);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        BinaryExpression that = (BinaryExpression) o;
+        return Objects.equals(_left, that._left) && Objects.equals(_right, that._right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _left, _right);
+    }
+
+    @Override
+    public BinaryExpression clone() {
+        BinaryExpression obj = (BinaryExpression) super.clone();
+        obj._left = _left.clone();
+        obj._right = _right.clone();
+        return obj;
     }
 }

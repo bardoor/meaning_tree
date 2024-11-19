@@ -4,11 +4,12 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class FunctionCall extends Expression {
-    protected final Expression _function;
+    protected Expression _function;
 
     public Expression getFunction() {
         return _function;
@@ -18,7 +19,7 @@ public class FunctionCall extends Expression {
         return List.copyOf(_arguments);
     }
 
-    protected final List<Expression> _arguments;
+    protected List<Expression> _arguments;
 
     public FunctionCall(Expression function, Expression ... arguments) {
         this(function, List.of(arguments));
@@ -48,14 +49,22 @@ public class FunctionCall extends Expression {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         FunctionCall that = (FunctionCall) o;
         return Objects.equals(_function, that._function) && Objects.equals(_arguments, that._arguments);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_function, _arguments);
+        return Objects.hash(super.hashCode(), _function, _arguments);
+    }
+
+    @Override
+    public FunctionCall clone() {
+        FunctionCall obj = (FunctionCall) super.clone();
+        obj._function = _function.clone();
+        obj._arguments = new ArrayList<>(_arguments.stream().map(Expression::clone).toList());
+        return obj;
     }
 }

@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.SequencedMap;
 
 public class DictionaryLiteral extends Literal {
-    private final SequencedMap<Expression, Expression> _content;
+    private SequencedMap<Expression, Expression> _content;
     private @Nullable Type keyTypeHint;
     private @Nullable Type valueTypeHint;
 
@@ -55,6 +55,15 @@ public class DictionaryLiteral extends Literal {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_content);
+        return Objects.hash(super.hashCode(), _content);
+    }
+
+    @Override
+    public DictionaryLiteral clone() {
+        DictionaryLiteral obj = (DictionaryLiteral) super.clone();
+        obj._content = new LinkedHashMap<>(_content);
+        if (keyTypeHint != null) obj.keyTypeHint = keyTypeHint.clone();
+        if (valueTypeHint != null) obj.valueTypeHint = valueTypeHint.clone();
+        return obj;
     }
 }

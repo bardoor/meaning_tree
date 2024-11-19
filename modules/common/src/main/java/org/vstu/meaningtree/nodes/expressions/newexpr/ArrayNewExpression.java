@@ -5,11 +5,11 @@ import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.expressions.other.ArrayInitializer;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 
-import java.util.*;
+import java.util.Objects;
 
 public class ArrayNewExpression extends NewExpression {
-    private final Shape _shape;
-    private final ArrayInitializer _initializer;
+    private Shape _shape;
+    private ArrayInitializer _initializer;
 
     public ArrayNewExpression(Type type, Shape shape, ArrayInitializer initializer) {
         super(type);
@@ -51,5 +51,13 @@ public class ArrayNewExpression extends NewExpression {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), _shape, _initializer);
+    }
+
+    @Override
+    public ArrayNewExpression clone() {
+        ArrayNewExpression obj = (ArrayNewExpression) super.clone();
+        obj._shape = _shape.clone();
+        if (_initializer != null) obj._initializer = _initializer.clone();
+        return obj;
     }
 }

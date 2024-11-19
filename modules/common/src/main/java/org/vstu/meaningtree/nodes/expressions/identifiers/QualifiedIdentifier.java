@@ -5,8 +5,8 @@ import org.vstu.meaningtree.nodes.expressions.Identifier;
 import java.util.Objects;
 
 public class QualifiedIdentifier extends Identifier {
-    private final Identifier _scope;
-    private final SimpleIdentifier _member;
+    private Identifier _scope;
+    private SimpleIdentifier _member;
 
     public QualifiedIdentifier(Identifier scope, SimpleIdentifier member) {
         _scope = scope;
@@ -36,6 +36,14 @@ public class QualifiedIdentifier extends Identifier {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_scope, _member);
+        return Objects.hash(super.hashCode(), _scope, _member);
+    }
+
+    @Override
+    public QualifiedIdentifier clone() {
+        QualifiedIdentifier obj = (QualifiedIdentifier) super.clone();
+        obj._scope = _scope.clone();
+        obj._member = _member.clone();
+        return obj;
     }
 }

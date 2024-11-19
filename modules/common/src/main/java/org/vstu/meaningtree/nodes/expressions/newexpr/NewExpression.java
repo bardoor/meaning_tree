@@ -10,7 +10,7 @@ public abstract class NewExpression extends Expression {
         _type = type;
     }
 
-    protected final Type _type;
+    protected Type _type;
 
     public Type getType() {
         return _type;
@@ -26,6 +26,13 @@ public abstract class NewExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_type);
+        return Objects.hash(super.hashCode(), _type);
+    }
+
+    @Override
+    public NewExpression clone() {
+        NewExpression obj = (NewExpression) super.clone();
+        obj._type = _type.clone();
+        return obj;
     }
 }

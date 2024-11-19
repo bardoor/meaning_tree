@@ -10,6 +10,8 @@ import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
@@ -20,7 +22,6 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
-import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
@@ -79,25 +80,27 @@ public class CppTokenizer extends LanguageTokenizer {
         put("<<", new OperatorToken("<<", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put(">>", new OperatorToken(">>", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("<", new OperatorToken("<", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("<=", new OperatorToken("<=", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put(">", new OperatorToken(">", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put(">=", new OperatorToken(">=", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<=>", new OperatorToken("<=>", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("==", new OperatorToken("==", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("!=", new OperatorToken("!=", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<", new OperatorToken("<", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<=", new OperatorToken("<=", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(">", new OperatorToken(">", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(">=", new OperatorToken(">=", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("&", new OperatorToken("&", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("==", new OperatorToken("==", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("!=", new OperatorToken("!=", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("^", new OperatorToken("^", TokenType.OPERATOR, 11, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("&", new OperatorToken("&", TokenType.OPERATOR, 11, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("|", new OperatorToken("|", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("^", new OperatorToken("^", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));
+        put("|", new OperatorToken("|", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("||", new OperatorToken("||", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));
+        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));
 
-        List<OperatorToken> ternary = OperatorToken.makeComplex(14, OperatorArity.TERNARY,
+        put("||", new OperatorToken("||", TokenType.OPERATOR, 15, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));
+
+        List<OperatorToken> ternary = OperatorToken.makeComplex(16, OperatorArity.TERNARY,
                 OperatorAssociativity.RIGHT, true, new String[] {"?", ":"},
                 new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
         );
@@ -283,6 +286,23 @@ public class CppTokenizer extends LanguageTokenizer {
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
+            case SimpleIdentifier ident -> {
+                result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
+            }
+            case QualifiedIdentifier ident -> {
+                tokenizeExtended(ident.getScope());
+                result.add(getOperatorByTokenName("::"));
+                tokenizeExtended(ident.getMember());
+            }
+            case ScopedIdentifier ident -> {
+                for (SimpleIdentifier simple : ident.getScopeResolution()) {
+                    tokenizeExtended(simple);
+                    result.add(getOperatorByTokenName("."));
+                }
+                if (!ident.getScopeResolution().isEmpty()) {
+                    result.removeLast();
+                }
+            }
             case ParenthesizedExpression paren -> {
                 result.add(new Token("(", TokenType.OPENING_BRACE));
                 tokenizeExtended(paren.getExpression(), result);

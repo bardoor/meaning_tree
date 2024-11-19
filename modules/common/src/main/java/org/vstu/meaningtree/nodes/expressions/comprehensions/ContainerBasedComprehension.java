@@ -6,8 +6,8 @@ import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import java.util.Objects;
 
 public class ContainerBasedComprehension extends Comprehension {
-    private final VariableDeclaration _containerItem;
-    private final Expression _container;
+    private VariableDeclaration _containerItem;
+    private Expression _container;
 
     @Override
     public boolean equals(Object o) {
@@ -35,5 +35,12 @@ public class ContainerBasedComprehension extends Comprehension {
 
     public Expression getContainerExpression() {
         return _container;
+    }
+
+    public ContainerBasedComprehension clone() {
+        ContainerBasedComprehension obj = (ContainerBasedComprehension) super.clone();
+        obj._containerItem = _containerItem;
+        obj._container = _container;
+        return obj;
     }
 }

@@ -2,11 +2,12 @@ package org.vstu.meaningtree.nodes.expressions.other;
 
 import org.vstu.meaningtree.nodes.Expression;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class ArrayInitializer extends Expression {
-    private final List<Expression> _values;
+    private List<Expression> _values;
 
     public ArrayInitializer(List<Expression> values) {
         _values = List.copyOf(values);
@@ -30,6 +31,13 @@ public class ArrayInitializer extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_values);
+        return Objects.hash(super.hashCode(), _values);
+    }
+
+    @Override
+    public ArrayInitializer clone() {
+        ArrayInitializer obj = (ArrayInitializer) super.clone();
+        obj._values = new ArrayList<>(_values);
+        return obj;
     }
 }

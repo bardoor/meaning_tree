@@ -144,7 +144,7 @@ public class TokenList extends ArrayList<Token> {
                     start = i;
                 }
                 stop = i + 1;
-                while (stop < size() && isTransitiveOperator(stop, opIndexToken) == pos) {
+                while (stop < size() && get(stop) instanceof OperandToken && isTransitiveOperator(stop, opIndexToken) == pos) {
                     stop = i + 1;
                     i++;
                 }

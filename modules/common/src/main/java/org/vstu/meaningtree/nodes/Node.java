@@ -1,21 +1,60 @@
 package org.vstu.meaningtree.nodes;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.utils.Experimental;
+import org.vstu.meaningtree.utils.NodeIterator;
+
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-abstract public class Node implements Serializable {
+abstract public class Node implements Serializable, Cloneable {
     protected static AtomicInteger _id_generator = new AtomicInteger();
-    protected Integer _id = _id_generator.incrementAndGet();
+    protected int _id = _id_generator.incrementAndGet();
 
+    // Любое привязанное к узлу извне значение
+    @Nullable
     protected Object assignedValueTag = null;
 
-    // TODO: в будущем нужно сделать возможность пройтись итератором по дереву и получить такую информацию
     /**
-     * @param oneOfMany признак того, что поле, в котором он находится - массив или коллекция
+     * Проверяет значение узлов по значению
+     * @param o другой объект
+     * @return результат эквивалентности
      */
-    public record NodeInfo(Node node, Node parent, boolean oneOfMany, String fieldName) {
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return Objects.equals(assignedValueTag, node.assignedValueTag);
+    }
+
+    /**
+     * Уникальный хэш-код узла, исходя из его содержимого и типа
+     * @return хэш-код
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(assignedValueTag, getClass().getSimpleName().hashCode());
+    }
+
+    @Override
+    public Node clone() {
+        try {
+            Node clone = (Node) super.clone();
+            clone._id = getId();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
+
+    /**
+     * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
+     * В случае, если не в массиве, то имеет значение -1
+     */
+    public record Info(Node node, Node parent, int pos, String fieldName) {
     }
 
     public String generateDot() {
@@ -32,44 +71,12 @@ abstract public class Node implements Serializable {
         return builder.toString();
     }
 
-    public Integer getId() {
+    public int getId() {
         return _id;
     }
 
-    // TODO: Функция добавлена для необходимости получить всех детей узла без разбора.
-    // По факту в будущем нужен итератор, который будет ленивым и выдавать больше информации
-    // например через NodeInfo. Пока времени это реализовать нет
-    public List<Node> walkAllNodes() {
-        ArrayList<Node> nodes = new ArrayList<>();
-        appendWalkNode(nodes, this);
-        return nodes;
-    }
-
-    private void appendWalkNode(List<Node> nodes, Node node) {
-        for (Object obj : node.getChildren().values()) {
-            if (obj instanceof List<?> list) {
-                for (Object lstChild : list) {
-                    Node childNode = (Node) lstChild;
-                    nodes.add(childNode);
-                    appendWalkNode(nodes, childNode);
-                }
-            } else if (obj instanceof Map<?, ?> map) {
-                for (Object lstChild : map.values()) {
-                    Node childNode = (Node) lstChild;
-                    nodes.add(childNode);
-                    appendWalkNode(nodes, childNode);
-                }
-            } else if (obj instanceof Node childNode) {
-                nodes.add(childNode);
-                appendWalkNode(nodes, childNode);
-            } else if (obj instanceof Optional<?> optional) {
-                if (optional.isPresent()) {
-                    Node childNode = (Node) optional.get();
-                    nodes.add(childNode);
-                    appendWalkNode(nodes, childNode);
-                }
-            }
-        }
+    public boolean uniquenessEquals(Node other) {
+        return this.getId() == other.getId();
     }
 
     /**
@@ -85,7 +92,10 @@ abstract public class Node implements Serializable {
                 Object child = field.get(this);
                 if (child instanceof Node ||
                         (child instanceof List collection && collection.stream().allMatch((Object obj) -> obj instanceof Node)) ||
-                        (child instanceof Map childMap && childMap.values().stream().allMatch((Object obj) -> obj instanceof Node)) ||
+                        (child instanceof Map childMap
+                                && (childMap.values().stream().allMatch((Object obj) -> obj instanceof Node)
+                                || childMap.keySet().stream().allMatch((Object obj) -> obj instanceof Node))
+                        ) ||
                         (child instanceof Node[])
                 ) {
                     map.put(field.getName(), child);
@@ -109,7 +119,7 @@ abstract public class Node implements Serializable {
         return fields.toArray(new Field[0]);
     }
 
-    // EXPERIMENTAL
+    @Experimental
     public boolean substituteChildren(String fieldName, Object newChild) {
         Field[] fields = getAllFields(this);
         for (Field field : fields) {
@@ -130,7 +140,7 @@ abstract public class Node implements Serializable {
         return false;
     }
 
-    // EXPERIMENTAL
+    @Experimental
     public List ensureMutableNodeListInChildren(String listName) {
         Field[] fields = getAllFields(this);
         for (Field field : fields) {
@@ -151,15 +161,38 @@ abstract public class Node implements Serializable {
         return null;
     }
 
-    public void setAssignedValueTag(Object obj) {
+    /**
+     * Установить привязанный тег значения к узлу. Может быть полезен для внешней модификации дерева
+     * @param obj - любой объект
+     */
+    public void setAssignedValueTag(@Nullable Object obj) {
         assignedValueTag = obj;
     }
 
+    /**
+     * Привязанный тег значения к узлу
+     * @return любой объект, привязанный ранее или null
+     */
+    @Nullable
     public Object getAssignedValueTag() {
         return assignedValueTag;
     }
 
     public String getNodeUniqueName() {
         return this.getClass().getName();
+    }
+
+    @Experimental
+    @NotNull
+    public Iterator<Info> iterateChildren() {
+        return new NodeIterator(this);
+    }
+
+    @Experimental
+    public List<Node.Info> walkChildren() {
+        List<Node.Info> result = new ArrayList<>();
+        NodeIterator iterator = new NodeIterator(this);
+        iterator.forEachRemaining(result::add);
+        return result;
     }
 }

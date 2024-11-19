@@ -3,8 +3,9 @@ package org.vstu.meaningtree;
 import org.vstu.meaningtree.nodes.Node;
 
 import java.io.Serializable;
+import java.util.Objects;
 
-public class MeaningTree implements Serializable {
+public class MeaningTree implements Serializable, Cloneable {
     private final Node _rootNode;
 
     public MeaningTree(Node rootNode) {
@@ -39,5 +40,21 @@ public class MeaningTree implements Serializable {
         return result.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        MeaningTree that = (MeaningTree) o;
+        return Objects.equals(_rootNode, that._rootNode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_rootNode);
+    }
+
+    @Override
+    public MeaningTree clone() {
+        return new MeaningTree(_rootNode.clone());
+    }
 }
 

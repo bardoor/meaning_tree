@@ -2,11 +2,12 @@ package org.vstu.meaningtree.nodes.expressions.identifiers;
 
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class ScopedIdentifier extends Identifier {
-    private final List<SimpleIdentifier> _scopeResolutionList;
+    private List<SimpleIdentifier> _scopeResolutionList;
 
     public ScopedIdentifier(SimpleIdentifier... identifiers) {
         _scopeResolutionList = List.of(identifiers);
@@ -35,6 +36,13 @@ public class ScopedIdentifier extends Identifier {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_scopeResolutionList);
+        return Objects.hash(super.hashCode(), _scopeResolutionList);
+    }
+
+    @Override
+    public ScopedIdentifier clone() {
+        ScopedIdentifier obj = (ScopedIdentifier) super.clone();
+        obj._scopeResolutionList = new ArrayList<>(_scopeResolutionList.stream().map(SimpleIdentifier::clone).toList());
+        return obj;
     }
 }

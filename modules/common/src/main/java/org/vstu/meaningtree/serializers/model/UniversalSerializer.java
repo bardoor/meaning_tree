@@ -14,11 +14,7 @@ import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
-import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
-import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
-import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
-import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
-import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
+import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 
@@ -61,7 +57,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     }
 
     public SerializedNode serialize(BinaryExpression binOp) {
-        return new SerializedNode(binOp.getNodeUniqueName(),
+        return new SerializedNode(binOp.getNodeUniqueName().replace("org.vstu.meaningtree.nodes.", ""),
                 new HashMap<>() {{
                     put("left", serialize(binOp.getLeft()));
                     put("right", serialize(binOp.getRight()));
@@ -86,7 +82,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     }
 
     public SerializedNode serialize(UnaryExpression unaryOp) {
-        return new SerializedNode(unaryOp.getNodeUniqueName(),
+        return new SerializedNode(unaryOp.getNodeUniqueName().replace("org.vstu.meaningtree.nodes.", ""),
                 new HashMap<>() {{
                     put("arg", serialize(unaryOp.getArgument()));
                 }}

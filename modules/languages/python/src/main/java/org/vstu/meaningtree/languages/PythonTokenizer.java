@@ -10,6 +10,8 @@ import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
@@ -18,7 +20,6 @@ import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
 import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
-import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
@@ -50,6 +51,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         put("]", subscript.getLast());
 
         put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("await", new OperatorToken("await", TokenType.OPERATOR, 3, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
         put("**", new OperatorToken("**", TokenType.OPERATOR, 4, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Возведение в степень
         put("~", new OperatorToken("~", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.UNARY, false)); // Побитовая инверсия
         put("UPLUS", new OperatorToken("+", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.UNARY, false)); // Унарный плюс
@@ -223,6 +225,23 @@ public class PythonTokenizer extends LanguageTokenizer {
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
+            case SimpleIdentifier ident -> {
+                result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
+            }
+            case QualifiedIdentifier ident -> {
+                tokenizeExtended(ident.getScope());
+                result.add(getOperatorByTokenName("."));
+                tokenizeExtended(ident.getMember());
+            }
+            case ScopedIdentifier ident -> {
+                for (SimpleIdentifier simple : ident.getScopeResolution()) {
+                    tokenizeExtended(simple);
+                    result.add(getOperatorByTokenName("."));
+                }
+                if (!ident.getScopeResolution().isEmpty()) {
+                    result.removeLast();
+                }
+            }
             case ParenthesizedExpression paren -> {
                 result.add(new Token("(", TokenType.OPENING_BRACE));
                 tokenizeExtended(paren.getExpression(), result);

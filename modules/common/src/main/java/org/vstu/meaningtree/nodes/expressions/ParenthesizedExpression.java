@@ -5,7 +5,7 @@ import org.vstu.meaningtree.nodes.Expression;
 import java.util.Objects;
 
 public class ParenthesizedExpression extends Expression {
-    private final Expression _expr;
+    private Expression _expr;
 
     public ParenthesizedExpression(Expression expr) {
         _expr = expr;
@@ -30,6 +30,13 @@ public class ParenthesizedExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_expr);
+        return Objects.hash(super.hashCode(), _expr);
+    }
+
+    @Override
+    public ParenthesizedExpression clone() {
+        ParenthesizedExpression obj = (ParenthesizedExpression) super.clone();
+        obj._expr = _expr.clone();
+        return obj;
     }
 }

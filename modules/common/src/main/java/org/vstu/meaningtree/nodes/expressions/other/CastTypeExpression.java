@@ -6,8 +6,8 @@ import org.vstu.meaningtree.nodes.Type;
 import java.util.Objects;
 
 public class CastTypeExpression extends Expression {
-    private final Type _castType;
-    private final Expression _value;
+    private Type _castType;
+    private Expression _value;
 
     public CastTypeExpression(Type castType, Expression value) {
         _castType = castType;
@@ -32,6 +32,14 @@ public class CastTypeExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_castType, _value);
+        return Objects.hash(super.hashCode(), _castType, _value);
+    }
+
+    @Override
+    public CastTypeExpression clone() {
+        CastTypeExpression obj = (CastTypeExpression) super.clone();
+        obj._castType = _castType.clone();
+        obj._value = _value.clone();
+        return obj;
     }
 }
