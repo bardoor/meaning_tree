@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.nodes.statements;
+package org.vstu.meaningtree.nodes.expressions.other;
 
 import org.vstu.meaningtree.nodes.Expression;
 

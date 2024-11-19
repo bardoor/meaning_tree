@@ -14,11 +14,7 @@ import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
-import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
-import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
-import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
-import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
-import org.vstu.meaningtree.nodes.statements.ExpressionSequence;
+import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 
