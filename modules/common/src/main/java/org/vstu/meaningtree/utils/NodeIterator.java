@@ -29,7 +29,8 @@ public class NodeIterator implements Iterator<Node.Info> {
 
     private void pustIterator(Object target) {
         if (target instanceof Node node && !node.getChildren().isEmpty()) {
-            iteratorQueue.addLast(node.iterateChildren());
+            //TODO: uncomment
+            //iteratorQueue.addLast(node.iterateChildren());
         } else if (target instanceof Node[] array && array.length > 0) {
             iteratorQueue.addLast(Arrays.stream(array).iterator());
         } else if (target instanceof List collection && !collection.isEmpty()) {
@@ -38,7 +39,8 @@ public class NodeIterator implements Iterator<Node.Info> {
             iteratorQueue.addLast(map.entrySet().iterator());
         } else if (target instanceof Optional<?> opt) {
             if (opt.isPresent() && opt.get() instanceof Node node && !node.getChildren().isEmpty()) {
-                iteratorQueue.addLast(node.iterateChildren());
+                //TODO: uncomment
+                //iteratorQueue.addLast(node.iterateChildren());
             }
         }
     }
