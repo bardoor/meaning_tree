@@ -28,8 +28,6 @@ public class MeaningTree implements Serializable, Cloneable {
     }
     */
 
-
-
     public String generateDot() {
         return normalizeDot("graph MeaningTree {\ndpi=255;\n" + _rootNode.generateDot() + "}");
     }

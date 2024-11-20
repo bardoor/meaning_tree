@@ -40,7 +40,10 @@ abstract public class Node implements Serializable, Cloneable {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(_labels, getClass().getSimpleName().hashCode());
+        List<Object> toHash = new ArrayList<>();
+        toHash.add(getClass().getSimpleName());
+        toHash.addAll(_labels);
+        return Objects.hash(toHash.toArray(new Object[0]));
     }
 
     @Override

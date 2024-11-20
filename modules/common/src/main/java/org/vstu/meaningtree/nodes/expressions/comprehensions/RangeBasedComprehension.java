@@ -4,6 +4,8 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.other.Range;
 
+import java.util.Objects;
+
 
 public class RangeBasedComprehension extends Comprehension {
     private Range _range;
@@ -27,5 +29,10 @@ public class RangeBasedComprehension extends Comprehension {
         obj._range = _range.clone();
         obj._identifier = _identifier.clone();
         return obj;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), _range, _identifier);
     }
 }
