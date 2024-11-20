@@ -1,9 +1,7 @@
 package org.vstu.meaningtree.nodes;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.utils.Experimental;
-import org.vstu.meaningtree.utils.NodeIterator;
 import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.io.Serializable;
@@ -187,6 +185,7 @@ abstract public class Node implements Serializable, Cloneable {
         return this.getClass().getName();
     }
 
+    /*TODO: uncomment when NodeIterator will be fixed
     @Experimental
     @NotNull
     public Iterator<Info> iterateChildren() {
@@ -200,6 +199,7 @@ abstract public class Node implements Serializable, Cloneable {
         iterator.forEachRemaining(result::add);
         return result;
     }
+    */
 
     public void setLabel(NodeLabel label) {
         _labels.add(label);
@@ -245,5 +245,40 @@ abstract public class Node implements Serializable, Cloneable {
 
     public boolean removeLabel(short id) {
         return _labels.remove(getLabel(id));
+    }
+
+    // TODO: Функция добавлена для необходимости получить всех детей узла без разбора.
+    // По факту в будущем нужен итератор, который будет ленивым и выдавать больше информации
+    // например через NodeInfo. Пока времени это реализовать нет
+    public List<Node> walkAllNodes() {
+        ArrayList<Node> nodes = new ArrayList<>();
+        appendWalkNode(nodes, this);
+        return nodes;
+    }
+    private void appendWalkNode(List<Node> nodes, Node node) {
+        for (Object obj : node.getChildren().values()) {
+            if (obj instanceof List<?> list) {
+                for (Object lstChild : list) {
+                    Node childNode = (Node) lstChild;
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            } else if (obj instanceof Map<?, ?> map) {
+                for (Object lstChild : map.values()) {
+                    Node childNode = (Node) lstChild;
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            } else if (obj instanceof Node childNode) {
+                nodes.add(childNode);
+                appendWalkNode(nodes, childNode);
+            } else if (obj instanceof Optional<?> optional) {
+                if (optional.isPresent()) {
+                    Node childNode = (Node) optional.get();
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            }
+        }
     }
 }

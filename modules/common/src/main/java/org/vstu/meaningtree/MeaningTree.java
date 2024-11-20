@@ -16,6 +16,20 @@ public class MeaningTree implements Serializable, Cloneable {
         return _rootNode;
     }
 
+    /*TODO: uncomment when NodeIterator will be fixed
+    @Override
+    @NotNull
+    public Iterator<Node.Info> iterator() {
+        return _rootNode.iterateChildren();
+    }
+
+    public List<Node.Info> walk() {
+        return _rootNode.walkChildren();
+    }
+    */
+
+
+
     public String generateDot() {
         return normalizeDot("graph MeaningTree {\ndpi=255;\n" + _rootNode.generateDot() + "}");
     }
