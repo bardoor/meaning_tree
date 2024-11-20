@@ -63,6 +63,7 @@ import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
 import org.vstu.meaningtree.nodes.types.containers.PlainCollectionType;
 import org.vstu.meaningtree.nodes.types.containers.SetType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -122,6 +123,11 @@ public class JavaViewer extends LanguageViewer {
     @Override
     public String toString(Node node) {
         Objects.requireNonNull(node);
+
+        // Для dummy узлов ничего не выводим
+        if (node.hasLabel(NodeLabel.DUMMY)) {
+            return "";
+        }
 
         if (node instanceof Expression expression) {
             HindleyMilner.inference(expression, _typeScope);

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.NodeIterator;
+import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -14,9 +15,14 @@ abstract public class Node implements Serializable, Cloneable {
     protected static AtomicInteger _id_generator = new AtomicInteger();
     protected int _id = _id_generator.incrementAndGet();
 
-    // Любое привязанное к узлу извне значение
-    @Nullable
-    protected Object assignedValueTag = null;
+    /**
+     * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
+     * В случае, если не в массиве, то имеет значение -1
+     */
+    public record Info(Node node, Node parent, int pos, String fieldName) {
+    }
+
+    private Set<NodeLabel> _labels = new HashSet<>();
 
     /**
      * Проверяет значение узлов по значению
@@ -27,7 +33,7 @@ abstract public class Node implements Serializable, Cloneable {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
-        return Objects.equals(assignedValueTag, node.assignedValueTag);
+        return Objects.equals(_labels, node._labels);
     }
 
     /**
@@ -36,7 +42,7 @@ abstract public class Node implements Serializable, Cloneable {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(assignedValueTag, getClass().getSimpleName().hashCode());
+        return Objects.hash(_labels, getClass().getSimpleName().hashCode());
     }
 
     @Override
@@ -44,17 +50,11 @@ abstract public class Node implements Serializable, Cloneable {
         try {
             Node clone = (Node) super.clone();
             clone._id = getId();
+            clone._labels = new HashSet<>(_labels);
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
-    }
-
-    /**
-     * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
-     * В случае, если не в массиве, то имеет значение -1
-     */
-    public record Info(Node node, Node parent, int pos, String fieldName) {
     }
 
     public String generateDot() {
@@ -166,7 +166,7 @@ abstract public class Node implements Serializable, Cloneable {
      * @param obj - любой объект
      */
     public void setAssignedValueTag(@Nullable Object obj) {
-        assignedValueTag = obj;
+        _labels.add(new NodeLabel(NodeLabel.VALUE, obj));
     }
 
     /**
@@ -175,7 +175,12 @@ abstract public class Node implements Serializable, Cloneable {
      */
     @Nullable
     public Object getAssignedValueTag() {
-        return assignedValueTag;
+        NodeLabel label = getLabel(NodeLabel.VALUE);
+        if (label != null) {
+            return label.getAttribute();
+        } else {
+            return null;
+        }
     }
 
     public String getNodeUniqueName() {
@@ -194,5 +199,51 @@ abstract public class Node implements Serializable, Cloneable {
         NodeIterator iterator = new NodeIterator(this);
         iterator.forEachRemaining(result::add);
         return result;
+    }
+
+    public void setLabel(NodeLabel label) {
+        _labels.add(label);
+    }
+
+    public void setLabel(short id) {
+        _labels.add(new NodeLabel(id));
+    }
+
+    public NodeLabel getLabel(short id) {
+        return _labels.stream().filter((NodeLabel l) -> l.getId() == id).findFirst().orElse(null);
+    }
+
+    public boolean hasLabel(short id) {
+        return _labels.stream().anyMatch((NodeLabel l) -> l.getId() == id);
+    }
+
+    /**
+     * Переключает состояние метки
+     * @param id - айди метки
+     * @param val - атрибут
+     * @return убрана или установлена метка после вызова этой функции
+     */
+    public boolean toggleLabel(short id, Object val) {
+        NodeLabel label = getLabel(id);
+        if (label != null) {
+            _labels.remove(label);
+            return false;
+        } else {
+            _labels.add(new NodeLabel(id));
+            return true;
+        }
+    }
+
+    /**
+     * Переключает состояние метки
+     * @param id - айди метки
+     * @return убрана или установлена метка после вызова этой функции
+     */
+    public boolean toggleLabel(short id) {
+        return toggleLabel(id, null);
+    }
+
+    public boolean removeLabel(short id) {
+        return _labels.remove(getLabel(id));
     }
 }
