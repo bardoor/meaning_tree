@@ -21,6 +21,7 @@ import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.utils.NodeLabel;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
 
@@ -28,7 +29,7 @@ import java.util.*;
 
 public class JavaTokenizer extends LanguageTokenizer {
     private static final List<String> stopNodes = List.of("string_literal");
-    private Set<Integer> valueSetNodes = new HashSet<>();
+    private Set<Long> valueSetNodes = new HashSet<>();
 
     private static final Map<String, OperatorToken> operators = new HashMap<>() {{
         List<OperatorToken> braces = OperatorToken.makeComplex(1,
@@ -110,8 +111,8 @@ public class JavaTokenizer extends LanguageTokenizer {
     }};
 
 
-    public JavaTokenizer(JavaLanguage javaLanguage, JavaViewer viewer) {
-        super(javaLanguage, viewer);
+    public JavaTokenizer(JavaTranslator translator) {
+        super(translator);
     }
 
     @Override
@@ -261,6 +262,9 @@ public class JavaTokenizer extends LanguageTokenizer {
     }
 
     public TokenGroup tokenizeExtended(Node node, TokenList result) {
+        if (node.hasLabel(NodeLabel.DUMMY)) {
+            return new TokenGroup(0, 0, result);
+        }
         int posStart = result.size();
         switch (node) {
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);

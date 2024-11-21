@@ -17,7 +17,7 @@ public class PythonTranslator extends LanguageTranslator {
 
     @Override
     public LanguageTokenizer getTokenizer() {
-        return new PythonTokenizer((PythonLanguage) _language, (PythonViewer) _viewer);
+        return new PythonTokenizer(this);
     }
 
     @Override

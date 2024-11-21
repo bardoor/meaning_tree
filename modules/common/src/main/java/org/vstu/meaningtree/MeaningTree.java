@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info> {
-    private final Node _rootNode;
+    private Node _rootNode;
 
     public MeaningTree(Node rootNode) {
         _rootNode = rootNode;
@@ -20,6 +20,8 @@ public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info>
     public Node getRootNode() {
         return _rootNode;
     }
+
+    public void changeRoot(Node node) {_rootNode = node;}
 
     @Override
     @NotNull

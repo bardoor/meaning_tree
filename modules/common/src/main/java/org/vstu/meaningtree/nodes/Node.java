@@ -9,17 +9,29 @@ import org.vstu.meaningtree.utils.NodeLabel;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 abstract public class Node implements Serializable, Cloneable {
-    protected static AtomicInteger _id_generator = new AtomicInteger();
-    protected int _id = _id_generator.incrementAndGet();
+    protected static AtomicLong _id_generator = new AtomicLong();
+    protected long _id = _id_generator.incrementAndGet();
+
+    /**
+     * Внимание! После вызова этого метода, все новые узлы дерева начнут нумерацию своего id с нуля.
+     * Это может привести к конфликтам. Убедитесь, что новые узлы не будут сравниваться по id с предыдущими узлами
+     */
+    public static void resetIdCounter() {
+        System.err.println("Warning! Node counter was reset. It may cause conflicts");
+        _id_generator = new AtomicLong();
+    }
 
     /**
      * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
      * В случае, если не в массиве, то имеет значение -1
      */
     public record Info(Node node, Node parent, int pos, String fieldName) {
+        public String readableFieldName() {
+            return fieldName.startsWith("_") ? fieldName.replaceFirst("_", "") : fieldName;
+        }
     }
 
     private Set<NodeLabel> _labels = new HashSet<>();
@@ -74,7 +86,7 @@ abstract public class Node implements Serializable, Cloneable {
         return builder.toString();
     }
 
-    public int getId() {
+    public long getId() {
         return _id;
     }
 
@@ -135,7 +147,31 @@ abstract public class Node implements Serializable, Cloneable {
                         field.set(this, newChild);
                     }
                     return true;
-                } catch (IllegalAccessException e) {
+                } catch (IllegalAccessException | IllegalArgumentException e) {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Experimental
+    public boolean substituteNodeChildren(String fieldName, Object newChild, Object key) {
+        if (key == null) {
+            return substituteChildren(fieldName, newChild);
+        }
+        Field[] fields = getAllFields(this);
+        for (Field field : fields) {
+            if (field.getName().equals(fieldName)) {
+                try {
+                    Object value = field.get(this);
+                    if (value instanceof List list) {
+                        list.set((Integer)key, newChild);
+                    } else if (value instanceof Map map) {
+                        map.put(key, newChild);
+                    }
+                    return true;
+                } catch (IllegalAccessException | IllegalArgumentException e) {
                     return false;
                 }
             }
@@ -156,7 +192,7 @@ abstract public class Node implements Serializable, Cloneable {
                         substituteChildren(listName, newList);
                         return newList;
                     }
-                } catch (IllegalAccessException ex2) {
+                } catch (IllegalAccessException | IllegalArgumentException ex2) {
                     return null;
                 }
             }
