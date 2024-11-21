@@ -134,6 +134,14 @@ abstract public class Node implements Serializable, Cloneable {
         return fields.toArray(new Field[0]);
     }
 
+    /**
+     * Подменяет дочерний узел данного узла указанным, если это возможно.
+     * Списки и словари считаются дочерним объектом и в них функция не заходит.
+     * Если нужно такое поведение см. substituteNodeChildren
+     * @param fieldName - имя поля
+     * @param newChild - новый дочерний узел
+     * @return выполнилась ли замена
+     */
     @Experimental
     public boolean substituteChildren(String fieldName, Object newChild) {
         Field[] fields = getAllFields(this);
@@ -155,6 +163,14 @@ abstract public class Node implements Serializable, Cloneable {
         return false;
     }
 
+    /**
+     * Подменяет дочерний узел данного узла указанным, если это возможно.
+     * Данный метод может менять дочерний узел даже внутри списка или словаря, если передать key
+     * @param fieldName - имя поля
+     * @param newChild - новый дочерний узел
+     * @param key - ключ словаря или индекс массива, если null - эквивалентно substituteChildren
+     * @return выполнилась ли замена
+     */
     @Experimental
     public boolean substituteNodeChildren(String fieldName, Object newChild, Object key) {
         if (key == null) {
