@@ -1,7 +1,9 @@
 package org.vstu.meaningtree.nodes;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.utils.Experimental;
+import org.vstu.meaningtree.utils.NodeIterator;
 import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.io.Serializable;
@@ -188,21 +190,22 @@ abstract public class Node implements Serializable, Cloneable {
         return this.getClass().getName();
     }
 
-    /*TODO: uncomment when NodeIterator will be fixed
     @Experimental
     @NotNull
+    /**
+     * Итератор может выдавать нулевые ссылки, их лучше игнорировать
+     */
     public Iterator<Info> iterateChildren() {
-        return new NodeIterator(this);
+        return new NodeIterator(this, false);
     }
 
     @Experimental
     public List<Node.Info> walkChildren() {
         List<Node.Info> result = new ArrayList<>();
-        NodeIterator iterator = new NodeIterator(this);
+        NodeIterator iterator = new NodeIterator(this, false);
         iterator.forEachRemaining(result::add);
-        return result;
+        return result.stream().filter(Objects::nonNull).toList();
     }
-    */
 
     public void setLabel(NodeLabel label) {
         _labels.add(label);
@@ -250,9 +253,7 @@ abstract public class Node implements Serializable, Cloneable {
         return _labels.remove(getLabel(id));
     }
 
-    // TODO: Функция добавлена для необходимости получить всех детей узла без разбора.
-    // По факту в будущем нужен итератор, который будет ленивым и выдавать больше информации
-    // например через NodeInfo. Пока времени это реализовать нет
+    @Deprecated
     public List<Node> walkAllNodes() {
         ArrayList<Node> nodes = new ArrayList<>();
         appendWalkNode(nodes, this);

@@ -5,42 +5,44 @@ import org.vstu.meaningtree.nodes.Node;
 
 import java.util.*;
 
-//TODO: этот класс не работает, его нужно исправлять
+/**
+ * TODO: Итератор не совершенный и может выдавать null в некоторых ситуациях, поэтому это нужно иметь в виду
+ */
 public class NodeIterator implements Iterator<Node.Info> {
     private int ptr = -1;
     private Node parent;
     private SortedMap<String, Object> children;
     private ArrayDeque<Iterator<?>> iteratorQueue = new ArrayDeque<>();
 
-    public NodeIterator(Node node) {
+    private boolean giveSelf;
+
+    public NodeIterator(Node node, boolean giveSelf) {
         parent = node;
         children = node.getChildren();
+        this.giveSelf = !giveSelf;
     }
 
     @Override
     public boolean hasNext() {
-        // TODO: проблемы с данным участком
-        return !iteratorQueue.isEmpty() || ptr + 1 < children.sequencedKeySet().size();
+        return !iteratorQueue.isEmpty() || ptr + 1 < children.sequencedKeySet().size() || !giveSelf;
     }
 
     private String getChildren(int pos) {
         return children.sequencedKeySet().stream().toList().get(pos);
     }
 
-    private void pustIterator(Object target) {
-        if (target instanceof Node node && !node.getChildren().isEmpty()) {
-            //TODO: uncomment
-            //iteratorQueue.addLast(node.iterateChildren());
-        } else if (target instanceof Node[] array && array.length > 0) {
+    private void pushIterator(Object target) {
+        if (target instanceof Node node) {
+            iteratorQueue.addLast(node.iterateChildren());
+        } else if (target instanceof Node[] array) {
             iteratorQueue.addLast(Arrays.stream(array).iterator());
-        } else if (target instanceof List collection && !collection.isEmpty()) {
+        } else if (target instanceof List collection) {
             iteratorQueue.addLast(collection.iterator());
         } else if (target instanceof Map map && !map.isEmpty()) {
             iteratorQueue.addLast(map.entrySet().iterator());
         } else if (target instanceof Optional<?> opt) {
-            if (opt.isPresent() && opt.get() instanceof Node node && !node.getChildren().isEmpty()) {
-                //TODO: uncomment
-                //iteratorQueue.addLast(node.iterateChildren());
+            if (opt.isPresent() && opt.get() instanceof Node node) {
+                iteratorQueue.addLast(node.iterateChildren());
             }
         }
     }
@@ -58,6 +60,12 @@ public class NodeIterator implements Iterator<Node.Info> {
         return -1;
     }
 
+    private void ensureIteratorNotEmpty() {
+        if (!iteratorQueue.isEmpty() && !iteratorQueue.getLast().hasNext()) {
+            iteratorQueue.removeLast();
+        }
+    }
+
     private Node.Info getAt(int index) {
         Node.Info result = null;
         Iterator<?> iterator = iteratorQueue.getLast();
@@ -71,46 +79,57 @@ public class NodeIterator implements Iterator<Node.Info> {
                 current = nodeObj;
             } else if (iteratorNext instanceof Node.Info info) {
                 current = info.node();
+                result = info;
             } else {
                 throw new MeaningTreeException("Unknown type from iterator");
             }
-            pustIterator(current);
-            result = new Node.Info(current, parent, getFieldIndex(target, current), fieldName);
+            ensureIteratorNotEmpty();
+            if (result == null) {
+                pushIterator(current);
+                ensureIteratorNotEmpty();
+            }
+            return result != null ? result : new Node.Info(current, parent, getFieldIndex(target, current), fieldName);
         } else if (target instanceof Map && iterator.hasNext()) {
             Map.Entry<?, ?> current = (Map.Entry<?, ?>) iterator.next();
+            ensureIteratorNotEmpty();
             if (current.getValue() instanceof Node) {
-                pustIterator(current.getValue());
+                pushIterator(current.getValue());
+                ensureIteratorNotEmpty();
                 result = new Node.Info((Node) current.getValue(), parent, -1, fieldName);
             } else {
-                pustIterator(current.getKey());
+                pushIterator(current.getKey());
+                ensureIteratorNotEmpty();
                 result = new Node.Info((Node) current.getKey(), parent, -1, fieldName);
             }
+        } else {
+            throw new MeaningTreeException("Iterator is broken. Report this case to developers");
         }
         return result;
     }
 
     @Override
     public Node.Info next() {
+        if (!giveSelf) {
+            giveSelf = true;
+            return new Node.Info(parent, null, -1, "root");
+        }
         if (!hasNext()) {
             throw new NoSuchElementException("Iteration ended");
         }
-        if (iteratorQueue.isEmpty()) {
+        while (iteratorQueue.isEmpty()) {
             ptr++;
+            if (ptr >= children.size()) {
+                return null;
+            }
             Object target = children.get(getChildren(ptr));
-            pustIterator(target);
-        }
-        Node.Info result = getAt(ptr);
-        Iterator<?> iterator = iteratorQueue.getLast();
-        if (!iterator.hasNext()) {
-            iteratorQueue.removeLast();
-        }
-        if (iteratorQueue.isEmpty()) {
-            ptr++;
-            if (ptr < children.size()) {
-                Object target = children.get(getChildren(ptr));
-                pustIterator(target);
+            pushIterator(target);
+            ensureIteratorNotEmpty();
+            if (target instanceof Node node) {
+                return new Node.Info(node, parent, -1, getChildren(ptr));
             }
         }
-        return result; // unrecognized entry
+        Node.Info result = getAt(ptr);
+        ensureIteratorNotEmpty();
+        return result;
     }
 }
