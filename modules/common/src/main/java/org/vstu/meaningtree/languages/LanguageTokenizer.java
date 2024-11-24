@@ -26,7 +26,6 @@ public abstract class LanguageTokenizer {
         this.code = translator.prepareCode(code);
         parser.getMeaningTree(this.code);
         TokenList list = new TokenList();
-        //TODO: update grammars для языков, так как ошибочный код плохо поддерживается
         collectTokens(parser.getRootNode(), list, true);
         return list;
     }
