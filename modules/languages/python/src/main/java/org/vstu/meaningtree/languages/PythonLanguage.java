@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
@@ -153,7 +154,7 @@ public class PythonLanguage extends LanguageParser {
             case "while_statement" -> fromWhileLoop(node);
             case "set_comprehension", "dictionary_comprehension", "list_comprehension", "generator_expression" -> fromComprehension(node);
             case "match_statement" -> fromMatchStatement(node);
-            case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
+            case null, default -> throw new UnsupportedParsingException(String.format("Can't parse %s", node.getType()));
         };
         assignValue(node, createdNode);
         return createdNode;
