@@ -32,7 +32,7 @@ public class PythonTokenizer extends LanguageTokenizer {
     private static final List<String> stopNodes = List.of("string");
     private Set<Long> valueSetNodes = new HashSet<>();
 
-    private final Map<String, OperatorToken> operators = new HashMap<>() {{
+    protected static final Map<String, OperatorToken> operators = new HashMap<>() {{
         List<OperatorToken> braces = OperatorToken.makeComplex(2,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
                 new String[] {"(", ")"},
@@ -273,7 +273,7 @@ public class PythonTokenizer extends LanguageTokenizer {
             }
             default ->  {
                 String s = viewer.toString(node);
-                result.addAll(tokenize(s));
+                result.addAll(tokenize(translator.prepareCode(s)));
             }
         }
         int posStop = result.size();

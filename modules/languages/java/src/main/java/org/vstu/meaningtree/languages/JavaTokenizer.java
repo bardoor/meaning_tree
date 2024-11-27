@@ -31,7 +31,7 @@ public class JavaTokenizer extends LanguageTokenizer {
     private static final List<String> stopNodes = List.of("string_literal");
     private Set<Long> valueSetNodes = new HashSet<>();
 
-    private static final Map<String, OperatorToken> operators = new HashMap<>() {{
+    protected static final Map<String, OperatorToken> operators = new HashMap<>() {{
         List<OperatorToken> braces = OperatorToken.makeComplex(1,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
                 new String[] {"(", ")"},
@@ -320,7 +320,8 @@ public class JavaTokenizer extends LanguageTokenizer {
             }
             default ->  {
                 String s = viewer.toString(node);
-                result.addAll(tokenize(s));
+                TokenList tokens = tokenize(translator.prepareCode(s));
+                result.addAll(tokens.subList(0, tokens.getLast().type == TokenType.SEPARATOR ? tokens.size() - 1 : tokens.size()));
             }
         }
         int posStop = result.size();
