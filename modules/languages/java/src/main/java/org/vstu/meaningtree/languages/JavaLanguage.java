@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
@@ -42,7 +43,10 @@ import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.modules.*;
-import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.Loop;
+import org.vstu.meaningtree.nodes.statements.ReturnStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
@@ -161,7 +165,7 @@ public class JavaLanguage extends LanguageParser {
             case "character_literal" -> fromCharacterLiteralTSNode(node);
             case "do_statement" -> fromDoStatementTSNode(node);
             case "instanceof_expression" -> fromInstanceOfTSNode(node);
-            default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
@@ -206,6 +210,17 @@ public class JavaLanguage extends LanguageParser {
         Expression consequence = (Expression) fromTSNode(node.getChildByFieldName("consequence"));
         Expression alternative = (Expression) fromTSNode(node.getChildByFieldName("alternative"));
         return new TernaryOperator(condition, consequence, alternative);
+    }
+
+    private List<Node> fromClassBody(TSNode node) {
+        if (node.getNamedChild(0).getType().equals("block")) {
+            node = node.getNamedChild(0);
+        }
+        ArrayList<Node> nodes = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            nodes.add(fromTSNode(node.getNamedChild(i)));
+        }
+        return nodes;
     }
 
     private Node fromArrayAccessTSNode(TSNode node) {
@@ -315,6 +330,7 @@ public class JavaLanguage extends LanguageParser {
 
     private Node fromObjectCreationExpressionTSNode(TSNode objectCreationNode) {
         Type type = fromTypeTSNode(objectCreationNode.getChildByFieldName("type"));
+        TSNode body = objectCreationNode.getNamedChild(objectCreationNode.getNamedChildCount() - 1);
 
         List<Expression> arguments = new ArrayList<>();
         TSNode tsArguments = objectCreationNode.getChildByFieldName("arguments");
@@ -322,6 +338,67 @@ public class JavaLanguage extends LanguageParser {
             TSNode tsArgument = tsArguments.getNamedChild(i);
             Expression argument = (Expression) fromTSNode(tsArgument);
             arguments.add(argument);
+        }
+
+        // Список
+        if (type instanceof ListType && arguments.getFirst() instanceof MethodCall call
+            && call.getFunctionName().equalsIdentifier("of")
+        ) {
+            return new ListLiteral(call.getArguments());
+        }
+
+        // Список в качестве тела класса
+        if (type instanceof ListType && !body.isNull()) {
+            ArrayList<Expression> list = new ArrayList<>();
+            for (Node node : fromClassBody(body)) {
+                if (node instanceof ExpressionStatement expr) {
+                    node = expr.getExpression();
+                }
+                if (node instanceof FunctionCall call && call.getFunction().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                } else if (node instanceof MethodCall call
+                        && call.getObject() instanceof SelfReference
+                        && call.getFunctionName().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                }
+            }
+            return new ListLiteral(list);
+        }
+
+        // Словарь
+        if (type instanceof DictionaryType && !body.isNull()) {
+            LinkedHashMap<Expression, Expression> map = new LinkedHashMap<>();
+            for (Node node : fromClassBody(body)) {
+                if (node instanceof ExpressionStatement expr) {
+                    node = expr.getExpression();
+                }
+                if (node instanceof FunctionCall call && call.getFunction().equalsIdentifier("put") && call.getArguments().size() >= 2) {
+                    map.put(call.getArguments().getFirst(), call.getArguments().get(1));
+                } else if (node instanceof MethodCall call
+                        && call.getObject() instanceof SelfReference
+                        && call.getFunctionName().equalsIdentifier("add") && call.getArguments().size() >= 2) {
+                    map.put(call.getArguments().getFirst(), call.getArguments().get(1));
+                }
+            }
+            return new DictionaryLiteral(map);
+        }
+
+        // Множества
+        if (type instanceof SetType && !body.isNull()) {
+            List<Expression> list = new ArrayList<>();
+            for (Node node : fromClassBody(body)) {
+                if (node instanceof ExpressionStatement expr) {
+                    node = expr.getExpression();
+                }
+                if (node instanceof FunctionCall call && call.getFunction().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                } else if (node instanceof MethodCall call
+                        && call.getObject() instanceof SelfReference
+                        && call.getFunctionName().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                }
+            }
+            return new SetLiteral(list);
         }
 
         return new ObjectNewExpression(type, arguments);
