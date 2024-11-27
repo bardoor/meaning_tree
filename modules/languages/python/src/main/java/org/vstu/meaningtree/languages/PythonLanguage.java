@@ -604,7 +604,7 @@ public class PythonLanguage extends LanguageParser {
                 (nodes.size() > 1 && getConfigParameter("expressionMode").getBooleanValue())
                 || (!nodes.isEmpty() && !(nodes.getFirst() instanceof ExpressionStatement) &&
                         !(nodes.getFirst() instanceof  AssignmentStatement) &&
-                        !(nodes.getFirst() instanceof Expression))
+                        !(nodes.getFirst() instanceof Expression) && getConfigParameter("expressionMode").getBooleanValue())
         ) {
             throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
         }
