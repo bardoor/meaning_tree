@@ -23,7 +23,7 @@ public abstract class LanguageTokenizer {
      * @return
      */
     public TokenList tokenize(String code) {
-        this.code = translator.prepareCode(code);
+        this.code = code;
         parser.getMeaningTree(this.code);
         TokenList list = new TokenList();
         collectTokens(parser.getRootNode(), list, true);
