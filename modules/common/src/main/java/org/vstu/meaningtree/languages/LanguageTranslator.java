@@ -54,12 +54,10 @@ public abstract class LanguageTranslator {
             }
         }
 
-        _language.setConfig(_declaredConfigParams.stream().filter((ConfigParameter cfg) -> {
-            return cfg.getScope() == ConfigParameter.Scope.PARSER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR;
-        }).toList());
-        _viewer.setConfig(_declaredConfigParams.stream().filter((ConfigParameter cfg) -> {
-            return cfg.getScope() == ConfigParameter.Scope.VIEWER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR;
-        }).toList());
+        _language.setConfig(_declaredConfigParams.stream().filter(
+                (ConfigParameter cfg) -> cfg.getScope() == ConfigParameter.Scope.PARSER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR).toList());
+        _viewer.setConfig(_declaredConfigParams.stream().filter(
+                (ConfigParameter cfg) -> cfg.getScope() == ConfigParameter.Scope.VIEWER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR).toList());
     }
 
     public MeaningTree getMeaningTree(String code) {
