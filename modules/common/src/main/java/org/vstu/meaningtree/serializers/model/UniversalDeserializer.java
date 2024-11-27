@@ -163,7 +163,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
         } catch (ClassNotFoundException e) {
             throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
         }
-        if (clazz.getGenericSuperclass().equals(BinaryExpression.class)) {
+        if (BinaryExpression.class.isAssignableFrom(clazz)) {
             try {
                 return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class).newInstance(
                         deserialize(serialized.fields.get("left")),
@@ -174,7 +174,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             }
         }
 
-        if (clazz.getGenericSuperclass().equals(UnaryExpression.class)) {
+        if (UnaryExpression.class.isAssignableFrom(clazz)) {
             try {
                 return (Node) clazz.getDeclaredConstructor(Expression.class).newInstance(
                         deserialize(serialized.fields.get("arg"))
