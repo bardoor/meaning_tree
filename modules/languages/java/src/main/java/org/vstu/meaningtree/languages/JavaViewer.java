@@ -64,6 +64,7 @@ import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
 import org.vstu.meaningtree.nodes.types.containers.PlainCollectionType;
 import org.vstu.meaningtree.nodes.types.containers.SetType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -124,12 +125,20 @@ public class JavaViewer extends LanguageViewer {
     public String toString(Node node) {
         Objects.requireNonNull(node);
 
+        // Для dummy узлов ничего не выводим
+        if (node.hasLabel(NodeLabel.DUMMY)) {
+            return "";
+        }
+
+        /*
+        TODO: temporarily disabled
         if (node instanceof Expression expression) {
             HindleyMilner.inference(expression, _typeScope);
         }
         else if (node instanceof Statement statement) {
             HindleyMilner.inference(statement, _typeScope);
         }
+        */
 
         return switch (node) {
             case ListLiteral listLiteral -> toString(listLiteral);
@@ -1663,9 +1672,12 @@ public class JavaViewer extends LanguageViewer {
     public String toString(ProgramEntryPoint entryPoint) {
         List<Node> nodes = entryPoint.getBody();
         for (var node : nodes) {
+            /*
+            TODO: temporarily disabled
             if (node instanceof Statement statement) {
                 HindleyMilner.inference(statement, _typeScope);
             }
+            */
         }
 
         if (!entryPoint.hasMainClass()

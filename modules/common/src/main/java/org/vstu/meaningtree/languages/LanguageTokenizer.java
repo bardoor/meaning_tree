@@ -12,6 +12,7 @@ import java.util.Map;
 
 public abstract class LanguageTokenizer {
     protected String code;
+    protected LanguageTranslator translator;
     protected LanguageParser parser;
     protected LanguageViewer viewer;
 
@@ -22,10 +23,9 @@ public abstract class LanguageTokenizer {
      * @return
      */
     public TokenList tokenize(String code) {
-        this.code = code;
-        parser.getMeaningTree(code);
+        this.code = translator.prepareCode(code);
+        parser.getMeaningTree(this.code);
         TokenList list = new TokenList();
-        //TODO: update grammars для языков, так как ошибочный код плохо поддерживается
         collectTokens(parser.getRootNode(), list, true);
         return list;
     }
@@ -61,9 +61,10 @@ public abstract class LanguageTokenizer {
     protected abstract OperatorToken getOperator(String tokenValue, TSNode node);
     public abstract OperatorToken getOperatorByTokenName(String tokenName);
 
-    public LanguageTokenizer(LanguageParser parser, LanguageViewer viewer) {
-        this.parser = parser;
-        this.viewer = viewer;
+    public LanguageTokenizer(LanguageTranslator translator) {
+        this.translator = translator;
+        this.parser = translator._language;
+        this.viewer = translator._viewer;
     }
 
     protected TokenGroup collectTokens(TSNode node, TokenList tokens, boolean detectOperator) {

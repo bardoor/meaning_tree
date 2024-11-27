@@ -19,7 +19,7 @@ public class JavaTranslator extends LanguageTranslator {
 
     @Override
     public LanguageTokenizer getTokenizer() {
-        return new JavaTokenizer((JavaLanguage) _language, (JavaViewer) _viewer);
+        return new JavaTokenizer(this);
     }
 
     @Override

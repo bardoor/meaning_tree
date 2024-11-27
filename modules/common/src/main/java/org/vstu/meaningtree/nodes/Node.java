@@ -4,19 +4,37 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.NodeIterator;
+import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 abstract public class Node implements Serializable, Cloneable {
-    protected static AtomicInteger _id_generator = new AtomicInteger();
-    protected int _id = _id_generator.incrementAndGet();
+    protected static AtomicLong _id_generator = new AtomicLong();
+    protected long _id = _id_generator.incrementAndGet();
 
-    // Любое привязанное к узлу извне значение
-    @Nullable
-    protected Object assignedValueTag = null;
+    /**
+     * Внимание! После вызова этого метода, все новые узлы дерева начнут нумерацию своего id с нуля.
+     * Это может привести к конфликтам. Убедитесь, что новые узлы не будут сравниваться по id с предыдущими узлами
+     */
+    public static void resetIdCounter() {
+        System.err.println("Warning! Node counter was reset. It may cause conflicts");
+        _id_generator = new AtomicLong();
+    }
+
+    /**
+     * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
+     * В случае, если не в массиве, то имеет значение -1
+     */
+    public record Info(Node node, Node parent, int pos, String fieldName) {
+        public String readableFieldName() {
+            return fieldName.startsWith("_") ? fieldName.replaceFirst("_", "") : fieldName;
+        }
+    }
+
+    private Set<NodeLabel> _labels = new HashSet<>();
 
     /**
      * Проверяет значение узлов по значению
@@ -27,7 +45,7 @@ abstract public class Node implements Serializable, Cloneable {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
-        return Objects.equals(assignedValueTag, node.assignedValueTag);
+        return Objects.equals(_labels, node._labels);
     }
 
     /**
@@ -36,7 +54,10 @@ abstract public class Node implements Serializable, Cloneable {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(assignedValueTag, getClass().getSimpleName().hashCode());
+        List<Object> toHash = new ArrayList<>();
+        toHash.add(getClass().getSimpleName());
+        toHash.addAll(_labels);
+        return Objects.hash(toHash.toArray(new Object[0]));
     }
 
     @Override
@@ -44,17 +65,11 @@ abstract public class Node implements Serializable, Cloneable {
         try {
             Node clone = (Node) super.clone();
             clone._id = getId();
+            clone._labels = new HashSet<>(_labels);
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
-    }
-
-    /**
-     * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
-     * В случае, если не в массиве, то имеет значение -1
-     */
-    public record Info(Node node, Node parent, int pos, String fieldName) {
     }
 
     public String generateDot() {
@@ -71,7 +86,7 @@ abstract public class Node implements Serializable, Cloneable {
         return builder.toString();
     }
 
-    public int getId() {
+    public long getId() {
         return _id;
     }
 
@@ -119,6 +134,14 @@ abstract public class Node implements Serializable, Cloneable {
         return fields.toArray(new Field[0]);
     }
 
+    /**
+     * Подменяет дочерний узел данного узла указанным, если это возможно.
+     * Списки и словари считаются дочерним объектом и в них функция не заходит.
+     * Если нужно такое поведение см. substituteNodeChildren
+     * @param fieldName - имя поля
+     * @param newChild - новый дочерний узел
+     * @return выполнилась ли замена
+     */
     @Experimental
     public boolean substituteChildren(String fieldName, Object newChild) {
         Field[] fields = getAllFields(this);
@@ -132,7 +155,39 @@ abstract public class Node implements Serializable, Cloneable {
                         field.set(this, newChild);
                     }
                     return true;
-                } catch (IllegalAccessException e) {
+                } catch (IllegalAccessException | IllegalArgumentException e) {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Подменяет дочерний узел данного узла указанным, если это возможно.
+     * Данный метод может менять дочерний узел даже внутри списка или словаря, если передать key
+     * @param fieldName - имя поля
+     * @param newChild - новый дочерний узел
+     * @param key - ключ словаря или индекс массива, если null - эквивалентно substituteChildren
+     * @return выполнилась ли замена
+     */
+    @Experimental
+    public boolean substituteNodeChildren(String fieldName, Object newChild, Object key) {
+        if (key == null) {
+            return substituteChildren(fieldName, newChild);
+        }
+        Field[] fields = getAllFields(this);
+        for (Field field : fields) {
+            if (field.getName().equals(fieldName)) {
+                try {
+                    Object value = field.get(this);
+                    if (value instanceof List list) {
+                        list.set((Integer)key, newChild);
+                    } else if (value instanceof Map map) {
+                        map.put(key, newChild);
+                    }
+                    return true;
+                } catch (IllegalAccessException | IllegalArgumentException e) {
                     return false;
                 }
             }
@@ -153,7 +208,7 @@ abstract public class Node implements Serializable, Cloneable {
                         substituteChildren(listName, newList);
                         return newList;
                     }
-                } catch (IllegalAccessException ex2) {
+                } catch (IllegalAccessException | IllegalArgumentException ex2) {
                     return null;
                 }
             }
@@ -166,7 +221,7 @@ abstract public class Node implements Serializable, Cloneable {
      * @param obj - любой объект
      */
     public void setAssignedValueTag(@Nullable Object obj) {
-        assignedValueTag = obj;
+        _labels.add(new NodeLabel(NodeLabel.VALUE, obj));
     }
 
     /**
@@ -175,7 +230,12 @@ abstract public class Node implements Serializable, Cloneable {
      */
     @Nullable
     public Object getAssignedValueTag() {
-        return assignedValueTag;
+        NodeLabel label = getLabel(NodeLabel.VALUE);
+        if (label != null) {
+            return label.getAttribute();
+        } else {
+            return null;
+        }
     }
 
     public String getNodeUniqueName() {
@@ -184,15 +244,97 @@ abstract public class Node implements Serializable, Cloneable {
 
     @Experimental
     @NotNull
+    /**
+     * Итератор может выдавать нулевые ссылки, их лучше игнорировать
+     */
     public Iterator<Info> iterateChildren() {
-        return new NodeIterator(this);
+        return new NodeIterator(this, false);
     }
 
     @Experimental
     public List<Node.Info> walkChildren() {
         List<Node.Info> result = new ArrayList<>();
-        NodeIterator iterator = new NodeIterator(this);
+        NodeIterator iterator = new NodeIterator(this, false);
         iterator.forEachRemaining(result::add);
-        return result;
+        return result.stream().filter(Objects::nonNull).toList();
+    }
+
+    public void setLabel(NodeLabel label) {
+        _labels.add(label);
+    }
+
+    public void setLabel(short id) {
+        _labels.add(new NodeLabel(id));
+    }
+
+    public NodeLabel getLabel(short id) {
+        return _labels.stream().filter((NodeLabel l) -> l.getId() == id).findFirst().orElse(null);
+    }
+
+    public boolean hasLabel(short id) {
+        return _labels.stream().anyMatch((NodeLabel l) -> l.getId() == id);
+    }
+
+    /**
+     * Переключает состояние метки
+     * @param id - айди метки
+     * @param val - атрибут
+     * @return убрана или установлена метка после вызова этой функции
+     */
+    public boolean toggleLabel(short id, Object val) {
+        NodeLabel label = getLabel(id);
+        if (label != null) {
+            _labels.remove(label);
+            return false;
+        } else {
+            _labels.add(new NodeLabel(id));
+            return true;
+        }
+    }
+
+    /**
+     * Переключает состояние метки
+     * @param id - айди метки
+     * @return убрана или установлена метка после вызова этой функции
+     */
+    public boolean toggleLabel(short id) {
+        return toggleLabel(id, null);
+    }
+
+    public boolean removeLabel(short id) {
+        return _labels.remove(getLabel(id));
+    }
+
+    @Deprecated
+    public List<Node> walkAllNodes() {
+        ArrayList<Node> nodes = new ArrayList<>();
+        appendWalkNode(nodes, this);
+        return nodes;
+    }
+    private void appendWalkNode(List<Node> nodes, Node node) {
+        for (Object obj : node.getChildren().values()) {
+            if (obj instanceof List<?> list) {
+                for (Object lstChild : list) {
+                    Node childNode = (Node) lstChild;
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            } else if (obj instanceof Map<?, ?> map) {
+                for (Object lstChild : map.values()) {
+                    Node childNode = (Node) lstChild;
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            } else if (obj instanceof Node childNode) {
+                nodes.add(childNode);
+                appendWalkNode(nodes, childNode);
+            } else if (obj instanceof Optional<?> optional) {
+                if (optional.isPresent()) {
+                    Node childNode = (Node) optional.get();
+                    nodes.add(childNode);
+                    appendWalkNode(nodes, childNode);
+                }
+            }
+        }
     }
 }

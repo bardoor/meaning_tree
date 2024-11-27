@@ -1,12 +1,17 @@
 package org.vstu.meaningtree;
 
+import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.utils.NodeIterator;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 
-public class MeaningTree implements Serializable, Cloneable {
-    private final Node _rootNode;
+public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info> {
+    private Node _rootNode;
 
     public MeaningTree(Node rootNode) {
         _rootNode = rootNode;
@@ -14,6 +19,23 @@ public class MeaningTree implements Serializable, Cloneable {
 
     public Node getRootNode() {
         return _rootNode;
+    }
+
+    public void changeRoot(Node node) {_rootNode = node;}
+
+    @Override
+    @NotNull
+    /**
+     * Итератор может выдавать нулевые ссылки
+     */
+    public Iterator<Node.Info> iterator() {
+        return new NodeIterator(_rootNode, true);
+    }
+
+    public List<Node.Info> walk() {
+        ArrayList<Node.Info> nodes = new ArrayList<>(_rootNode.walkChildren());
+        nodes.addFirst(new Node.Info(_rootNode, null, -1, "root"));
+        return nodes;
     }
 
     public String generateDot() {

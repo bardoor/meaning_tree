@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.tokens.Token;
 import org.vstu.meaningtree.utils.tokens.TokenGroup;
 import org.vstu.meaningtree.utils.tokens.TokenList;
@@ -66,11 +67,11 @@ public abstract class LanguageTranslator {
     }
 
     protected MeaningTree getMeaningTree(String code, HashMap<int[], Object> values) {
-        return _language.getMeaningTree(code, values);
+        return _language.getMeaningTree(prepareCode(code), values);
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList) {
-        return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
+        return getMeaningTree(String.join(" ", prepareCode(tokenList).stream().map((Token t) -> t.value).toList()));
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList, Map<TokenGroup, Object> tokenValueTags) {
@@ -98,6 +99,10 @@ public abstract class LanguageTranslator {
 
     public String getCode(MeaningTree mt) {
         return _viewer.toString(mt);
+    }
+
+    public String getCode(Node node) {
+        return _viewer.toString(node);
     }
 
     public TokenList getCodeAsTokens(MeaningTree mt) {

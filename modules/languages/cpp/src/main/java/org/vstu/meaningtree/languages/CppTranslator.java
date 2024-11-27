@@ -19,7 +19,7 @@ public class CppTranslator extends LanguageTranslator {
 
     @Override
     public LanguageTokenizer getTokenizer() {
-        return new CppTokenizer((CppLanguage) _language, (CppViewer) _viewer);
+        return new CppTokenizer(this);
     }
 
     @Override

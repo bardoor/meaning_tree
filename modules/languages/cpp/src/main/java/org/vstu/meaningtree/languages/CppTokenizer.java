@@ -24,6 +24,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.utils.NodeLabel;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
 
@@ -31,7 +32,7 @@ import java.util.*;
 
 public class CppTokenizer extends LanguageTokenizer {
     private static final List<String> stopNodes = List.of("user_defined_literal");
-    private Set<Integer> valueSetNodes = new HashSet<>();
+    private Set<Long> valueSetNodes = new HashSet<>();
 
     private static final Map<String, OperatorToken> operators = new HashMap<>() {{
         put("::", new OperatorToken("::", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
@@ -123,8 +124,8 @@ public class CppTokenizer extends LanguageTokenizer {
     }};
 
 
-    public CppTokenizer(CppLanguage parser, CppViewer viewer) {
-        super(parser, viewer);
+    public CppTokenizer(CppTranslator translator) {
+        super(translator);
     }
 
     @Override
@@ -277,6 +278,9 @@ public class CppTokenizer extends LanguageTokenizer {
     }
 
     public TokenGroup tokenizeExtended(Node node, TokenList result) {
+        if (node.hasLabel(NodeLabel.DUMMY)) {
+            return new TokenGroup(0, 0, result);
+        }
         int posStart = result.size();
         switch (node) {
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
