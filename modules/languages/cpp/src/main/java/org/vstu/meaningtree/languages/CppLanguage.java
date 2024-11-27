@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
@@ -85,10 +86,9 @@ public class CppLanguage extends LanguageParser {
         Objects.requireNonNull(node);
 
         Node createdNode = switch (node.getType()) {
-            case "ERROR" -> fromTSNode(node.getChild(0));
+            case "ERROR", "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
             case "translation_unit" -> fromTranslationUnit(node);
             case "expression_statement"-> fromExpressionStatement(node);
-            case "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
             case "binary_expression" -> fromBinaryExpression(node);
             case "unary_expression" -> fromUnaryExpression(node);
             case "parenthesized_expression" -> fromParenthesizedExpression(node);
@@ -113,7 +113,7 @@ public class CppLanguage extends LanguageParser {
             case "delete_expression" -> fromDeleteExpression(node);
             case "cast_expression" -> fromCastExpression(node);
             case "pointer_expression" -> fromPointerExpression(node);
-            default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
@@ -131,6 +131,9 @@ public class CppLanguage extends LanguageParser {
         String op = getCodePiece(node);
         Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
         if (op.startsWith("&")) {
+            if (argument instanceof AddOp binOp) {
+                return new IndexExpression(binOp.getLeft(), binOp.getRight());
+            }
             return new PointerPackOp(argument);
         } else if (op.startsWith("*")) {
             return new PointerUnpackOp(argument);
@@ -493,6 +496,12 @@ public class CppLanguage extends LanguageParser {
                 ) {
                     yield new NotOp(new ParenthesizedExpression(new InstanceOfOp(call.getArguments().getFirst(), type.getTypeParameters()[0])));
                 }
+
+                if (eq.getLeft() instanceof PointerPackOp leftPtr && eq.getRight() instanceof PointerPackOp rightPtr ) {
+                    yield new ReferenceEqOp(leftPtr.getArgument(), rightPtr.getArgument(), false);
+                }
+                // TODO: add type checking
+
                 yield eq;
             }
             case "!=" -> {
@@ -505,6 +514,9 @@ public class CppLanguage extends LanguageParser {
                         && right instanceof NullLiteral
                 ) {
                     yield new InstanceOfOp(call.getArguments().getFirst(), type.getTypeParameters()[0]);
+                }
+                if (neq.getLeft() instanceof PointerPackOp leftPtr && neq.getRight() instanceof PointerPackOp rightPtr) {
+                    yield new ReferenceEqOp(leftPtr.getArgument(), rightPtr.getArgument(), false);
                 }
                 yield neq;
             }
@@ -671,9 +683,8 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    private AssignmentExpression fromAssignmentExpression(@NotNull TSNode node) {
-        String variableName = getCodePiece(node.getChildByFieldName("left"));
-        SimpleIdentifier identifier = new SimpleIdentifier(variableName);
+    private Expression fromAssignmentExpression(@NotNull TSNode node) {
+        Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
 
         String operatorType = node.getChildByFieldName("operator").getType();
@@ -693,7 +704,13 @@ public class CppLanguage extends LanguageParser {
             default -> throw new IllegalStateException("Unexpected augmented assignment type: " + operatorType);
         };
 
-        return new AssignmentExpression(identifier, right, augmentedAssignmentOperator);
+        // Если только одно выражение и присвоение указателю, то нет смысла что-либо присваивать
+        if (left instanceof PointerUnpackOp
+                && getConfigParameter("expressionMode").getBooleanValue()) {
+            return right;
+        }
+
+        return new AssignmentExpression(left, right, augmentedAssignmentOperator);
     }
 
     @NotNull
@@ -713,7 +730,22 @@ public class CppLanguage extends LanguageParser {
         } else {
             List<Node> nodes = new ArrayList<>();
             for (int i = 0; i < node.getNamedChildCount(); i++) {
-                nodes.add(fromTSNode(node.getNamedChild(i)));
+                TSNode currNode = node.getNamedChild(i);
+                if (currNode.getType().equals("ERROR")) {
+                    Node errorNode = fromTSNode(currNode);
+                    if (errorNode instanceof Expression expr) {
+                        nodes.add(new ExpressionStatement(expr));
+                    } else {
+                        nodes.add(errorNode);
+                    }
+                } else {
+                    Node converted = fromTSNode(currNode);
+                    if (converted instanceof ExpressionStatement exprStmt && exprStmt.getExpression() == null) {
+                        continue;
+                    }
+                    nodes.add(converted);
+                }
+
             }
             SymbolEnvironment context = new SymbolEnvironment(null);
             return new ProgramEntryPoint(context, nodes);
@@ -722,7 +754,10 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Node fromExpressionStatement(@NotNull TSNode node) {
-        Expression expr = (Expression) fromTSNode(node.getChild(0));
+        if (node.getNamedChild(0).isNull()) {
+            return new ExpressionStatement(null);
+        }
+        Expression expr = (Expression) fromTSNode(node.getNamedChild(0));
         if (expr instanceof AssignmentExpression assignmentExpression) {
             return assignmentExpression.toStatement();
         }
