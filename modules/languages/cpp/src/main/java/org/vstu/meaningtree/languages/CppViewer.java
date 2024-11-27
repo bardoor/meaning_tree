@@ -237,6 +237,9 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringExpressionStatement(@NotNull ExpressionStatement expressionStatement) {
+        if (expressionStatement.getExpression() == null) {
+            return ";";
+        }
         return toString(expressionStatement.getExpression()) + ";";
     }
 

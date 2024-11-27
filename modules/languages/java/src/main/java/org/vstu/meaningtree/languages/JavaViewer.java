@@ -227,22 +227,36 @@ public class JavaViewer extends LanguageViewer {
             case ExpressionSequence expressionSequence -> toString(expressionSequence);
             case CharacterLiteral characterLiteral -> toString(characterLiteral);
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
-            case PointerPackOp ptr -> toString(ptr.getArgument());
-            case PointerUnpackOp ptr -> toString(ptr.getArgument());
+            case PointerPackOp ptr -> toString(ptr);
+            case PointerUnpackOp ptr -> toString(ptr);
             case ContainsOp op -> toString(op);
             case ReferenceEqOp op -> toString(op);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
 
+    public String toString(PointerPackOp ptr) {
+        return toString(ptr.getArgument());
+    }
+
+    public String toString(PointerUnpackOp ptr) {
+        if (ptr.getArgument() instanceof SubOp) {
+            throw new UnsupportedViewingException("Subtraction of pointers cannot be converted to indexing");
+        }
+        return toString(ptr.getArgument());
+    }
+
     public String toString(ListLiteral list) {
         var builder = new StringBuilder();
         String typeHint = list.getTypeHint() == null ? "" : toString(list.getTypeHint());
-        builder.append(String.format("new java.util.ArrayList<%s>() {{", typeHint));
+        builder.append(String.format("new java.util.ArrayList<%s>(java.util.List.of(", typeHint));
         for (Expression expression : list.getList()) {
-            builder.append(String.format("add(%s);", toString(expression)));
+            builder.append(String.format("%s, ", toString(expression)));
         }
-        builder.append("}}");
+        if (builder.toString().endsWith(", ")) {
+            builder.delete(builder.length() - 2, builder.length());
+        }
+        builder.append("))");
         return builder.toString();
     }
 
@@ -271,7 +285,7 @@ public class JavaViewer extends LanguageViewer {
 
     public String toString(PlainCollectionLiteral unmodifiableListLiteral) {
         var builder = new StringBuilder();
-        String typeHint = unmodifiableListLiteral.getTypeHint() == null ? "Object" : toString(unmodifiableListLiteral.getTypeHint());
+        String typeHint = unmodifiableListLiteral.getTypeHint() == null ? "Object" : toString(unmodifiableListLiteral.getTypeHint(), false);
         builder.append(String.format("new %s[] {", typeHint));
 
         for (Expression expression : unmodifiableListLiteral.getList()) {
@@ -592,7 +606,7 @@ public class JavaViewer extends LanguageViewer {
         StringBuilder builder = new StringBuilder();
         builder.append("new ");
 
-        String type = toString(arrayNewExpression.getType());
+        String type = toString(arrayNewExpression.getType(), false);
         builder.append(type);
 
         String dimensions = toString(arrayNewExpression.getShape());
@@ -1299,14 +1313,14 @@ public class JavaViewer extends LanguageViewer {
     private String toString(ArrayType type) {
         StringBuilder builder = new StringBuilder();
 
-        String baseType = toString(type.getItemType());
+        String baseType = toString(type.getItemType(), false);
         builder.append(baseType);
         builder.append(toString(type.getShape()));
 
         return builder.toString();
     }
 
-    private String toString(VariableDeclarator varDecl) {
+    private String toString(VariableDeclarator varDecl, Type type) {
         StringBuilder builder = new StringBuilder();
 
 
@@ -1321,6 +1335,11 @@ public class JavaViewer extends LanguageViewer {
 
         String identifierName = toString(identifier);
         builder.append(identifierName);
+
+        if (rValue instanceof ArrayLiteral arr && type instanceof ListType) {
+            rValue = new ListLiteral(arr.getList());
+            ((ListLiteral) rValue).setTypeHint(arr.getTypeHint());
+        }
 
         if (rValue != null) {
             builder.append(" = ").append(toString(rValue));
@@ -1342,7 +1361,7 @@ public class JavaViewer extends LanguageViewer {
                 .append(" ");
 
         for (VariableDeclarator varDecl : stmt.getDeclarators()) {
-            builder.append(toString(varDecl)).append(", ");
+            builder.append(toString(varDecl, stmt.getType())).append(", ");
         }
         // Чтобы избежать лишней головной боли на проверки "а последняя ли это декларация",
         // я автоматически после каждой декларации добавляю запятую и пробел,
@@ -1394,6 +1413,9 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(ExpressionStatement stmt) {
+        if (stmt.getExpression() == null) {
+            return ";";
+        }
         return String.format("%s;", toString(stmt.getExpression()));
     }
 

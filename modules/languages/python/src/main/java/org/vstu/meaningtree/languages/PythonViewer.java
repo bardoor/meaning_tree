@@ -138,11 +138,25 @@ public class PythonViewer extends LanguageViewer {
             case CastTypeExpression cast -> callsToString(cast);
             case Comprehension compr -> comprehensionToString(compr);
             case null -> throw new MeaningTreeException("Null node detected");
-            default -> throw new MeaningTreeException("Unsupported tree element: " + node.getClass().getName());
+            default -> throw new UnsupportedViewingException("Unsupported tree element: " + node.getClass().getName());
         };
     }
 
+    public String toString(PointerPackOp ptr) {
+        return toString(ptr.getArgument());
+    }
+
+    public String toString(PointerUnpackOp ptr) {
+        if (ptr.getArgument() instanceof SubOp) {
+            throw new UnsupportedViewingException("Subtraction of pointers cannot be converted to indexing");
+        }
+        return toString(ptr.getArgument());
+    }
+
     private String toString(ExpressionStatement stmt) {
+        if (stmt.getExpression() == null) {
+            return "\n";
+        }
         if (stmt.getExpression() instanceof AssignmentExpression assignment) {
             return toString(assignment.toStatement());
         }
@@ -586,8 +600,12 @@ public class PythonViewer extends LanguageViewer {
             for (Expression key : map.keySet()) {
                 builder.append(String.format("%s: %s, ", toString(key), toString(map.get(key))));
             }
-            builder.setCharAt(builder.length() - 2, '}');
-            builder.setLength(builder.length() - 1);
+            if (!map.isEmpty()) {
+                builder.setCharAt(builder.length() - 2, '}');
+                builder.setLength(builder.length() - 1);
+            } else {
+                builder.append("}");
+            }
             return builder.toString();
         } else {
             return "None";
