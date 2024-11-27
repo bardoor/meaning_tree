@@ -471,10 +471,7 @@ group: ComparisonsTest
             a < b and m >= k and x >= y
 
         alt python:
-            a < b and m >= k and x >= y
-
-        alt python:
-            a < b and y <= x and k <= m
+            a < b and k <= m and y <= x
 
 
     case: CompoundComparisonConvertationCase4
@@ -507,9 +504,11 @@ group: ComparisonsTest
         main python:
             a < b and a < c
 
-        python:
+        alt python:
             a < b and a < c
 
+        alt python:
+            a < c and a < b
 
     case: CompoundComparisonConvertationCase7
         main python:
