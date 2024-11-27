@@ -14,7 +14,6 @@ public class SingleTestCode {
     public String language;
     public TestCodeType type;
 
-
     public SingleTestCode(String code) {
         parseName(code);
         this.code = parseCode(code);

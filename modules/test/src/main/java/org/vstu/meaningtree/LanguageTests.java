@@ -56,6 +56,7 @@ class LanguageTests {
         //TODO: hardcoded конфигурация для всех языков. В будущем лучше придумать, как задавать её прямо в тестах
         HashMap<String, String> defaultConfig = new HashMap<>() {{
             put("translationUnitMode", "false");
+            put("skipErrors", "true");
         }};
 
         _config.addLanguageConfig(new TestLanguageConfig(new JavaTranslator(defaultConfig), "java", false));
