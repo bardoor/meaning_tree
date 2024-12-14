@@ -16,6 +16,7 @@ import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
@@ -426,6 +427,12 @@ public class CppLanguage extends LanguageParser {
             return new PowOp(arguments.getFirst(), arguments.getLast());
         }
 
+        if (functionName instanceof ScopedIdentifier scoped && scoped.getScopeResolution().size() > 1) {
+            List<SimpleIdentifier> object = scoped.getScopeResolution()
+                    .subList(0, scoped.getScopeResolution().size() - 1);
+            return new MethodCall(object.size() == 1 ? object.getFirst() : new ScopedIdentifier(object)
+                    , scoped.getScopeResolution().getLast(), arguments);
+        }
         return new FunctionCall(functionName, arguments);
     }
 

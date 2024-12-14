@@ -85,8 +85,8 @@ public class PythonTokenizer extends LanguageTokenizer {
                 OperatorAssociativity.RIGHT, true, new String[] {"if", "else"},
                 new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
         );
-        put("if", ternary.getFirst()); // Условные выражения
-        put("else", ternary.getLast()); // Условные выражения
+        put("if", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.CENTER)); // Условные выражения
+        put("else", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.CENTER)); // Условные выражения
 
         put("lambda", new OperatorToken("lambda", TokenType.KEYWORD, 17, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Лямбда-выражения
         put(":=", new OperatorToken(":=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Моржовый оператор
@@ -286,25 +286,19 @@ public class PythonTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
+        TokenGroup complexName;
         if (call instanceof MethodCall method) {
-            tokenizeExtended(new MemberAccess(method.getObject(), (SimpleIdentifier) method.getFunction()), result);
+            complexName = tokenizeExtended(new MemberAccess(method.getObject(), (SimpleIdentifier) method.getFunction()), result);
         } else {
-            tokenizeExtended(call.getFunction(), result);
+            complexName = tokenizeExtended(call.getFunction(), result);
         }
         OperatorToken tok = getOperatorByTokenName("CALL_(");
+        if (complexName != null) complexName.setMetadata(tok, OperandPosition.LEFT);
         result.add(tok);
-        int i = 0;
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
             result.add(new Token(",", TokenType.COMMA));
-            if (i == 0) {
-                operand.setMetadata(tok, OperandPosition.LEFT);
-            } else if (i == call.getArguments().size() - 1) {
-                operand.setMetadata(tok, OperandPosition.RIGHT);
-            } else {
-                operand.setMetadata(tok, OperandPosition.CENTER);
-            }
-            i++;
+            operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
         result.add(getOperatorByTokenName("CALL_)"));

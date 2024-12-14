@@ -19,6 +19,7 @@ import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
@@ -348,6 +349,12 @@ public class PythonLanguage extends LanguageParser {
             return new MatMulOp(exprs.getFirst(), exprs.get(1));
         }
 
+        if (ident instanceof ScopedIdentifier scoped && scoped.getScopeResolution().size() > 1) {
+            List<SimpleIdentifier> object = scoped.getScopeResolution()
+                    .subList(0, scoped.getScopeResolution().size() - 1);
+            return new MethodCall(object.size() == 1 ? object.getFirst() : new ScopedIdentifier(object)
+                    , scoped.getScopeResolution().getLast(), exprs);
+        }
         return new FunctionCall(ident, exprs);
     }
 

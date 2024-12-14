@@ -14,6 +14,7 @@ import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
@@ -268,7 +269,7 @@ public class PythonSpecialNodeTransformations {
             }
             if (node.getValue() instanceof SimpleIdentifier ident && ident.equals(instanceName)) {
                 parent.substituteChildren(node.getKey(), new SelfReference(instanceName.getName()));
-            } else if (node.getValue() instanceof FunctionCall call && call.hasFunctionName() && PythonSpecificFeatures.getFunctionName(call).equals(new SimpleIdentifier("super"))) {
+            } else if (node.getValue() instanceof MethodCall call && PythonSpecificFeatures.getFunctionName(call).contains(new SimpleIdentifier("super"))) {
                 parent.substituteChildren(node.getKey(), new SuperClassReference());
             } else if (node.getValue() instanceof List collection) {
                 collection = parent.ensureMutableNodeListInChildren(node.getKey());
@@ -279,7 +280,7 @@ public class PythonSpecialNodeTransformations {
                     }
                 }
                 for (int i = 0; i < collection.size(); i++) {
-                    if (collection.get(i) instanceof FunctionCall call && call.hasFunctionName() && call.getFunctionName().equals(new SimpleIdentifier("super"))) {
+                    if (collection.get(i) instanceof FunctionCall call && call.getFunctionName().contains(new SimpleIdentifier("super"))) {
                         collection.set(i, new SuperClassReference());
                         break;
                     }
@@ -292,7 +293,7 @@ public class PythonSpecialNodeTransformations {
                     }
                 }
                 for (Object key : map.keySet()) {
-                    if (map.get(key) instanceof FunctionCall call && call.hasFunctionName() && call.getFunctionName().equals(new SimpleIdentifier("super"))) {
+                    if (map.get(key) instanceof FunctionCall call && call.hasFunctionName() && call.getFunctionName().contains(new SimpleIdentifier("super"))) {
                         map.put(key, new SuperClassReference());
                         break;
                     }

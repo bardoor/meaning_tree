@@ -59,8 +59,8 @@ public class CppTokenizer extends LanguageTokenizer {
         put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
         put("--", new OperatorToken("--", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
-        put("++U", new OperatorToken("++", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
-        put("--U", new OperatorToken("--", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
+        put("++U", new OperatorToken("++", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.RIGHT));
+        put("--U", new OperatorToken("--", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.RIGHT));
         put("UMINUS", new OperatorToken("-", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("UPLUS", new OperatorToken("+", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("POINTER_&", new OperatorToken("&", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
@@ -105,8 +105,8 @@ public class CppTokenizer extends LanguageTokenizer {
                 OperatorAssociativity.RIGHT, true, new String[] {"?", ":"},
                 new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
         );
-        put("?", ternary.getFirst());  // Тернарный оператор
-        put(":", ternary.getLast());
+        put("?", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.LEFT));  // Тернарный оператор
+        put(":", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.LEFT));
 
         put("=", new OperatorToken("=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
         put("+=", new OperatorToken("+=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
@@ -294,13 +294,13 @@ public class CppTokenizer extends LanguageTokenizer {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
             }
             case QualifiedIdentifier ident -> {
-                tokenizeExtended(ident.getScope());
+                tokenizeExtended(ident.getScope(), result);
                 result.add(getOperatorByTokenName("::"));
-                tokenizeExtended(ident.getMember());
+                tokenizeExtended(ident.getMember(), result);
             }
             case ScopedIdentifier ident -> {
                 for (SimpleIdentifier simple : ident.getScopeResolution()) {
-                    tokenizeExtended(simple);
+                    tokenizeExtended(simple, result);
                     result.add(getOperatorByTokenName("."));
                 }
                 if (!ident.getScopeResolution().isEmpty()) {
@@ -376,25 +376,21 @@ public class CppTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
+        TokenGroup complexName = null;
         if (call instanceof MethodCall method) {
-            tokenizeExtended(new MemberAccess(method.getObject(), (SimpleIdentifier) method.getFunction()), result);
+            complexName = tokenizeExtended(method.getObject(), result);
+            result.add(new Token(".", TokenType.SEPARATOR));
+            tokenizeExtended(method.getFunction(), result);
         } else {
             tokenizeExtended(call.getFunction(), result);
         }
         OperatorToken tok = getOperatorByTokenName("CALL_(");
+        if (complexName != null) complexName.setMetadata(tok, OperandPosition.LEFT);
         result.add(tok);
-        int i = 0;
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
             result.add(getOperatorByTokenName(","));
-            if (i == 0) {
-                operand.setMetadata(tok, OperandPosition.LEFT);
-            } else if (i == call.getArguments().size() - 1) {
-                operand.setMetadata(tok, OperandPosition.RIGHT);
-            } else {
-                operand.setMetadata(tok, OperandPosition.CENTER);
-            }
-            i++;
+            operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
         result.add(getOperatorByTokenName("CALL_)"));
@@ -402,7 +398,6 @@ public class CppTokenizer extends LanguageTokenizer {
             tok.assignValue(call.getAssignedValueTag());
             valueSetNodes.add(call.getId());
         }
-
     }
 
     private void tokenizeUnary(UnaryExpression unaryOp, TokenList result) {

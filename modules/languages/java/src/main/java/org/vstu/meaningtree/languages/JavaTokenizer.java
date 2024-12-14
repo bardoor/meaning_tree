@@ -33,7 +33,7 @@ public class JavaTokenizer extends LanguageTokenizer {
 
     protected static final Map<String, OperatorToken> operators = new HashMap<>() {{
         List<OperatorToken> braces = OperatorToken.makeComplex(1,
-                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, true,
                 new String[] {"(", ")"},
                 new TokenType[] {TokenType.CALL_OPENING_BRACE, TokenType.CALL_CLOSING_BRACE},
                 new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
@@ -57,8 +57,8 @@ public class JavaTokenizer extends LanguageTokenizer {
 
         put("+U", new OperatorToken("+", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));   // Унарный плюс
         put("-U", new OperatorToken("-", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));   // Унарный минус
-        put("++U", new OperatorToken("++", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Префиксный инкремент
-        put("--U", new OperatorToken("--", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Префиксный декремент
+        put("++U", new OperatorToken("++", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.RIGHT)); // Префиксный инкремент
+        put("--U", new OperatorToken("--", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.RIGHT)); // Префиксный декремент
         put("!", new OperatorToken("!", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));     // Логическое НЕ
         put("~", new OperatorToken("~", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));     // Побитовая инверсия
 
@@ -93,8 +93,8 @@ public class JavaTokenizer extends LanguageTokenizer {
                 OperatorAssociativity.RIGHT, true, new String[] {"?", ":"},
                 new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
         );
-        put("?", ternary.getFirst());  // Тернарный оператор
-        put(":", ternary.getLast());
+        put("?", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.LEFT));  // Тернарный оператор
+        put(":", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.LEFT));
 
         put("=", new OperatorToken("=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));   // Присваивание
         put("+=", new OperatorToken("+=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Сложение с присваиванием
@@ -278,13 +278,13 @@ public class JavaTokenizer extends LanguageTokenizer {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
             }
             case QualifiedIdentifier ident -> {
-                tokenizeExtended(ident.getScope());
+                tokenizeExtended(ident.getScope(), result);
                 result.add(new Token("::", TokenType.IDENTIFIER));
-                tokenizeExtended(ident.getMember());
+                tokenizeExtended(ident.getMember(), result);
             }
             case ScopedIdentifier ident -> {
                 for (SimpleIdentifier simple : ident.getScopeResolution()) {
-                    tokenizeExtended(simple);
+                    tokenizeExtended(simple, result);
                     result.add(getOperatorByTokenName("."));
                 }
                 if (!ident.getScopeResolution().isEmpty()) {
@@ -334,25 +334,21 @@ public class JavaTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
+        TokenGroup complexName = null;
         if (call instanceof MethodCall method) {
-            tokenizeExtended(new MemberAccess(method.getObject(), (SimpleIdentifier) method.getFunction()), result);
+            complexName = tokenizeExtended(method.getObject(), result);
+            result.add(new Token(".", TokenType.SEPARATOR));
+            tokenizeExtended(method.getFunction(), result);
         } else {
             tokenizeExtended(call.getFunction(), result);
         }
         OperatorToken tok = getOperatorByTokenName("CALL_(");
+        if (complexName != null) complexName.setMetadata(tok, OperandPosition.LEFT);
         result.add(tok);
-        int i = 0;
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(new Token(",", TokenType.COMMA));
-            if (i == 0) {
-                operand.setMetadata(tok, OperandPosition.LEFT);
-            } else if (i == call.getArguments().size() - 1) {
-                operand.setMetadata(tok, OperandPosition.RIGHT);
-            } else {
-                operand.setMetadata(tok, OperandPosition.CENTER);
-            }
-            i++;
+            result.add(getOperatorByTokenName(","));
+            operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
         result.add(getOperatorByTokenName("CALL_)"));
