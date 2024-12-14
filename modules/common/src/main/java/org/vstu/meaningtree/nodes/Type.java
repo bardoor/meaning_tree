@@ -30,4 +30,14 @@ public abstract class Type extends Identifier {
     public Type clone() {
         return (Type) super.clone();
     }
+
+    @Override
+    public int contentSize() {
+        return 1;
+    }
+
+    @Override
+    public boolean contains(Identifier o) {
+        return false;
+    }
 }

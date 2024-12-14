@@ -46,4 +46,14 @@ public class QualifiedIdentifier extends Identifier {
         obj._member = _member.clone();
         return obj;
     }
+
+    @Override
+    public boolean contains(Identifier other) {
+        return _scope.contains(other) || _member.equals(other);
+    }
+
+    @Override
+    public int contentSize() {
+        return _scope.contentSize() + 1;
+    }
 }

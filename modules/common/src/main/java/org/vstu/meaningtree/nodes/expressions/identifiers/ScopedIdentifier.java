@@ -45,4 +45,14 @@ public class ScopedIdentifier extends Identifier {
         obj._scopeResolutionList = new ArrayList<>(_scopeResolutionList.stream().map(SimpleIdentifier::clone).toList());
         return obj;
     }
+
+    @Override
+    public boolean contains(Identifier other) {
+        return _scopeResolutionList.contains(other);
+    }
+
+    @Override
+    public int contentSize() {
+        return _scopeResolutionList.size();
+    }
 }

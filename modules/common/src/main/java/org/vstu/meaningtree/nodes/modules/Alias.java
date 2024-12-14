@@ -19,4 +19,14 @@ public class Alias extends Identifier {
     public SimpleIdentifier getAlias() {
         return _alias;
     }
+
+    @Override
+    public boolean contains(Identifier other) {
+        return _alias.equals(other) || _realName.contains(other);
+    }
+
+    @Override
+    public int contentSize() {
+        return _realName.contentSize() + 1;
+    }
 }
