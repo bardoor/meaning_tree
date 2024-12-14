@@ -48,6 +48,40 @@ public class TokenList extends ArrayList<Token> {
         return new ImmutablePair<>(index, get(index));
     }
 
+    public ComplexOperatorToken isInComplex(int tokenIndex) {
+        for (int i = tokenIndex; i >= 0; i--) {
+            if (get(i) instanceof ComplexOperatorToken complex && complex.isOpening()) {
+                if (tokenIndex > i && tokenIndex < findClosingComplex(i)) {
+                    return complex;
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean isParenthesized(int operatorToken) {
+        if (!(get(operatorToken) instanceof OperatorToken)) {
+            return false;
+        }
+        for (int i = operatorToken; i >= 0; i--) {
+            if (get(i).type == TokenType.OPENING_BRACE) {
+                int brace = 1;
+                int j = i + 1;
+                for (;j < size() && brace != 0; j++) {
+                    if (get(j).type == TokenType.OPENING_BRACE) {
+                        brace++;
+                    } else if (get(j).type == TokenType.CLOSING_BRACE) {
+                        brace--;
+                    }
+                }
+                if (brace == 0 && operatorToken > i && operatorToken < j) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public void setMetadata(OperatorToken token, OperandPosition pos) {
         for (int i = 0; i < size(); i++) {
             Token t = get(i);
@@ -71,7 +105,7 @@ public class TokenList extends ArrayList<Token> {
     public int findComplex(int tokenIndex, int complexPos) {
         assert get(tokenIndex) instanceof ComplexOperatorToken;
         ComplexOperatorToken complex = (ComplexOperatorToken) get(tokenIndex);
-        int nesting = 0;
+        int nesting = 1;
         int start = complex.positionOfToken <= complexPos ? tokenIndex + 1 : size() - 1;
         int stop = complex.positionOfToken <= complexPos ? size() - 1 : tokenIndex;
         int step = complex.positionOfToken <= complexPos ? 1 : -1;
