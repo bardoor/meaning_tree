@@ -379,8 +379,7 @@ public class CppTokenizer extends LanguageTokenizer {
         TokenGroup complexName = null;
         if (call instanceof MethodCall method) {
             complexName = tokenizeExtended(method.getObject(), result);
-            result.add(new Token(".", TokenType.SEPARATOR));
-            tokenizeExtended(method.getFunction(), result);
+            result.add(new Token("." + ((SimpleIdentifier)method.getFunctionName()).getName(), TokenType.CALLABLE_IDENTIFIER));
         } else {
             tokenizeExtended(call.getFunction(), result);
         }
