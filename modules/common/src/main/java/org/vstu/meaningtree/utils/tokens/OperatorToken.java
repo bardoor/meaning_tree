@@ -13,6 +13,7 @@ public class OperatorToken extends OperandToken {
     public final OperatorArity arity;
     public final boolean isStrictOrder;
     public final OperatorTokenPosition tokenPos;
+    private OperandPosition firstOperandToEvaluation;
 
     public final OperatorType additionalOpType;
 
@@ -37,6 +38,7 @@ public class OperatorToken extends OperandToken {
         this.tokenPos = tokenPos;
         this.isStrictOrder = isStrictOrder;
         this.additionalOpType = additionalOpType;
+        firstOperandToEvaluation = arity == OperatorArity.UNARY ? OperandPosition.RIGHT : OperandPosition.LEFT;
     }
 
     public OperatorToken(String value,
@@ -69,6 +71,15 @@ public class OperatorToken extends OperandToken {
     ) {
         this(value, type, precedence, assoc, arity, isStrictOrder,
                 arity == OperatorArity.UNARY ? OperatorTokenPosition.PREFIX : OperatorTokenPosition.INFIX, OperatorType.OTHER);
+    }
+
+    public OperandPosition getFirstOperandToEvaluation() {
+        return firstOperandToEvaluation;
+    }
+
+    public OperatorToken setFirstOperandToEvaluation(OperandPosition op) {
+        firstOperandToEvaluation = op;
+        return this;
     }
 
     public static List<OperatorToken> makeComplex(int precedence, OperatorArity arity, OperatorAssociativity assoc,
