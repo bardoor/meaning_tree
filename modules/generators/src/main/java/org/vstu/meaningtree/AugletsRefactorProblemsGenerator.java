@@ -1,19 +1,21 @@
 package org.vstu.meaningtree;
 
-import org.apache.jena.sparql.expr.Expr;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
-import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
 import org.vstu.meaningtree.nodes.statements.loops.DoWhileLoop;
 import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class AugletsRefactorProblemsGenerator {
 
@@ -55,6 +57,7 @@ public class AugletsRefactorProblemsGenerator {
                 case ADD_USELESS_CONDITION_CHECKING_IN_ELSE -> addUselessConditionCheckingInElse((IfStatement) node);
                 case WRAP_WHILE_LOOP_AND_REPLACE_IT_WITH_DO_WHILE ->
                         wrapWhileLoopAndReplaceItWithDoWhile((WhileLoop) node);
+                case CONVERT_REDUNDANT_CONDITION_CHECKS -> convertWithRedundantConditionChecks((IfStatement) node);
             };
         }
         catch (ClassCastException castException) {
@@ -164,4 +167,36 @@ public class AugletsRefactorProblemsGenerator {
                 )
         );
     }
+
+    public static CompoundStatement convertWithRedundantConditionChecks(IfStatement ifStatement) {
+        var andOpClass = ShortCircuitAndOp.class;
+
+        List<ConditionBranch> branches = ifStatement.getBranches();
+        List<Node> newIfStmts = new ArrayList<>();
+        Expression lastNegativeCond = makeNegativeCondition(branches.getFirst().getCondition());
+        newIfStmts.add(new IfStatement(branches.getFirst().getCondition(), branches.getFirst().getBody()));
+
+        for (int i = 1; i < branches.size(); i++) {
+            ConditionBranch curBranch = branches.get(i);
+            Expression[] condExprs = { lastNegativeCond, curBranch.getCondition() };
+
+            Expression newCondExpr = BinaryExpression.fromManyOperands(condExprs, 0, andOpClass);
+            newIfStmts.add(new IfStatement(newCondExpr, curBranch.getBody()));
+
+            lastNegativeCond = BinaryExpression.fromManyOperands(
+                    new Expression[] { lastNegativeCond, makeNegativeCondition(curBranch.getCondition()) },
+                    0,
+                    andOpClass
+            );
+        }
+
+        if (ifStatement.hasElseBranch()) {
+            newIfStmts.add(new IfStatement(lastNegativeCond, ifStatement.getElseBranch()));
+        }
+
+        // TODO: возникает лишний блок кода. Как это пофиксить? Подумаю...
+        return new CompoundStatement(new SymbolEnvironment(null), newIfStmts);
+    }
+
+
 }
