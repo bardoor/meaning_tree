@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
@@ -335,18 +336,21 @@ public class JavaTokenizer extends LanguageTokenizer {
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
         TokenGroup complexName = null;
+        OperatorToken tok = getOperatorByTokenName("CALL_(");
         if (call instanceof MethodCall method) {
             complexName = tokenizeExtended(method.getObject(), result);
             result.add(new Token("." + ((SimpleIdentifier)method.getFunctionName()).getName(), TokenType.CALLABLE_IDENTIFIER));
         } else {
-            tokenizeExtended(call.getFunction(), result);
+            if (!(call.getFunction() instanceof SimpleIdentifier)) {
+                throw new UnsupportedParsingException("This language supports only simple identifier as function name");
+            }
+            result.add(new Token(((SimpleIdentifier)call.getFunctionName()).getName(), TokenType.CALLABLE_IDENTIFIER));
         }
-        OperatorToken tok = getOperatorByTokenName("CALL_(");
         if (complexName != null) complexName.setMetadata(tok, OperandPosition.LEFT);
         result.add(tok);
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(getOperatorByTokenName(","));
+            result.add(new Token(",", TokenType.COMMA));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();

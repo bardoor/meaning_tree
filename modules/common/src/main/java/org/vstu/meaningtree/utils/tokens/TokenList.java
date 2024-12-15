@@ -106,10 +106,10 @@ public class TokenList extends ArrayList<Token> {
         assert get(tokenIndex) instanceof ComplexOperatorToken;
         ComplexOperatorToken complex = (ComplexOperatorToken) get(tokenIndex);
         int nesting = 1;
-        int start = complex.positionOfToken <= complexPos ? tokenIndex + 1 : size() - 1;
-        int stop = complex.positionOfToken <= complexPos ? size() - 1 : tokenIndex;
+        int start = complex.positionOfToken <= complexPos ? tokenIndex + 1 : tokenIndex - 1;
+        int stop = complex.positionOfToken <= complexPos ? size() : 0;
         int step = complex.positionOfToken <= complexPos ? 1 : -1;
-        for (int i = start; i < stop; i += step){
+        for (int i = start; (complex.positionOfToken <= complexPos) == (i < stop); i += step){
             if (get(i) instanceof ComplexOperatorToken currentComplex) {
                 boolean increaseCondition = currentComplex.positionOfToken != complexPos;
                 boolean decreaseCondition = currentComplex.positionOfToken == complexPos;
