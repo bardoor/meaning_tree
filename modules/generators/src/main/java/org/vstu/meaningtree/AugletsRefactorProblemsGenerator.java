@@ -84,6 +84,36 @@ public class AugletsRefactorProblemsGenerator {
         return null;
     }
 
+    /**
+     * Добавляет внутрь существующей ветки else ненужную проверку
+     *
+     * <p>
+     *     Код внутри блока <b>else</b> оборачивается в <b>if</b>,
+     *     условие которого - отрицание условия <b>if</b> изначального ветвления
+     * </p>
+     * <p>Пример:
+     * <pre><code>
+     * // До модификации
+     * if (a > b) {
+     *     ...
+     * } else {
+     *     ..
+     * }
+     *
+     * // После модификации
+     * if (a > b) {
+     *     ...
+     * } else {
+     *     if (a <= b) {
+     *         ...
+     *     }
+     * }
+     * </code></pre>
+     *
+     * @param ifStatement узел ветвления с ровно одной веткой <b>then</b> и веткой <b>else</b>
+     * @return {@code IfStatement} с модифицированной веткой <b>else</b>,
+     * <p>Или {@code null} если в переданном {@code IfStatement} отсутствует ветка <b>else</b> или несколько веток <b>then</b>
+     */
     public static IfStatement addUselessConditionCheckingInElse(IfStatement ifStatement) {
         if (ifStatement.getBranches().size() != 1 || !ifStatement.hasElseBranch()) {
             return null;
