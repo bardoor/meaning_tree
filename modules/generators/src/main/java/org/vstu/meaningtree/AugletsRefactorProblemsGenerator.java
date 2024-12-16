@@ -162,6 +162,28 @@ public class AugletsRefactorProblemsGenerator {
         return new NotOp(condition);
     }
 
+    /**
+     * Оборачивает цикл <code>while</code> в <code>if</code> и заменяет его на цикл <code>do-while</code>
+     * <p>
+     *     Пример:
+     *     <pre><code>
+     *     // До модификации
+     *     while (x > 0) {
+     *         ...
+     *     }
+     *
+     *     // После модификации
+     *     if (x > 0) {
+     *         do {
+     *             ...
+     *         } while (x > 0);
+     *     }
+     *     </code></pre>
+     * </p>
+     *
+     * @param whileLoop исходный цикл <code>while</code>
+     * @return {@link IfStatement}, содержащий цикл <code>do-while</code> с условием из исходного цикла
+     */
     public static IfStatement wrapWhileLoopAndReplaceItWithDoWhile(WhileLoop whileLoop) {
         var condition = whileLoop.getCondition();
         var doWhile = new DoWhileLoop(condition, whileLoop.getBody());
