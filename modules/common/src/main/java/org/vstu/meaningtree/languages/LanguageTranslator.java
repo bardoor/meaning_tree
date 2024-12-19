@@ -61,7 +61,7 @@ public abstract class LanguageTranslator {
     }
 
     public MeaningTree getMeaningTree(String code) {
-        return _language.getMeaningTree(code);
+        return _language.getMeaningTree(prepareCode(code));
     }
 
     protected MeaningTree getMeaningTree(String code, HashMap<int[], Object> values) {
@@ -69,7 +69,7 @@ public abstract class LanguageTranslator {
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList) {
-        return getMeaningTree(String.join(" ", prepareCode(tokenList).stream().map((Token t) -> t.value).toList()));
+        return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList, Map<TokenGroup, Object> tokenValueTags) {

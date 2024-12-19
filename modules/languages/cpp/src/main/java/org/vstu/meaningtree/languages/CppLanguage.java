@@ -7,9 +7,11 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
@@ -34,6 +36,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
@@ -44,6 +47,7 @@ import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
+import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.io.File;
@@ -82,6 +86,28 @@ public class CppLanguage extends LanguageParser {
         return new MeaningTree(fromTSNode(rootNode));
     }
 
+    @Override
+    public TSNode getRootNode() {
+        TSNode result = super.getRootNode();
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
+            TSNode func = result.getNamedChild(0);
+            assert func.getType().equals("function_definition");
+            assert (getCodePiece(func.getChildByFieldName("declarator")
+                    .getChildByFieldName("declarator"))
+                    .equals("main"));
+            TSNode body = func.getChildByFieldName("body");
+            if (body.getNamedChildCount() > 1) {
+                throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
+            }
+            if (body.getNamedChildCount() < 1) {
+                throw new UnsupportedParsingException("Main expression was not found in expression mode");
+            }
+            result = body.getNamedChild(0);
+        }
+        return result;
+    }
+
     @NotNull
     private Node fromTSNode(@NotNull TSNode node) {
         Objects.requireNonNull(node);
@@ -89,6 +115,7 @@ public class CppLanguage extends LanguageParser {
         Node createdNode = switch (node.getType()) {
             case "ERROR", "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
             case "translation_unit" -> fromTranslationUnit(node);
+            case "function_definition" -> fromFunction(node);
             case "expression_statement"-> fromExpressionStatement(node);
             case "binary_expression" -> fromBinaryExpression(node);
             case "unary_expression" -> fromUnaryExpression(node);
@@ -110,6 +137,7 @@ public class CppLanguage extends LanguageParser {
             case "initializer_list" -> fromInitializerList(node);
             case "primitive_type", "template_function", "placeholder_type_specifier", "sized_type_specifier", "type_descriptor" -> fromType(node);
             case "sizeof_expression" -> fromSizeOf(node);
+            case "compound_statement" -> fromBody(node);
             case "new_expression" -> fromNewExpression(node);
             case "delete_expression" -> fromDeleteExpression(node);
             case "cast_expression" -> fromCastExpression(node);
@@ -118,6 +146,26 @@ public class CppLanguage extends LanguageParser {
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromFunction(TSNode node) {
+        // TODO: требуется ревизия. Сделано только для режима выражений и функции main
+        Type retType = fromType(node.getChildByFieldName("type"));
+        TSNode declarator = node.getChildByFieldName("declarator");
+        SimpleIdentifier name = (SimpleIdentifier) fromTSNode(declarator.getChildByFieldName("declarator"));
+        CompoundStatement body = fromBody(node.getChildByFieldName("body"));
+        // TODO: Аргументы игнорируются!!
+        return new FunctionDefinition(new FunctionDeclaration(name, retType, List.of(), List.of()), body);
+    }
+
+    private CompoundStatement fromBody(TSNode node) {
+        // TODO: Нужна поддержка таблицы символов
+        BodyBuilder builder = new BodyBuilder();
+        for (int i = 1; i < node.getChildCount() - 1; i++) {
+            Node child = fromTSNode(node.getChild(i));
+            builder.put(child);
+        }
+        return builder.build();
     }
 
     private Node fromInitializerList(TSNode node) {
@@ -731,32 +779,30 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Node fromTranslationUnit(@NotNull TSNode node) {
-        // TODO: Temporary solution
-        if (node.getNamedChildCount() == 1) {
-            return fromTSNode(node.getNamedChild(0));
-        } else {
-            List<Node> nodes = new ArrayList<>();
-            for (int i = 0; i < node.getNamedChildCount(); i++) {
-                TSNode currNode = node.getNamedChild(i);
-                if (currNode.getType().equals("ERROR")) {
-                    Node errorNode = fromTSNode(currNode);
-                    if (errorNode instanceof Expression expr) {
-                        nodes.add(new ExpressionStatement(expr));
-                    } else {
-                        nodes.add(errorNode);
-                    }
+        List<Node> nodes = new ArrayList<>();
+        FunctionDefinition entryPoint = null;
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            TSNode currNode = node.getNamedChild(i);
+            if (currNode.getType().equals("ERROR")) {
+                Node errorNode = fromTSNode(currNode);
+                if (errorNode instanceof Expression expr) {
+                    nodes.add(new ExpressionStatement(expr));
                 } else {
-                    Node converted = fromTSNode(currNode);
-                    if (converted instanceof ExpressionStatement exprStmt && exprStmt.getExpression() == null) {
-                        continue;
-                    }
-                    nodes.add(converted);
+                    nodes.add(errorNode);
                 }
-
+            } else {
+                Node converted = fromTSNode(currNode);
+                if (converted instanceof ExpressionStatement exprStmt && exprStmt.getExpression() == null) {
+                    continue;
+                }
+                if (converted instanceof FunctionDefinition funcDecl && funcDecl.getName().equalsIdentifier("main")) {
+                    entryPoint = funcDecl;
+                }
+                nodes.add(converted);
             }
-            SymbolEnvironment context = new SymbolEnvironment(null);
-            return new ProgramEntryPoint(context, nodes);
         }
+        SymbolEnvironment context = new SymbolEnvironment(null); //TODO: fix symbol table
+        return new ProgramEntryPoint(context, nodes, entryPoint);
     }
 
     @NotNull

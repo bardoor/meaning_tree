@@ -20,6 +20,7 @@ public abstract class LanguageTokenizer {
 
     /**
      * Токенизирует выражения из кода, переданного в токенайзер
+     * Не учитывает режим выражения и прочие конфигурации
      * @return
      */
     public TokenList tokenize(String code) {
@@ -43,7 +44,7 @@ public abstract class LanguageTokenizer {
     }
 
     public TokenList tokenizeExtended(String code) {
-        return tokenizeExtended(parser.getMeaningTree(code));
+        return tokenizeExtended(parser.getMeaningTree(translator.prepareCode(code)));
     }
 
     /**

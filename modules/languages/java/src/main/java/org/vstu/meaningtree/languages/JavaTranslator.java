@@ -27,6 +27,9 @@ public class JavaTranslator extends LanguageTranslator {
         if (getConfigParameter("expressionMode").getBooleanValue() && !code.endsWith(";")) {
             code = code + ";";
         }
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            code = String.format("class Main { public static void main(String[] args) {%s} }", code);
+        }
         return code;
     }
 
@@ -34,6 +37,18 @@ public class JavaTranslator extends LanguageTranslator {
     public TokenList prepareCode(TokenList list) {
         if (getConfigParameter("expressionMode").getBooleanValue() && !list.getLast().type.equals(TokenType.SEPARATOR)) {
             list.add(new Token(";", TokenType.SEPARATOR));
+        }
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            TokenList final_ = getTokenizer().tokenize("class Main { public static void main(String[] args) {;%s} }");
+            int marker = final_.indexOf(
+                    final_.stream().filter((Token t) -> t.value.equals(";")).findFirst().orElse(null)
+            );
+            final_.remove(marker);
+            final_.addAll(
+                    marker,
+                    list
+            );
+            return final_;
         }
         return list;
     }

@@ -109,6 +109,30 @@ public class JavaLanguage extends LanguageParser {
         return new MeaningTree(fromTSNode(rootNode));
     }
 
+    @Override
+    public TSNode getRootNode() {
+        TSNode result = super.getRootNode();
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
+            TSNode cls = result.getNamedChild(0);
+            assert cls.getType().equals("class_declaration");
+            TSNode clsbody = cls.getChildByFieldName("body");
+            assert cls.getNamedChildCount() > 0;
+            TSNode func = clsbody.getNamedChild(0);
+            assert getCodePiece(func.getChildByFieldName("name")).equals("main");
+            TSNode body = func.getChildByFieldName("body");
+            if (body.getNamedChildCount() > 1) {
+                throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
+            }
+            if (body.getNamedChildCount() < 1) {
+                throw new UnsupportedParsingException("Main expression was not found in expression mode");
+            }
+            result = body.getNamedChild(0);
+        }
+        return result;
+    }
+
+
     private void rollbackContext() {
         if (currentContext.getParent() != null) {
             currentContext = currentContext.getParent();
@@ -1166,9 +1190,6 @@ public class JavaLanguage extends LanguageParser {
                         )
         ) {
             throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
-        }
-        if (getConfigParameter("expressionMode").getBooleanValue() && nodes.length > 0) {
-            return nodes[0];
         }
 
         return new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), mainClass, mainMethod);
