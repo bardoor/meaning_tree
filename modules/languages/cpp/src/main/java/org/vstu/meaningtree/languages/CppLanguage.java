@@ -714,7 +714,7 @@ public class CppLanguage extends LanguageParser {
             Node treeNode = fromTSNode(node.getChildByFieldName("argument"));
             boolean isPointer = node.getChild(1).getType().equals("->");
             if (treeNode instanceof SimpleIdentifier ident && !isPointer) {
-                return new ScopedIdentifier(ident, (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("field")));
+                return new MemberAccess(ident, (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("field")));
             } else if (treeNode instanceof ScopedIdentifier ident && !isPointer) {
                 List<SimpleIdentifier> identList = new ArrayList<>(ident.getScopeResolution());
                 Identifier fieldIdent = (Identifier) fromIdentifier(node.getChildByFieldName("field"));
@@ -725,7 +725,7 @@ public class CppLanguage extends LanguageParser {
                 } else if (fieldIdent instanceof QualifiedIdentifier) {
                     throw new MeaningTreeException("Unsupported scoped and qualified identifier combination");
                 }
-                return new ScopedIdentifier(identList);
+                return new ScopedIdentifier(identList).toMemberAccess();
             } else {
                 if (isPointer) {
                     return new PointerMemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));

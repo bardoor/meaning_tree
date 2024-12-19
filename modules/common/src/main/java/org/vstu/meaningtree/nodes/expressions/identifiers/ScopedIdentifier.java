@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.nodes.expressions.identifiers;
 
 import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,5 +55,14 @@ public class ScopedIdentifier extends Identifier {
     @Override
     public int contentSize() {
         return _scopeResolutionList.size();
+    }
+
+    public MemberAccess toMemberAccess() {
+        if (_scopeResolutionList.size() == 2) {
+            return new MemberAccess(_scopeResolutionList.getFirst(), _scopeResolutionList.getLast());
+        }
+        return new MemberAccess(
+                new ScopedIdentifier(_scopeResolutionList.subList(0, _scopeResolutionList.size() - 1))
+                        .toMemberAccess(), _scopeResolutionList.getLast());
     }
 }
