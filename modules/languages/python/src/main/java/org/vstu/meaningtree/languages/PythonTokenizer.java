@@ -391,10 +391,10 @@ public class PythonTokenizer extends LanguageTokenizer {
     private void tokenizeTernary(TernaryOperator ternary, TokenList result) {
         TokenGroup alt1 = tokenizeExtended(ternary.getThenExpr(), result);
         OperatorToken op1 = getOperatorByTokenName("if");
-        alt1.setMetadata(op1, OperandPosition.CENTER);
+        alt1.setMetadata(op1, OperandPosition.LEFT);
         result.add(op1);
         TokenGroup cond = tokenizeExtended(ternary.getCondition(), result);
-        cond.setMetadata(op1, OperandPosition.LEFT);
+        cond.setMetadata(op1, OperandPosition.CENTER);
         OperatorToken op2 = getOperatorByTokenName("else");
         result.add(op2);
         TokenGroup alt2 = tokenizeExtended(ternary.getElseExpr(), result);
