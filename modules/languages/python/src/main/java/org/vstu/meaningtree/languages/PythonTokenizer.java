@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
+import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
@@ -290,7 +291,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         if (call instanceof MethodCall method) {
             complexName = tokenizeExtended(new MemberAccess(method.getObject(), (SimpleIdentifier) method.getFunction()), result);
         } else {
-            complexName = tokenizeExtended(call.getFunction(), result);
+            complexName = tokenizeExtended(PythonSpecificFeatures.getFunctionExpression(call), result);
         }
         OperatorToken tok = getOperatorByTokenName("CALL_(");
         if (complexName != null) complexName.setMetadata(tok, OperandPosition.LEFT);
@@ -318,7 +319,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         };
         if (operator == null) {
             String s = viewer.toString(unaryOp);
-            result.addAll(tokenize(s));
+            result.addAll(tokenize(translator.prepareCode(s)));
             return;
         }
         TokenGroup op;
@@ -360,7 +361,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         };
         if (operator == null) {
             String s = viewer.toString(binOp);
-            result.addAll(tokenize(s));
+            result.addAll(tokenize(translator.prepareCode(s)));
             return;
         }
         TokenGroup left = tokenizeExtended(binOp.getLeft(), result);

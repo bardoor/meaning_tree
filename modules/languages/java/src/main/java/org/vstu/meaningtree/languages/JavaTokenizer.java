@@ -375,7 +375,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         };
         if (operator == null) {
             String s = viewer.toString(unaryOp);
-            result.addAll(tokenize(s));
+            result.addAll(tokenize(translator.prepareCode(s)));
             return;
         }
         TokenGroup op;
@@ -422,7 +422,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         };
         if (operator == null) {
             String s = viewer.toString(binOp);
-            result.addAll(tokenize(s));
+            result.addAll(tokenize(translator.prepareCode(s)));
             return;
         }
         TokenGroup left = tokenizeExtended(binOp.getLeft(), result);
