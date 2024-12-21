@@ -1,7 +1,6 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.tokens.Token;
@@ -49,8 +48,6 @@ public abstract class LanguageTranslator {
             ConfigParameter cfg = getConfigParameter(paramName);
             if (cfg != null) {
                 cfg.inferValueFrom(rawConfig.get(paramName));
-            } else {
-                throw new MeaningTreeException("Missing config parameter: ".concat(paramName));
             }
         }
 
