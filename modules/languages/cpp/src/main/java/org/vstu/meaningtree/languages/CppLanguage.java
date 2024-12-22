@@ -461,7 +461,7 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Node fromCallExpression(@NotNull TSNode node) {
-        Identifier functionName = (Identifier) fromTSNode(node.getChildByFieldName("function"));
+        Expression functionName = (Expression) fromTSNode(node.getChildByFieldName("function"));
 
         TSNode tsArguments = node.getChildByFieldName("arguments");
         List<Expression> arguments = new ArrayList<>();
@@ -480,6 +480,9 @@ public class CppLanguage extends LanguageParser {
                     .subList(0, scoped.getScopeResolution().size() - 1);
             return new MethodCall(object.size() == 1 ? object.getFirst() : new ScopedIdentifier(object)
                     , scoped.getScopeResolution().getLast(), arguments);
+        }
+        if (functionName instanceof MemberAccess memAccess) {
+            return new MethodCall(memAccess.getExpression(), memAccess.getMember(), arguments);
         }
         return new FunctionCall(functionName, arguments);
     }

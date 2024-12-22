@@ -319,10 +319,8 @@ public class PythonLanguage extends LanguageParser {
 
     private Node fromFunctionCall(TSNode node) {
         TSNode tsNode = node.getChildByFieldName("function");
-        Expression ident = (Expression) fromTSNode(tsNode);
-        if (ident instanceof MemberAccess memAccess) {
-            ident = memAccess.toScopedIdentifier();
-        }
+        Expression name = (Expression) fromTSNode(tsNode);
+
         List<Expression> exprs = new ArrayList<>();
         TSNode arguments = node.getChildByFieldName("arguments");
         for (int i = 0; i < arguments.getNamedChildCount(); i++) {
@@ -349,13 +347,16 @@ public class PythonLanguage extends LanguageParser {
             return new MatMulOp(exprs.getFirst(), exprs.get(1));
         }
 
-        if (ident instanceof ScopedIdentifier scoped && scoped.getScopeResolution().size() > 1) {
+        if (name instanceof ScopedIdentifier scoped && scoped.getScopeResolution().size() > 1) {
             List<SimpleIdentifier> object = scoped.getScopeResolution()
                     .subList(0, scoped.getScopeResolution().size() - 1);
             return new MethodCall(object.size() == 1 ? object.getFirst() : new ScopedIdentifier(object)
                     , scoped.getScopeResolution().getLast(), exprs);
         }
-        return new FunctionCall(ident, exprs);
+        if (name instanceof MemberAccess memberAccess) {
+            return new MethodCall(memberAccess.getExpression(), memberAccess.getMember(), exprs);
+        }
+        return new FunctionCall(name, exprs);
     }
 
     private Annotation fromDecorator(TSNode node) {
