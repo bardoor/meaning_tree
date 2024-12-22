@@ -15,6 +15,9 @@ import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.io.InputCommand;
+import org.vstu.meaningtree.nodes.io.PrintCommand;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 
@@ -91,8 +94,18 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     public SerializedNode serialize(FunctionCall call) {
         return new SerializedNode("FunctionCall", new HashMap<>() {{
-            put("name", serialize(call.getFunction()));
+            if (call.getFunction() != null) {
+                put("name", serialize(call.getFunction()));
+            }
             put("args", serialize(call.getArguments()));
+            if (call instanceof PrintValues p) {
+                if (p.separator != null) put("separator", serialize(p.separator));
+                if (p.end != null) put("end", serialize(p.end));
+            }
+        }}, new HashMap<>() {{
+            if (call instanceof PrintCommand || call instanceof InputCommand) {
+                put("spec", call.getClass().getSimpleName());
+            }
         }});
     }
 

@@ -24,6 +24,8 @@ import org.vstu.meaningtree.nodes.expressions.other.ExpressionSequence;
 import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
 import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
 import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
+import org.vstu.meaningtree.nodes.io.InputCommand;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
@@ -123,6 +125,22 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeFunctionCall(SerializedNode serialized) {
+        if (serialized.values.containsKey("spec")) {
+            String className = (String) serialized.values.get("spec");
+            switch (className) {
+                case "PrintValues" -> {
+
+                    return new PrintValues(
+                            (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args")),
+                            serialized.fields.containsKey("separator") ? (StringLiteral) deserialize(serialized.fields.get("separator")) : null,
+                            serialized.fields.containsKey("end") ? (StringLiteral) deserialize(serialized.fields.get("end")) : null
+                    );
+                }
+                case "InputCommand" -> {
+                    return new InputCommand((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args")));
+                }
+            }
+        }
         return new FunctionCall(
                 (Identifier) deserialize(serialized.fields.get("name")),
                 (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"))
