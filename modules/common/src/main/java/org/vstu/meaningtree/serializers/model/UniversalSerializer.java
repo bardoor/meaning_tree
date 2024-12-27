@@ -3,6 +3,7 @@ package org.vstu.meaningtree.serializers.model;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
+import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -20,6 +21,14 @@ import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.types.NoReturn;
+import org.vstu.meaningtree.nodes.types.UnknownType;
+import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.*;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.nodes.types.user.Class;
+import org.vstu.meaningtree.nodes.types.user.Enum;
+import org.vstu.meaningtree.nodes.types.user.*;
 
 import java.util.*;
 
@@ -31,6 +40,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case UnaryExpression expr -> serialize(expr);
             case ParenthesizedExpression expr -> serialize(expr);
             case TernaryOperator ternary -> serialize(ternary);
+            case Type type -> serialize(type);
             case Identifier ident -> serialize(ident);
             case MethodCall call -> serialize(call);
             case FunctionCall call -> serialize(call);
@@ -42,13 +52,91 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case ExpressionSequence sequence -> serialize(sequence);
             case ExpressionStatement stmt -> serialize(stmt);
             case MemberAccess member -> serialize(member);
+            case Shape shape -> serialize(shape);
             case ProgramEntryPoint entryPoint -> serialize(entryPoint);
+            case CastTypeExpression castType -> serialize(castType);
             default -> serializeDefault(node);
         };
         if (node.getAssignedValueTag() != null) {
             result.values.put("assignedValueTag", node.getAssignedValueTag());
         }
         return result;
+    }
+
+    public SerializedNode serialize(CastTypeExpression castType) {
+        return new SerializedNode("CastTypeExpression", new HashMap<>() {{
+            put("type", serialize(castType.getCastType()));
+            put("expression", serialize(castType.getValue()));
+        }});
+    }
+
+    public SerializedNode serialize(Type type) {
+        return switch (type) {
+            case BooleanType bool -> new SerializedNode("BooleanType", new HashMap<>());
+            case CharacterType chart -> new SerializedNode("CharacterType", new HashMap<>(), new HashMap<>() {{
+                put("size", chart.size);
+            }});
+            case FloatType floatt -> new SerializedNode("FloatType", new HashMap<>(), new HashMap<>() {{
+                put("size", floatt.size);
+            }});
+            case IntType intt -> new SerializedNode("IntType", new HashMap<>(), new HashMap<>() {{
+                put("size", intt.size);
+                put("isUnsigned", intt.isUnsigned);
+            }});
+            case PointerType ptr -> new SerializedNode("PointerType", new HashMap<>() {{
+                put("type", serialize(ptr.getTargetType()));
+            }});
+            case ReferenceType ptr -> new SerializedNode("ReferenceType", new HashMap<>() {{
+                put("type", serialize(ptr.getTargetType()));
+            }});
+            case StringType str -> new SerializedNode("StringType", new HashMap<>(), new HashMap<>() {{
+                put("charSize", str.charSize);
+            }});
+            case ArrayType arr -> new SerializedNode("ArrayType", new HashMap<>() {{
+                put("type", serialize(arr.getItemType()));
+                put("shape", serialize(arr.getShape()));
+            }});
+            case DictionaryType dict -> new SerializedNode("DictionaryType", new HashMap<>() {{
+                put("keyType", serialize(dict.getKeyType()));
+                put("valueType", serialize(dict.getValueType()));
+            }});
+            case ListType arr -> new SerializedNode("ListType", new HashMap<>() {{
+                put("type", serialize(arr.getItemType()));
+            }});
+            case SetType arr -> new SerializedNode("SetType", new HashMap<>() {{
+                put("type", serialize(arr.getItemType()));
+            }});
+            case UnmodifiableListType arr -> new SerializedNode("UnmodifiableListType", new HashMap<>() {{
+                put("type", serialize(arr.getItemType()));
+            }});
+            case UnknownType unknownType -> new SerializedNode("UnknownType", new HashMap<>(), new HashMap<>());
+            case NoReturn noRet -> new SerializedNode("NoReturn", new HashMap<>(), new HashMap<>());
+            case Class cls -> new SerializedNode("Class", new HashMap<>() {{
+                put("name", serialize(cls.getQualifiedName()));
+            }});
+            case Enum cls -> new SerializedNode("Enum", new HashMap<>() {{
+                put("name", serialize(cls.getQualifiedName()));
+            }});
+            case Structure cls -> new SerializedNode("Structure", new HashMap<>() {{
+                put("name", serialize(cls.getQualifiedName()));
+            }});
+            case Interface cls -> new SerializedNode("Interface", new HashMap<>() {{
+                put("name", serialize(cls.getQualifiedName()));
+            }});
+            case GenericClass generic -> new SerializedNode("GenericClass", new HashMap<>() {{
+                put("name", serialize(generic.getQualifiedName()));
+                put("templateParameters", serialize(generic.getTypeParameters()));
+            }});
+            default -> new SerializedNode(type.getClass().getSimpleName(), new HashMap<>(), new HashMap<>());
+        };
+    }
+
+    public SerializedNode serialize(Shape shape) {
+        return new SerializedNode("Shape", new HashMap<>() {{
+            put("dimensions", serialize(shape.getDimensions()));
+        }}, new HashMap<>() {{
+            put("dimensionCount", shape.getDimensionCount());
+        }});
     }
 
     public SerializedListNode serialize(List<? extends Node> nodes) {

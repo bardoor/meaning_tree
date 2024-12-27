@@ -4,6 +4,7 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
+import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
@@ -20,14 +21,18 @@ import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
-import org.vstu.meaningtree.nodes.expressions.other.ExpressionSequence;
-import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
-import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
-import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
+import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.types.NoReturn;
+import org.vstu.meaningtree.nodes.types.UnknownType;
+import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.*;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.nodes.types.user.GenericClass;
+import org.vstu.meaningtree.nodes.types.user.Structure;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +47,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "TernaryOperator" -> deserializeTernary(serialized);
             case "SimpleIdentifier", "QualifiedIdentifier", "ScopedIdentifier" -> deserializeIdentifier(serialized);
             case "MethodCall" -> deserializeMethodCall(serialized);
+            case "CastTypeExpression" -> deserializeTypeCast(serialized);
             case "FunctionCall" -> deserializeFunctionCall(serialized);
             case "Integer", "Float", "String", "Boolean" -> deserializeLiteral(serialized);
             case "IndexExpression" -> deserializeIndex(serialized);
@@ -51,12 +57,62 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "ExpressionSequence" -> deserializeExprSequence(serialized);
             case "ExpressionStatement" -> deserializeExprStmt(serialized);
             case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
+            case "Shape" -> deserializeShape(serialized);
+            case "BooleanType", "StringType", "CharacterType",
+                 "FloatType", "IntegerType", "PointerType",
+                 "ReferenceType", "ArrayType", "ListType",
+                 "DictionaryType", "SetType", "UnmodifiableListType",
+                 "Class", "Enum", "Structure", "Interface",
+                 "GenericClass", "UnknownType", "NoReturn" -> deserializeType(serialized);
             default -> deserializeOther(serialized);
         };
         if (abstractSerialized.values.containsKey("assignedValueTag")) {
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    private Node deserializeTypeCast(SerializedNode serialized) {
+        return new CastTypeExpression((Type) deserialize(serialized.fields.get("type")),
+                (Expression) deserialize(serialized.fields.get("expression")));
+    }
+
+    private Node deserializeType(SerializedNode serialized) {
+        return switch (serialized.nodeName) {
+            case "BooleanType" -> new BooleanType();
+            case "StringType" -> new StringType((int) serialized.values.get("charSize"));
+            case "CharacterType" -> new CharacterType((int) serialized.values.get("size"));
+            case "FloatType" -> new FloatType((int) serialized.values.get("size"));
+            case "IntegerType" -> new IntType((int) serialized.values.get("size"));
+            case "PointerType" -> new PointerType((Type) deserialize(serialized.fields.get("type")));
+            case "ReferenceType" -> new ReferenceType((Type) deserialize(serialized.fields.get("type")));
+            case "ArrayType" -> {
+                Shape shape = (Shape) deserialize(serialized.fields.get("shape"));
+                yield new ArrayType((Type) deserialize(serialized.fields.get("type")), shape.getDimensionCount(), shape.getDimensions());
+            }
+            case "ListType" -> new ListType((Type) deserialize(serialized.fields.get("type")));
+            case "SetType" -> new SetType((Type) deserialize(serialized.fields.get("type")));
+            case "UnmodifiableListType" -> new UnmodifiableListType((Type) deserialize(serialized.fields.get("type")));
+            case "DictionaryType" -> new DictionaryType((Type) deserialize(serialized.fields.get("keyType")),
+                    (Type) deserialize(serialized.fields.get("valueType")));
+            case "Class" -> new org.vstu.meaningtree.nodes.types.user.Class((Identifier) deserialize(serialized.fields.get("name")));
+            case "Structure" -> new Structure((Identifier) deserialize(serialized.fields.get("name")));
+            case "Enum" -> new org.vstu.meaningtree.nodes.types.user.Enum((Identifier) deserialize(serialized.fields.get("name")));
+            case "Interface" -> new org.vstu.meaningtree.nodes.types.user.Interface((Identifier) deserialize(serialized.fields.get("name")));
+            case "NoReturn" -> new NoReturn();
+            case "UnknownType" -> new UnknownType();
+            case "GenericClass" -> new GenericClass(
+                    (Identifier) deserialize(serialized.fields.get("name")),
+                    deserializeList((SerializedListNode) serialized.fields.get("templateParameters")).toArray(new Type[0])
+            );
+            default -> throw new MeaningTreeException("Unknown type in serializer");
+        };
+    }
+
+    private Node deserializeShape(SerializedNode serialized) {
+        return new Shape((int) serialized.values.get("dimensionCount"),
+                (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("dimensions"))
+        );
     }
 
     private Node deserializeEntryPoint(SerializedNode serialized) {
