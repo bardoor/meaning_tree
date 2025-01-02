@@ -17,10 +17,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.CompoundComparison;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
@@ -49,7 +46,9 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "MethodCall" -> deserializeMethodCall(serialized);
             case "CastTypeExpression" -> deserializeTypeCast(serialized);
             case "FunctionCall" -> deserializeFunctionCall(serialized);
-            case "Integer", "Float", "String", "Boolean" -> deserializeLiteral(serialized);
+            case "Integer", "Float", "String", "Boolean",
+                 "Bool", "Null", "Array", "List", "InterpolatedString", "Char", "UnmodifiableList"
+                    -> deserializeLiteral(serialized);
             case "IndexExpression" -> deserializeIndex(serialized);
             case "CompoundComparison" -> deserializeCompound(serialized);
             case "AssignmentStatement" -> deserializeAssignmentStmt(serialized);
@@ -168,6 +167,27 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "Float" -> new FloatLiteral((String) serialized.values.get("text"));
             case "String" -> StringLiteral.fromEscaped((String) serialized.values.get("text"), StringLiteral.Type.NONE);
             case "Boolean" -> new BoolLiteral((boolean) serialized.values.get("text"));
+            case "Char" -> new CharacterLiteral((int) serialized.values.get("value"));
+            case "List" -> {
+                PlainCollectionLiteral lit = new ListLiteral((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("elements")));
+                if (serialized.fields.containsKey("type")) lit.setTypeHint((Type) deserialize(serialized.fields.get("type")));
+                yield lit;
+            }
+            case "Array" -> {
+                PlainCollectionLiteral lit = new ArrayLiteral((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("elements")));
+                if (serialized.fields.containsKey("type")) lit.setTypeHint((Type) deserialize(serialized.fields.get("type")));
+                yield lit;
+            }
+            case "UnmodifiableList" -> {
+                PlainCollectionLiteral lit = new UnmodifiableListLiteral((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("elements")));
+                if (serialized.fields.containsKey("type")) lit.setTypeHint((Type) deserialize(serialized.fields.get("type")));
+                yield lit;
+            }
+            case "InterpolatedString" -> new InterpolatedStringLiteral(
+                    StringLiteral.Type.valueOf((String) serialized.values.get("type")),
+                    (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("components"))
+            );
+            case "Null" -> new NullLiteral();
             default -> throw new MeaningTreeException("Unsupported literal in universal deserializer");
         };
     }
@@ -185,7 +205,6 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             String className = (String) serialized.values.get("spec");
             switch (className) {
                 case "PrintValues" -> {
-
                     return new PrintValues(
                             (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args")),
                             serialized.fields.containsKey("separator") ? (StringLiteral) deserialize(serialized.fields.get("separator")) : null,

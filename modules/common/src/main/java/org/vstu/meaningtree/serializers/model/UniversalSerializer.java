@@ -11,10 +11,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.CompoundComparison;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
@@ -231,12 +228,33 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
                 put("text", number.getStringValue(true));
                 put("value", number.getDoubleValue());
             }});
+            case InterpolatedStringLiteral istr -> new SerializedNode("InterpolatedString", new HashMap<>() {{
+                put("components", serialize(istr.components()));
+            }}, new HashMap<>() {{
+                put("type", istr.getStringType().name());
+            }});
             case StringLiteral str -> new SerializedNode("String", new HashMap<>(), new HashMap<>() {{
                 put("text", str.getEscapedValue());
             }});
             case BoolLiteral bool -> new SerializedNode("Boolean", new HashMap<>(), new HashMap<>() {{
                 put("text", bool.getValue());
             }});
+            case CharacterLiteral chr -> new SerializedNode("Char", new HashMap<>(), new HashMap<>() {{
+                put("value", chr.getValue());
+            }});
+            case NullLiteral nl -> new SerializedNode("Null", new HashMap<>(), new HashMap<>());
+            case ArrayLiteral arr -> new SerializedNode("Array", new HashMap<>() {{
+                put("elements", serialize(arr.getList()));
+                if (arr.getTypeHint() != null) put("type", serialize(arr.getTypeHint()));
+            }}, new HashMap<>());
+            case ListLiteral arr -> new SerializedNode("List", new HashMap<>() {{
+                put("elements", serialize(arr.getList()));
+                if (arr.getTypeHint() != null) put("type", serialize(arr.getTypeHint()));
+            }}, new HashMap<>());
+            case UnmodifiableListLiteral arr -> new  SerializedNode("UnmodifiableList", new HashMap<>() {{
+                put("elements", serialize(arr.getList()));
+                if (arr.getTypeHint() != null) put("type", serialize(arr.getTypeHint()));
+            }}, new HashMap<>());
             default -> serializeDefault(literal);
         };
     }

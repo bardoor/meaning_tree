@@ -16,6 +16,7 @@ import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
@@ -783,6 +784,9 @@ public class PythonViewer extends LanguageViewer {
             }
             case ObjectNewExpression newExpr -> {
                 return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
+            }
+            case MethodCall funcCall -> {
+                return String.format("%s.%s(%s)", toString(funcCall.getObject()), toString(funcCall.getFunction()), argumentsToString(funcCall.getArguments()));
             }
             case FunctionCall funcCall -> {
                 return String.format("%s(%s)", toString(PythonSpecificFeatures.getFunctionExpression(funcCall)), argumentsToString(funcCall.getArguments()));
