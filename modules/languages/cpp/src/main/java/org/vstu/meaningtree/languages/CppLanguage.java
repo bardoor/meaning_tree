@@ -129,6 +129,7 @@ public class CppLanguage extends LanguageParser {
             case "declaration" -> fromDeclaration(node);
             case "identifier", "qualified_identifier", "field_expression", "namespace_identifier", "type_identifier", "field_identifier" -> fromIdentifier(node);
             case "number_literal" -> fromNumberLiteral(node);
+            case "char_literal" -> fromCharLiteral(node);
             case "string_literal" -> fromStringLiteral(node);
             case "user_defined_literal" -> fromUserDefinedLiteral(node);
             case "null" -> new NullLiteral();
@@ -146,6 +147,10 @@ public class CppLanguage extends LanguageParser {
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromCharLiteral(TSNode node) {
+        return new CharacterLiteral(getCodePiece(node.getNamedChild(0)).charAt(0));
     }
 
     private Node fromFunction(TSNode node) {

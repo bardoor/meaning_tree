@@ -91,6 +91,7 @@ public class CppViewer extends LanguageViewer {
             case BinaryExpression binaryExpression -> toStringBinaryExpression(binaryExpression);
             case NullLiteral nullLit -> "NULL";
             case StringLiteral sl -> toStringStringLiteral(sl);
+            case CharacterLiteral cl -> toStringCharLiteral(cl);
             case BoolLiteral bl -> bl.getValue() ? "true" : "false";
             case PlainCollectionLiteral colLit -> toStringCollectionLiteral(colLit);
             case DictionaryLiteral dLit -> toStringDictionaryLiteral(dLit);
@@ -105,6 +106,13 @@ public class CppViewer extends LanguageViewer {
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    private String toStringCharLiteral(CharacterLiteral cl) {
+        StringBuilder sb = new StringBuilder("'");
+        sb.append((char) cl.getValue());
+        sb.append("'");
+        return sb.toString();
     }
 
     private String fromMultipleAssignmentStatement(MultipleAssignmentStatement mas) {
