@@ -58,7 +58,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
             case "Shape" -> deserializeShape(serialized);
             case "BooleanType", "StringType", "CharacterType",
-                 "FloatType", "IntegerType", "PointerType",
+                 "FloatType", "IntType", "PointerType",
                  "ReferenceType", "ArrayType", "ListType",
                  "DictionaryType", "SetType", "UnmodifiableListType",
                  "Class", "Enum", "Structure", "Interface",
@@ -82,7 +82,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "StringType" -> new StringType((int) serialized.values.get("charSize"));
             case "CharacterType" -> new CharacterType((int) serialized.values.get("size"));
             case "FloatType" -> new FloatType((int) serialized.values.get("size"));
-            case "IntegerType" -> new IntType((int) serialized.values.get("size"));
+            case "IntType" -> new IntType((int) serialized.values.get("size"));
             case "PointerType" -> new PointerType((Type) deserialize(serialized.fields.get("type")));
             case "ReferenceType" -> new ReferenceType((Type) deserialize(serialized.fields.get("type")));
             case "ArrayType" -> {
@@ -277,7 +277,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             }
         }
 
-        throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
+        throw new MeaningTreeException("Unsupported serialized node " + serialized.nodeName + " in universal deserializer");
     }
 
     private List<? extends Node> deserializeList(SerializedListNode serializedListNode) {
