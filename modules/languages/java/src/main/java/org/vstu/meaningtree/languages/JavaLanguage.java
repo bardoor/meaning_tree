@@ -128,6 +128,9 @@ public class JavaLanguage extends LanguageParser {
                 throw new UnsupportedParsingException("Main expression was not found in expression mode");
             }
             result = body.getNamedChild(0);
+            if (result.getType().equals("expression_statement")) {
+                result = result.getNamedChild(0);
+            }
         }
         return result;
     }
