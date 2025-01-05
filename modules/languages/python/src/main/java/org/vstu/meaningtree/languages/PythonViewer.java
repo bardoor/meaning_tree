@@ -15,6 +15,7 @@ import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.calls.ConstructorCall;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
@@ -113,6 +114,7 @@ public class PythonViewer extends LanguageViewer {
             case DeleteExpression delExpr -> String.format("del %s", toString(delExpr.getTarget()));
             case Range range -> rangeToString(range);
             case ContinueStatement continueStatement -> "continue";
+            case ConstructorCall call -> String.format("%s(%s)", toString(call.getOwner()), argumentsToString(call.getArguments()));
             case Comment comment -> commentToString(comment);
             case Literal literal -> literalToString(literal);
             case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
