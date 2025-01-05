@@ -1,6 +1,8 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 
 import java.util.Objects;
 
@@ -33,5 +35,9 @@ public class SizeofExpression extends Expression {
         SizeofExpression obj = (SizeofExpression) super.clone();
         obj.internalValue = internalValue.clone();
         return obj;
+    }
+
+    public FunctionCall toCall() {
+        return new FunctionCall(new SimpleIdentifier("sizeof"), internalValue);
     }
 }

@@ -116,4 +116,11 @@ public class OperatorToken extends OperandToken {
         copy.setMetadata(operandOf, operandPos);
         return copy;
     }
+
+    public OperatorToken clone(String newName) {
+        OperatorToken copy = new OperatorToken(newName, type, precedence, assoc, arity, isStrictOrder, tokenPos, additionalOpType);
+        copy.assignValue(assignedValue);
+        copy.setMetadata(operandOf, operandPos);
+        return copy;
+    }
 }

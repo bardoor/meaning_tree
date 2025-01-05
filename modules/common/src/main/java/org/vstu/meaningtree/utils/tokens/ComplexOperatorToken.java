@@ -60,4 +60,13 @@ public class ComplexOperatorToken extends OperatorToken {
         copy.setMetadata(operandOf, operandPos);
         return copy;
     }
+
+    public ComplexOperatorToken clone(String newName) {
+        ComplexOperatorToken copy = new ComplexOperatorToken(positionOfToken,
+                newName, type, tokenPos, precedence, assoc, arity, isStrictOrder, complexTokenValues.toArray(new String[0])
+        );
+        copy.assignValue(assignedValue);
+        copy.setMetadata(operandOf, operandPos);
+        return copy;
+    }
 }

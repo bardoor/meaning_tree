@@ -11,6 +11,7 @@ public enum TokenType {
     CALLABLE_IDENTIFIER,
     IDENTIFIER,
     KEYWORD,
+    CAST,
 
     OPENING_BRACE,
     CLOSING_BRACE,
