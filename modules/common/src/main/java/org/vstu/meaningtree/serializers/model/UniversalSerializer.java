@@ -12,6 +12,10 @@ import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
@@ -49,6 +53,8 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case ExpressionSequence sequence -> serialize(sequence);
             case ExpressionStatement stmt -> serialize(stmt);
             case MemberAccess member -> serialize(member);
+            case NewExpression newExpr -> serialize(newExpr);
+            case SizeofExpression sizeOf -> serialize(sizeOf);
             case Shape shape -> serialize(shape);
             case ProgramEntryPoint entryPoint -> serialize(entryPoint);
             case CastTypeExpression castType -> serialize(castType);
@@ -58,6 +64,33 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             result.values.put("assignedValueTag", node.getAssignedValueTag());
         }
         return result;
+    }
+
+    public SerializedNode serialize(SizeofExpression sizeOf) {
+        return new SerializedNode("Sizeof", new HashMap<>() {{
+            put("value", serialize(sizeOf.getExpression()));
+        }});
+    }
+
+    public SerializedNode serialize(NewExpression newExpr) {
+        return switch (newExpr) {
+            case ArrayNewExpression arr -> new SerializedNode("ArrayNew", new HashMap<>() {{
+                put("type", serialize(arr.getType()));
+                put("shape", serialize(arr.getShape()));
+                if (arr.getInitializer() != null) {
+                    put("initializer", serialize(arr.getInitializer().getValues()));
+                }
+            }});
+            case PlacementNewExpression objNew -> new SerializedNode("PlacementNew", new HashMap<>() {{
+                put("type", serialize(objNew.getType()));
+                put("arguments", serialize(objNew.getConstructorArguments()));
+            }});
+            case ObjectNewExpression objNew -> new SerializedNode("ObjectNew", new HashMap<>() {{
+                put("type", serialize(objNew.getType()));
+                put("arguments", serialize(objNew.getConstructorArguments()));
+            }});
+            default -> throw new MeaningTreeException("Invalid new expression for serializer");
+        };
     }
 
     public SerializedNode serialize(CastTypeExpression castType) {
@@ -149,8 +182,14 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
                 new HashMap<>() {{
                     put("left", serialize(binOp.getLeft()));
                     put("right", serialize(binOp.getRight()));
+                }}, new HashMap<>() {{
+                    if (binOp instanceof ReferenceEqOp eqOp) {
+                        put("negative", eqOp.isNegative());
+                    } else if (binOp instanceof ContainsOp cntOp) {
+                        put("negative", cntOp.isNegative());
+                    }
                 }}
-                );
+        );
     }
 
     public SerializedNode serialize(ProgramEntryPoint entryPoint) {

@@ -18,6 +18,9 @@ import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
@@ -51,6 +54,8 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                     -> deserializeLiteral(serialized);
             case "IndexExpression" -> deserializeIndex(serialized);
             case "CompoundComparison" -> deserializeCompound(serialized);
+            case "ObjectNew", "ArrayNew", "PlacementNew" -> deserializeNew(serialized);
+            case "Sizeof" -> deserializeSizeof(serialized);
             case "AssignmentStatement" -> deserializeAssignmentStmt(serialized);
             case "AssignmentExpression" -> deserializeAssignmentExpr(serialized);
             case "ExpressionSequence" -> deserializeExprSequence(serialized);
@@ -69,6 +74,30 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    private Node deserializeSizeof(SerializedNode serialized) {
+        return new SizeofExpression((Expression) deserialize(serialized.fields.get("value")));
+    }
+
+    private Node deserializeNew(SerializedNode serialized) {
+        return switch (serialized.nodeName) {
+            case "ArrayNew" -> new ArrayNewExpression(
+                    (Type) deserialize(serialized.fields.get("type")),
+                    (Shape) deserialize(serialized.fields.get("shape")),
+                    serialized.fields.containsKey("initializer") ? null : new ArrayInitializer((List<Expression>)
+                            deserializeList((SerializedListNode) serialized.fields.get("initializer")))
+            );
+            case "ObjectNew" -> new ObjectNewExpression(
+                    (Type) deserialize(serialized.fields.get("type")),
+                    (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("arguments"))
+            );
+            case "PlacementNew" -> new PlacementNewExpression(
+                    (Type) deserialize(serialized.fields.get("type")),
+                    (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("arguments"))
+            );
+            default -> throw new MeaningTreeException("Unsupported new expression for deserialize");
+        };
     }
 
     private Node deserializeTypeCast(SerializedNode serialized) {
@@ -258,6 +287,13 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
         }
         if (BinaryExpression.class.isAssignableFrom(clazz)) {
             try {
+                if (clazz.equals(ReferenceEqOp.class) || clazz.equals(ContainsOp.class)) {
+                    return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class, Boolean.class).newInstance(
+                            deserialize(serialized.fields.get("left")),
+                            deserialize(serialized.fields.get("right")),
+                            deserialize(serialized.fields.get("negative"))
+                    );
+                }
                 return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class).newInstance(
                         deserialize(serialized.fields.get("left")),
                         deserialize(serialized.fields.get("right"))
