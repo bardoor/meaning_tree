@@ -39,7 +39,7 @@ public class CppTranslator extends LanguageTranslator {
             list.add(new Token(";", TokenType.SEPARATOR));
         }
         if (getConfigParameter("expressionMode").getBooleanValue()) {
-            TokenList final_ = getTokenizer().tokenize("int main() {}");
+            TokenList final_ = getTokenizer().tokenize("int main() {}", false);
             final_.addAll(
                     final_.indexOf(
                             final_.stream().filter((Token t) -> t.value.equals("{")).findFirst().orElse(null)

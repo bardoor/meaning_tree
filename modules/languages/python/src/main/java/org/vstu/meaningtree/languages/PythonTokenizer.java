@@ -8,6 +8,7 @@ import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.calls.ConstructorCall;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
@@ -19,6 +20,8 @@ import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
 import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
@@ -78,6 +81,8 @@ public class PythonTokenizer extends LanguageTokenizer {
         put("!=", new OperatorToken("!=", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Не равно
         put("in", new OperatorToken("in", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Оператор in
         put("is", new OperatorToken("is", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Оператор is
+        put("not in", new OperatorToken("not in", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Оператор in
+        put("is not", new OperatorToken("is not", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Оператор is
         put("not", new OperatorToken("not", TokenType.OPERATOR, 13, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Логическое НЕ
         put("and", new OperatorToken("and", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND)); // Логическое И
         put("or", new OperatorToken("or", TokenType.OPERATOR, 15, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR)); // Логическое ИЛИ
@@ -185,8 +190,8 @@ public class PythonTokenizer extends LanguageTokenizer {
     protected List<String> getOperatorNodes(OperatorArity arity) {
         return switch (arity) {
             case UNARY -> List.of("unary_operator", "not_operator");
-            case BINARY -> List.of("binary_operator", "attribute", "boolean_operator");
-            case TERNARY -> List.of(); //ternary nodes is unsupported due to children field indexes, not names
+            case BINARY -> List.of("binary_operator", "attribute", "named_expression", "boolean_operator", "subscript", "call");
+            case TERNARY -> List.of("conditional_expression");
         };
     }
 
@@ -206,6 +211,32 @@ public class PythonTokenizer extends LanguageTokenizer {
             } else if (pos == OperandPosition.RIGHT) {
                 return "attribute";
             }
+        } else if (operatorNode.equals("subscript")) {
+            if (pos == OperandPosition.LEFT) {
+                return "value";
+            } else if (pos == OperandPosition.CENTER) {
+                return "subscript";
+            }
+        } else if (operatorNode.equals("call")) {
+            if (pos == OperandPosition.LEFT) {
+                return "function";
+            } else if (pos == OperandPosition.CENTER) {
+                return "arguments";
+            }
+        } else if (operatorNode.equals("conditional_expression")) {
+            if (pos == OperandPosition.LEFT) {
+                return "_0";
+            } else if (pos == OperandPosition.CENTER) {
+                return "_1";
+            } else if (pos == OperandPosition.RIGHT) {
+                return "_2";
+            }
+        } else if (operatorNode.equals("named_expression")) {
+            if (pos == OperandPosition.LEFT) {
+                return "name";
+            } else if (pos == OperandPosition.CENTER) {
+                return "value";
+            }
         }
         return null;
     }
@@ -223,8 +254,12 @@ public class PythonTokenizer extends LanguageTokenizer {
         }
         int posStart = result.size();
         switch (node) {
+            case InstanceOfOp ins -> tokenizeInstanceOf(ins, result);
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
+            case PointerPackOp packOp -> tokenizeExtended(packOp.getArgument(), result);
+            case PointerUnpackOp unpackOp -> tokenizeExtended(unpackOp.getArgument(), result);
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
+            case SizeofExpression sizeOf -> tokenizeCall(sizeOf.toCall(), result);
             case FunctionCall call -> tokenizeCall(call, result);
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
@@ -272,9 +307,12 @@ public class PythonTokenizer extends LanguageTokenizer {
             case ExpressionStatement exprStmt -> {
                 tokenizeExtended(exprStmt.getExpression(), result);
             }
+            case CastTypeExpression cast -> {
+                tokenizeExtended(new ConstructorCall(cast.getCastType(), cast.getValue()), result);
+            }
             default ->  {
                 String s = viewer.toString(node);
-                result.addAll(tokenize(translator.prepareCode(s)));
+                result.addAll(tokenize(s));
             }
         }
         int posStop = result.size();
@@ -284,6 +322,10 @@ public class PythonTokenizer extends LanguageTokenizer {
             valueSetNodes.add(node.getId());
         }
         return resultGroup;
+    }
+
+    private void tokenizeInstanceOf(InstanceOfOp ins, TokenList result) {
+        tokenizeCall(new FunctionCall(new SimpleIdentifier("isinstance"), ins.getLeft(), ins.getRight()), result);
     }
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
@@ -319,7 +361,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         };
         if (operator == null) {
             String s = viewer.toString(unaryOp);
-            result.addAll(tokenize(translator.prepareCode(s)));
+            result.addAll(tokenize(s));
             return;
         }
         TokenGroup op;
@@ -347,6 +389,7 @@ public class PythonTokenizer extends LanguageTokenizer {
             case LeOp op -> "<=";
             case ShortCircuitAndOp op -> "and";
             case ShortCircuitOrOp op -> "or";
+            case ContainsOp op -> op.isNegative() ? "not in" : "in";
             case BitwiseAndOp op -> "&";
             case BitwiseOrOp op -> "|";
             case XorOp op -> "^";
@@ -354,14 +397,13 @@ public class PythonTokenizer extends LanguageTokenizer {
             case RightShiftOp op -> ">>";
             case EqOp op -> "==";
             case ModOp op -> "%";
-            case ContainsOp op -> "in";
             case MatMulOp op -> "@";
-            case ReferenceEqOp op -> "is";
+            case ReferenceEqOp op -> op.isNegative() ? "is" : "is not";
             default -> null;
         };
         if (operator == null) {
             String s = viewer.toString(binOp);
-            result.addAll(tokenize(translator.prepareCode(s)));
+            result.addAll(tokenize(s));
             return;
         }
         TokenGroup left = tokenizeExtended(binOp.getLeft(), result);

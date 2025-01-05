@@ -582,7 +582,7 @@ public class CppViewer extends LanguageViewer {
             String neg = op.isNegative() ? "!=" : "==";
             return String.format("%s %s %s", toString(new PointerPackOp(op.getLeft())), neg, toString(new PointerPackOp(op.getRight())));
         } else if (binaryExpression instanceof InstanceOfOp op) {
-            return String.format("dynamic_cast<%s>(%s) != nullptr", toString(op.getType()), toString(op.getLeft()));
+            return String.format("dynamic_cast<%s>(%s) != NULL", toString(op.getType()), toString(op.getLeft()));
         } else if (binaryExpression instanceof FloorDivOp op) {
             return String.format("(long) (%s / %s)", toString(op.getLeft()), toString(op.getRight()));
         }

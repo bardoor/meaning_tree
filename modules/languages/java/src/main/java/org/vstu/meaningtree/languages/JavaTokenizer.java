@@ -19,6 +19,8 @@ import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
@@ -27,6 +29,7 @@ import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class JavaTokenizer extends LanguageTokenizer {
     private static final List<String> stopNodes = List.of("string_literal");
@@ -41,6 +44,8 @@ public class JavaTokenizer extends LanguageTokenizer {
 
         put("CALL_(", braces.getFirst());
         put("CALL_)", braces.getLast());
+
+        put("CAST", new OperatorToken("CAST", TokenType.CAST, 1, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
 
         List<OperatorToken> subscript = OperatorToken.makeComplex(1,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
@@ -211,21 +216,20 @@ public class JavaTokenizer extends LanguageTokenizer {
     @Override
     protected List<String> getOperatorNodes(OperatorArity arity) {
         return switch (arity) {
-            case UNARY -> List.of(
-                    "unary_expression", "update_expression"
+            case UNARY -> List.of("unary_expression", "update_expression");
+            case BINARY -> List.of("binary_expression", "field_access",
+                    "cast_expression", "array_access", "method_invocation",
+                    "instanceof_expression", "assignment_expression"
             );
-            case BINARY -> List.of("binary_expression", "field_access", "cast_expression");
             case TERNARY -> List.of("ternary_expression");
         };
     }
 
     @Override
     protected String getFieldNameByOperandPos(OperandPosition pos, String operatorNode) {
-        if (List.of(
-                "unary_expression", "update_expression"
-        ).contains(operatorNode)) {
+        if (List.of("unary_expression", "update_expression").contains(operatorNode)) {
             return "operand";
-        } else if (operatorNode.equals("binary_expression")) {
+        } else if (List.of("binary_expression", "assignment_expression", "instanceof_expression").contains(operatorNode)) {
             if (pos == OperandPosition.LEFT) {
                 return "left";
             } else if (pos == OperandPosition.RIGHT) {
@@ -251,6 +255,24 @@ public class JavaTokenizer extends LanguageTokenizer {
             } else if (pos == OperandPosition.RIGHT) {
                 return "alternative";
             }
+        } else if (operatorNode.equals("array_access")) {
+            if (pos == OperandPosition.LEFT) {
+                return "array";
+            } else if (pos == OperandPosition.RIGHT) {
+                return "index";
+            }
+        } else if (operatorNode.equals("method_invocation")) {
+            if (pos == OperandPosition.LEFT) {
+                return "object";
+            } else if (pos == OperandPosition.CENTER) {
+                return "arguments";
+            }
+        } else if (operatorNode.equals("assignment_expression")) {
+            if (pos == OperandPosition.LEFT) {
+                return "object";
+            } else if (pos == OperandPosition.CENTER) {
+                return "arguments";
+            }
         }
         return null;
     }
@@ -269,8 +291,12 @@ public class JavaTokenizer extends LanguageTokenizer {
         int posStart = result.size();
         switch (node) {
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
+            case PointerPackOp packOp -> tokenizeExtended(packOp.getArgument(), result);
+            case PointerUnpackOp unpackOp -> tokenizeExtended(unpackOp.getArgument(), result);
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
             case FunctionCall call -> tokenizeCall(call, result);
+            case CastTypeExpression cast -> tokenizeCast(cast, result);
+            case SizeofExpression sizeOf -> tokenizeCall(sizeOf.toCall(), result);
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
@@ -321,7 +347,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             }
             default ->  {
                 String s = viewer.toString(node);
-                TokenList tokens = tokenize(translator.prepareCode(s));
+                TokenList tokens = tokenize(s);
                 result.addAll(tokens.subList(0, tokens.getLast().type == TokenType.SEPARATOR ? tokens.size() - 1 : tokens.size()));
             }
         }
@@ -332,6 +358,15 @@ public class JavaTokenizer extends LanguageTokenizer {
             valueSetNodes.add(node.getId());
         }
         return resultGroup;
+    }
+
+    private void tokenizeCast(CastTypeExpression cast, TokenList result) {
+        TokenList lst = tokenizeExtended(cast.getCastType());
+        String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
+        OperatorToken op = getOperatorByTokenName("CAST").clone("(" + typeName + ")");
+        result.add(op);
+        TokenGroup arg = tokenizeExtended(cast.getValue(), result);
+        arg.setMetadata(op, OperandPosition.RIGHT);
     }
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
@@ -416,13 +451,18 @@ public class JavaTokenizer extends LanguageTokenizer {
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
             case EqOp op -> "==";
+            case ReferenceEqOp op -> op.isNegative() ? "!=" : "==";
             case ModOp op -> "%";
             case InstanceOfOp op -> "instanceof";
             default -> null;
         };
+        if (binOp instanceof ContainsOp) {
+            tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()));
+            return;
+        }
         if (operator == null) {
             String s = viewer.toString(binOp);
-            result.addAll(tokenize(translator.prepareCode(s)));
+            result.addAll(tokenize(s));
             return;
         }
         TokenGroup left = tokenizeExtended(binOp.getLeft(), result);

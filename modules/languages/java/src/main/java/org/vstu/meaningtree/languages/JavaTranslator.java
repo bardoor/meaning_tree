@@ -39,7 +39,7 @@ public class JavaTranslator extends LanguageTranslator {
             list.add(new Token(";", TokenType.SEPARATOR));
         }
         if (getConfigParameter("expressionMode").getBooleanValue()) {
-            TokenList final_ = getTokenizer().tokenize("class Main { public static void main(String[] args) {;%s} }");
+            TokenList final_ = getTokenizer().tokenize("class Main { public static void main(String[] args) {;%s} }", true);
             int marker = final_.indexOf(
                     final_.stream().filter((Token t) -> t.value.equals(";")).findFirst().orElse(null)
             );
