@@ -82,6 +82,7 @@ public abstract class LanguageTokenizer {
                 return null;
             }
             tokens.add(recognizeToken(node));
+            skipChildren = true;
         } else if (
                 (getOperatorNodes(OperatorArity.BINARY).contains(node.getType())
                 || getOperatorNodes(OperatorArity.TERNARY).contains(node.getType())) && detectOperator
