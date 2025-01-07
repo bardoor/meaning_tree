@@ -37,7 +37,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class CppTokenizer extends LanguageTokenizer {
-    private static final List<String> stopNodes = List.of("user_defined_literal");
+    private static final List<String> stopNodes = List.of("user_defined_literal", "char_literal");
     private Set<Long> valueSetNodes = new HashSet<>();
 
     protected static final Map<String, OperatorToken> operators = new HashMap<>() {{
@@ -273,7 +273,7 @@ public class CppTokenizer extends LanguageTokenizer {
             } else {
                 tokenType = TokenType.IDENTIFIER;
             }
-        } else if (List.of("number_literal", "string_literal", "true", "false", "null", "user_defined_literal").contains(type)) {
+        } else if (List.of("number_literal", "char_literal", "string_literal", "true", "false", "null", "user_defined_literal").contains(type)) {
             tokenType = TokenType.CONST;
         } else {
             tokenType = TokenType.UNKNOWN;
@@ -415,7 +415,7 @@ public class CppTokenizer extends LanguageTokenizer {
         result.add(tok);
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(getOperatorByTokenName(","));
+            result.add(new Token(",", TokenType.SEPARATOR));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();

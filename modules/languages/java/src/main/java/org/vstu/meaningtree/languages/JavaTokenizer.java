@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JavaTokenizer extends LanguageTokenizer {
-    private static final List<String> stopNodes = List.of("string_literal");
+    private static final List<String> stopNodes = List.of("string_literal", "char_literal");
     private Set<Long> valueSetNodes = new HashSet<>();
 
     protected static final Map<String, OperatorToken> operators = new HashMap<>() {{
@@ -201,8 +201,8 @@ public class JavaTokenizer extends LanguageTokenizer {
                 tokenType = TokenType.IDENTIFIER;
             }
         } else if (List.of("decimal_floating_point_literal", "decimal_integer_literal",
-                "string_literal", "true", "false", "null_literal"
-        ).contains(type)) {
+                "string_literal", "true", "false", "null_literal", "char_literal"
+                ).contains(type)) {
             tokenType = TokenType.CONST;
         } else if (type.equals(",")) {
             tokenType = TokenType.COMMA;

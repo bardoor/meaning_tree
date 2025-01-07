@@ -161,6 +161,20 @@ public class TokenList extends ArrayList<Token> {
         return flag ? pos : null;
     }
 
+    public Map<OperandPosition, TokenList> findOperandsAsList(int opIndexToken) {
+        OperandToken op = (OperandToken) get(opIndexToken);
+        Map<OperandPosition, TokenList> result = new HashMap<>();
+        for (int i = 0; i < size(); i++) {
+            if (get(i) instanceof OperandToken operand && operand.operandOf() != null && operand.operandOf().equals(op)) {
+                if (!result.containsKey(operand.operandPosition())) {
+                    result.put(operand.operandPosition(), new TokenList());
+                }
+                result.get(operand.operandPosition()).add(operand);
+            }
+        }
+        return result;
+    }
+
     public Map<OperandPosition, TokenGroup> findOperands(int opIndexToken) {
         OperandToken op = (OperandToken) get(opIndexToken);
         Map<OperandPosition, TokenGroup> result = new HashMap<>();
