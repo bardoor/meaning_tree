@@ -29,6 +29,8 @@ public class RDFSerializer implements Serializer<Model> {
     private Literal createValue(Model model, Object obj) {
         return switch (obj) {
             case String v -> model.createTypedLiteral(v, XSDDatatype.XSDstring);
+            case Byte v -> model.createTypedLiteral(v, XSDDatatype.XSDinteger);
+            case Short v -> model.createTypedLiteral(v, XSDDatatype.XSDinteger);
             case Integer v -> model.createTypedLiteral(v, XSDDatatype.XSDinteger);
             case Long v -> model.createTypedLiteral(v, XSDDatatype.XSDlong);
             case Boolean v -> model.createTypedLiteral(v, XSDDatatype.XSDboolean);

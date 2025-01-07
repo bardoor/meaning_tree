@@ -196,7 +196,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "Float" -> new FloatLiteral((String) serialized.values.get("text"));
             case "String" -> StringLiteral.fromEscaped((String) serialized.values.get("text"), StringLiteral.Type.NONE);
             case "Boolean" -> new BoolLiteral((boolean) serialized.values.get("text"));
-            case "Char" -> new CharacterLiteral((int) serialized.values.get("value"));
+            case "Char" -> new CharacterLiteral(serialized.values.get("value") instanceof String ? Integer.parseInt(serialized.values.get("value").toString()) : (int) serialized.values.get("value"));
             case "List" -> {
                 PlainCollectionLiteral lit = new ListLiteral((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("elements")));
                 if (serialized.fields.containsKey("type")) lit.setTypeHint((Type) deserialize(serialized.fields.get("type")));
