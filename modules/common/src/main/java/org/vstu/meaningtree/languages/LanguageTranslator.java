@@ -24,7 +24,7 @@ public abstract class LanguageTranslator {
                 // а не её часть (например, только выражение)
                 new ConfigParameter("translationUnitMode", true, ConfigParameter.Scope.VIEWER),
                 // Вывод только одного выражения
-                new ConfigParameter("expressionMode", false, ConfigParameter.Scope.PARSER),
+                new ConfigParameter("expressionMode", false, ConfigParameter.Scope.TRANSLATOR),
                 // Попытаться сгенерировать дерево, несмотря на ошибки
                 new ConfigParameter("skipErrors", false, ConfigParameter.Scope.PARSER)
         };

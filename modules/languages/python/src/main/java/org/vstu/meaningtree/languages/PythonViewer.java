@@ -524,6 +524,13 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
+        if (!(expr.getLValue() instanceof Identifier)) {
+            if (getConfigParameter("expressionMode").getBooleanValue()) {
+                return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
+            } else {
+                throw new UnsupportedViewingException("Assignment expressions in Python supports only identifiers");
+            }
+        }
         return String.format("%s := %s", toString(expr.getLValue()), toString(expr.getRValue()));
     }
 

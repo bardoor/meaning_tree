@@ -794,7 +794,7 @@ public class PythonLanguage extends LanguageParser {
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
 
-        if (!node.getChildByFieldName("type").isNull()) {
+        if (!node.getChildByFieldName("type").isNull() && left instanceof SimpleIdentifier ident) {
             Type type = determineType(node.getChildByFieldName("type"));
             if (right instanceof PlainCollectionLiteral pl) {
                 if (type instanceof PlainCollectionType arrayType) {
@@ -803,7 +803,7 @@ public class PythonLanguage extends LanguageParser {
                     pl.setTypeHint(type);
                 }
             }
-            return new VariableDeclaration(type, (SimpleIdentifier) left, right);
+            return new VariableDeclaration(type, ident, right);
         }
 
         return new AssignmentStatement(left, right, augOp);

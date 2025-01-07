@@ -518,20 +518,16 @@ public class CppLanguage extends LanguageParser {
         String code = getCodePiece(node);
 
         if (code.endsWith("++")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
-            return new PostfixIncrementOp(identifier);
+            return new PostfixIncrementOp((Expression) fromTSNode(node.getChild(0)));
         }
         else if (code.startsWith("++")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
-            return new PrefixIncrementOp(identifier);
+            return new PrefixIncrementOp((Expression) fromTSNode(node.getChild(1)));
         }
         else if (code.endsWith("--")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
-            return new PostfixDecrementOp(identifier);
+            return new PostfixDecrementOp((Expression) fromTSNode(node.getChild(0)));
         }
         else if (code.startsWith("--")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
-            return new PrefixDecrementOp(identifier);
+            return new PrefixDecrementOp((Expression) fromTSNode(node.getChild(1)));
         }
 
         throw new IllegalArgumentException();
