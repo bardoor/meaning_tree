@@ -339,11 +339,26 @@ public class CppTokenizer extends LanguageTokenizer {
                 result.add(new Token(";", TokenType.SEPARATOR));
             }
             case ExpressionSequence sequence -> {
-                for (Expression expr : sequence.getExpressions()) {
-                    tokenizeExtended(expr, result);
-                    result.add(getOperatorByTokenName(","));
+                List<Expression> exprs = sequence.getExpressions();
+                if (!sequence.getExpressions().isEmpty()) {
+                    int i;
+                    OperatorToken op;
+                    TokenGroup op1 = tokenizeExtended(exprs.getFirst(), result);
+                    op = getOperatorByTokenName(",");
+                    result.add(op);
+                    TokenGroup op2 = tokenizeExtended(exprs.get(1), result);
+                    op1.setMetadata(op, OperandPosition.LEFT);
+                    op2.setMetadata(op, OperandPosition.RIGHT);
+                    for (i = 2; i < exprs.size(); i++) {
+                        OperatorToken newOp = getOperatorByTokenName(",");
+                        result.add(newOp);
+                        op2 = tokenizeExtended(exprs.get(i), result);
+                        op2.setMetadata(newOp, OperandPosition.RIGHT);
+                        op.setMetadata(newOp, OperandPosition.LEFT);
+                        op = newOp;
+
+                    }
                 }
-                if (!sequence.getExpressions().isEmpty()) result.removeLast();
             }
             case ExpressionStatement exprStmt -> {
                 tokenizeExtended(exprStmt.getExpression(), result);
