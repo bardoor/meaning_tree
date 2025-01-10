@@ -1,6 +1,5 @@
 package org.vstu.meaningtree.languages;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
@@ -219,6 +218,7 @@ public class JavaViewer extends LanguageViewer {
             case BitwiseAndOp bitwiseAndOp -> toString(bitwiseAndOp);
             case BitwiseOrOp bitwiseOrOp -> toString(bitwiseOrOp);
             case XorOp xorOp -> toString(xorOp);
+            case SizeofExpression sizeof -> toString(sizeof.toCall());
             case InversionOp inversionOp -> toString(inversionOp);
             case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
@@ -437,9 +437,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(CharacterLiteral characterLiteral) {
-        String symbol = StringEscapeUtils.escapeJava(
-                Character.toString(characterLiteral.getValue())
-        );
+        String symbol = characterLiteral.escapedString();
         return "'" + symbol + "'";
     }
 
@@ -1239,6 +1237,7 @@ public class JavaViewer extends LanguageViewer {
             case SetType setType -> toString(setType);
             case DictionaryType dictType -> toString(dictType);
             case PlainCollectionType plain -> toString(plain);
+            case PointerType ptr -> toString(ptr.getTargetType());
             default -> throw new IllegalStateException("Unexpected value: " + type.getClass());
         };
     }

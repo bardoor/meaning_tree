@@ -165,7 +165,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeAssignmentExpr(SerializedNode serialized) {
-        return new AssignmentStatement(
+        return new AssignmentExpression(
                 (Expression) deserialize(serialized.fields.get("left")),
                 (Expression) deserialize(serialized.fields.get("right")),
                 AugmentedAssignmentOperator.valueOf((String) serialized.values.get("augmentedOp"))

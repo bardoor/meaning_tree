@@ -153,6 +153,7 @@ public class PythonLanguage extends LanguageParser {
             case "function_definition" -> fromFunctionTSNode(node);
             case "decorated_definition" -> detectAnnotated(node);
             case "while_statement" -> fromWhileLoop(node);
+            case "assert_statement" -> fromAssertTSNode(node);
             case "set_comprehension", "dictionary_comprehension", "list_comprehension", "generator_expression" -> fromComprehension(node);
             case "match_statement" -> fromMatchStatement(node);
             case null, default -> throw new UnsupportedParsingException(String.format("Can't parse %s", node.getType()));
@@ -160,7 +161,12 @@ public class PythonLanguage extends LanguageParser {
         assignValue(node, createdNode);
         return createdNode;
     }
-    
+
+    private Node fromAssertTSNode(TSNode node) {
+        return new FunctionCall(new SimpleIdentifier("assert"), (Expression)
+                fromTSNode(node.getNamedChild(0)));
+    }
+
     private void rollbackContext() {
         if (currentContext.getParent() != null) {
             currentContext = currentContext.getParent();

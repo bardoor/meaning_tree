@@ -22,6 +22,7 @@ import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
@@ -146,6 +147,7 @@ public class CppLanguage extends LanguageParser {
             case "delete_expression" -> fromDeleteExpression(node);
             case "cast_expression" -> fromCastExpression(node);
             case "pointer_expression" -> fromPointerExpression(node);
+            case "this" -> new SelfReference("this");
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);

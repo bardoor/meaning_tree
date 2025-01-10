@@ -117,6 +117,7 @@ public class PythonViewer extends LanguageViewer {
             case ConstructorCall call -> String.format("%s(%s)", toString(call.getOwner()), argumentsToString(call.getArguments()));
             case Comment comment -> commentToString(comment);
             case Literal literal -> literalToString(literal);
+            case SizeofExpression sizeof -> toString(sizeof.toCall());
             case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
             case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
@@ -617,7 +618,10 @@ public class PythonViewer extends LanguageViewer {
                 builder.append("}");
             }
             return builder.toString();
-        } else {
+        } else if (literal instanceof CharacterLiteral ch) {
+            return "\"" + ch.escapedString() + "\"";
+        }
+        else {
             return "None";
         }
     }

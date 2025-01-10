@@ -110,7 +110,7 @@ public class CppViewer extends LanguageViewer {
 
     private String toStringCharLiteral(CharacterLiteral cl) {
         StringBuilder sb = new StringBuilder("'");
-        sb.append((char) cl.getValue());
+        sb.append(cl.escapedString());
         sb.append("'");
         return sb.toString();
     }

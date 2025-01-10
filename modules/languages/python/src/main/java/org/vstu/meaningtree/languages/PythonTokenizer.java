@@ -130,7 +130,11 @@ public class PythonTokenizer extends LanguageTokenizer {
 
     @Override
     public OperatorToken getOperatorByTokenName(String tokenName) {
-        return operators.getOrDefault(tokenName, null).clone();
+        OperatorToken res = operators.getOrDefault(tokenName, null);
+        if (res == null) {
+            return null;
+        }
+        return res.clone();
     }
 
     @Override
@@ -355,8 +359,8 @@ public class PythonTokenizer extends LanguageTokenizer {
         String operator = switch (unaryOp) {
             case NotOp op -> "not";
             case InversionOp op -> "~";
-            case UnaryMinusOp op -> "-U";
-            case UnaryPlusOp op -> "+U";
+            case UnaryMinusOp op -> "UMINUS";
+            case UnaryPlusOp op -> "UPLUS";
             default -> null;
         };
         if (operator == null) {

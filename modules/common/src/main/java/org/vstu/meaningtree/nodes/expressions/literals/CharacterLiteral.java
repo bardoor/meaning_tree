@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions.literals;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.vstu.meaningtree.nodes.expressions.Literal;
 
 import java.util.Objects;
@@ -23,6 +24,11 @@ public class CharacterLiteral extends Literal {
     public CharacterLiteral(int codePoint) {
         _value = codePoint;
     }
+
+    public String escapedString() {
+        return StringEscapeUtils.escapeJava(new String(new char[] {(char) getValue()}));
+    }
+
 
     public int getValue() {
         return _value;
