@@ -4,10 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
-import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.Node;
-import org.vstu.meaningtree.nodes.ProgramEntryPoint;
-import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
@@ -102,6 +99,7 @@ public class CppViewer extends LanguageViewer {
             case DeleteStatement del -> toStringDelete(del.toExpression()) + ";";
             case MemberAccess memAccess -> toStringMemberAccess(memAccess);
             case CompoundComparison cmpCmp -> toStringCompoundComparison(cmpCmp);
+            case Comment cmnt -> toStringComment(cmnt);
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
@@ -113,6 +111,14 @@ public class CppViewer extends LanguageViewer {
         sb.append(cl.escapedString());
         sb.append("'");
         return sb.toString();
+    }
+
+    private String toStringComment(Comment comment) {
+        if (comment.isMultiline()) {
+            return "/*" + comment.getUnescapedContent() + "*/";
+        }
+
+        return "//%s".formatted(comment.getUnescapedContent());
     }
 
     private String fromMultipleAssignmentStatement(MultipleAssignmentStatement mas) {

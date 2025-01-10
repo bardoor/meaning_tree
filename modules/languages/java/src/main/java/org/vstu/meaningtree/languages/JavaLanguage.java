@@ -183,6 +183,7 @@ public class JavaLanguage extends LanguageParser {
             case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
             case "array_initializer" -> fromArrayInitializer(node);
             case "return_statement" -> fromReturnStatementTSNode(node);
+            case "void_type" -> fromTypeTSNode(node);
             case "line_comment", "block_comment" -> fromCommentTSNode(node);
             case "cast_expression" -> fromCastExpressionTSNode(node);
             case "array_access" -> fromArrayAccessTSNode(node);
@@ -192,10 +193,15 @@ public class JavaLanguage extends LanguageParser {
             case "character_literal" -> fromCharacterLiteralTSNode(node);
             case "do_statement" -> fromDoStatementTSNode(node);
             case "instanceof_expression" -> fromInstanceOfTSNode(node);
+            case "class_literal" -> fromClassLiteralTSNode(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromClassLiteralTSNode(TSNode node) {
+        return new MemberAccess(fromTypeTSNode(node.getNamedChild(0)), new SimpleIdentifier("class"));
     }
 
     private Node fromInstanceOfTSNode(TSNode node) {

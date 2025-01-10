@@ -148,10 +148,22 @@ public class CppLanguage extends LanguageParser {
             case "cast_expression" -> fromCastExpression(node);
             case "pointer_expression" -> fromPointerExpression(node);
             case "this" -> new SelfReference("this");
+            case "offsetof_expression" -> fromOffsetOf(node);
+            case "comment" -> fromComment(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Comment fromComment(TSNode node) {
+        return Comment.fromUnescaped(getCodePiece(node).replaceFirst("/*", "")
+                .replaceFirst("//", "").replace("*/", "").trim());
+    }
+
+    private Node fromOffsetOf(TSNode node) {
+        return new FunctionCall(new SimpleIdentifier("offsetof"), (Expression) fromTSNode(node.getChildByFieldName("type").getChildByFieldName("type")),
+                (Expression) fromTSNode(node.getChildByFieldName("member")));
     }
 
     private Node fromCharLiteral(TSNode node) {

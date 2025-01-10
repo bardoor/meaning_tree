@@ -331,7 +331,7 @@ public class PythonLanguage extends LanguageParser {
         TSNode arguments = node.getChildByFieldName("arguments");
         for (int i = 0; i < arguments.getNamedChildCount(); i++) {
             String tsNodeChildType = arguments.getNamedChild(i).getType();
-            if (tsNodeChildType.equals("(") || tsNodeChildType.equals(")") || tsNodeChildType.equals(",")) {
+            if (tsNodeChildType.equals("(") || tsNodeChildType.equals(")") || tsNodeChildType.equals(",") || tsNodeChildType.equals("comment")) {
                 continue;
             }
             Expression expr = (Expression) fromTSNode(arguments.getNamedChild(i));
