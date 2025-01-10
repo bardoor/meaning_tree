@@ -98,7 +98,7 @@ public class CppLanguage extends LanguageParser {
                     .getChildByFieldName("declarator"))
                     .equals("main"));
             TSNode body = func.getChildByFieldName("body");
-            if (body.getNamedChildCount() > 1) {
+            if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
                 throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
             }
             if (body.getNamedChildCount() < 1) {
@@ -130,6 +130,7 @@ public class CppLanguage extends LanguageParser {
             case "comma_expression" -> fromCommaExpression(node);
             case "subscript_expression" -> fromSubscriptExpression(node);
             case "assignment_expression" -> fromAssignmentExpression(node);
+            case "compound_literal_expression" -> fromTSNode(node.getChildByFieldName("value"));
             case "declaration" -> fromDeclaration(node);
             case "identifier", "qualified_identifier", "field_expression", "namespace_identifier", "type_identifier", "field_identifier" -> fromIdentifier(node);
             case "number_literal" -> fromNumberLiteral(node);
@@ -138,6 +139,7 @@ public class CppLanguage extends LanguageParser {
             case "user_defined_literal" -> fromUserDefinedLiteral(node);
             case "null" -> new NullLiteral();
             case "true" -> new BoolLiteral(true);
+            case "concatenated_string" -> fromConcatenatedString(node);
             case "false" -> new BoolLiteral(false);
             case "initializer_list" -> fromInitializerList(node);
             case "primitive_type", "template_function", "placeholder_type_specifier", "sized_type_specifier", "type_descriptor" -> fromType(node);
@@ -154,6 +156,18 @@ public class CppLanguage extends LanguageParser {
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromConcatenatedString(TSNode node) {
+        List<StringLiteral> literals = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            literals.add(fromStringLiteral(node.getNamedChild(i)));
+        }
+        StringBuilder val = new StringBuilder();
+        for (StringLiteral s : literals) {
+            val.append(s.getUnescapedValue());
+        }
+        return StringLiteral.fromUnescaped(val.toString(), StringLiteral.Type.NONE);
     }
 
     private Comment fromComment(TSNode node) {
@@ -408,7 +422,7 @@ public class CppLanguage extends LanguageParser {
         }
     }
 
-    private Node fromStringLiteral(TSNode node) {
+    private StringLiteral fromStringLiteral(TSNode node) {
         String strLiteral = getCodePiece(node);
         boolean isWide = strLiteral.toLowerCase().startsWith("l");
         strLiteral = strLiteral.substring(1, strLiteral.length() - 1);

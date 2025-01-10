@@ -121,7 +121,7 @@ public class JavaLanguage extends LanguageParser {
             TSNode func = clsbody.getNamedChild(0);
             assert getCodePiece(func.getChildByFieldName("name")).equals("main");
             TSNode body = func.getChildByFieldName("body");
-            if (body.getNamedChildCount() > 1) {
+            if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
                 throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
             }
             if (body.getNamedChildCount() < 1) {

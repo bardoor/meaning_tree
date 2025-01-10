@@ -139,9 +139,9 @@ public class JavaTokenizer extends LanguageTokenizer {
     protected OperatorToken getOperator(String tokenValue, TSNode node) {
         if (!node.getParent().isNull() && node.getParent().getType().equals("unary_expression") && List.of("+", "-").contains(tokenValue)) {
             if (tokenValue.equals("+")) {
-                return operators.get("UPLUS").clone();
+                return operators.get("+U").clone();
             } else if (tokenValue.equals("-")) {
-                return operators.get("UMINUS").clone();
+                return operators.get("-U").clone();
             }
         }
 

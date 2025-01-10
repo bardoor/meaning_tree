@@ -79,7 +79,7 @@ public abstract class LanguageTokenizer {
         if (node.getChildCount() == 0 || getStopNodes().contains(node.getType())) {
             String value = TreeSitterUtils.getCodePiece(code, node);
             if (value.trim().isEmpty()) {
-                return null;
+                return new TokenGroup(0, 0, tokens);
             }
             tokens.add(recognizeToken(node));
             skipChildren = true;
@@ -119,7 +119,14 @@ public abstract class LanguageTokenizer {
                     }
                 }
 
-                String index = "_" + i;
+                int namedIndex = -1;
+                for (int j = 0; j < node.getNamedChildCount(); j++) {
+                    if (node.getChild(i).equals(node.getNamedChild(j))) {
+                        namedIndex = j;
+                        break;
+                    }
+                }
+                String index = "_" + namedIndex;
                 OperandPosition pos = null;
 
                 if (index.equals(leftName)) {
@@ -144,7 +151,7 @@ public abstract class LanguageTokenizer {
                     operands.put(pos, group);
                 }
 
-                if (group.length() == 1 && tokens.get(group.start) instanceof OperatorToken op && token == null) {
+                if (group.length() > 0 && group.length() == 1 && tokens.get(group.start) instanceof OperatorToken op && token == null) {
                     token = op;
                 }
             }

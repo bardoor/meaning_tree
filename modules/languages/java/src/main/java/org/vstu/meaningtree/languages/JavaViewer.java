@@ -144,6 +144,7 @@ public class JavaViewer extends LanguageViewer {
             case InterpolatedStringLiteral interpolatedStringLiteral -> toString(interpolatedStringLiteral);
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
+            case QualifiedIdentifier id -> toString(id);
             case StringLiteral l -> toString(l);
             case UserType userType -> toString(userType);
             case ReferenceType ref -> toString(ref.getTargetType());
