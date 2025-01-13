@@ -5,15 +5,15 @@ import org.vstu.meaningtree.nodes.Expression;
 import java.util.*;
 
 public class ExpressionDAG {
-    private HashMap<Expression, ArrayList<Expression>> edges;
-    private HashMap<Expression, ArrayList<Expression>> specialTaggedEdges;
+    private LinkedHashMap<Expression, ArrayList<Expression>> edges;
+    private LinkedHashMap<Expression, ArrayList<Expression>> specialTaggedEdges;
 
     public ExpressionDAG(Expression ... vertices) {
-        edges = new HashMap<>();
+        edges = new LinkedHashMap<>();
         for (Expression vertex : vertices) {
             edges.put(vertex, new ArrayList<>());
         }
-        specialTaggedEdges = new HashMap<>();
+        specialTaggedEdges = new LinkedHashMap<>();
     }
 
     public void addEdge(Expression from, Expression to) {
@@ -33,7 +33,7 @@ public class ExpressionDAG {
 
     public Expression[] getRouteTo(Expression one) {
         ArrayList<Expression> route = new ArrayList<>();
-        for (Expression expr : edges.keySet()) {
+        for (Expression expr : edges.sequencedKeySet()) {
             if (edges.get(expr).contains(one)) {
                 route.add(expr);
             }
@@ -42,7 +42,7 @@ public class ExpressionDAG {
     }
 
     public Expression[] getVertices() {
-        return edges.keySet().toArray(new Expression[0]);
+        return edges.sequencedKeySet().toArray(new Expression[0]);
     }
 
     public ExpressionDAG[] weaklyConnectedComponents() {
@@ -112,7 +112,7 @@ public class ExpressionDAG {
         Map<Expression, Integer> distances = new HashMap<>();
         Map<Expression, Expression> predecessors = new HashMap<>();
 
-        for (Expression vertex : edges.keySet()) {
+        for (Expression vertex : edges.sequencedKeySet()) {
             distances.put(vertex, Integer.MIN_VALUE);
         }
 
@@ -157,7 +157,7 @@ public class ExpressionDAG {
     private List<Expression> topologicalSort() {
         Set<Expression> visited = new HashSet<>();
         Stack<Expression> stack = new Stack<>();
-        for (Expression vertex : edges.keySet()) {
+        for (Expression vertex : edges.sequencedKeySet()) {
             if (!visited.contains(vertex)) {
                 topologicalSortUtil(vertex, visited, stack);
             }
@@ -194,7 +194,7 @@ public class ExpressionDAG {
 
     public Expression getVertexWithMinIncomingEdges() {
         Map<Expression, Integer> inDegreeMap = new HashMap<>();
-        for (Expression vertex : edges.keySet()) {
+        for (Expression vertex : edges.sequencedKeySet()) {
             inDegreeMap.put(vertex, 0);
         }
         for (ArrayList<Expression> adjList : edges.values()) {
@@ -228,7 +228,7 @@ public class ExpressionDAG {
 
     public Expression getVertexWithMaxIncomingEdges() {
         Map<Expression, Integer> inDegreeMap = new HashMap<>();
-        for (Expression vertex : edges.keySet()) {
+        for (Expression vertex : edges.sequencedKeySet()) {
             inDegreeMap.put(vertex, 0);
         }
         for (ArrayList<Expression> adjList : edges.values()) {
@@ -256,7 +256,7 @@ public class ExpressionDAG {
 
     public void removeOrphanedVertices() {
         List<Expression> toDelete = new ArrayList<>();
-        for (Expression expr : edges.keySet()) {
+        for (Expression expr : edges.sequencedKeySet()) {
             if (getRouteFrom(expr).length == 0 && getRouteTo(expr).length == 0) {
                 toDelete.add(expr);
             }

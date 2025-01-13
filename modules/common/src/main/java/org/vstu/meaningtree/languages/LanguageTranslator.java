@@ -1,7 +1,6 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.tokens.Token;
@@ -25,7 +24,7 @@ public abstract class LanguageTranslator {
                 // а не её часть (например, только выражение)
                 new ConfigParameter("translationUnitMode", true, ConfigParameter.Scope.VIEWER),
                 // Вывод только одного выражения
-                new ConfigParameter("expressionMode", false, ConfigParameter.Scope.PARSER),
+                new ConfigParameter("expressionMode", false, ConfigParameter.Scope.TRANSLATOR),
                 // Попытаться сгенерировать дерево, несмотря на ошибки
                 new ConfigParameter("skipErrors", false, ConfigParameter.Scope.PARSER)
         };
@@ -49,21 +48,17 @@ public abstract class LanguageTranslator {
             ConfigParameter cfg = getConfigParameter(paramName);
             if (cfg != null) {
                 cfg.inferValueFrom(rawConfig.get(paramName));
-            } else {
-                throw new MeaningTreeException("Missing config parameter: ".concat(paramName));
             }
         }
 
-        _language.setConfig(_declaredConfigParams.stream().filter((ConfigParameter cfg) -> {
-            return cfg.getScope() == ConfigParameter.Scope.PARSER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR;
-        }).toList());
-        _viewer.setConfig(_declaredConfigParams.stream().filter((ConfigParameter cfg) -> {
-            return cfg.getScope() == ConfigParameter.Scope.VIEWER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR;
-        }).toList());
+        _language.setConfig(_declaredConfigParams.stream().filter(
+                (ConfigParameter cfg) -> cfg.getScope() == ConfigParameter.Scope.PARSER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR).toList());
+        _viewer.setConfig(_declaredConfigParams.stream().filter(
+                (ConfigParameter cfg) -> cfg.getScope() == ConfigParameter.Scope.VIEWER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR).toList());
     }
 
     public MeaningTree getMeaningTree(String code) {
-        return _language.getMeaningTree(code);
+        return _language.getMeaningTree(prepareCode(code));
     }
 
     protected MeaningTree getMeaningTree(String code, HashMap<int[], Object> values) {
@@ -71,7 +66,7 @@ public abstract class LanguageTranslator {
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList) {
-        return getMeaningTree(String.join(" ", prepareCode(tokenList).stream().map((Token t) -> t.value).toList()));
+        return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList, Map<TokenGroup, Object> tokenValueTags) {

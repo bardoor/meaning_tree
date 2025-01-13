@@ -7,4 +7,7 @@ public abstract class Identifier extends Expression {
     public Identifier clone() {
         return (Identifier) super.clone();
     }
+
+    public abstract boolean contains(Identifier other);
+    public abstract int contentSize();
 }

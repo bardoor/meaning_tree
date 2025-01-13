@@ -68,5 +68,11 @@ public class Token {
         copy.assignValue(assignedValue);
         return copy;
     }
+
+    public Token clone(String newName) {
+        Token copy = new Token(newName, type);
+        copy.assignValue(assignedValue);
+        return copy;
+    }
 }
 

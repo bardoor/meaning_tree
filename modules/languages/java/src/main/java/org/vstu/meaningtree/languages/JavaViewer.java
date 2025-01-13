@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.languages;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.HindleyMilner;
 import org.vstu.meaningtree.languages.utils.Scope;
 import org.vstu.meaningtree.nodes.*;
@@ -59,10 +59,7 @@ import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
-import org.vstu.meaningtree.nodes.types.containers.ArrayType;
-import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
-import org.vstu.meaningtree.nodes.types.containers.PlainCollectionType;
-import org.vstu.meaningtree.nodes.types.containers.SetType;
+import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.utils.NodeLabel;
 
@@ -148,6 +145,7 @@ public class JavaViewer extends LanguageViewer {
             case InterpolatedStringLiteral interpolatedStringLiteral -> toString(interpolatedStringLiteral);
             case FloatLiteral l -> toString(l);
             case IntegerLiteral l -> toString(l);
+            case QualifiedIdentifier id -> toString(id);
             case StringLiteral l -> toString(l);
             case UserType userType -> toString(userType);
             case ReferenceType ref -> toString(ref.getTargetType());
@@ -222,6 +220,7 @@ public class JavaViewer extends LanguageViewer {
             case BitwiseAndOp bitwiseAndOp -> toString(bitwiseAndOp);
             case BitwiseOrOp bitwiseOrOp -> toString(bitwiseOrOp);
             case XorOp xorOp -> toString(xorOp);
+            case SizeofExpression sizeof -> toString(sizeof.toCall());
             case InversionOp inversionOp -> toString(inversionOp);
             case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
@@ -230,22 +229,36 @@ public class JavaViewer extends LanguageViewer {
             case ExpressionSequence expressionSequence -> toString(expressionSequence);
             case CharacterLiteral characterLiteral -> toString(characterLiteral);
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
-            case PointerPackOp ptr -> toString(ptr.getArgument());
-            case PointerUnpackOp ptr -> toString(ptr.getArgument());
+            case PointerPackOp ptr -> toString(ptr);
+            case PointerUnpackOp ptr -> toString(ptr);
             case ContainsOp op -> toString(op);
             case ReferenceEqOp op -> toString(op);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
 
+    public String toString(PointerPackOp ptr) {
+        return toString(ptr.getArgument());
+    }
+
+    public String toString(PointerUnpackOp ptr) {
+        if (ptr.getArgument() instanceof SubOp) {
+            throw new UnsupportedViewingException("Subtraction of pointers cannot be converted to indexing");
+        }
+        return toString(ptr.getArgument());
+    }
+
     public String toString(ListLiteral list) {
         var builder = new StringBuilder();
         String typeHint = list.getTypeHint() == null ? "" : toString(list.getTypeHint());
-        builder.append(String.format("new java.util.ArrayList<%s>() {{", typeHint));
+        builder.append(String.format("new java.util.ArrayList<%s>(java.util.List.of(", typeHint));
         for (Expression expression : list.getList()) {
-            builder.append(String.format("add(%s);", toString(expression)));
+            builder.append(String.format("%s, ", toString(expression)));
         }
-        builder.append("}}");
+        if (builder.toString().endsWith(", ")) {
+            builder.delete(builder.length() - 2, builder.length());
+        }
+        builder.append("))");
         return builder.toString();
     }
 
@@ -274,7 +287,7 @@ public class JavaViewer extends LanguageViewer {
 
     public String toString(PlainCollectionLiteral unmodifiableListLiteral) {
         var builder = new StringBuilder();
-        String typeHint = unmodifiableListLiteral.getTypeHint() == null ? "Object" : toString(unmodifiableListLiteral.getTypeHint());
+        String typeHint = unmodifiableListLiteral.getTypeHint() == null ? "Object" : toString(unmodifiableListLiteral.getTypeHint(), false);
         builder.append(String.format("new %s[] {", typeHint));
 
         for (Expression expression : unmodifiableListLiteral.getList()) {
@@ -433,9 +446,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(CharacterLiteral characterLiteral) {
-        String symbol = StringEscapeUtils.escapeJava(
-                Character.toString(characterLiteral.getValue())
-        );
+        String symbol = characterLiteral.escapedString();
         return "'" + symbol + "'";
     }
 
@@ -602,7 +613,7 @@ public class JavaViewer extends LanguageViewer {
         StringBuilder builder = new StringBuilder();
         builder.append("new ");
 
-        String type = toString(arrayNewExpression.getType());
+        String type = toString(arrayNewExpression.getType(), false);
         builder.append(type);
 
         String dimensions = toString(arrayNewExpression.getShape());
@@ -995,7 +1006,71 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(BinaryExpression expr, String sign) {
-        return String.format("%s %s %s", toString(expr.getLeft()), sign, toString(expr.getRight()));
+        Expression left = expr.getLeft();
+        Expression right = expr.getRight();
+        if (left instanceof BinaryExpression leftBinOp
+                && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
+            left = new ParenthesizedExpression(leftBinOp);
+        } else if (left instanceof AssignmentExpression assignmentExpression
+            && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
+            left = new ParenthesizedExpression(assignmentExpression);
+        }
+
+        if (right instanceof BinaryExpression rightBinOp
+                && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
+            right = new ParenthesizedExpression(rightBinOp);
+        } else if (right instanceof AssignmentExpression assignmentExpression
+                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
+            right = new ParenthesizedExpression(assignmentExpression);
+        }
+
+        return String.format("%s %s %s", toString(left), sign, toString(right));
+    }
+
+    private String tokenOfBinaryOp(BinaryExpression leftBinOp) {
+        return switch (leftBinOp) {
+            case AddOp op -> "+";
+            case SubOp op -> "-";
+            case MulOp op -> "*";
+            case DivOp op -> "/";
+            case ModOp op -> "%";
+            case EqOp op -> "==";
+            case NotEqOp op -> "!=";
+            case GeOp op -> ">=";
+            case ReferenceEqOp op -> "==";
+            case LeOp op -> "<=";
+            case LtOp op -> "<";
+            case GtOp op -> ">";
+            case InstanceOfOp op -> "instanceof";
+            case ShortCircuitAndOp op -> "&&";
+            case ShortCircuitOrOp op -> "||";
+            case BitwiseAndOp op -> "&";
+            case BitwiseOrOp op -> "|";
+            case LeftShiftOp op -> "<<";
+            case RightShiftOp op -> ">>";
+            case XorOp op -> "^";
+            default -> throw new IllegalStateException("Unexpected type of binary operator: " + leftBinOp.getClass().getName());
+        };
+    }
+
+    public String tokenOfBinaryOp(AssignmentExpression expr) {
+        AugmentedAssignmentOperator op = expr.getAugmentedOperator();
+        return switch (op) {
+            case NONE -> "=";
+            case ADD -> "+=";
+            case SUB -> "-=";
+            case MUL -> "*=";
+            // В Java тип деления определяется не видом операции, а типом операндов,
+            // поэтому один и тот же оператор
+            case DIV, FLOOR_DIV -> "/=";
+            case BITWISE_AND -> "&=";
+            case BITWISE_OR -> "|=";
+            case BITWISE_XOR -> "^=";
+            case BITWISE_SHIFT_LEFT -> "<<=";
+            case BITWISE_SHIFT_RIGHT -> ">>=";
+            case MOD -> "%=";
+            default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+        };
     }
 
     public String toString(AddOp op) {
@@ -1075,13 +1150,10 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(AugmentedAssignmentOperator op, Expression left, Expression right) {
-        String l = toString(left);
-        String r = toString(right);
-
         // В Java нет встроенного оператора возведения в степень, следовательно,
         // нет и соотвествующего оператора присванивания, поэтому этот случай обрабатываем по особому
         if (op == POW) {
-            return "%s = Math.pow(%s, %s)".formatted(l, l, r);
+            return "%s = Math.pow(%s, %s)".formatted(toString(left), toString(left), toString(right));
         }
 
         String o = switch (op) {
@@ -1101,6 +1173,22 @@ public class JavaViewer extends LanguageViewer {
             default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
         };
 
+        if (left instanceof BinaryExpression leftBinOp
+                && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(o).precedence) {
+            left = new ParenthesizedExpression(leftBinOp);
+        } else if (left instanceof AssignmentExpression assignmentExpression
+                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(o).precedence) {
+            left = new ParenthesizedExpression(assignmentExpression);
+        }
+
+        if (right instanceof BinaryExpression rightBinOp
+                && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(o).precedence) {
+            right = new ParenthesizedExpression(rightBinOp);
+        } else if (right instanceof AssignmentExpression assignmentExpression
+                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(o).precedence) {
+            right = new ParenthesizedExpression(assignmentExpression);
+        }
+
         if (right instanceof IntegerLiteral integerLiteral
                 && (long) integerLiteral.getValue() == 1
                 && (o.equals("+=") || o.equals("-="))) {
@@ -1110,10 +1198,10 @@ public class JavaViewer extends LanguageViewer {
                 default -> throw new IllegalArgumentException();
             };
 
-            return l + o;
+            return toString(left) + o;
         }
 
-        return "%s %s %s".formatted(l, o, r);
+        return "%s %s %s".formatted(toString(left), o, toString(right));
     }
 
     public String toString(AssignmentExpression expr) {
@@ -1162,6 +1250,7 @@ public class JavaViewer extends LanguageViewer {
             case SetType setType -> toString(setType);
             case DictionaryType dictType -> toString(dictType);
             case PlainCollectionType plain -> toString(plain);
+            case PointerType ptr -> toString(ptr.getTargetType());
             default -> throw new IllegalStateException("Unexpected value: " + type.getClass());
         };
     }
@@ -1236,14 +1325,14 @@ public class JavaViewer extends LanguageViewer {
     private String toString(ArrayType type) {
         StringBuilder builder = new StringBuilder();
 
-        String baseType = toString(type.getItemType());
+        String baseType = toString(type.getItemType(), false);
         builder.append(baseType);
         builder.append(toString(type.getShape()));
 
         return builder.toString();
     }
 
-    private String toString(VariableDeclarator varDecl) {
+    private String toString(VariableDeclarator varDecl, Type type) {
         StringBuilder builder = new StringBuilder();
 
 
@@ -1258,6 +1347,11 @@ public class JavaViewer extends LanguageViewer {
 
         String identifierName = toString(identifier);
         builder.append(identifierName);
+
+        if (rValue instanceof ArrayLiteral arr && type instanceof ListType) {
+            rValue = new ListLiteral(arr.getList());
+            ((ListLiteral) rValue).setTypeHint(arr.getTypeHint());
+        }
 
         if (rValue != null) {
             builder.append(" = ").append(toString(rValue));
@@ -1279,7 +1373,7 @@ public class JavaViewer extends LanguageViewer {
                 .append(" ");
 
         for (VariableDeclarator varDecl : stmt.getDeclarators()) {
-            builder.append(toString(varDecl)).append(", ");
+            builder.append(toString(varDecl, stmt.getType())).append(", ");
         }
         // Чтобы избежать лишней головной боли на проверки "а последняя ли это декларация",
         // я автоматически после каждой декларации добавляю запятую и пробел,
@@ -1331,6 +1425,9 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(ExpressionStatement stmt) {
+        if (stmt.getExpression() == null) {
+            return ";";
+        }
         return String.format("%s;", toString(stmt.getExpression()));
     }
 

@@ -155,14 +155,14 @@ group: LiteralsTest
             [1, 2, 4, a, b]
 
         java:
-            new java.util.ArrayList<>() {{add(1);add(2);add(4);add(a);add(b);}};
+            new java.util.ArrayList<>(java.util.List.of(1, 2, 4, a, b));
 
     case: SetLiteral
         python:
             {1, 2, 3}
 
         java:
-            new java.util.HashSet<>() {{add(1);add(2);add(3)}};
+            new java.util.HashSet<>() {{add(1);add(2);add(3);}};
 
     case: TupleLiteral
         main python:
@@ -180,7 +180,7 @@ group: LiteralsTest
             x = {"a": b, "x": y}
 
         java:
-            x = new java.util.TreeMap<String, Object>() {{put("a", b); put("x", y);}};
+            x = new java.util.TreeMap<>() {{put("a", b);put("x", y);}};
 
         c++:
             x = {{"a", b}, {"x", y}};
@@ -302,7 +302,7 @@ group: SimpleExpressionsTest
             a == b;
 
         c++:
-            a == b;
+            &a == &b;
 
     case: ReferenceNotEqualOp
         main python:
@@ -312,7 +312,7 @@ group: SimpleExpressionsTest
             a != b;
 
         c++:
-            a != b;
+            &a != &b;
 
     case: NotInstanceOf
         python:
@@ -542,6 +542,20 @@ group: SimpleExpressionsTest
         java:
             x[10][y];
 
+    case: DifferentPriorityOperators
+        main python:
+            x & y == z
+
+        java:
+            (x & y) == z;
+
+    case: DifferentPriorityOperators
+        main c++:
+            t = x & y == z;
+
+        python:
+            t = x & (y == z)
+
 group: ComparisonsTest
     case: LessOp
         python:
@@ -714,7 +728,7 @@ group: SimpleStatements
             std::list<int> a = {1, 2, 3};
 
         java:
-            java.util.ArrayList<Integer> alist = new java.util.ArrayList<Integer>() {{add(1);add(2);add(3);}}
+            java.util.ArrayList<Integer> a = new java.util.ArrayList<Integer>(java.util.List.of(1, 2, 3));
 
         python:
             a: list[int] = [1, 2, 3]

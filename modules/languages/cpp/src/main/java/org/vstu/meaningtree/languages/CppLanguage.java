@@ -5,19 +5,24 @@ import org.jetbrains.annotations.NotNull;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
@@ -32,6 +37,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
@@ -42,6 +48,7 @@ import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
+import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.io.File;
@@ -80,15 +87,40 @@ public class CppLanguage extends LanguageParser {
         return new MeaningTree(fromTSNode(rootNode));
     }
 
+    @Override
+    public TSNode getRootNode() {
+        TSNode result = super.getRootNode();
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
+            TSNode func = result.getNamedChild(0);
+            assert func.getType().equals("function_definition");
+            assert (getCodePiece(func.getChildByFieldName("declarator")
+                    .getChildByFieldName("declarator"))
+                    .equals("main"));
+            TSNode body = func.getChildByFieldName("body");
+            if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
+                throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
+            }
+            if (body.getNamedChildCount() < 1) {
+                throw new UnsupportedParsingException("Main expression was not found in expression mode");
+            }
+            result = body.getNamedChild(0);
+            if (result.getType().equals("expression_statement")) {
+                result = result.getNamedChild(0);
+            }
+        }
+        return result;
+    }
+
     @NotNull
     private Node fromTSNode(@NotNull TSNode node) {
         Objects.requireNonNull(node);
 
         Node createdNode = switch (node.getType()) {
-            case "ERROR" -> fromTSNode(node.getChild(0));
+            case "ERROR", "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
             case "translation_unit" -> fromTranslationUnit(node);
+            case "function_definition" -> fromFunction(node);
             case "expression_statement"-> fromExpressionStatement(node);
-            case "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
             case "binary_expression" -> fromBinaryExpression(node);
             case "unary_expression" -> fromUnaryExpression(node);
             case "parenthesized_expression" -> fromParenthesizedExpression(node);
@@ -98,25 +130,78 @@ public class CppLanguage extends LanguageParser {
             case "comma_expression" -> fromCommaExpression(node);
             case "subscript_expression" -> fromSubscriptExpression(node);
             case "assignment_expression" -> fromAssignmentExpression(node);
+            case "compound_literal_expression" -> fromTSNode(node.getChildByFieldName("value"));
             case "declaration" -> fromDeclaration(node);
             case "identifier", "qualified_identifier", "field_expression", "namespace_identifier", "type_identifier", "field_identifier" -> fromIdentifier(node);
             case "number_literal" -> fromNumberLiteral(node);
+            case "char_literal" -> fromCharLiteral(node);
             case "string_literal" -> fromStringLiteral(node);
             case "user_defined_literal" -> fromUserDefinedLiteral(node);
             case "null" -> new NullLiteral();
             case "true" -> new BoolLiteral(true);
+            case "concatenated_string" -> fromConcatenatedString(node);
             case "false" -> new BoolLiteral(false);
             case "initializer_list" -> fromInitializerList(node);
             case "primitive_type", "template_function", "placeholder_type_specifier", "sized_type_specifier", "type_descriptor" -> fromType(node);
             case "sizeof_expression" -> fromSizeOf(node);
+            case "compound_statement" -> fromBody(node);
             case "new_expression" -> fromNewExpression(node);
             case "delete_expression" -> fromDeleteExpression(node);
             case "cast_expression" -> fromCastExpression(node);
             case "pointer_expression" -> fromPointerExpression(node);
-            default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+            case "this" -> new SelfReference("this");
+            case "offsetof_expression" -> fromOffsetOf(node);
+            case "comment" -> fromComment(node);
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromConcatenatedString(TSNode node) {
+        List<StringLiteral> literals = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            literals.add(fromStringLiteral(node.getNamedChild(i)));
+        }
+        StringBuilder val = new StringBuilder();
+        for (StringLiteral s : literals) {
+            val.append(s.getUnescapedValue());
+        }
+        return StringLiteral.fromUnescaped(val.toString(), StringLiteral.Type.NONE);
+    }
+
+    private Comment fromComment(TSNode node) {
+        return Comment.fromUnescaped(getCodePiece(node).replaceFirst("/*", "")
+                .replaceFirst("//", "").replace("*/", "").trim());
+    }
+
+    private Node fromOffsetOf(TSNode node) {
+        return new FunctionCall(new SimpleIdentifier("offsetof"), (Expression) fromTSNode(node.getChildByFieldName("type").getChildByFieldName("type")),
+                (Expression) fromTSNode(node.getChildByFieldName("member")));
+    }
+
+    private Node fromCharLiteral(TSNode node) {
+        return new CharacterLiteral(getCodePiece(node.getNamedChild(0)).charAt(0));
+    }
+
+    private Node fromFunction(TSNode node) {
+        // TODO: требуется ревизия. Сделано только для режима выражений и функции main
+        Type retType = fromType(node.getChildByFieldName("type"));
+        TSNode declarator = node.getChildByFieldName("declarator");
+        SimpleIdentifier name = (SimpleIdentifier) fromTSNode(declarator.getChildByFieldName("declarator"));
+        CompoundStatement body = fromBody(node.getChildByFieldName("body"));
+        // TODO: Аргументы игнорируются!!
+        return new FunctionDefinition(new FunctionDeclaration(name, retType, List.of(), List.of()), body);
+    }
+
+    private CompoundStatement fromBody(TSNode node) {
+        // TODO: Нужна поддержка таблицы символов
+        BodyBuilder builder = new BodyBuilder();
+        for (int i = 1; i < node.getChildCount() - 1; i++) {
+            Node child = fromTSNode(node.getChild(i));
+            builder.put(child);
+        }
+        return builder.build();
     }
 
     private Node fromInitializerList(TSNode node) {
@@ -131,6 +216,9 @@ public class CppLanguage extends LanguageParser {
         String op = getCodePiece(node);
         Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
         if (op.startsWith("&")) {
+            if (argument instanceof AddOp binOp) {
+                return new IndexExpression(binOp.getLeft(), binOp.getRight());
+            }
             return new PointerPackOp(argument);
         } else if (op.startsWith("*")) {
             return new PointerUnpackOp(argument);
@@ -334,7 +422,7 @@ public class CppLanguage extends LanguageParser {
         }
     }
 
-    private Node fromStringLiteral(TSNode node) {
+    private StringLiteral fromStringLiteral(TSNode node) {
         String strLiteral = getCodePiece(node);
         boolean isWide = strLiteral.toLowerCase().startsWith("l");
         strLiteral = strLiteral.substring(1, strLiteral.length() - 1);
@@ -409,7 +497,7 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Node fromCallExpression(@NotNull TSNode node) {
-        Identifier functionName = (Identifier) fromTSNode(node.getChildByFieldName("function"));
+        Expression functionName = (Expression) fromTSNode(node.getChildByFieldName("function"));
 
         TSNode tsArguments = node.getChildByFieldName("arguments");
         List<Expression> arguments = new ArrayList<>();
@@ -423,6 +511,15 @@ public class CppLanguage extends LanguageParser {
             return new PowOp(arguments.getFirst(), arguments.getLast());
         }
 
+        if (functionName instanceof ScopedIdentifier scoped && scoped.getScopeResolution().size() > 1) {
+            List<SimpleIdentifier> object = scoped.getScopeResolution()
+                    .subList(0, scoped.getScopeResolution().size() - 1);
+            return new MethodCall(object.size() == 1 ? object.getFirst() : new ScopedIdentifier(object)
+                    , scoped.getScopeResolution().getLast(), arguments);
+        }
+        if (functionName instanceof MemberAccess memAccess) {
+            return new MethodCall(memAccess.getExpression(), memAccess.getMember(), arguments);
+        }
         return new FunctionCall(functionName, arguments);
     }
 
@@ -449,20 +546,16 @@ public class CppLanguage extends LanguageParser {
         String code = getCodePiece(node);
 
         if (code.endsWith("++")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
-            return new PostfixIncrementOp(identifier);
+            return new PostfixIncrementOp((Expression) fromTSNode(node.getChild(0)));
         }
         else if (code.startsWith("++")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
-            return new PrefixIncrementOp(identifier);
+            return new PrefixIncrementOp((Expression) fromTSNode(node.getChild(1)));
         }
         else if (code.endsWith("--")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
-            return new PostfixDecrementOp(identifier);
+            return new PostfixDecrementOp((Expression) fromTSNode(node.getChild(0)));
         }
         else if (code.startsWith("--")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
-            return new PrefixDecrementOp(identifier);
+            return new PrefixDecrementOp((Expression) fromTSNode(node.getChild(1)));
         }
 
         throw new IllegalArgumentException();
@@ -493,6 +586,12 @@ public class CppLanguage extends LanguageParser {
                 ) {
                     yield new NotOp(new ParenthesizedExpression(new InstanceOfOp(call.getArguments().getFirst(), type.getTypeParameters()[0])));
                 }
+
+                if (eq.getLeft() instanceof PointerPackOp leftPtr && eq.getRight() instanceof PointerPackOp rightPtr ) {
+                    yield new ReferenceEqOp(leftPtr.getArgument(), rightPtr.getArgument(), false);
+                }
+                // TODO: add type checking
+
                 yield eq;
             }
             case "!=" -> {
@@ -505,6 +604,9 @@ public class CppLanguage extends LanguageParser {
                         && right instanceof NullLiteral
                 ) {
                     yield new InstanceOfOp(call.getArguments().getFirst(), type.getTypeParameters()[0]);
+                }
+                if (neq.getLeft() instanceof PointerPackOp leftPtr && neq.getRight() instanceof PointerPackOp rightPtr) {
+                    yield new ReferenceEqOp(leftPtr.getArgument(), rightPtr.getArgument(), false);
                 }
                 yield neq;
             }
@@ -647,7 +749,7 @@ public class CppLanguage extends LanguageParser {
             Node treeNode = fromTSNode(node.getChildByFieldName("argument"));
             boolean isPointer = node.getChild(1).getType().equals("->");
             if (treeNode instanceof SimpleIdentifier ident && !isPointer) {
-                return new ScopedIdentifier(ident, (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("field")));
+                return new MemberAccess(ident, (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("field")));
             } else if (treeNode instanceof ScopedIdentifier ident && !isPointer) {
                 List<SimpleIdentifier> identList = new ArrayList<>(ident.getScopeResolution());
                 Identifier fieldIdent = (Identifier) fromIdentifier(node.getChildByFieldName("field"));
@@ -658,7 +760,7 @@ public class CppLanguage extends LanguageParser {
                 } else if (fieldIdent instanceof QualifiedIdentifier) {
                     throw new MeaningTreeException("Unsupported scoped and qualified identifier combination");
                 }
-                return new ScopedIdentifier(identList);
+                return new ScopedIdentifier(identList).toMemberAccess();
             } else {
                 if (isPointer) {
                     return new PointerMemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));
@@ -671,9 +773,8 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    private AssignmentExpression fromAssignmentExpression(@NotNull TSNode node) {
-        String variableName = getCodePiece(node.getChildByFieldName("left"));
-        SimpleIdentifier identifier = new SimpleIdentifier(variableName);
+    private Expression fromAssignmentExpression(@NotNull TSNode node) {
+        Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
 
         String operatorType = node.getChildByFieldName("operator").getType();
@@ -693,7 +794,13 @@ public class CppLanguage extends LanguageParser {
             default -> throw new IllegalStateException("Unexpected augmented assignment type: " + operatorType);
         };
 
-        return new AssignmentExpression(identifier, right, augmentedAssignmentOperator);
+        // Если только одно выражение и присвоение указателю, то нет смысла что-либо присваивать
+        if (left instanceof PointerUnpackOp
+                && getConfigParameter("expressionMode").getBooleanValue()) {
+            return right;
+        }
+
+        return new AssignmentExpression(left, right, augmentedAssignmentOperator);
     }
 
     @NotNull
@@ -707,22 +814,38 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Node fromTranslationUnit(@NotNull TSNode node) {
-        // TODO: Temporary solution
-        if (node.getNamedChildCount() == 1) {
-            return fromTSNode(node.getNamedChild(0));
-        } else {
-            List<Node> nodes = new ArrayList<>();
-            for (int i = 0; i < node.getNamedChildCount(); i++) {
-                nodes.add(fromTSNode(node.getNamedChild(i)));
+        List<Node> nodes = new ArrayList<>();
+        FunctionDefinition entryPoint = null;
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            TSNode currNode = node.getNamedChild(i);
+            if (currNode.getType().equals("ERROR")) {
+                Node errorNode = fromTSNode(currNode);
+                if (errorNode instanceof Expression expr) {
+                    nodes.add(new ExpressionStatement(expr));
+                } else {
+                    nodes.add(errorNode);
+                }
+            } else {
+                Node converted = fromTSNode(currNode);
+                if (converted instanceof ExpressionStatement exprStmt && exprStmt.getExpression() == null) {
+                    continue;
+                }
+                if (converted instanceof FunctionDefinition funcDecl && funcDecl.getName().equalsIdentifier("main")) {
+                    entryPoint = funcDecl;
+                }
+                nodes.add(converted);
             }
-            SymbolEnvironment context = new SymbolEnvironment(null);
-            return new ProgramEntryPoint(context, nodes);
         }
+        SymbolEnvironment context = new SymbolEnvironment(null); //TODO: fix symbol table
+        return new ProgramEntryPoint(context, nodes, entryPoint);
     }
 
     @NotNull
     private Node fromExpressionStatement(@NotNull TSNode node) {
-        Expression expr = (Expression) fromTSNode(node.getChild(0));
+        if (node.getNamedChild(0).isNull()) {
+            return new ExpressionStatement(null);
+        }
+        Expression expr = (Expression) fromTSNode(node.getNamedChild(0));
         if (expr instanceof AssignmentExpression assignmentExpression) {
             return assignmentExpression.toStatement();
         }

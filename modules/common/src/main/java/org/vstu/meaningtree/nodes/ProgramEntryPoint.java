@@ -67,7 +67,7 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
     }
 
     public Node getEntryPoint() {
-        return Objects.requireNonNull(_entryPointNode, "Main class is not present");
+        return Objects.requireNonNull(_entryPointNode, "Entry point node is not present");
     }
 
     @Override

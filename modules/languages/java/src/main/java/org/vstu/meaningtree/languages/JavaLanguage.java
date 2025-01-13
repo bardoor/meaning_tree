@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
@@ -42,7 +43,10 @@ import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.modules.*;
-import org.vstu.meaningtree.nodes.statements.*;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.Loop;
+import org.vstu.meaningtree.nodes.statements.ReturnStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
@@ -105,6 +109,33 @@ public class JavaLanguage extends LanguageParser {
         return new MeaningTree(fromTSNode(rootNode));
     }
 
+    @Override
+    public TSNode getRootNode() {
+        TSNode result = super.getRootNode();
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
+            TSNode cls = result.getNamedChild(0);
+            assert cls.getType().equals("class_declaration");
+            TSNode clsbody = cls.getChildByFieldName("body");
+            assert cls.getNamedChildCount() > 0;
+            TSNode func = clsbody.getNamedChild(0);
+            assert getCodePiece(func.getChildByFieldName("name")).equals("main");
+            TSNode body = func.getChildByFieldName("body");
+            if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
+                throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
+            }
+            if (body.getNamedChildCount() < 1) {
+                throw new UnsupportedParsingException("Main expression was not found in expression mode");
+            }
+            result = body.getNamedChild(0);
+            if (result.getType().equals("expression_statement")) {
+                result = result.getNamedChild(0);
+            }
+        }
+        return result;
+    }
+
+
     private void rollbackContext() {
         if (currentContext.getParent() != null) {
             currentContext = currentContext.getParent();
@@ -152,6 +183,7 @@ public class JavaLanguage extends LanguageParser {
             case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
             case "array_initializer" -> fromArrayInitializer(node);
             case "return_statement" -> fromReturnStatementTSNode(node);
+            case "void_type" -> fromTypeTSNode(node);
             case "line_comment", "block_comment" -> fromCommentTSNode(node);
             case "cast_expression" -> fromCastExpressionTSNode(node);
             case "array_access" -> fromArrayAccessTSNode(node);
@@ -161,10 +193,15 @@ public class JavaLanguage extends LanguageParser {
             case "character_literal" -> fromCharacterLiteralTSNode(node);
             case "do_statement" -> fromDoStatementTSNode(node);
             case "instanceof_expression" -> fromInstanceOfTSNode(node);
-            default -> throw new UnsupportedOperationException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+            case "class_literal" -> fromClassLiteralTSNode(node);
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromClassLiteralTSNode(TSNode node) {
+        return new MemberAccess(fromTypeTSNode(node.getNamedChild(0)), new SimpleIdentifier("class"));
     }
 
     private Node fromInstanceOfTSNode(TSNode node) {
@@ -206,6 +243,17 @@ public class JavaLanguage extends LanguageParser {
         Expression consequence = (Expression) fromTSNode(node.getChildByFieldName("consequence"));
         Expression alternative = (Expression) fromTSNode(node.getChildByFieldName("alternative"));
         return new TernaryOperator(condition, consequence, alternative);
+    }
+
+    private List<Node> fromClassBody(TSNode node) {
+        if (node.getNamedChild(0).getType().equals("block")) {
+            node = node.getNamedChild(0);
+        }
+        ArrayList<Node> nodes = new ArrayList<>();
+        for (int i = 0; i < node.getNamedChildCount(); i++) {
+            nodes.add(fromTSNode(node.getNamedChild(i)));
+        }
+        return nodes;
     }
 
     private Node fromArrayAccessTSNode(TSNode node) {
@@ -315,6 +363,7 @@ public class JavaLanguage extends LanguageParser {
 
     private Node fromObjectCreationExpressionTSNode(TSNode objectCreationNode) {
         Type type = fromTypeTSNode(objectCreationNode.getChildByFieldName("type"));
+        TSNode body = objectCreationNode.getNamedChild(objectCreationNode.getNamedChildCount() - 1);
 
         List<Expression> arguments = new ArrayList<>();
         TSNode tsArguments = objectCreationNode.getChildByFieldName("arguments");
@@ -322,6 +371,67 @@ public class JavaLanguage extends LanguageParser {
             TSNode tsArgument = tsArguments.getNamedChild(i);
             Expression argument = (Expression) fromTSNode(tsArgument);
             arguments.add(argument);
+        }
+
+        // Список
+        if (type instanceof ListType && arguments.getFirst() instanceof MethodCall call
+            && call.getFunctionName().equalsIdentifier("of")
+        ) {
+            return new ListLiteral(call.getArguments());
+        }
+
+        // Список в качестве тела класса
+        if (type instanceof ListType && !body.isNull()) {
+            ArrayList<Expression> list = new ArrayList<>();
+            for (Node node : fromClassBody(body)) {
+                if (node instanceof ExpressionStatement expr) {
+                    node = expr.getExpression();
+                }
+                if (node instanceof FunctionCall call && call.getFunction().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                } else if (node instanceof MethodCall call
+                        && call.getObject() instanceof SelfReference
+                        && call.getFunctionName().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                }
+            }
+            return new ListLiteral(list);
+        }
+
+        // Словарь
+        if (type instanceof DictionaryType && !body.isNull()) {
+            LinkedHashMap<Expression, Expression> map = new LinkedHashMap<>();
+            for (Node node : fromClassBody(body)) {
+                if (node instanceof ExpressionStatement expr) {
+                    node = expr.getExpression();
+                }
+                if (node instanceof FunctionCall call && call.getFunction().equalsIdentifier("put") && call.getArguments().size() >= 2) {
+                    map.put(call.getArguments().getFirst(), call.getArguments().get(1));
+                } else if (node instanceof MethodCall call
+                        && call.getObject() instanceof SelfReference
+                        && call.getFunctionName().equalsIdentifier("add") && call.getArguments().size() >= 2) {
+                    map.put(call.getArguments().getFirst(), call.getArguments().get(1));
+                }
+            }
+            return new DictionaryLiteral(map);
+        }
+
+        // Множества
+        if (type instanceof SetType && !body.isNull()) {
+            List<Expression> list = new ArrayList<>();
+            for (Node node : fromClassBody(body)) {
+                if (node instanceof ExpressionStatement expr) {
+                    node = expr.getExpression();
+                }
+                if (node instanceof FunctionCall call && call.getFunction().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                } else if (node instanceof MethodCall call
+                        && call.getObject() instanceof SelfReference
+                        && call.getFunctionName().equalsIdentifier("add") && !call.getArguments().isEmpty()) {
+                    list.add(call.getArguments().getFirst());
+                }
+            }
+            return new SetLiteral(list);
         }
 
         return new ObjectNewExpression(type, arguments);
@@ -659,24 +769,21 @@ public class JavaLanguage extends LanguageParser {
         return new PackageDeclaration(fromIdentifierTSNode(packageName));
     }
 
-    private Node fromUpdateExpressionTSNode(TSNode node) {
+    @NotNull
+    private UnaryExpression fromUpdateExpressionTSNode(@NotNull TSNode node) {
         String code = getCodePiece(node);
 
         if (code.endsWith("++")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
-            return new PostfixIncrementOp(identifier);
+            return new PostfixIncrementOp((Expression) fromTSNode(node.getChild(0)));
         }
         else if (code.startsWith("++")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
-            return new PrefixIncrementOp(identifier);
+            return new PrefixIncrementOp((Expression) fromTSNode(node.getChild(1)));
         }
         else if (code.endsWith("--")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(0));
-            return new PostfixDecrementOp(identifier);
+            return new PostfixDecrementOp((Expression) fromTSNode(node.getChild(0)));
         }
         else if (code.startsWith("--")) {
-            Identifier identifier = (Identifier) fromTSNode(node.getChild(1));
-            return new PrefixDecrementOp(identifier);
+            return new PrefixDecrementOp((Expression) fromTSNode(node.getChild(1)));
         }
 
         throw new IllegalArgumentException();
@@ -1086,13 +1193,10 @@ public class JavaLanguage extends LanguageParser {
                 (nodes.length > 1 && getConfigParameter("expressionMode").getBooleanValue())
                         || (nodes.length > 0 && !(nodes[0] instanceof ExpressionStatement) &&
                         !(nodes[0] instanceof AssignmentStatement) &&
-                        !(nodes[0] instanceof Expression)
+                        !(nodes[0] instanceof Expression) && getConfigParameter("expressionMode").getBooleanValue()
                         )
         ) {
             throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
-        }
-        if (getConfigParameter("expressionMode").getBooleanValue() && nodes.length > 0) {
-            return nodes[0];
         }
 
         */

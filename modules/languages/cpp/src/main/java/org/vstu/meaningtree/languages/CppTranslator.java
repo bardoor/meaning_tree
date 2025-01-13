@@ -27,6 +27,9 @@ public class CppTranslator extends LanguageTranslator {
         if (getConfigParameter("expressionMode").getBooleanValue() && !code.endsWith(";")) {
             code = code + ";";
         }
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            code = String.format("int main() {%s}", code);
+        }
         return code;
     }
 
@@ -35,8 +38,20 @@ public class CppTranslator extends LanguageTranslator {
         if (getConfigParameter("expressionMode").getBooleanValue() && !list.getLast().type.equals(TokenType.SEPARATOR)) {
             list.add(new Token(";", TokenType.SEPARATOR));
         }
+        if (getConfigParameter("expressionMode").getBooleanValue()) {
+            TokenList final_ = getTokenizer().tokenize("int main() {}", false);
+            final_.addAll(
+                    final_.indexOf(
+                            final_.stream().filter((Token t) -> t.value.equals("{")).findFirst().orElse(null)
+                    ),
+                    list
+            );
+            return final_;
+        }
         return list;
     }
+
+
 
     @Override
     protected ConfigParameter[] getDeclaredConfigParameters() {

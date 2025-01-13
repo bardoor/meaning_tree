@@ -1,12 +1,11 @@
 package org.vstu.meaningtree;
 
 import java.util.Arrays;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CodeFormatter {
     protected final boolean _indentSensitive;
-    protected final int TAB_SIZE = 4;
+    protected static final int TAB_SIZE = 4;
 
     public CodeFormatter(boolean indentSensitive) {
         _indentSensitive = indentSensitive;

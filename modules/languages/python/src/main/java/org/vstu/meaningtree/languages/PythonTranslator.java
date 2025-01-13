@@ -34,7 +34,7 @@ public class PythonTranslator extends LanguageTranslator {
     protected ConfigParameter[] getDeclaredConfigParameters() {
         return new ConfigParameter[] {
                 // Отключает распознавание составных сравнений и их преобразование из нескольких соединенных "И"
-                new ConfigParameter("disableCompoundComparisonConversion", false, ConfigParameter.Scope.PARSER)
+                new ConfigParameter("disableCompoundComparisonConversion", false, ConfigParameter.Scope.TRANSLATOR)
         };
     }
 }

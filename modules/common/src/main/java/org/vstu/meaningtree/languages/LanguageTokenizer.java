@@ -18,16 +18,22 @@ public abstract class LanguageTokenizer {
 
     protected abstract Token recognizeToken(TSNode node);
 
+
+    public TokenList tokenize(String code, boolean noPrepare) {
+        this.code = noPrepare ? code : translator.prepareCode(code);
+        parser.getMeaningTree(this.code);
+        TokenList list = new TokenList();
+        collectTokens(parser.getRootNode(), list, true, null);
+        return list;
+    }
+
     /**
      * Токенизирует выражения из кода, переданного в токенайзер
+     * Не учитывает режим выражения и прочие конфигурации
      * @return
      */
     public TokenList tokenize(String code) {
-        this.code = translator.prepareCode(code);
-        parser.getMeaningTree(this.code);
-        TokenList list = new TokenList();
-        collectTokens(parser.getRootNode(), list, true);
-        return list;
+        return tokenize(code, false);
     }
 
     public abstract TokenList tokenizeExtended(Node node);
@@ -43,7 +49,7 @@ public abstract class LanguageTokenizer {
     }
 
     public TokenList tokenizeExtended(String code) {
-        return tokenizeExtended(parser.getMeaningTree(code));
+        return tokenizeExtended(parser.getMeaningTree(translator.prepareCode(code)));
     }
 
     /**
@@ -67,15 +73,16 @@ public abstract class LanguageTokenizer {
         this.viewer = translator._viewer;
     }
 
-    protected TokenGroup collectTokens(TSNode node, TokenList tokens, boolean detectOperator) {
+    protected TokenGroup collectTokens(TSNode node, TokenList tokens, boolean detectOperator, Map<OperandPosition, TokenGroup> parent) {
         int start = tokens.size();
         boolean skipChildren = false;
         if (node.getChildCount() == 0 || getStopNodes().contains(node.getType())) {
             String value = TreeSitterUtils.getCodePiece(code, node);
             if (value.trim().isEmpty()) {
-                return null;
+                return new TokenGroup(0, 0, tokens);
             }
             tokens.add(recognizeToken(node));
+            skipChildren = true;
         } else if (
                 (getOperatorNodes(OperatorArity.BINARY).contains(node.getType())
                 || getOperatorNodes(OperatorArity.TERNARY).contains(node.getType())) && detectOperator
@@ -83,17 +90,68 @@ public abstract class LanguageTokenizer {
             OperatorToken token = null;
             Map<OperandPosition, TokenGroup> operands = new HashMap<>();
             for (int i = 0; i < node.getChildCount(); i++) {
-                TokenGroup group = collectTokens(node.getChild(i), tokens, true);
-                if (node.getFieldNameForChild(i) != null) {
-                    if (node.getFieldNameForChild(i).equals(getFieldNameByOperandPos(OperandPosition.LEFT, node.getType()))) {
-                        operands.put(OperandPosition.LEFT, group);
-                    } else if (node.getFieldNameForChild(i).equals(getFieldNameByOperandPos(OperandPosition.RIGHT, node.getType()))) {
-                        operands.put(OperandPosition.RIGHT, group);
-                    } else if (node.getFieldNameForChild(i).equals(getFieldNameByOperandPos(OperandPosition.CENTER, node.getType()))) {
-                        operands.put(OperandPosition.CENTER, group);
+                TokenGroup group = collectTokens(node.getChild(i), tokens, true, operands);
+
+                String leftName = getFieldNameByOperandPos(OperandPosition.LEFT, node.getType());
+                String centerName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getType());
+                String rightName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getType());
+
+                if (!node.getParent().isNull() && parent != null) {
+                    String leftParentName = getFieldNameByOperandPos(OperandPosition.LEFT, node.getParent().getType());
+                    String centerParentName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getParent().getType());
+                    String rightParentName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getParent().getType());
+
+                    if (leftParentName != null && leftParentName.contains(".")
+                            && leftParentName.split("\\.").length == 2
+                            && leftParentName.split("\\.")[1].equals(node.getType())
+                    ) {
+                        parent.put(OperandPosition.LEFT, group);
+                    } else if (rightParentName != null && rightParentName.contains(".")
+                            && rightParentName.split("\\.").length == 2
+                            && rightParentName.split("\\.")[1].equals(node.getType())
+                    ) {
+                        parent.put(OperandPosition.RIGHT, group);
+                    } else if (centerParentName != null && centerParentName.contains(".")
+                            && centerParentName.split("\\.").length == 2
+                            && centerParentName.split("\\.")[1].equals(node.getType())
+                    ) {
+                        parent.put(OperandPosition.CENTER, group);
                     }
                 }
-                if (group.length() == 1 && tokens.get(group.start) instanceof OperatorToken op && token == null) {
+
+                int namedIndex = -1;
+                for (int j = 0; j < node.getNamedChildCount(); j++) {
+                    if (node.getChild(i).equals(node.getNamedChild(j))) {
+                        namedIndex = j;
+                        break;
+                    }
+                }
+                String index = "_" + namedIndex;
+                OperandPosition pos = null;
+
+                if (index.equals(leftName)) {
+                    pos = OperandPosition.LEFT;
+                } else if (index.equals(centerName)) {
+                    pos = OperandPosition.CENTER;
+                } else if (index.equals(rightName)) {
+                    pos = OperandPosition.RIGHT;
+                }
+
+                if (node.getFieldNameForChild(i) != null) {
+                    if (node.getFieldNameForChild(i).equals(leftName)) {
+                        pos = OperandPosition.LEFT;
+                    } else if (node.getFieldNameForChild(i).equals(rightName)) {
+                        pos = OperandPosition.RIGHT;
+                    } else if (node.getFieldNameForChild(i).equals(centerName)) {
+                        pos = OperandPosition.CENTER;
+                    }
+                }
+
+                if (pos != null) {
+                    operands.put(pos, group);
+                }
+
+                if (group.length() > 0 && group.length() == 1 && tokens.get(group.start) instanceof OperatorToken op && token == null) {
                     token = op;
                 }
             }
@@ -112,7 +170,7 @@ public abstract class LanguageTokenizer {
             }
             skipChildren = true;
         } else if (getOperatorNodes(OperatorArity.UNARY).contains(node.getType()) && detectOperator) {
-            TokenGroup group = collectTokens(node, tokens, false);
+            TokenGroup group = collectTokens(node, tokens, false, null);
             int unaryStart = group.start;
             int unaryStop = group.stop;
             OperatorToken token;
@@ -134,7 +192,7 @@ public abstract class LanguageTokenizer {
             skipChildren = true;
         }
         for (int i = 0; i < node.getChildCount() && !skipChildren; i++) {
-            collectTokens(node.getChild(i), tokens, true);
+            collectTokens(node.getChild(i), tokens, true, null);
         }
         int stop = tokens.size();
         return new TokenGroup(start, stop, tokens);

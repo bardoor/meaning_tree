@@ -48,6 +48,40 @@ public class TokenList extends ArrayList<Token> {
         return new ImmutablePair<>(index, get(index));
     }
 
+    public ComplexOperatorToken isInComplex(int tokenIndex) {
+        for (int i = tokenIndex; i >= 0; i--) {
+            if (get(i) instanceof ComplexOperatorToken complex && complex.isOpening()) {
+                if (tokenIndex > i && tokenIndex < findClosingComplex(i)) {
+                    return complex;
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean isParenthesized(int operatorToken) {
+        if (!(get(operatorToken) instanceof OperatorToken)) {
+            return false;
+        }
+        for (int i = operatorToken; i >= 0; i--) {
+            if (get(i).type == TokenType.OPENING_BRACE) {
+                int brace = 1;
+                int j = i + 1;
+                for (;j < size() && brace != 0; j++) {
+                    if (get(j).type == TokenType.OPENING_BRACE) {
+                        brace++;
+                    } else if (get(j).type == TokenType.CLOSING_BRACE) {
+                        brace--;
+                    }
+                }
+                if (brace == 0 && operatorToken > i && operatorToken < j) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public void setMetadata(OperatorToken token, OperandPosition pos) {
         for (int i = 0; i < size(); i++) {
             Token t = get(i);
@@ -71,11 +105,11 @@ public class TokenList extends ArrayList<Token> {
     public int findComplex(int tokenIndex, int complexPos) {
         assert get(tokenIndex) instanceof ComplexOperatorToken;
         ComplexOperatorToken complex = (ComplexOperatorToken) get(tokenIndex);
-        int nesting = 0;
-        int start = complex.positionOfToken <= complexPos ? tokenIndex + 1 : size() - 1;
-        int stop = complex.positionOfToken <= complexPos ? size() - 1 : tokenIndex;
+        int nesting = 1;
+        int start = complex.positionOfToken <= complexPos ? tokenIndex + 1 : tokenIndex - 1;
+        int stop = complex.positionOfToken <= complexPos ? size() : 0;
         int step = complex.positionOfToken <= complexPos ? 1 : -1;
-        for (int i = start; i < stop; i += step){
+        for (int i = start; (complex.positionOfToken <= complexPos) == (i < stop); i += step){
             if (get(i) instanceof ComplexOperatorToken currentComplex) {
                 boolean increaseCondition = currentComplex.positionOfToken != complexPos;
                 boolean decreaseCondition = currentComplex.positionOfToken == complexPos;
@@ -125,6 +159,20 @@ public class TokenList extends ArrayList<Token> {
             operand = operand.operandOf();
         }
         return flag ? pos : null;
+    }
+
+    public Map<OperandPosition, TokenList> findOperandsAsList(int opIndexToken) {
+        OperandToken op = (OperandToken) get(opIndexToken);
+        Map<OperandPosition, TokenList> result = new HashMap<>();
+        for (int i = 0; i < size(); i++) {
+            if (get(i) instanceof OperandToken operand && operand.operandOf() != null && operand.operandOf().equals(op)) {
+                if (!result.containsKey(operand.operandPosition())) {
+                    result.put(operand.operandPosition(), new TokenList());
+                }
+                result.get(operand.operandPosition()).add(operand);
+            }
+        }
+        return result;
     }
 
     public Map<OperandPosition, TokenGroup> findOperands(int opIndexToken) {

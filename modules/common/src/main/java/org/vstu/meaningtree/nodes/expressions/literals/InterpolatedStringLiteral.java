@@ -28,6 +28,8 @@ public class InterpolatedStringLiteral extends Literal implements Iterable<Expre
         return _type;
     }
 
+    public List<Expression> components() {return _components;}
+
     @NotNull
     @Override
     public Iterator<Expression> iterator() {

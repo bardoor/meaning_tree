@@ -13,6 +13,7 @@ public class OperatorToken extends OperandToken {
     public final OperatorArity arity;
     public final boolean isStrictOrder;
     public final OperatorTokenPosition tokenPos;
+    private OperandPosition firstOperandToEvaluation;
 
     public final OperatorType additionalOpType;
 
@@ -37,6 +38,7 @@ public class OperatorToken extends OperandToken {
         this.tokenPos = tokenPos;
         this.isStrictOrder = isStrictOrder;
         this.additionalOpType = additionalOpType;
+        firstOperandToEvaluation = arity == OperatorArity.UNARY ? OperandPosition.RIGHT : OperandPosition.LEFT;
     }
 
     public OperatorToken(String value,
@@ -71,6 +73,15 @@ public class OperatorToken extends OperandToken {
                 arity == OperatorArity.UNARY ? OperatorTokenPosition.PREFIX : OperatorTokenPosition.INFIX, OperatorType.OTHER);
     }
 
+    public OperandPosition getFirstOperandToEvaluation() {
+        return firstOperandToEvaluation;
+    }
+
+    public OperatorToken setFirstOperandToEvaluation(OperandPosition op) {
+        firstOperandToEvaluation = op;
+        return this;
+    }
+
     public static List<OperatorToken> makeComplex(int precedence, OperatorArity arity, OperatorAssociativity assoc,
                                             boolean isStrictOrder, String[] tokens, TokenType[] types, OperatorTokenPosition[] pos) {
         assert types.length == tokens.length;
@@ -101,6 +112,13 @@ public class OperatorToken extends OperandToken {
 
     public OperatorToken clone() {
         OperatorToken copy = new OperatorToken(value, type, precedence, assoc, arity, isStrictOrder, tokenPos, additionalOpType);
+        copy.assignValue(assignedValue);
+        copy.setMetadata(operandOf, operandPos);
+        return copy;
+    }
+
+    public OperatorToken clone(String newName) {
+        OperatorToken copy = new OperatorToken(newName, type, precedence, assoc, arity, isStrictOrder, tokenPos, additionalOpType);
         copy.assignValue(assignedValue);
         copy.setMetadata(operandOf, operandPos);
         return copy;

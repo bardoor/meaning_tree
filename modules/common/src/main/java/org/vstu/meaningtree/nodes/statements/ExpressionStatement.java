@@ -39,7 +39,7 @@ public class ExpressionStatement extends Statement {
     @Override
     public ExpressionStatement clone() {
         ExpressionStatement obj = (ExpressionStatement) super.clone();
-        obj._expr = _expr.clone();
+        if (_expr != null) obj._expr = _expr.clone();
         return obj;
     }
 }

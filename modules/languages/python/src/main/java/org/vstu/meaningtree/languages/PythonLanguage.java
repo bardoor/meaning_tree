@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
@@ -18,6 +19,7 @@ import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
@@ -151,14 +153,20 @@ public class PythonLanguage extends LanguageParser {
             case "function_definition" -> fromFunctionTSNode(node);
             case "decorated_definition" -> detectAnnotated(node);
             case "while_statement" -> fromWhileLoop(node);
+            case "assert_statement" -> fromAssertTSNode(node);
             case "set_comprehension", "dictionary_comprehension", "list_comprehension", "generator_expression" -> fromComprehension(node);
             case "match_statement" -> fromMatchStatement(node);
-            case null, default -> throw new UnsupportedOperationException(String.format("Can't parse %s", node.getType()));
+            case null, default -> throw new UnsupportedParsingException(String.format("Can't parse %s", node.getType()));
         };
         assignValue(node, createdNode);
         return createdNode;
     }
-    
+
+    private Node fromAssertTSNode(TSNode node) {
+        return new FunctionCall(new SimpleIdentifier("assert"), (Expression)
+                fromTSNode(node.getNamedChild(0)));
+    }
+
     private void rollbackContext() {
         if (currentContext.getParent() != null) {
             currentContext = currentContext.getParent();
@@ -317,15 +325,13 @@ public class PythonLanguage extends LanguageParser {
 
     private Node fromFunctionCall(TSNode node) {
         TSNode tsNode = node.getChildByFieldName("function");
-        Expression ident = (Expression) fromTSNode(tsNode);
-        if (ident instanceof MemberAccess memAccess) {
-            ident = memAccess.toScopedIdentifier();
-        }
+        Expression name = (Expression) fromTSNode(tsNode);
+
         List<Expression> exprs = new ArrayList<>();
         TSNode arguments = node.getChildByFieldName("arguments");
         for (int i = 0; i < arguments.getNamedChildCount(); i++) {
             String tsNodeChildType = arguments.getNamedChild(i).getType();
-            if (tsNodeChildType.equals("(") || tsNodeChildType.equals(")") || tsNodeChildType.equals(",")) {
+            if (tsNodeChildType.equals("(") || tsNodeChildType.equals(")") || tsNodeChildType.equals(",") || tsNodeChildType.equals("comment")) {
                 continue;
             }
             Expression expr = (Expression) fromTSNode(arguments.getNamedChild(i));
@@ -347,7 +353,16 @@ public class PythonLanguage extends LanguageParser {
             return new MatMulOp(exprs.getFirst(), exprs.get(1));
         }
 
-        return new FunctionCall(ident, exprs);
+        if (name instanceof ScopedIdentifier scoped && scoped.getScopeResolution().size() > 1) {
+            List<SimpleIdentifier> object = scoped.getScopeResolution()
+                    .subList(0, scoped.getScopeResolution().size() - 1);
+            return new MethodCall(object.size() == 1 ? object.getFirst() : new ScopedIdentifier(object)
+                    , scoped.getScopeResolution().getLast(), exprs);
+        }
+        if (name instanceof MemberAccess memberAccess) {
+            return new MethodCall(memberAccess.getExpression(), memberAccess.getMember(), exprs);
+        }
+        return new FunctionCall(name, exprs);
     }
 
     private Annotation fromDecorator(TSNode node) {
@@ -604,11 +619,14 @@ public class PythonLanguage extends LanguageParser {
                 (nodes.size() > 1 && getConfigParameter("expressionMode").getBooleanValue())
                 || (!nodes.isEmpty() && !(nodes.getFirst() instanceof ExpressionStatement) &&
                         !(nodes.getFirst() instanceof  AssignmentStatement) &&
-                        !(nodes.getFirst() instanceof Expression))
+                        !(nodes.getFirst() instanceof Expression) && getConfigParameter("expressionMode").getBooleanValue())
         ) {
             throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
         }
         if (getConfigParameter("expressionMode").getBooleanValue() && !nodes.isEmpty()) {
+            if (nodes.getFirst() instanceof ExpressionStatement exprStmt) {
+                return exprStmt.getExpression();
+            }
             return nodes.getFirst();
         }
         return new ProgramEntryPoint(currentContext, nodes, entryPointNode);
@@ -782,7 +800,7 @@ public class PythonLanguage extends LanguageParser {
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
 
-        if (!node.getChildByFieldName("type").isNull()) {
+        if (!node.getChildByFieldName("type").isNull() && left instanceof SimpleIdentifier ident) {
             Type type = determineType(node.getChildByFieldName("type"));
             if (right instanceof PlainCollectionLiteral pl) {
                 if (type instanceof PlainCollectionType arrayType) {
@@ -791,7 +809,7 @@ public class PythonLanguage extends LanguageParser {
                     pl.setTypeHint(type);
                 }
             }
-            return new VariableDeclaration(type, (SimpleIdentifier) left, right);
+            return new VariableDeclaration(type, ident, right);
         }
 
         return new AssignmentStatement(left, right, augOp);

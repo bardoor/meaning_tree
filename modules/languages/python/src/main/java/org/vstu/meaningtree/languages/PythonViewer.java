@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
@@ -14,7 +15,9 @@ import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
+import org.vstu.meaningtree.nodes.expressions.calls.ConstructorCall;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.Comprehension;
 import org.vstu.meaningtree.nodes.expressions.comprehensions.ContainerBasedComprehension;
@@ -92,6 +95,8 @@ public class PythonViewer extends LanguageViewer {
             case BinaryComparison cmpNode -> comparisonToString(cmpNode);
             case BinaryExpression binaryExpression -> binaryOpToString(binaryExpression);
             case IfStatement ifStatement -> conditionToString(ifStatement, tab);
+            case PointerPackOp ptr -> toString(ptr);
+            case PointerUnpackOp ptr -> toString(ptr);
             case UnaryExpression exprNode -> unaryToString(exprNode);
             case CompoundStatement exprNode -> blockToString(exprNode, tab);
             case CompoundComparison compound -> compoundComparisonToString(compound);
@@ -109,8 +114,10 @@ public class PythonViewer extends LanguageViewer {
             case DeleteExpression delExpr -> String.format("del %s", toString(delExpr.getTarget()));
             case Range range -> rangeToString(range);
             case ContinueStatement continueStatement -> "continue";
+            case ConstructorCall call -> String.format("%s(%s)", toString(call.getOwner()), argumentsToString(call.getArguments()));
             case Comment comment -> commentToString(comment);
             case Literal literal -> literalToString(literal);
+            case SizeofExpression sizeof -> toString(sizeof.toCall());
             case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
             case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
@@ -135,11 +142,25 @@ public class PythonViewer extends LanguageViewer {
             case CastTypeExpression cast -> callsToString(cast);
             case Comprehension compr -> comprehensionToString(compr);
             case null -> throw new MeaningTreeException("Null node detected");
-            default -> throw new MeaningTreeException("Unsupported tree element: " + node.getClass().getName());
+            default -> throw new UnsupportedViewingException("Unsupported tree element: " + node.getClass().getName());
         };
     }
 
+    public String toString(PointerPackOp ptr) {
+        return toString(ptr.getArgument());
+    }
+
+    public String toString(PointerUnpackOp ptr) {
+        if (ptr.getArgument() instanceof SubOp) {
+            throw new UnsupportedViewingException("Subtraction of pointers cannot be converted to indexing");
+        }
+        return toString(ptr.getArgument());
+    }
+
     private String toString(ExpressionStatement stmt) {
+        if (stmt.getExpression() == null) {
+            return "\n";
+        }
         if (stmt.getExpression() instanceof AssignmentExpression assignment) {
             return toString(assignment.toStatement());
         }
@@ -504,6 +525,13 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
+        if (!(expr.getLValue() instanceof Identifier)) {
+            if (getConfigParameter("expressionMode").getBooleanValue()) {
+                return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
+            } else {
+                throw new UnsupportedViewingException("Assignment expressions in Python supports only identifiers");
+            }
+        }
         return String.format("%s := %s", toString(expr.getLValue()), toString(expr.getRValue()));
     }
 
@@ -583,10 +611,17 @@ public class PythonViewer extends LanguageViewer {
             for (Expression key : map.keySet()) {
                 builder.append(String.format("%s: %s, ", toString(key), toString(map.get(key))));
             }
-            builder.setCharAt(builder.length() - 2, '}');
-            builder.setLength(builder.length() - 1);
+            if (!map.isEmpty()) {
+                builder.setCharAt(builder.length() - 2, '}');
+                builder.setLength(builder.length() - 1);
+            } else {
+                builder.append("}");
+            }
             return builder.toString();
-        } else {
+        } else if (literal instanceof CharacterLiteral ch) {
+            return "\"" + ch.escapedString() + "\"";
+        }
+        else {
             return "None";
         }
     }
@@ -654,33 +689,73 @@ public class PythonViewer extends LanguageViewer {
         return String.format("range(%s, %s, %s)", toString(start), toString(stop), toString(step));
     }
 
+    protected String tokenOfBinaryOp(BinaryExpression node) {
+        if (node instanceof AddOp) {
+            return "+";
+        } else if (node instanceof SubOp) {
+            return "-";
+        } else if (node instanceof MulOp) {
+            return "*";
+        } else if (node instanceof DivOp) {
+            return "/";
+        } else if (node instanceof PowOp) {
+            return "**";
+        } else if (node instanceof FloorDivOp) {
+            return "//";
+        } else if (node instanceof ModOp) {
+            return "%";
+        } else if (node instanceof BitwiseAndOp) {
+            return "&";
+        } else if (node instanceof BitwiseOrOp) {
+            return "|";
+        } else if (node instanceof RightShiftOp) {
+            return ">>";
+        } else if (node instanceof LeftShiftOp) {
+            return "<<";
+        } else if (node instanceof XorOp) {
+            return "^";
+        } else if (node instanceof MatMulOp) {
+            return "@";
+        } else if (node instanceof ShortCircuitAndOp) {
+            return "and";
+        } else if (node instanceof ShortCircuitOrOp) {
+            return "or";
+        } else if (node instanceof EqOp) {
+            return "==";
+        } else if (node instanceof NotEqOp) {
+            return "!=";
+        } else if (node instanceof GeOp) {
+            return ">=";
+        } else if (node instanceof LeOp) {
+            return "<=";
+        } else if (node instanceof GtOp) {
+            return ">";
+        } else if (node instanceof LtOp) {
+            return "<";
+        } else if (node instanceof ReferenceEqOp eq) {
+            return "is";
+        } else if (node instanceof ContainsOp cnt) {
+            return "in";
+        } else if (node instanceof InstanceOfOp op) {
+            return "CALL_(";
+        }
+        throw new IllegalStateException("Unexpected type of binary operator: " + node.getClass().getName());
+    }
+
     private String binaryOpToString(BinaryExpression node) {
         String pattern = "";
-        if (node instanceof AddOp) {
-            pattern = "%s + %s";
-        } else if (node instanceof SubOp) {
-            pattern = "%s - %s";
-        } else if (node instanceof MulOp) {
-            pattern = "%s * %s";
-        } else if (node instanceof DivOp) {
-            pattern = "%s / %s";
-        } else if (node instanceof PowOp) {
-            pattern = "%s ** %s";
-        } else if (node instanceof FloorDivOp) {
-            pattern = "%s // %s";
-        } else if (node instanceof ModOp) {
-            pattern = "%s %% %s";
-        } else if (node instanceof BitwiseAndOp) {
-            pattern = "%s & %s";
-        } else if (node instanceof BitwiseOrOp) {
-            pattern = "%s | %s";
-        } else if (node instanceof RightShiftOp) {
-            pattern = "%s >> %s";
-        } else if (node instanceof LeftShiftOp) {
-            pattern = "%s << %s";
-        } else if (node instanceof XorOp) {
-            pattern = "%s ^ %s";
-        } else if (node instanceof ShortCircuitAndOp) {
+        Expression left = node.getLeft();
+        Expression right = node.getRight();
+        String token = tokenOfBinaryOp(node);
+        if (left instanceof BinaryExpression leftBinOp
+                && PythonTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
+            left = new ParenthesizedExpression(leftBinOp);
+        }
+        if (right instanceof BinaryExpression rightBinOp
+                && PythonTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
+            right = new ParenthesizedExpression(rightBinOp);
+        }
+        if (node instanceof ShortCircuitAndOp) {
             Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
             if (result instanceof CompoundComparison
                     && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
@@ -688,12 +763,13 @@ public class PythonViewer extends LanguageViewer {
             } else {
                 return preferExplicitAndOpToString(result);
             }
-        } else if (node instanceof ShortCircuitOrOp) {
-            pattern = "%s or %s";
         } else if (node instanceof InstanceOfOp) {
-            pattern = "isinstance(%s, %s)";
+            return String.format("isinstance(%s, %s)", toString(node.getLeft()), toString(node.getRight()));
+        } else {
+            if (token.equals("%")) token = "%%";
+            pattern = "%s " + token + " %s";
         }
-        return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
+        return String.format(pattern, toString(left), toString(right));
     }
 
     private String preferExplicitAndOpToString(Node node) {
@@ -721,6 +797,9 @@ public class PythonViewer extends LanguageViewer {
             }
             case ObjectNewExpression newExpr -> {
                 return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
+            }
+            case MethodCall funcCall -> {
+                return String.format("%s.%s(%s)", toString(funcCall.getObject()), toString(funcCall.getFunction()), argumentsToString(funcCall.getArguments()));
             }
             case FunctionCall funcCall -> {
                 return String.format("%s(%s)", toString(PythonSpecificFeatures.getFunctionExpression(funcCall)), argumentsToString(funcCall.getArguments()));
@@ -783,7 +862,7 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof PostfixIncrementOp || node instanceof PrefixIncrementOp) {
             pattern = "%s += 1";
         } else if (node instanceof PointerPackOp || node instanceof PointerUnpackOp) {
-            return toString(node.getArgument());
+            return toString(node);
         }
         return String.format(pattern, toString(expr));
     }
@@ -827,19 +906,18 @@ public class PythonViewer extends LanguageViewer {
 
     private String comparisonToString(BinaryComparison node) {
         String pattern = "";
-        if (node instanceof EqOp) {
-            pattern = "%s == %s";
-        } else if (node instanceof NotEqOp) {
-            pattern = "%s != %s";
-        } else if (node instanceof GeOp) {
-            pattern = "%s >= %s";
-        } else if (node instanceof LeOp) {
-            pattern = "%s <= %s";
-        } else if (node instanceof GtOp) {
-            pattern = "%s > %s";
-        } else if (node instanceof LtOp) {
-            pattern = "%s < %s";
-        } else if (node instanceof ReferenceEqOp eq) {
+        Expression left = node.getLeft();
+        Expression right = node.getRight();
+        String token = tokenOfBinaryOp(node);
+        if (left instanceof BinaryExpression leftBinOp
+                && PythonTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
+            left = new ParenthesizedExpression(leftBinOp);
+        }
+        if (right instanceof BinaryExpression rightBinOp
+                && PythonTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
+            right = new ParenthesizedExpression(rightBinOp);
+        }
+        if (node instanceof ReferenceEqOp eq) {
             if (eq.isNegative()) {
                 pattern = "%s is not %s";
             } else {
@@ -851,8 +929,11 @@ public class PythonViewer extends LanguageViewer {
             } else {
                 pattern = "%s in %s";
             }
+        } else {
+            if (token.equals("%")) token = "%%";
+            pattern = "%s " + token + " %s";
         }
-        return String.format(pattern, toString(node.getLeft()), toString(node.getRight()));
+        return String.format(pattern, toString(left), toString(right));
     }
 
     private String compoundComparisonToString(CompoundComparison node) {

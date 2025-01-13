@@ -55,4 +55,11 @@ public class OperandToken extends Token {
         copy.setMetadata(operandOf, operandPos);
         return copy;
     }
+
+    public OperandToken clone(String newName) {
+        OperandToken copy = new OperandToken(newName, type);
+        copy.assignValue(assignedValue);
+        copy.setMetadata(operandOf, operandPos);
+        return copy;
+    }
 }

@@ -4,6 +4,7 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
+import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
@@ -16,16 +17,22 @@ import org.vstu.meaningtree.nodes.expressions.comparison.CompoundComparison;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.BoolLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.FloatLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
-import org.vstu.meaningtree.nodes.expressions.other.ExpressionSequence;
-import org.vstu.meaningtree.nodes.expressions.other.IndexExpression;
-import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
-import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
+import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.io.InputCommand;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.types.NoReturn;
+import org.vstu.meaningtree.nodes.types.UnknownType;
+import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.*;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.nodes.types.user.GenericClass;
+import org.vstu.meaningtree.nodes.types.user.Structure;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.lang.reflect.InvocationTargetException;
@@ -40,21 +47,100 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "TernaryOperator" -> deserializeTernary(serialized);
             case "SimpleIdentifier", "QualifiedIdentifier", "ScopedIdentifier" -> deserializeIdentifier(serialized);
             case "MethodCall" -> deserializeMethodCall(serialized);
+            case "CastTypeExpression" -> deserializeTypeCast(serialized);
             case "FunctionCall" -> deserializeFunctionCall(serialized);
-            case "Integer", "Float", "String", "Boolean" -> deserializeLiteral(serialized);
+            case "Integer", "Float", "String", "Boolean",
+                 "Bool", "Null", "Array", "List", "InterpolatedString", "Char", "UnmodifiableList"
+                    -> deserializeLiteral(serialized);
             case "IndexExpression" -> deserializeIndex(serialized);
             case "CompoundComparison" -> deserializeCompound(serialized);
+            case "ObjectNew", "ArrayNew", "PlacementNew" -> deserializeNew(serialized);
+            case "Sizeof" -> deserializeSizeof(serialized);
             case "AssignmentStatement" -> deserializeAssignmentStmt(serialized);
             case "AssignmentExpression" -> deserializeAssignmentExpr(serialized);
             case "ExpressionSequence" -> deserializeExprSequence(serialized);
             case "ExpressionStatement" -> deserializeExprStmt(serialized);
             case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
+            case "Shape" -> deserializeShape(serialized);
+            case "BooleanType", "StringType", "CharacterType",
+                 "FloatType", "IntType", "PointerType",
+                 "ReferenceType", "ArrayType", "ListType",
+                 "DictionaryType", "SetType", "UnmodifiableListType",
+                 "Class", "Enum", "Structure", "Interface",
+                 "GenericClass", "UnknownType", "NoReturn" -> deserializeType(serialized);
             default -> deserializeOther(serialized);
         };
         if (abstractSerialized.values.containsKey("assignedValueTag")) {
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    private Node deserializeSizeof(SerializedNode serialized) {
+        return new SizeofExpression((Expression) deserialize(serialized.fields.get("value")));
+    }
+
+    private Node deserializeNew(SerializedNode serialized) {
+        return switch (serialized.nodeName) {
+            case "ArrayNew" -> new ArrayNewExpression(
+                    (Type) deserialize(serialized.fields.get("type")),
+                    (Shape) deserialize(serialized.fields.get("shape")),
+                    serialized.fields.containsKey("initializer") ? null : new ArrayInitializer((List<Expression>)
+                            deserializeList((SerializedListNode) serialized.fields.get("initializer")))
+            );
+            case "ObjectNew" -> new ObjectNewExpression(
+                    (Type) deserialize(serialized.fields.get("type")),
+                    (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("arguments"))
+            );
+            case "PlacementNew" -> new PlacementNewExpression(
+                    (Type) deserialize(serialized.fields.get("type")),
+                    (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("arguments"))
+            );
+            default -> throw new MeaningTreeException("Unsupported new expression for deserialize");
+        };
+    }
+
+    private Node deserializeTypeCast(SerializedNode serialized) {
+        return new CastTypeExpression((Type) deserialize(serialized.fields.get("type")),
+                (Expression) deserialize(serialized.fields.get("expression")));
+    }
+
+    private Node deserializeType(SerializedNode serialized) {
+        return switch (serialized.nodeName) {
+            case "BooleanType" -> new BooleanType();
+            case "StringType" -> new StringType((int) serialized.values.get("charSize"));
+            case "CharacterType" -> new CharacterType((int) serialized.values.get("size"));
+            case "FloatType" -> new FloatType((int) serialized.values.get("size"));
+            case "IntType" -> new IntType((int) serialized.values.get("size"));
+            case "PointerType" -> new PointerType((Type) deserialize(serialized.fields.get("type")));
+            case "ReferenceType" -> new ReferenceType((Type) deserialize(serialized.fields.get("type")));
+            case "ArrayType" -> {
+                Shape shape = (Shape) deserialize(serialized.fields.get("shape"));
+                yield new ArrayType((Type) deserialize(serialized.fields.get("type")), shape.getDimensionCount(), shape.getDimensions());
+            }
+            case "ListType" -> new ListType((Type) deserialize(serialized.fields.get("type")));
+            case "SetType" -> new SetType((Type) deserialize(serialized.fields.get("type")));
+            case "UnmodifiableListType" -> new UnmodifiableListType((Type) deserialize(serialized.fields.get("type")));
+            case "DictionaryType" -> new DictionaryType((Type) deserialize(serialized.fields.get("keyType")),
+                    (Type) deserialize(serialized.fields.get("valueType")));
+            case "Class" -> new org.vstu.meaningtree.nodes.types.user.Class((Identifier) deserialize(serialized.fields.get("name")));
+            case "Structure" -> new Structure((Identifier) deserialize(serialized.fields.get("name")));
+            case "Enum" -> new org.vstu.meaningtree.nodes.types.user.Enum((Identifier) deserialize(serialized.fields.get("name")));
+            case "Interface" -> new org.vstu.meaningtree.nodes.types.user.Interface((Identifier) deserialize(serialized.fields.get("name")));
+            case "NoReturn" -> new NoReturn();
+            case "UnknownType" -> new UnknownType();
+            case "GenericClass" -> new GenericClass(
+                    (Identifier) deserialize(serialized.fields.get("name")),
+                    deserializeList((SerializedListNode) serialized.fields.get("templateParameters")).toArray(new Type[0])
+            );
+            default -> throw new MeaningTreeException("Unknown type in serializer");
+        };
+    }
+
+    private Node deserializeShape(SerializedNode serialized) {
+        return new Shape((int) serialized.values.get("dimensionCount"),
+                (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("dimensions"))
+        );
     }
 
     private Node deserializeEntryPoint(SerializedNode serialized) {
@@ -79,7 +165,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeAssignmentExpr(SerializedNode serialized) {
-        return new AssignmentStatement(
+        return new AssignmentExpression(
                 (Expression) deserialize(serialized.fields.get("left")),
                 (Expression) deserialize(serialized.fields.get("right")),
                 AugmentedAssignmentOperator.valueOf((String) serialized.values.get("augmentedOp"))
@@ -110,6 +196,27 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "Float" -> new FloatLiteral((String) serialized.values.get("text"));
             case "String" -> StringLiteral.fromEscaped((String) serialized.values.get("text"), StringLiteral.Type.NONE);
             case "Boolean" -> new BoolLiteral((boolean) serialized.values.get("text"));
+            case "Char" -> new CharacterLiteral(serialized.values.get("value") instanceof String ? Integer.parseInt(serialized.values.get("value").toString()) : (int) serialized.values.get("value"));
+            case "List" -> {
+                PlainCollectionLiteral lit = new ListLiteral((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("elements")));
+                if (serialized.fields.containsKey("type")) lit.setTypeHint((Type) deserialize(serialized.fields.get("type")));
+                yield lit;
+            }
+            case "Array" -> {
+                PlainCollectionLiteral lit = new ArrayLiteral((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("elements")));
+                if (serialized.fields.containsKey("type")) lit.setTypeHint((Type) deserialize(serialized.fields.get("type")));
+                yield lit;
+            }
+            case "UnmodifiableList" -> {
+                PlainCollectionLiteral lit = new UnmodifiableListLiteral((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("elements")));
+                if (serialized.fields.containsKey("type")) lit.setTypeHint((Type) deserialize(serialized.fields.get("type")));
+                yield lit;
+            }
+            case "InterpolatedString" -> new InterpolatedStringLiteral(
+                    StringLiteral.Type.valueOf((String) serialized.values.get("type")),
+                    (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("components"))
+            );
+            case "Null" -> new NullLiteral();
             default -> throw new MeaningTreeException("Unsupported literal in universal deserializer");
         };
     }
@@ -123,6 +230,21 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeFunctionCall(SerializedNode serialized) {
+        if (serialized.values.containsKey("spec")) {
+            String className = (String) serialized.values.get("spec");
+            switch (className) {
+                case "PrintValues" -> {
+                    return new PrintValues(
+                            (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args")),
+                            serialized.fields.containsKey("separator") ? (StringLiteral) deserialize(serialized.fields.get("separator")) : null,
+                            serialized.fields.containsKey("end") ? (StringLiteral) deserialize(serialized.fields.get("end")) : null
+                    );
+                }
+                case "InputCommand" -> {
+                    return new InputCommand((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args")));
+                }
+            }
+        }
         return new FunctionCall(
                 (Identifier) deserialize(serialized.fields.get("name")),
                 (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"))
@@ -163,8 +285,15 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
         } catch (ClassNotFoundException e) {
             throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
         }
-        if (clazz.getGenericSuperclass().equals(BinaryExpression.class)) {
+        if (BinaryExpression.class.isAssignableFrom(clazz)) {
             try {
+                if (clazz.equals(ReferenceEqOp.class) || clazz.equals(ContainsOp.class)) {
+                    return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class, Boolean.class).newInstance(
+                            deserialize(serialized.fields.get("left")),
+                            deserialize(serialized.fields.get("right")),
+                            deserialize(serialized.fields.get("negative"))
+                    );
+                }
                 return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class).newInstance(
                         deserialize(serialized.fields.get("left")),
                         deserialize(serialized.fields.get("right"))
@@ -174,7 +303,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             }
         }
 
-        if (clazz.getGenericSuperclass().equals(UnaryExpression.class)) {
+        if (UnaryExpression.class.isAssignableFrom(clazz)) {
             try {
                 return (Node) clazz.getDeclaredConstructor(Expression.class).newInstance(
                         deserialize(serialized.fields.get("arg"))
@@ -184,7 +313,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             }
         }
 
-        throw new MeaningTreeException("Unsupported serialized node in universal deserializer");
+        throw new MeaningTreeException("Unsupported serialized node " + serialized.nodeName + " in universal deserializer");
     }
 
     private List<? extends Node> deserializeList(SerializedListNode serializedListNode) {

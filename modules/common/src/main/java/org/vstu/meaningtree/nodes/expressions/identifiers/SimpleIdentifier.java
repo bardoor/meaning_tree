@@ -42,4 +42,14 @@ public class SimpleIdentifier extends Identifier {
     public SimpleIdentifier clone() {
         return (SimpleIdentifier) super.clone();
     }
+
+    @Override
+    public boolean contains(Identifier other) {
+        return equals(other);
+    }
+
+    @Override
+    public int contentSize() {
+        return 1;
+    }
 }
