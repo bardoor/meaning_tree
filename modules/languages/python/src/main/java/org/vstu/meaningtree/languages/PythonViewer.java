@@ -775,6 +775,9 @@ public class PythonViewer extends LanguageViewer {
     private String preferExplicitAndOpToString(Node node) {
         if (node instanceof ShortCircuitAndOp op) {
             return String.format("%s and %s", preferExplicitAndOpToString(op.getLeft()), preferExplicitAndOpToString(op.getRight()));
+        } else if (node instanceof CompoundComparison op && getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+           return preferExplicitAndOpToString(BinaryExpression.fromManyOperands
+                   (op.getComparisons().toArray(new BinaryComparison[0]), 0, ShortCircuitAndOp.class));
         } else {
             return toString(node);
         }

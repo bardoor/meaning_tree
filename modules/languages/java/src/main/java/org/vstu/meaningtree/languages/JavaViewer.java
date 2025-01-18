@@ -15,6 +15,7 @@ import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
@@ -229,6 +230,7 @@ public class JavaViewer extends LanguageViewer {
             case CharacterLiteral characterLiteral -> toString(characterLiteral);
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
             case PointerPackOp ptr -> toString(ptr);
+            case DefinitionArgument defArg ->toString(defArg.getInitialExpression());
             case PointerUnpackOp ptr -> toString(ptr);
             case ContainsOp op -> toString(op);
             case ReferenceEqOp op -> toString(op);
@@ -1000,8 +1002,12 @@ public class JavaViewer extends LanguageViewer {
     private String toString(BinaryExpression expr, String sign) {
         Expression left = expr.getLeft();
         Expression right = expr.getRight();
+        if (expr instanceof PowOp) {
+            return toString(new MethodCall(new SimpleIdentifier("Math"),
+                    new SimpleIdentifier("pow"), left, right));
+        }
         if (left instanceof BinaryExpression leftBinOp
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
+                && tokenOfBinaryOp(leftBinOp) != null && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
             left = new ParenthesizedExpression(leftBinOp);
         } else if (left instanceof AssignmentExpression assignmentExpression
             && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
@@ -1009,7 +1015,7 @@ public class JavaViewer extends LanguageViewer {
         }
 
         if (right instanceof BinaryExpression rightBinOp
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
+                && tokenOfBinaryOp(rightBinOp) != null && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
             right = new ParenthesizedExpression(rightBinOp);
         } else if (right instanceof AssignmentExpression assignmentExpression
                 && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
@@ -1041,7 +1047,7 @@ public class JavaViewer extends LanguageViewer {
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
             case XorOp op -> "^";
-            default -> throw new IllegalStateException("Unexpected type of binary operator: " + leftBinOp.getClass().getName());
+            default -> null;
         };
     }
 

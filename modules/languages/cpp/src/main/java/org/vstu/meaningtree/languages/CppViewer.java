@@ -7,6 +7,7 @@ import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
@@ -86,7 +87,7 @@ public class CppViewer extends LanguageViewer {
             case FloorDivOp floorDivOp -> toStringFloorDiv(floorDivOp);
             case UnaryExpression unaryExpression -> toStringUnaryExpression(unaryExpression);
             case BinaryExpression binaryExpression -> toStringBinaryExpression(binaryExpression);
-            case NullLiteral nullLit -> "NULL";
+            case NullLiteral nullLit -> "nullptr";
             case StringLiteral sl -> toStringStringLiteral(sl);
             case CharacterLiteral cl -> toStringCharLiteral(cl);
             case BoolLiteral bl -> bl.getValue() ? "true" : "false";
@@ -99,6 +100,7 @@ public class CppViewer extends LanguageViewer {
             case DeleteStatement del -> toStringDelete(del.toExpression()) + ";";
             case MemberAccess memAccess -> toStringMemberAccess(memAccess);
             case CompoundComparison cmpCmp -> toStringCompoundComparison(cmpCmp);
+            case DefinitionArgument defArg -> toString(defArg.getInitialExpression());
             case Comment cmnt -> toStringComment(cmnt);
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
@@ -588,7 +590,7 @@ public class CppViewer extends LanguageViewer {
             String neg = op.isNegative() ? "!=" : "==";
             return String.format("%s %s %s", toString(new PointerPackOp(op.getLeft())), neg, toString(new PointerPackOp(op.getRight())));
         } else if (binaryExpression instanceof InstanceOfOp op) {
-            return String.format("dynamic_cast<%s>(%s) != NULL", toString(op.getType()), toString(op.getLeft()));
+            return String.format("dynamic_cast<%s>(%s) != nullptr", toString(op.getType()), toString(op.getLeft()));
         } else if (binaryExpression instanceof FloorDivOp op) {
             return String.format("(long) (%s / %s)", toString(op.getLeft()), toString(op.getRight()));
         }

@@ -5,6 +5,7 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
@@ -62,6 +63,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "ExpressionStatement" -> deserializeExprStmt(serialized);
             case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
             case "Shape" -> deserializeShape(serialized);
+            case "DefinitionArgument" -> deserializeDefArg(serialized);
             case "BooleanType", "StringType", "CharacterType",
                  "FloatType", "IntType", "PointerType",
                  "ReferenceType", "ArrayType", "ListType",
@@ -74,6 +76,12 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    private Node deserializeDefArg(SerializedNode serialized) {
+        return new DefinitionArgument((SimpleIdentifier) deserialize(serialized.fields.get("name")),
+                (Expression) deserialize(serialized.fields.get("value"))
+                );
     }
 
     private Node deserializeSizeof(SerializedNode serialized) {

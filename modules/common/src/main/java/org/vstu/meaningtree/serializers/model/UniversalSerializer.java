@@ -4,6 +4,7 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -57,6 +58,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case SizeofExpression sizeOf -> serialize(sizeOf);
             case Shape shape -> serialize(shape);
             case ProgramEntryPoint entryPoint -> serialize(entryPoint);
+            case DefinitionArgument defArg -> serialize(defArg);
             case CastTypeExpression castType -> serialize(castType);
             default -> serializeDefault(node);
         };
@@ -64,6 +66,13 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             result.values.put("assignedValueTag", node.getAssignedValueTag());
         }
         return result;
+    }
+
+    public SerializedNode serialize(DefinitionArgument defArg) {
+        return new SerializedNode("DefinitionArgument", new HashMap<>() {{
+            put("name", serialize(defArg.getName()));
+            put("value", serialize(defArg.getInitialExpression()));
+        }});
     }
 
     public SerializedNode serialize(SizeofExpression sizeOf) {

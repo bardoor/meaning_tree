@@ -13,6 +13,7 @@ import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
@@ -217,7 +218,15 @@ public class CppLanguage extends LanguageParser {
         Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
         if (op.startsWith("&")) {
             if (argument instanceof AddOp binOp) {
-                return new IndexExpression(binOp.getLeft(), binOp.getRight());
+                Expression leftmost = binOp.getLeft();
+                List<Expression> args = new ArrayList<>();
+                args.add(binOp.getRight());
+                while (leftmost instanceof AddOp leftmostOp) {
+                    leftmost = leftmostOp.getLeft();
+                    args.add(leftmostOp.getRight());
+                }
+                return new IndexExpression(leftmost, BinaryExpression.
+                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class));
             }
             return new PointerPackOp(argument);
         } else if (op.startsWith("*")) {
@@ -794,10 +803,20 @@ public class CppLanguage extends LanguageParser {
             default -> throw new IllegalStateException("Unexpected augmented assignment type: " + operatorType);
         };
 
-        // Если только одно выражение и присвоение указателю, то нет смысла что-либо присваивать
-        if (left instanceof PointerUnpackOp
-                && getConfigParameter("expressionMode").getBooleanValue()) {
-            return right;
+        if (left instanceof PointerUnpackOp ptrOp) {
+            if (ptrOp.getArgument() instanceof ParenthesizedExpression p && p.getExpression() instanceof AddOp binOp) {
+                Expression leftmost = binOp.getLeft();
+                List<Expression> args = new ArrayList<>();
+                args.add(binOp.getRight());
+                while (leftmost instanceof AddOp op) {
+                    leftmost = op.getLeft();
+                    args.add(op.getRight());
+                }
+                left = new IndexExpression(leftmost, BinaryExpression.
+                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class));
+            } else if (getConfigParameter("expressionMode").getBooleanValue()) {
+                return right;
+            }
         }
 
         return new AssignmentExpression(left, right, augmentedAssignmentOperator);
