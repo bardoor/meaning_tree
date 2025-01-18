@@ -52,8 +52,6 @@ import org.vstu.meaningtree.nodes.types.user.GenericClass;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 public class CppLanguage extends LanguageParser {
@@ -71,9 +69,12 @@ public class CppLanguage extends LanguageParser {
     @Override
     public TSTree getTSTree() {
         TSTree tree = _parser.parseString(null, _code);
+        /*
+        TODO: only for test
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+        */
         return tree;
     }
 

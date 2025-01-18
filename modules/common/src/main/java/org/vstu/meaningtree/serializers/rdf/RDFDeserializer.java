@@ -22,7 +22,7 @@ public class RDFDeserializer implements Deserializer<Model> {
     private Object recognizeLiteral(Literal literal) {
         if (literal.getDatatype().equals(XSDDatatype.XSDstring)) {
             return literal.getString();
-        } else if (literal.getDatatype().equals(XSDDatatype.XSDinteger)) {
+        } else if (literal.getDatatype().equals(XSDDatatype.XSDinteger) || literal.getDatatype().equals(XSDDatatype.XSDint)) {
             return literal.getInt();
         } else if (literal.getDatatype().equals(XSDDatatype.XSDlong)) {
             return literal.getLong();

@@ -65,8 +65,6 @@ import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -85,9 +83,13 @@ public class PythonLanguage extends LanguageParser {
 
         TSTree tree = parser.parseString(null, _code);
 
+        /*
+        TODO: only for test
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+        */
+
         return tree;
     }
 
