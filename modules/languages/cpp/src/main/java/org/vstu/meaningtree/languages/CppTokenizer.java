@@ -128,7 +128,7 @@ public class CppTokenizer extends LanguageTokenizer {
         put("^=", new OperatorToken("^=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
         put("|=", new OperatorToken("|=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
 
-        put(",", new OperatorToken(",", TokenType.COMMA, 17, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(",", new OperatorToken(",", TokenType.COMMA, 17, OperatorAssociativity.LEFT, OperatorArity.BINARY, true));
     }};
 
 
