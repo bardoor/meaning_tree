@@ -333,6 +333,8 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
         return new SerializedNode("IndexExpression", new HashMap<>() {{
             put("expr", serialize(index.getExpr()));
             put("index", serialize(index.getIndex()));
+        }}, new HashMap<>() {{
+            put("preferPointers", index.isPreferPointerRepresentation());
         }});
     }
 

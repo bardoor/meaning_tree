@@ -315,7 +315,11 @@ public class CppViewer extends LanguageViewer {
     private String toStringIndexExpression(@NotNull IndexExpression indexExpression) {
         String base = toString(indexExpression.getExpr());
         String indices = toString(indexExpression.getIndex());
-        return "%s[%s]".formatted(base, indices);
+        if (indexExpression.isPreferPointerRepresentation()) {
+            return "*(%s + %s)".formatted(base, indices);
+        } else {
+            return "%s[%s]".formatted(base, indices);
+        }
     }
 
     @NotNull

@@ -227,7 +227,7 @@ public class CppLanguage extends LanguageParser {
                     args.add(leftmostOp.getRight());
                 }
                 return new IndexExpression(leftmost, BinaryExpression.
-                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class));
+                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class), true);
             }
             return new PointerPackOp(argument);
         } else if (op.startsWith("*")) {
@@ -814,7 +814,7 @@ public class CppLanguage extends LanguageParser {
                     args.add(op.getRight());
                 }
                 left = new IndexExpression(leftmost, BinaryExpression.
-                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class));
+                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class), true);
             } else if (getConfigParameter("expressionMode").getBooleanValue()) {
                 return right;
             }

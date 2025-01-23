@@ -194,7 +194,8 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
 
     private Node deserializeIndex(SerializedNode serialized) {
         return new IndexExpression((Expression) deserialize(serialized.fields.get("expr")),
-                (Expression) deserialize(serialized.fields.get("index"))
+                (Expression) deserialize(serialized.fields.get("index")),
+                serialized.values.containsKey("preferPointers") && (boolean) serialized.values.get("preferPointers")
                 );
     }
 
