@@ -62,8 +62,8 @@ abstract public class BinaryExpression extends Expression {
         exprs.add(this.getRight());
         Expression expr = this.getLeft();
         while (expr.getClass().equals(this.getClass())) {
-            expr = ((BinaryExpression)expr).getLeft();
             exprs.add(((BinaryExpression)expr).getRight());
+            expr = ((BinaryExpression)expr).getLeft();
         }
         exprs.add(expr);
         return exprs.reversed();

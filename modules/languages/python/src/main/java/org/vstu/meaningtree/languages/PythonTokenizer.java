@@ -249,6 +249,9 @@ public class PythonTokenizer extends LanguageTokenizer {
     @Override
     public TokenList tokenizeExtended(Node node) {
         TokenList result = new TokenList();
+        if (node instanceof AssignmentExpression assign) {
+            node = assign.toStatement();
+        }
         tokenizeExtended(node, result);
         return result;
     }
@@ -294,7 +297,7 @@ public class PythonTokenizer extends LanguageTokenizer {
             }
             case AssignmentExpression assignment -> {
                 tokenizeExtended(assignment.getLValue(), result);
-                if (!(assignment.getLValue() instanceof SimpleIdentifier)) {
+                if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
                     throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
                 }
                 result.add(getOperatorByTokenName(":="));
@@ -303,7 +306,11 @@ public class PythonTokenizer extends LanguageTokenizer {
             case AssignmentStatement assignment -> {
                 tokenizeExtended(assignment.getLValue(), result);
                 result.add(new Token("=", TokenType.STATEMENT_TOKEN));
-                tokenizeExtended(assignment.getRValue(), result);
+                if (assignment.getRValue() instanceof AssignmentExpression assign) {
+                    tokenizeExtended(assign.toStatement(), result);
+                } else {
+                    tokenizeExtended(assignment.getRValue(), result);
+                }
             }
             case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {

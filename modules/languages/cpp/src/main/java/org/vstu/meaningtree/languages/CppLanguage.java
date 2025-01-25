@@ -38,10 +38,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
-import org.vstu.meaningtree.nodes.io.FormatInput;
-import org.vstu.meaningtree.nodes.io.FormatPrint;
-import org.vstu.meaningtree.nodes.io.PointerInputCommand;
-import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.io.*;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
@@ -64,6 +61,8 @@ public class CppLanguage extends LanguageParser {
     private final TSLanguage _language;
     private final TSParser _parser;
     private final Map<String, UserType> _userTypes;
+
+    private int binaryRecursiveFlag = -1;
 
     public CppLanguage() {
         _language = new TreeSitterCpp();
@@ -92,7 +91,11 @@ public class CppLanguage extends LanguageParser {
         if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
-        return new MeaningTree(fromTSNode(rootNode));
+        Node node = fromTSNode(rootNode);
+        if (node instanceof AssignmentExpression expr) {
+            node = expr.toStatement();
+        }
+        return new MeaningTree(node);
     }
 
     @Override
@@ -642,9 +645,15 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Node fromBinaryExpression(@NotNull TSNode node) {
+        if (binaryRecursiveFlag == -1) {
+            binaryRecursiveFlag = node.getEndByte();
+        }
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
         TSNode operator = node.getChildByFieldName("operator");
+        if (binaryRecursiveFlag == node.getEndByte()) {
+            binaryRecursiveFlag = -1;
+        }
 
         return switch (getCodePiece(operator)) {
             case "+" -> new AddOp(left, right);
@@ -698,20 +707,19 @@ public class CppLanguage extends LanguageParser {
             case "^" -> new XorOp(left, right);
             case "<<" -> {
                 LeftShiftOp lshift = new LeftShiftOp(left, right);
-                /*
-                TODO: future
-                Expression fName = lshift.getLeftmost();
-                List<Expression> exprs = lshift.getRecursivePlainOperands();
-                boolean isEndl = sanitizeFromStd(exprs.getLast()).equalsIdentifier("endl");
-                if (sanitizeFromStd(fName).equalsIdentifier("cout")) {
-                    yield new PrintValues(exprs.subList(1, exprs.size() - (isEndl ? 1 : 0)),
-                            StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
-                            StringLiteral.fromUnescaped(isEndl ? "\n" : "", StringLiteral.Type.NONE)
-                            );
-                } else if (sanitizeFromStd(fName).equalsIdentifier("cin")) {
-                    yield new InputCommand(exprs.subList(1, exprs.size()));
+                if (binaryRecursiveFlag == -1) {
+                    Expression fName = lshift.getLeftmost();
+                    List<Expression> exprs = lshift.getRecursivePlainOperands();
+                    boolean isEndl = sanitizeFromStd(exprs.getLast()).equalsIdentifier("endl");
+                    if (sanitizeFromStd(fName).equalsIdentifier("cout")) {
+                        yield new PrintValues(exprs.subList(1, exprs.size() - (isEndl ? 1 : 0)),
+                                StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
+                                StringLiteral.fromUnescaped(isEndl ? "\n" : "", StringLiteral.Type.NONE)
+                        );
+                    } else if (sanitizeFromStd(fName).equalsIdentifier("cin")) {
+                        yield new InputCommand(exprs.subList(1, exprs.size()));
+                    }
                 }
-                */
                 yield lshift;
             }
             case ">>" -> new RightShiftOp(left, right);

@@ -534,7 +534,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
-        if (!(expr.getLValue() instanceof SimpleIdentifier)) {
+        if (!(expr.getLValue() instanceof SimpleIdentifier) || (expr.getRValue() instanceof AssignmentExpression)) {
             if (getConfigParameter("expressionMode").getBooleanValue()) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
             } else {
@@ -581,7 +581,11 @@ public class PythonViewer extends LanguageViewer {
             case POW -> "**=";
             default -> "=";
         };
-        return String.format("%s %s %s", toString(stmt.getLValue()), operator, toString(stmt.getRValue()));
+        if (stmt.getRValue() instanceof AssignmentExpression assign) {
+            return String.format("%s %s %s", toString(stmt.getLValue()), operator, toString(assign.toStatement()));
+        } else {
+            return String.format("%s %s %s", toString(stmt.getLValue()), operator, toString(stmt.getRValue()));
+        }
     }
 
     private String literalToString(Literal literal) {
