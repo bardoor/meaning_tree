@@ -38,7 +38,10 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
-import org.vstu.meaningtree.nodes.io.*;
+import org.vstu.meaningtree.nodes.io.FormatInput;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
+import org.vstu.meaningtree.nodes.io.PointerInputCommand;
+import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
@@ -574,13 +577,15 @@ public class CppLanguage extends LanguageParser {
                 } else if (arg instanceof MulOp mulOp) {
                     if (mulOp.getLeft() instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
                         foundType = type;
-                    } else if (!(mulOp.getRight() instanceof SizeofExpression)) {
+                    }
+                    if (!(mulOp.getRight() instanceof SizeofExpression)) {
                         count = mulOp.getRight();
                     }
 
                     if (mulOp.getRight() instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
                         foundType = type;
-                    } else if (!(mulOp.getLeft() instanceof SizeofExpression)) {
+                    }
+                    if (!(mulOp.getLeft() instanceof SizeofExpression)) {
                         count = mulOp.getLeft();
                     }
                 }
@@ -693,17 +698,20 @@ public class CppLanguage extends LanguageParser {
             case "^" -> new XorOp(left, right);
             case "<<" -> {
                 LeftShiftOp lshift = new LeftShiftOp(left, right);
+                /*
+                TODO: future
                 Expression fName = lshift.getLeftmost();
                 List<Expression> exprs = lshift.getRecursivePlainOperands();
                 boolean isEndl = sanitizeFromStd(exprs.getLast()).equalsIdentifier("endl");
                 if (sanitizeFromStd(fName).equalsIdentifier("cout")) {
                     yield new PrintValues(exprs.subList(1, exprs.size() - (isEndl ? 1 : 0)),
-                            StringLiteral.fromUnescaped(" ", StringLiteral.Type.NONE),
+                            StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
                             StringLiteral.fromUnescaped(isEndl ? "\n" : "", StringLiteral.Type.NONE)
                             );
                 } else if (sanitizeFromStd(fName).equalsIdentifier("cin")) {
                     yield new InputCommand(exprs.subList(1, exprs.size()));
                 }
+                */
                 yield lshift;
             }
             case ">>" -> new RightShiftOp(left, right);

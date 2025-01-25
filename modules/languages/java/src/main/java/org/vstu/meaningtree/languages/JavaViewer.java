@@ -41,6 +41,8 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
+import org.vstu.meaningtree.nodes.io.FormatInput;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
@@ -189,7 +191,9 @@ public class JavaViewer extends LanguageViewer {
             case RangeForLoop rangeLoop -> toString(rangeLoop);
             case ProgramEntryPoint entryPoint -> toString(entryPoint);
             case MethodCall methodCall -> toString(methodCall);
+            case FormatPrint fmt -> String.format("System.out.printf(%s)", fmt.getFormatString(), toStringExprList(fmt.getArguments()));
             case PrintValues printValues -> toString(printValues);
+            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Python");
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
@@ -241,6 +245,10 @@ public class JavaViewer extends LanguageViewer {
             case ReferenceEqOp op -> toString(op);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toStringExprList(List<Expression> arguments) {
+        return arguments.stream().map(this::toString).collect(Collectors.joining(", "));
     }
 
     public String toString(PointerPackOp ptr) {
