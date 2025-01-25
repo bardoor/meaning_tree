@@ -38,6 +38,9 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.io.*;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
@@ -305,10 +308,13 @@ public class CppLanguage extends LanguageParser {
         return switch (type) {
             case "int" -> new IntType();
             case "int8_t" -> new IntType(8);
-            case "size_t" -> new IntType(32, true);
+            case "uint8_t" -> new IntType(8, true);
+            case "size_t", "uint64_t" -> new IntType(64, true);
             case "int16_t" -> new IntType(16);
             case "int32_t", "time32_t" -> new IntType(32);
             case "int64_t", "time64_t" -> new IntType(64);
+            case "uint16_t" -> new IntType(16, true);
+            case "uint32_t" -> new IntType(32, true);
             case "double" -> new FloatType(64);
             case "float" -> new FloatType(32);
             case "char" -> new CharacterType(8);
@@ -494,7 +500,7 @@ public class CppLanguage extends LanguageParser {
         }
         expressions.add((Expression) fromTSNode(tsRight));
 
-        return new ExpressionSequence(expressions);
+        return new CommaExpression(expressions);
     }
 
     @NotNull
@@ -505,9 +511,17 @@ public class CppLanguage extends LanguageParser {
         return new TernaryOperator(condition, consequence, alternative);
     }
 
+    public Expression sanitizeFromStd(Expression expr) {
+        if (expr instanceof QualifiedIdentifier qual && qual.getScope().equalsIdentifier("std")) {
+            return qual.getMember();
+        }
+        return expr;
+    }
+
     @NotNull
     private Node fromCallExpression(@NotNull TSNode node) {
         Expression functionName = (Expression) fromTSNode(node.getChildByFieldName("function"));
+        Expression clearFunctionName = sanitizeFromStd(functionName);
 
         TSNode tsArguments = node.getChildByFieldName("arguments");
         List<Expression> arguments = new ArrayList<>();
@@ -517,7 +531,7 @@ public class CppLanguage extends LanguageParser {
             arguments.add(argument);
         }
 
-        if (functionName.toString().equals("pow") && arguments.size() == 2) {
+        if (clearFunctionName.toString().equals("pow") && arguments.size() == 2) {
             return new PowOp(arguments.getFirst(), arguments.getLast());
         }
 
@@ -530,6 +544,56 @@ public class CppLanguage extends LanguageParser {
         if (functionName instanceof MemberAccess memAccess) {
             return new MethodCall(memAccess.getExpression(), memAccess.getMember(), arguments);
         }
+
+        if (clearFunctionName.toString().equals("printf")) {
+            return new FormatPrint(arguments.getFirst(), arguments.subList(1, arguments.size()).toArray(new Expression[0]));
+        }
+
+        if (functionName.toString().equals("scanf") || clearFunctionName.toString().equals("scanf_s")) {
+            return new FormatInput(arguments.getFirst(), arguments.subList(1, arguments.size()).toArray(new Expression[0]));
+        }
+
+        if ((clearFunctionName.toString().equals("puts") || clearFunctionName.toString().equals("puts_s")) && arguments.size() == 1) {
+            return new PrintValues(arguments,
+                    StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
+                    StringLiteral.fromUnescaped("", StringLiteral.Type.NONE));
+        }
+
+        if (clearFunctionName.toString().equals("gets") || clearFunctionName.toString().equals("gets_s")) {
+            return new PointerInputCommand(arguments.getFirst(), arguments.subList(1, arguments.size()));
+        }
+
+        if ((clearFunctionName.toString().equals("malloc") || clearFunctionName.toString().equals("сalloc") ||
+                clearFunctionName.toString().equals("_malloc") || clearFunctionName.toString().equals("_сalloc"))
+                && arguments.size() == 1) {
+            Type foundType = null;
+            Expression count = new IntegerLiteral(1);
+            for (Expression arg : arguments) {
+                if (arg instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
+                    foundType = type;
+                } else if (arg instanceof MulOp mulOp) {
+                    if (mulOp.getLeft() instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
+                        foundType = type;
+                    } else if (!(mulOp.getRight() instanceof SizeofExpression)) {
+                        count = mulOp.getRight();
+                    }
+
+                    if (mulOp.getRight() instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
+                        foundType = type;
+                    } else if (!(mulOp.getLeft() instanceof SizeofExpression)) {
+                        count = mulOp.getLeft();
+                    }
+                }
+            }
+            if (foundType != null) {
+                return new MemoryAllocationCall(foundType, count, functionName.toString().equals("сalloc"));
+            }
+        }
+
+        if (functionName.toString().equals("free") && arguments.size() == 1) {
+            return new MemoryFreeCall(arguments.getFirst());
+        }
+
         return new FunctionCall(functionName, arguments);
     }
 
@@ -627,7 +691,21 @@ public class CppLanguage extends LanguageParser {
             case "&" -> new BitwiseAndOp(left, right);
             case "|" -> new BitwiseOrOp(left, right);
             case "^" -> new XorOp(left, right);
-            case "<<" -> new LeftShiftOp(left, right);
+            case "<<" -> {
+                LeftShiftOp lshift = new LeftShiftOp(left, right);
+                Expression fName = lshift.getLeftmost();
+                List<Expression> exprs = lshift.getRecursivePlainOperands();
+                boolean isEndl = sanitizeFromStd(exprs.getLast()).equalsIdentifier("endl");
+                if (sanitizeFromStd(fName).equalsIdentifier("cout")) {
+                    yield new PrintValues(exprs.subList(1, exprs.size() - (isEndl ? 1 : 0)),
+                            StringLiteral.fromUnescaped(" ", StringLiteral.Type.NONE),
+                            StringLiteral.fromUnescaped(isEndl ? "\n" : "", StringLiteral.Type.NONE)
+                            );
+                } else if (sanitizeFromStd(fName).equalsIdentifier("cin")) {
+                    yield new InputCommand(exprs.subList(1, exprs.size()));
+                }
+                yield lshift;
+            }
             case ">>" -> new RightShiftOp(left, right);
             case "<=>" -> new ThreeWayComparisonOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));

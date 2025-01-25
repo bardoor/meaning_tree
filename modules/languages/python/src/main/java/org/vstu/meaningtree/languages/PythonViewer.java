@@ -34,6 +34,8 @@ import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
@@ -108,16 +110,18 @@ public class PythonViewer extends LanguageViewer {
             case ParenthesizedExpression paren -> String.format("(%s)", toString(paren.getExpression()));
             case ObjectNewExpression newExpr -> callsToString(newExpr);
             case ArrayNewExpression newExpr -> callsToString(newExpr);
+            case MemoryAllocationCall memoryAllocationCall -> toString(memoryAllocationCall.toNew());
+            case MemoryFreeCall freeCall -> toString(freeCall.toDelete());
             case FunctionCall funcCall -> callsToString(funcCall);
-            case BreakStatement breakStmt -> "break";
+            case BreakStatement ignored2 -> "break";
             case DeleteStatement delStmt -> String.format("del %s", toString(delStmt.getTarget()));
-            case DeleteExpression delExpr -> String.format("del %s", toString(delExpr.getTarget()));
+            case DeleteExpression ignored2 -> throw new UnsupportedViewingException("Delete expressions is unsupported on Python");
             case Range range -> rangeToString(range);
-            case ContinueStatement continueStatement -> "continue";
+            case ContinueStatement ignored1 -> "continue";
             case ConstructorCall call -> String.format("%s(%s)", toString(call.getOwner()), argumentsToString(call.getArguments()));
             case Comment comment -> commentToString(comment);
             case Literal literal -> literalToString(literal);
-            case SizeofExpression sizeof -> toString(sizeof.toCall());
+            case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
             case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
@@ -137,6 +141,7 @@ public class PythonViewer extends LanguageViewer {
             case ArrayInitializer arrayInit -> arrayInitializerToString(arrayInit);
             case Include incl -> String.format("import %s", toString(incl.getFileName()));
             case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
+            case CommaExpression ignored -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence exprSeq -> String.join(", ", exprSeq.getExpressions().stream().map((Expression nd) -> toString(nd, tab)).toList().toArray(new String[0]));
             case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
             case CastTypeExpression cast -> callsToString(cast);
@@ -525,14 +530,34 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
-        if (!(expr.getLValue() instanceof Identifier)) {
+        if (!(expr.getLValue() instanceof SimpleIdentifier)) {
             if (getConfigParameter("expressionMode").getBooleanValue()) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
             } else {
-                throw new UnsupportedViewingException("Assignment expressions in Python supports only identifiers");
+                throw new UnsupportedViewingException("Assignment expressions in Python supports only simple identifiers");
             }
         }
-        return String.format("%s := %s", toString(expr.getLValue()), toString(expr.getRValue()));
+        AugmentedAssignmentOperator augOp = expr.getAugmentedOperator();
+        String operator = switch (augOp) {
+            case ADD -> "+";
+            case SUB -> "-";
+            case MUL -> "*";
+            case DIV -> "/";
+            case FLOOR_DIV -> "//";
+            case BITWISE_AND -> "&";
+            case BITWISE_OR -> "|";
+            case BITWISE_XOR -> "^";
+            case BITWISE_SHIFT_LEFT -> "<<";
+            case BITWISE_SHIFT_RIGHT -> ">>";
+            case MOD -> "%";
+            case POW -> "**";
+            default -> "=";
+        };
+        String prefix = "";
+        if (!operator.equals("=")) {
+            prefix = toString(expr.getLValue()) + " " + operator + " ";
+        }
+        return String.format("%s := %s%s", toString(expr.getLValue()), prefix, toString(expr.getRValue()));
     }
 
     private String assignmentToString(AssignmentStatement stmt) {

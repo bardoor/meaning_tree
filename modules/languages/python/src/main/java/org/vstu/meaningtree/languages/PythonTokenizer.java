@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
@@ -263,7 +264,7 @@ public class PythonTokenizer extends LanguageTokenizer {
             case PointerPackOp packOp -> tokenizeExtended(packOp.getArgument(), result);
             case PointerUnpackOp unpackOp -> tokenizeExtended(unpackOp.getArgument(), result);
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
-            case SizeofExpression sizeOf -> tokenizeCall(sizeOf.toCall(), result);
+            case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case FunctionCall call -> tokenizeCall(call, result);
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
@@ -293,6 +294,9 @@ public class PythonTokenizer extends LanguageTokenizer {
             }
             case AssignmentExpression assignment -> {
                 tokenizeExtended(assignment.getLValue(), result);
+                if (!(assignment.getLValue() instanceof SimpleIdentifier)) {
+                    throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
+                }
                 result.add(getOperatorByTokenName(":="));
                 tokenizeExtended(assignment.getRValue(), result);
             }
@@ -301,6 +305,7 @@ public class PythonTokenizer extends LanguageTokenizer {
                 result.add(new Token("=", TokenType.STATEMENT_TOKEN));
                 tokenizeExtended(assignment.getRValue(), result);
             }
+            case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {
                 for (Expression expr : sequence.getExpressions()) {
                     tokenizeExtended(expr, result);

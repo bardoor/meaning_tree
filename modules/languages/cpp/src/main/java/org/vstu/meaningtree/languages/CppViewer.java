@@ -33,6 +33,9 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.io.*;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
@@ -51,6 +54,7 @@ import org.vstu.meaningtree.utils.NodeLabel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
@@ -77,6 +81,10 @@ public class CppViewer extends LanguageViewer {
             case IndexExpression indexExpression -> toStringIndexExpression(indexExpression);
             case ExpressionSequence commaExpression -> toStringCommaExpression(commaExpression);
             case TernaryOperator ternaryOperator -> toStringTernaryOperator(ternaryOperator);
+            case MemoryAllocationCall mAlloc -> toStringMemoryAllocation(mAlloc);
+            case MemoryFreeCall mFree -> toStringMemoryFree(mFree);
+            case InputCommand inputCommand -> toStringInput(inputCommand);
+            case PrintCommand formatInput -> toStringPrint(formatInput);
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
             case AssignmentExpression assignmentExpression -> toStringAssignmentExpression(assignmentExpression);
@@ -106,6 +114,36 @@ public class CppViewer extends LanguageViewer {
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    private String toStringMemoryFree(MemoryFreeCall mFree) {
+        return String.format("free(%s)", toString(mFree.getArguments().getFirst()));
+    }
+
+    private String toStringMemoryAllocation(MemoryAllocationCall mAlloc) {
+        if (mAlloc.isClearAllocation()) {
+            return String.format("calloc(%s)", toString(new MulOp(mAlloc.getType(), mAlloc.getCount())));
+        }
+        return String.format("malloc(%s)", toString(new MulOp(mAlloc.getType(), mAlloc.getCount())));
+    }
+
+    private String toStringPrint(PrintCommand print) {
+        if (print instanceof FormatPrint fmt) {
+            return String.format("printf(%s, %s)", toString(fmt.getFormatString()), toStringFunctionCallArgumentsList(fmt.getArguments()));
+        }
+        String res = String.format("std::cout << %s", print.getArguments().stream().map(this::toString).collect(Collectors.joining(" << ")));
+        if (print instanceof PrintValues pVal) {
+            assert pVal.separator != null;
+            res += pVal.separator.getUnescapedValue().equals("\n") ? "<< std::endl" : "";
+        }
+        return res;
+    }
+
+    private String toStringInput(InputCommand inputCommand) {
+        if (inputCommand instanceof FormatInput fmt) {
+            return String.format("scanf(%s, %s)", toString(fmt.getFormatString()), toStringFunctionCallArgumentsList(fmt.getArguments()));
+        }
+        return String.format("std::cin << %s", toString(inputCommand.getArguments().getFirst()));
     }
 
     private String toStringCharLiteral(CharacterLiteral cl) {

@@ -2,6 +2,7 @@ package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
@@ -300,7 +301,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
             case FunctionCall call -> tokenizeCall(call, result);
             case CastTypeExpression cast -> tokenizeCast(cast, result);
-            case SizeofExpression sizeOf -> tokenizeCall(sizeOf.toCall(), result);
+            case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
@@ -338,6 +339,7 @@ public class JavaTokenizer extends LanguageTokenizer {
                 tokenizeExtended(assignment.getRValue(), result);
                 result.add(new Token(";", TokenType.SEPARATOR));
             }
+            case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {
                 for (Expression expr : sequence.getExpressions()) {
                     tokenizeExtended(expr, result);
@@ -349,7 +351,7 @@ public class JavaTokenizer extends LanguageTokenizer {
                 tokenizeExtended(exprStmt.getExpression(), result);
                 result.add(new Token(";", TokenType.SEPARATOR));
             }
-            default ->  {
+            default -> {
                 String s = viewer.toString(node);
                 TokenList tokens = tokenize(s);
                 result.addAll(tokens.subList(0, tokens.getLast().type == TokenType.SEPARATOR ? tokens.size() - 1 : tokens.size()));

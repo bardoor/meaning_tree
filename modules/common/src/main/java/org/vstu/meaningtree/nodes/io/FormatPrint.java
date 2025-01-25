@@ -6,12 +6,12 @@ import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class FormatPrint extends PrintValues {
+public class FormatPrint extends PrintValues {
     private final Expression _formatString;
 
-    protected FormatPrint(Expression formatString) {
+    public FormatPrint(Expression formatString, Expression ... values) {
         super(
-                List.of(),
+                List.of(values),
                 StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
                 StringLiteral.fromUnescaped("", StringLiteral.Type.NONE)
         );

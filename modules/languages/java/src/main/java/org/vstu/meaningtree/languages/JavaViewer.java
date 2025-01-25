@@ -42,6 +42,8 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
@@ -150,6 +152,8 @@ public class JavaViewer extends LanguageViewer {
             case UserType userType -> toString(userType);
             case ReferenceType ref -> toString(ref.getTargetType());
             case PointerType ptr -> toString(ptr.getTargetType());
+            case MemoryAllocationCall memoryAllocationCall -> toString(memoryAllocationCall.toNew());
+            case MemoryFreeCall freeCall -> toString(freeCall.toDelete());
             case Type type -> toString(type, true);
             case SelfReference selfReference -> toString(selfReference);
             case UnaryMinusOp unaryMinusOp -> toString(unaryMinusOp);
@@ -220,7 +224,8 @@ public class JavaViewer extends LanguageViewer {
             case BitwiseAndOp bitwiseAndOp -> toString(bitwiseAndOp);
             case BitwiseOrOp bitwiseOrOp -> toString(bitwiseOrOp);
             case XorOp xorOp -> toString(xorOp);
-            case SizeofExpression sizeof -> toString(sizeof.toCall());
+            case CommaExpression ignored -> throw new UnsupportedViewingException("Comma is unsupported in this language");
+            case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case InversionOp inversionOp -> toString(inversionOp);
             case LeftShiftOp leftShiftOp -> toString(leftShiftOp);
             case RightShiftOp rightShiftOp -> toString(rightShiftOp);
