@@ -1,7 +1,11 @@
 package org.vstu.meaningtree.languages;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
@@ -27,6 +31,14 @@ public abstract class LanguageTokenizer {
         return list;
     }
 
+    public Pair<Boolean, TokenList> tryTokenize(String code, boolean noPrepare) {
+        try {
+            return ImmutablePair.of(true, tokenize(code, noPrepare));
+        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
+    }
+
     /**
      * Токенизирует выражения из кода, переданного в токенайзер
      * Не учитывает режим выражения и прочие конфигурации
@@ -34,6 +46,14 @@ public abstract class LanguageTokenizer {
      */
     public TokenList tokenize(String code) {
         return tokenize(code, false);
+    }
+
+    public Pair<Boolean, TokenList> tryTokenize(String code) {
+        try {
+            return ImmutablePair.of(true, tokenize(code));
+        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
     }
 
     public abstract TokenList tokenizeExtended(Node node);
@@ -48,8 +68,24 @@ public abstract class LanguageTokenizer {
         return tokenizeExtended(mt.getRootNode());
     }
 
+    public Pair<Boolean, TokenList> tryTokenizeExtended(MeaningTree mt) {
+        try {
+            return ImmutablePair.of(true, tokenizeExtended(mt));
+        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
+    }
+
     public TokenList tokenizeExtended(String code) {
         return tokenizeExtended(parser.getMeaningTree(translator.prepareCode(code)));
+    }
+
+    public Pair<Boolean, TokenList> tryTokenizeExtended(String code) {
+        try {
+            return ImmutablePair.of(true, tokenizeExtended(code));
+        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
     }
 
     /**

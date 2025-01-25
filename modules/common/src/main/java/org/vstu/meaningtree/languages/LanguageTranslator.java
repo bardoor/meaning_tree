@@ -1,6 +1,10 @@
 package org.vstu.meaningtree.languages;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.tokens.Token;
@@ -61,12 +65,28 @@ public abstract class LanguageTranslator {
         return _language.getMeaningTree(prepareCode(code));
     }
 
+    public Pair<Boolean, MeaningTree> tryGetMeaningTree(String code) {
+        try {
+            return ImmutablePair.of(true, getMeaningTree(code));
+        } catch (UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
+    }
+
     protected MeaningTree getMeaningTree(String code, HashMap<int[], Object> values) {
         return _language.getMeaningTree(prepareCode(code), values);
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList) {
         return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
+    }
+
+    public Pair<Boolean, MeaningTree> tryGetMeaningTree(TokenList tokens) {
+        try {
+            return ImmutablePair.of(true, getMeaningTree(tokens));
+        } catch (UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList, Map<TokenGroup, Object> tokenValueTags) {
@@ -90,10 +110,36 @@ public abstract class LanguageTranslator {
         return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()), codeValueTag);
     }
 
+    public Pair<Boolean, MeaningTree> tryGetMeaningTree(TokenList tokens, Map<TokenGroup, Object> tokenValueTags) {
+        try {
+            return ImmutablePair.of(true, getMeaningTree(tokens, tokenValueTags));
+        } catch (UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
+    }
+
     public abstract LanguageTokenizer getTokenizer();
 
     public String getCode(MeaningTree mt) {
         return _viewer.toString(mt);
+    }
+
+    public Pair<Boolean, String> tryGetCode(MeaningTree mt) {
+        try {
+            String result = getCode(mt);
+            return ImmutablePair.of(true, result);
+        } catch (UnsupportedViewingException e) {
+            return ImmutablePair.of(false, null);
+        }
+    }
+
+    public Pair<Boolean, TokenList> tryGetCodeAsTokens(MeaningTree mt) {
+        try {
+            TokenList result = getCodeAsTokens(mt);
+            return ImmutablePair.of(true, result);
+        } catch (UnsupportedViewingException e) {
+            return ImmutablePair.of(false, null);
+        }
     }
 
     public String getCode(Node node) {
