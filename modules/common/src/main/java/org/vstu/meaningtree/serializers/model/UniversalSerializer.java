@@ -370,7 +370,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     }
 
     public SerializedNode serialize(ExpressionSequence seq) {
-        return new SerializedNode("ExpressionSequence", new HashMap<>() {{
+        return new SerializedNode(seq.getClass().getSimpleName(), new HashMap<>() {{
             put("exprs", serialize(seq.getExpressions()));
         }});
     }

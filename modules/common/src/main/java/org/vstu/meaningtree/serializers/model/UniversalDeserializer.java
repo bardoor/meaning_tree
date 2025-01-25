@@ -59,7 +59,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "Sizeof" -> deserializeSizeof(serialized);
             case "AssignmentStatement" -> deserializeAssignmentStmt(serialized);
             case "AssignmentExpression" -> deserializeAssignmentExpr(serialized);
-            case "ExpressionSequence" -> deserializeExprSequence(serialized);
+            case "ExpressionSequence", "CommaExpression" -> deserializeExprSequence(serialized);
             case "ExpressionStatement" -> deserializeExprStmt(serialized);
             case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
             case "Shape" -> deserializeShape(serialized);
@@ -169,6 +169,9 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeExprSequence(SerializedNode serialized) {
+        if (serialized.nodeName.equals("CommaExpression")) {
+            return new CommaExpression((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("exprs")));
+        }
         return new ExpressionSequence((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("exprs")));
     }
 
