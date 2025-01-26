@@ -59,27 +59,29 @@ public class TokenList extends ArrayList<Token> {
         return null;
     }
 
-    public boolean isParenthesized(int operatorToken) {
+    public Pair<Integer, Integer> getEnclosingParentheses(int operatorToken) {
         if (!(get(operatorToken) instanceof OperatorToken)) {
-            return false;
+            return ImmutablePair.of(-1, -1);
         }
         for (int i = operatorToken; i >= 0; i--) {
             if (get(i).type == TokenType.OPENING_BRACE) {
                 int brace = 1;
+                int closing = -1;
                 int j = i + 1;
                 for (;j < size() && brace != 0; j++) {
                     if (get(j).type == TokenType.OPENING_BRACE) {
                         brace++;
                     } else if (get(j).type == TokenType.CLOSING_BRACE) {
+                        closing = j;
                         brace--;
                     }
                 }
                 if (brace == 0 && operatorToken > i && operatorToken < j) {
-                    return true;
+                    return ImmutablePair.of(i, closing);
                 }
             }
         }
-        return false;
+        return ImmutablePair.of(-1, -1);
     }
 
     public void setMetadata(OperatorToken token, OperandPosition pos) {

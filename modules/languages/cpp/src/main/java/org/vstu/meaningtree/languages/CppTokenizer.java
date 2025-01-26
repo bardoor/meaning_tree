@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
@@ -346,7 +347,7 @@ public class CppTokenizer extends LanguageTokenizer {
                 List<Expression> exprs = sequence.getExpressions();
                 if (!sequence.getExpressions().isEmpty()) {
                     if (sequence.getExpressions().size() == 1) {
-                        tokenizeExtended(sequence.getExpressions().getFirst());
+                        tokenizeExtended(sequence.getExpressions().getFirst(), result);
                     } else {
                         int i;
                         OperatorToken op;
@@ -365,6 +366,8 @@ public class CppTokenizer extends LanguageTokenizer {
                             op = newOp;
                         }
                     }
+                } else {
+                    throw new UnsupportedViewingException("Unsupported expression sequence in index");
                 }
             }
             case ExpressionStatement exprStmt -> {
@@ -552,7 +555,7 @@ public class CppTokenizer extends LanguageTokenizer {
             default -> null;
         };
         if (binOp instanceof ContainsOp) {
-            tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()));
+            tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()), result);
             return;
         }
         if (binOp instanceof InstanceOfOp ins) {

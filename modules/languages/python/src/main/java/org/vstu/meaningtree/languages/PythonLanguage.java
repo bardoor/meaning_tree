@@ -800,7 +800,13 @@ public class PythonLanguage extends LanguageParser {
         }
 
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
-        Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
+        Node rightRaw = fromTSNode(node.getChildByFieldName("right"));
+        Expression right;
+        if (rightRaw instanceof AssignmentStatement r) {
+            right = r.toExpression();
+        } else {
+            right = (Expression)rightRaw;
+        }
 
         if (!node.getChildByFieldName("type").isNull() && left instanceof SimpleIdentifier ident) {
             Type type = determineType(node.getChildByFieldName("type"));
