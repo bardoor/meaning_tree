@@ -754,8 +754,14 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof ShortCircuitOrOp) {
             return "or";
         } else if (node instanceof EqOp) {
+            if (node.getRight() instanceof NullLiteral) {
+                return "is";
+            }
             return "==";
         } else if (node instanceof NotEqOp) {
+            if (node.getRight() instanceof NullLiteral) {
+                return "is not";
+            }
             return "!=";
         } else if (node instanceof GeOp) {
             return ">=";

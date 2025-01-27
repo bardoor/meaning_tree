@@ -554,7 +554,7 @@ public class CppViewer extends LanguageViewer {
                 yield String.format("%s &", toStringType(ref.getTargetType()));
             }
             case DictionaryType dct -> String.format("std::map<%s, %s>", toStringType(dct.getKeyType()), toStringType(dct.getValueType()));
-            case ListType lst -> String.format("std::list<%s>", toStringType(lst.getItemType()));
+            case ListType lst -> String.format("std::vector<%s>", toStringType(lst.getItemType()));
             case ArrayType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
             case SetType set ->  String.format("std::set<%s>", toStringType(set.getItemType()));
             case StringType str -> "std::string"; // TODO: пока нет способа хорошо представить юникод-строки
