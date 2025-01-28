@@ -15,7 +15,7 @@ public class OperatorToken extends OperandToken {
     public final OperatorTokenPosition tokenPos;
     private OperandPosition firstOperandToEvaluation;
 
-    public final OperatorType additionalOpType;
+    public OperatorType additionalOpType;
 
     @Override
     public int hashCode() {

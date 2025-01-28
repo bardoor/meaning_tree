@@ -69,7 +69,6 @@ import java.util.stream.Collectors;
 
 
 public class PythonViewer extends LanguageViewer {
-
     @Override
     public String toString(Node node) {
         // Для dummy узлов ничего не выводим
@@ -900,9 +899,21 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof InversionOp) {
             pattern = "~%s";
         } else if (node instanceof PostfixDecrementOp || node instanceof PrefixDecrementOp) {
-            pattern = "%s -= 1";
+            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            Node parent = origin == null ? null : origin.findParentOfNode(node);
+            if (exprRepr || parent instanceof Expression) {
+                return String.format("%s := %s + 1", toString(expr), toString(expr));
+            } else {
+                pattern = "%s -= 1";
+            }
         } else if (node instanceof PostfixIncrementOp || node instanceof PrefixIncrementOp) {
-            pattern = "%s += 1";
+            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            Node parent = origin == null ? null : origin.findParentOfNode(node);
+            if (exprRepr || parent instanceof Expression) {
+                return String.format("%s := %s + 1", toString(expr), toString(expr));
+            } else {
+                pattern = "%s += 1";
+            }
         } else if (node instanceof PointerPackOp || node instanceof PointerUnpackOp) {
             return toString(node);
         }

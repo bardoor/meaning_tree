@@ -427,6 +427,7 @@ public class CppTokenizer extends LanguageTokenizer {
     private void tokenizeCall(FunctionCall call, TokenList result) {
         TokenGroup complexName = null;
         OperatorToken tok = getOperatorByTokenName("CALL_(");
+        tok.additionalOpType = call instanceof MethodCall ? OperatorType.METHOD_CALL : OperatorType.OTHER;
         if (call instanceof MethodCall method) {
             complexName = tokenizeExtended(method.getObject(), result);
             result.add(new Token("." + ((SimpleIdentifier)method.getFunctionName()).getName(), TokenType.CALLABLE_IDENTIFIER));

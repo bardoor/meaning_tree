@@ -270,6 +270,7 @@ public class PythonTokenizer extends LanguageTokenizer {
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
             case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case FunctionCall call -> tokenizeCall(call, result);
+            case ObjectNewExpression newExpr -> tokenizeNewExpr(newExpr, result);
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
@@ -296,14 +297,6 @@ public class PythonTokenizer extends LanguageTokenizer {
                 tokenizeExtended(paren.getExpression(), result);
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
-            case AssignmentExpression assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
-                    throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
-                }
-                result.add(getOperatorByTokenName(":="));
-                tokenizeExtended(assignment.getRValue(), result);
-            }
             case AssignmentStatement assignment -> {
                 tokenizeExtended(assignment.getLValue(), result);
                 result.add(new Token("=", TokenType.STATEMENT_TOKEN));
@@ -312,6 +305,14 @@ public class PythonTokenizer extends LanguageTokenizer {
                 } else {
                     tokenizeExtended(assignment.getRValue(), result);
                 }
+            }
+            case AssignmentExpression assignment -> {
+                tokenizeExtended(assignment.getLValue(), result);
+                if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
+                    throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
+                }
+                result.add(getOperatorByTokenName(":="));
+                tokenizeExtended(assignment.getRValue(), result);
             }
             case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {
@@ -339,6 +340,24 @@ public class PythonTokenizer extends LanguageTokenizer {
             valueSetNodes.add(node.getId());
         }
         return resultGroup;
+    }
+
+    private void tokenizeNewExpr(ObjectNewExpression newExpr, TokenList result) {
+        TokenGroup complexName = tokenizeExtended(newExpr.getType(), result);
+        OperatorToken tok = getOperatorByTokenName("CALL_(");
+        if (complexName != null) complexName.setMetadata(tok, OperandPosition.LEFT);
+        result.add(tok);
+        for (Expression expr : newExpr.getConstructorArguments()) {
+            TokenGroup operand = tokenizeExtended(expr, result);
+            result.add(new Token(",", TokenType.COMMA));
+            operand.setMetadata(tok, OperandPosition.CENTER);
+        }
+        if (!newExpr.getConstructorArguments().isEmpty()) result.removeLast();
+        result.add(getOperatorByTokenName("CALL_)"));
+        if (newExpr.getAssignedValueTag() != null) {
+            tok.assignValue(newExpr.getAssignedValueTag());
+            valueSetNodes.add(newExpr.getId());
+        }
     }
 
     private void tokenizeInstanceOf(InstanceOfOp ins, TokenList result) {
