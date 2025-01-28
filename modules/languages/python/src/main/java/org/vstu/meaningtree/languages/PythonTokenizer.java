@@ -15,6 +15,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.NullLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
@@ -399,7 +400,12 @@ public class PythonTokenizer extends LanguageTokenizer {
             case DivOp op -> "/";
             case LtOp op -> "<";
             case GtOp op -> ">";
-            case NotEqOp op -> "!=";
+            case NotEqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is not";
+                }
+                yield "!=";
+            }
             case GeOp op -> ">=";
             case PowOp op -> "**";
             case LeOp op -> "<=";
@@ -411,7 +417,12 @@ public class PythonTokenizer extends LanguageTokenizer {
             case XorOp op -> "^";
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
-            case EqOp op -> "==";
+            case EqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is";
+                }
+                yield "==";
+            }
             case ModOp op -> "%";
             case MatMulOp op -> "@";
             case ReferenceEqOp op -> op.isNegative() ? "is" : "is not";
