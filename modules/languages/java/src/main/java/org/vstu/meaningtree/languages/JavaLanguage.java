@@ -1200,7 +1200,7 @@ public class JavaLanguage extends LanguageParser {
                         !(nodes[0] instanceof Expression) && getConfigParameter("expressionMode").getBooleanValue()
                         )
         ) {
-            throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
+            throw new UnsupportedParsingException("Cannot parse the code as expression in expression mode");
         }
 
         return new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), mainClass, mainMethod);

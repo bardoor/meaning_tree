@@ -15,6 +15,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
 import org.vstu.meaningtree.nodes.expressions.literals.NullLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
@@ -24,8 +25,7 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
-import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
-import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
+import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.utils.NodeLabel;
@@ -395,6 +395,28 @@ public class PythonTokenizer extends LanguageTokenizer {
             case UnaryPlusOp op -> "UPLUS";
             default -> null;
         };
+
+        switch (unaryOp) {
+            case PrefixDecrementOp prefixDecrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new SubOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            case PostfixDecrementOp postfixDecrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new SubOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            case PrefixIncrementOp prefixIncrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new AddOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            case PostfixIncrementOp postfixIncrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new AddOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            default -> {
+            }
+        }
+
         if (operator == null) {
             String s = viewer.toString(unaryOp);
             result.addAll(tokenize(s));

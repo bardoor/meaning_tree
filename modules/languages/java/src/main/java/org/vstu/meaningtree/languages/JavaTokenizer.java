@@ -464,7 +464,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             default -> null;
         };
         if (binOp instanceof ContainsOp) {
-            tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()));
+            tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()), result);
             return;
         }
         if (operator == null) {
