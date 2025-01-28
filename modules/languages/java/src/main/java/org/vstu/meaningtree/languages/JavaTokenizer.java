@@ -381,7 +381,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         tok.additionalOpType = call instanceof MethodCall ? OperatorType.METHOD_CALL : OperatorType.OTHER;
         if (call instanceof MethodCall method) {
             complexName = tokenizeExtended(method.getObject(), result);
-            result.add(new Token("." + ((SimpleIdentifier)method.getFunctionName()).getName(), TokenType.CALLABLE_IDENTIFIER));
+            tok = tok.clone("." + ((SimpleIdentifier)method.getFunctionName()).getName() + "(");
         } else {
             if (!(call.getFunction() instanceof SimpleIdentifier)) {
                 throw new UnsupportedParsingException("This language supports only simple identifier as function name");
