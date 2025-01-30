@@ -495,35 +495,38 @@ public class CppTokenizer extends LanguageTokenizer {
             case ObjectNewExpression objNew -> {
                 TokenList lst = tokenizeExtended(newExpr.getType());
                 String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
-                OperatorToken newTok = getOperatorByTokenName("new").clone("new" + typeName + "(");
+                OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "(");
                 result.add(newTok);
                 for (Expression expr : objNew.getConstructorArguments()) {
                     TokenGroup operand = tokenizeExtended(expr, result);
-                    result.add(getOperatorByTokenName(","));
+                    result.add(new Token(",", TokenType.SEPARATOR));
                     operand.setMetadata(newTok, OperandPosition.CENTER);
                 }
+                if (!objNew.getConstructorArguments().isEmpty()) result.removeLast();
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
             case ArrayNewExpression arrNew -> {
-                TokenList lst = tokenizeExtended(newExpr.getType());
-                String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
-                OperatorToken newTok = getOperatorByTokenName("new").clone("new" + typeName + "[");
-                result.add(newTok);
-                for (int i = 0; i < arrNew.getShape().getDimensionCount(); i++) {
-                    if (arrNew.getShape().getDimension(i) != null) {
-                        TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
-                        operand.setMetadata(newTok, OperandPosition.CENTER);
-                    }
-                    result.add(new Token("][", TokenType.SEPARATOR));
-                }
-                result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
                 if (arrNew.getInitializer() != null) {
-                    result.add(new Token("{", TokenType.COMPOUND_OPENING_BRACE));
+                    TokenList lst = tokenizeExtended(newExpr.getType());
+                    String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
+                    OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "[");
+                    result.add(newTok);
+                    for (int i = 0; i < arrNew.getShape().getDimensionCount(); i++) {
+                        if (arrNew.getShape().getDimension(i) != null) {
+                            TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
+                            operand.setMetadata(newTok, OperandPosition.CENTER);
+                        }
+                        result.add(new Token("][", TokenType.SEPARATOR));
+                    }
+                    result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
+                }
+                if (arrNew.getInitializer() != null) {
+                    result.add(new Token("{", TokenType.INITIALIZER_LIST_OPENING_BRACE));
                     for (Expression expr : arrNew.getInitializer().getValues()) {
                         tokenizeExtended(expr, result);
-                        result.add(getOperatorByTokenName(","));
+                        result.add(new Token(",", TokenType.SEPARATOR));
                     }
-                    result.add(new Token("}", TokenType.COMPOUND_OPENING_BRACE));
+                    result.add(new Token("}", TokenType.INITIALIZER_LIST_CLOSING_BRACE));
                 }
             }
             default -> throw new MeaningTreeException("New expression of unknown type");

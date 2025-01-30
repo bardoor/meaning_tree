@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.Expression;
@@ -19,6 +20,9 @@ import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
@@ -57,6 +61,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("[", subscript.getFirst());
         put("]", subscript.getLast());
 
+        put("new", new OperatorToken("new", TokenType.OPERATOR, 1, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put(".", new OperatorToken(".", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX).setFirstOperandToEvaluation(OperandPosition.LEFT));   // Постфиксный инкремент
@@ -300,6 +305,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             case PointerUnpackOp unpackOp -> tokenizeExtended(unpackOp.getArgument(), result);
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
             case FunctionCall call -> tokenizeCall(call, result);
+            case NewExpression newExpr -> tokenizeNew(newExpr, result);
             case CastTypeExpression cast -> tokenizeCast(cast, result);
             case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case MemberAccess access -> tokenizeFieldOp(access, result);
@@ -373,6 +379,49 @@ public class JavaTokenizer extends LanguageTokenizer {
         result.add(op);
         TokenGroup arg = tokenizeExtended(cast.getValue(), result);
         arg.setMetadata(op, OperandPosition.RIGHT);
+    }
+
+    private void tokenizeNew(NewExpression newExpr, TokenList result) {
+        switch (newExpr) {
+            case ObjectNewExpression objNew -> {
+                TokenList lst = tokenizeExtended(newExpr.getType());
+                String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
+                OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "(");
+                result.add(newTok);
+                for (Expression expr : objNew.getConstructorArguments()) {
+                    TokenGroup operand = tokenizeExtended(expr, result);
+                    result.add(new Token(",", TokenType.SEPARATOR));
+                    operand.setMetadata(newTok, OperandPosition.CENTER);
+                }
+                if (!objNew.getConstructorArguments().isEmpty()) result.removeLast();
+                result.add(new Token(")", TokenType.CLOSING_BRACE));
+            }
+            case ArrayNewExpression arrNew -> {
+                if (arrNew.getInitializer() != null) {
+                    TokenList lst = tokenizeExtended(newExpr.getType());
+                    String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
+                    OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "[");
+                    result.add(newTok);
+                    for (int i = 0; i < arrNew.getShape().getDimensionCount(); i++) {
+                        if (arrNew.getShape().getDimension(i) != null) {
+                            TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
+                            operand.setMetadata(newTok, OperandPosition.CENTER);
+                        }
+                        result.add(new Token("][", TokenType.SEPARATOR));
+                    }
+                    result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
+                }
+                if (arrNew.getInitializer() != null) {
+                    result.add(new Token("{", TokenType.INITIALIZER_LIST_OPENING_BRACE));
+                    for (Expression expr : arrNew.getInitializer().getValues()) {
+                        tokenizeExtended(expr, result);
+                        result.add(new Token(",", TokenType.SEPARATOR));
+                    }
+                    result.add(new Token("}", TokenType.INITIALIZER_LIST_CLOSING_BRACE));
+                }
+            }
+            default -> throw new MeaningTreeException("New expression of unknown type");
+        }
     }
 
     private void tokenizeCall(FunctionCall call, TokenList result) {

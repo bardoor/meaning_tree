@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.Expression;
@@ -258,6 +259,9 @@ public class PythonTokenizer extends LanguageTokenizer {
     }
 
     public TokenGroup tokenizeExtended(Node node, TokenList result) {
+        if (node == null) {
+            throw new MeaningTreeException("Null node passed");
+        }
         if (node.hasLabel(NodeLabel.DUMMY)) {
             return new TokenGroup(0, 0, result);
         }
