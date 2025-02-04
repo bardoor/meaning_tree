@@ -99,6 +99,20 @@ public class PythonTokenizer extends LanguageTokenizer {
 
         put("lambda", new OperatorToken("lambda", TokenType.KEYWORD, 17, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Лямбда-выражения
         put(":=", new OperatorToken(":=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Моржовый оператор
+        put("=", new OperatorToken("=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // сделано ради CompPrehension
+        put("+=", new OperatorToken("+=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("-=", new OperatorToken("-=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("*=", new OperatorToken("*=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("/=", new OperatorToken("/=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("//=", new OperatorToken("//=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("@=", new OperatorToken("@=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("%=", new OperatorToken("%=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("**=", new OperatorToken("**=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(">>=", new OperatorToken(">>=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<<=", new OperatorToken("<<=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("&=", new OperatorToken("&=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("^=", new OperatorToken("^=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("|=", new OperatorToken("|=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
     }};
 
 
@@ -302,21 +316,34 @@ public class PythonTokenizer extends LanguageTokenizer {
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
             case AssignmentStatement assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                result.add(new Token("=", TokenType.STATEMENT_TOKEN));
+                TokenGroup grp1 = tokenizeExtended(assignment.getLValue(), result);
+                String token = assignment.getAugmentedOperator().getValue();
+                OperatorToken tok = getOperatorByTokenName(token);
+                result.add(tok);
+                TokenGroup grp2;
                 if (assignment.getRValue() instanceof AssignmentExpression assign) {
-                    tokenizeExtended(assign.toStatement(), result);
+                    grp2 = tokenizeExtended(assign.toStatement(), result);
                 } else {
-                    tokenizeExtended(assignment.getRValue(), result);
+                    grp2 = tokenizeExtended(assignment.getRValue(), result);
                 }
+                grp1.setMetadata(tok, OperandPosition.LEFT);
+                grp2.setMetadata(tok, OperandPosition.RIGHT);
             }
             case AssignmentExpression assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
                 if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
                     throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
                 }
-                result.add(getOperatorByTokenName(":="));
-                tokenizeExtended(assignment.getRValue(), result);
+                TokenGroup grp1 = tokenizeExtended(assignment.getLValue(), result);
+                OperatorToken tok = getOperatorByTokenName(":=");
+                result.add(tok);
+                TokenGroup grp2;
+                if (assignment.getRValue() instanceof AssignmentExpression assign) {
+                    grp2 = tokenizeExtended(assign.toStatement(), result);
+                } else {
+                    grp2 = tokenizeExtended(assignment.getRValue(), result);
+                }
+                grp1.setMetadata(tok, OperandPosition.LEFT);
+                grp2.setMetadata(tok, OperandPosition.RIGHT);
             }
             case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {
