@@ -335,14 +335,20 @@ public class JavaTokenizer extends LanguageTokenizer {
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
             case AssignmentExpression assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                result.add(getOperatorByTokenName("="));
-                tokenizeExtended(assignment.getRValue(), result);
+                OperatorToken opTok = getOperatorByTokenName("=");
+                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
+                result.add(opTok);
+                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
+                group1.setMetadata(opTok, OperandPosition.LEFT);
+                group2.setMetadata(opTok, OperandPosition.RIGHT);
             }
             case AssignmentStatement assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                result.add(getOperatorByTokenName("="));
-                tokenizeExtended(assignment.getRValue(), result);
+                OperatorToken opTok = getOperatorByTokenName("=");
+                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
+                result.add(opTok);
+                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
+                group1.setMetadata(opTok, OperandPosition.LEFT);
+                group2.setMetadata(opTok, OperandPosition.RIGHT);
                 result.add(new Token(";", TokenType.SEPARATOR));
             }
             case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
