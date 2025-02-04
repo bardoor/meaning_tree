@@ -818,8 +818,8 @@ public class JavaLanguage extends LanguageParser {
             case "&=" -> AugmentedAssignmentOperator.BITWISE_AND;
             case "|=" -> AugmentedAssignmentOperator.BITWISE_OR;
             case "^=" -> AugmentedAssignmentOperator.BITWISE_XOR;
-            case "<<=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_LEFT;
-            case ">>=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_RIGHT;
+            case "<<=", "<<<=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_LEFT;
+            case ">>=", ">>>=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_RIGHT;
             case "%=" -> AugmentedAssignmentOperator.MOD;
             default -> throw new IllegalStateException("Unexpected augmented assignment type: " + operatorType);
         };
@@ -1318,8 +1318,8 @@ public class JavaLanguage extends LanguageParser {
             case "&" -> new BitwiseAndOp(left, right);
             case "|" -> new BitwiseOrOp(left, right);
             case "^" -> new XorOp(left, right);
-            case "<<" -> new LeftShiftOp(left, right);
-            case ">>" -> new RightShiftOp(left, right);
+            case "<<", "<<<" -> new LeftShiftOp(left, right);
+            case ">>", ">>>" -> new RightShiftOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }
