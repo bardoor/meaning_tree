@@ -420,7 +420,8 @@ public class CppLanguage extends LanguageParser {
     private Type parseSizedTypeSpecifier(TSNode node) {
         String type = getCodePiece(node);
         String subType = node.getChildByFieldName("type").isNull() ? "int" : getCodePiece(node.getChildByFieldName("type"));
-        if (type.matches(".*(long|int|short|unsigned).*")) {
+
+        if (type.matches(".*(long|int|short|unsigned|signed).*")) {
             boolean isUnsigned = false;
             int size = 32;
             if (type.contains("unsigned")) {
@@ -434,8 +435,10 @@ public class CppLanguage extends LanguageParser {
             if (size > 64) {
                 size = 64;
             }
-            if (subType.equals("int")) {
+            if (subType.equals("int") || subType.equals("short") || subType.equals("long")) {
                 return new IntType(size, isUnsigned);
+            } else if (subType.equals("char")) {
+                return new CharacterType();
             } else {
                 return new FloatType(size);
             }
