@@ -23,8 +23,11 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.types.NoReturn;
@@ -252,13 +255,27 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                             serialized.fields.containsKey("end") ? (StringLiteral) deserialize(serialized.fields.get("end")) : null
                     );
                 }
+                case "FormatPrint" -> {
+                    List<Expression> exprs = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new FormatPrint((Expression) deserialize(serialized.fields.get("formatString")),
+                            exprs);
+                }
                 case "InputCommand" -> {
                     return new InputCommand((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args")));
+                }
+                case "MemoryAllocationCall" -> {
+                    List<Expression> args = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new MemoryAllocationCall((Type) args.getFirst(), args.get(1), (boolean) serialized.values.get("clearAlloc"));
+                }
+                case "MemoryFreeCall" -> {
+                    List<Expression> args = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new MemoryFreeCall(args.getFirst());
+
                 }
             }
         }
         return new FunctionCall(
-                (Identifier) deserialize(serialized.fields.get("name")),
+                (Expression) deserialize(serialized.fields.get("name")),
                 (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"))
         );
     }
@@ -300,10 +317,10 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
         if (BinaryExpression.class.isAssignableFrom(clazz)) {
             try {
                 if (clazz.equals(ReferenceEqOp.class) || clazz.equals(ContainsOp.class)) {
-                    return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class, Boolean.class).newInstance(
+                    return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class, boolean.class).newInstance(
                             deserialize(serialized.fields.get("left")),
                             deserialize(serialized.fields.get("right")),
-                            deserialize(serialized.fields.get("negative"))
+                            serialized.values.get("negative")
                     );
                 }
                 return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class).newInstance(
@@ -312,6 +329,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                         );
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                      NoSuchMethodException e) {
+                e.printStackTrace();
             }
         }
 

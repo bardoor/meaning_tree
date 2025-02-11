@@ -18,9 +18,12 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.types.NoReturn;
@@ -235,9 +238,16 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
                 if (p.separator != null) put("separator", serialize(p.separator));
                 if (p.end != null) put("end", serialize(p.end));
             }
+            if (call instanceof FormatPrint p) {
+                put("formatString", serialize(p.getFormatString()));
+            }
         }}, new HashMap<>() {{
-            if (call instanceof PrintCommand || call instanceof InputCommand) {
+            if (call instanceof PrintCommand || call instanceof InputCommand
+                    || call instanceof MemoryAllocationCall || call instanceof MemoryFreeCall) {
                 put("spec", call.getClass().getSimpleName());
+            }
+            if (call instanceof MemoryAllocationCall m) {
+                put("clearAlloc", m.isClearAllocation());
             }
         }});
     }

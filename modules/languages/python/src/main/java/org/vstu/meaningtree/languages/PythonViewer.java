@@ -776,8 +776,9 @@ public class PythonViewer extends LanguageViewer {
             return "in";
         } else if (node instanceof InstanceOfOp op) {
             return "CALL_(";
+        } else {
+            return null;
         }
-        throw new IllegalStateException("Unexpected type of binary operator: " + node.getClass().getName());
     }
 
     private String binaryOpToString(BinaryExpression node) {

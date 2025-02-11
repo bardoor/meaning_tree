@@ -540,6 +540,12 @@ public class CppLanguage extends LanguageParser {
             arguments.add(argument);
         }
 
+        if (functionName instanceof ParenthesizedExpression p
+                && p.getExpression() instanceof SimpleIdentifier ident
+                && arguments.size() == 1) {
+            return new CastTypeExpression(new Class(ident), arguments.getFirst());
+        }
+
         if (clearFunctionName.toString().equals("pow") && arguments.size() == 2) {
             return new PowOp(arguments.getFirst(), arguments.getLast());
         }

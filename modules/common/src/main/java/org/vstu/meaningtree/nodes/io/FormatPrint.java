@@ -9,15 +9,18 @@ import java.util.Objects;
 public class FormatPrint extends PrintValues {
     private final Expression _formatString;
 
-    public FormatPrint(Expression formatString, Expression ... values) {
+    public FormatPrint(Expression formatString, List<Expression> values) {
         super(
-                List.of(values),
+                values,
                 StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
                 StringLiteral.fromUnescaped("", StringLiteral.Type.NONE)
         );
         _formatString = formatString;
     }
 
+    public FormatPrint(Expression formatString, Expression ... values) {
+        this(formatString, List.of(values));
+    }
 
     public Expression getFormatString() {
         return _formatString;

@@ -129,6 +129,9 @@ public class CppViewer extends LanguageViewer {
 
     private String toStringPrint(PrintCommand print) {
         if (print instanceof FormatPrint fmt) {
+            if (fmt.getArguments().isEmpty()) {
+                return String.format("printf(%s)", toString(fmt.getFormatString()));
+            }
             return String.format("printf(%s, %s)", toString(fmt.getFormatString()), toStringFunctionCallArgumentsList(fmt.getArguments()));
         }
         String res = String.format("std::cout << %s", print.getArguments().stream().map(this::toString).collect(Collectors.joining(" << ")));
@@ -141,6 +144,9 @@ public class CppViewer extends LanguageViewer {
 
     private String toStringInput(InputCommand inputCommand) {
         if (inputCommand instanceof FormatInput fmt) {
+            if (fmt.getArguments().isEmpty()) {
+                return String.format("scanf(%s)", toString(fmt.getFormatString()));
+            }
             return String.format("scanf(%s, %s)", toString(fmt.getFormatString()), toStringFunctionCallArgumentsList(fmt.getArguments()));
         }
         return String.format("std::cin << %s", toString(inputCommand.getArguments().getFirst()));
@@ -388,9 +394,11 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringFunctionCallArgumentsList(@NotNull List<Expression> arguments) {
+        if (arguments.isEmpty()) {
+            return "";
+        }
         StringBuilder builder = new StringBuilder();
 
-        builder.append("(");
 
         for (Expression argument : arguments) {
             builder
@@ -403,7 +411,6 @@ public class CppViewer extends LanguageViewer {
             builder.deleteCharAt(builder.length() - 1);
         }
 
-        builder.append(")");
 
         return builder.toString();
     }
@@ -411,7 +418,7 @@ public class CppViewer extends LanguageViewer {
     @NotNull
     private String toStringFunctionCall(@NotNull FunctionCall functionCall) {
         String functionName = toString(functionCall.getFunction());
-        return functionName + toStringFunctionCallArgumentsList(functionCall.getArguments());
+        return functionName + "(" + toStringFunctionCallArgumentsList(functionCall.getArguments()) + ")";
     }
 
     @NotNull
