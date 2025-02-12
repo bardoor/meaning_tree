@@ -341,6 +341,10 @@ public class JavaTokenizer extends LanguageTokenizer {
                 TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
                 group1.setMetadata(opTok, OperandPosition.LEFT);
                 group2.setMetadata(opTok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    opTok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
             }
             case AssignmentStatement assignment -> {
                 OperatorToken opTok = getOperatorByTokenName("=");
@@ -350,6 +354,10 @@ public class JavaTokenizer extends LanguageTokenizer {
                 group1.setMetadata(opTok, OperandPosition.LEFT);
                 group2.setMetadata(opTok, OperandPosition.RIGHT);
                 result.add(new Token(";", TokenType.SEPARATOR));
+                if (assignment.getAssignedValueTag() != null) {
+                    opTok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
             }
             case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {
@@ -371,7 +379,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         }
         int posStop = result.size();
         TokenGroup resultGroup = new TokenGroup(posStart, posStop, result);
-        if (node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
+        if (!(node instanceof ParenthesizedExpression) && node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
             resultGroup.assignValue(node.getAssignedValueTag());
             valueSetNodes.add(node.getId());
         }
@@ -401,6 +409,10 @@ public class JavaTokenizer extends LanguageTokenizer {
                 }
                 if (!objNew.getConstructorArguments().isEmpty()) result.removeLast();
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
+                if (newExpr.getAssignedValueTag() != null) {
+                    newTok.assignValue(newExpr.getAssignedValueTag());
+                    valueSetNodes.add(newExpr.getId());
+                }
             }
             case ArrayNewExpression arrNew -> {
                 if (arrNew.getInitializer() != null) {
@@ -416,6 +428,10 @@ public class JavaTokenizer extends LanguageTokenizer {
                         result.add(new Token("][", TokenType.SEPARATOR));
                     }
                     result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
+                    if (arrNew.getAssignedValueTag() != null) {
+                        newTok.assignValue(arrNew.getAssignedValueTag());
+                        valueSetNodes.add(arrNew.getId());
+                    }
                 }
                 if (arrNew.getInitializer() != null) {
                     result.add(new Token("{", TokenType.INITIALIZER_LIST_OPENING_BRACE));
@@ -593,5 +609,9 @@ public class JavaTokenizer extends LanguageTokenizer {
         TokenGroup centerOperand = tokenizeExtended(subscript.getIndex(), result);
         centerOperand.setMetadata(open, OperandPosition.CENTER);
         result.add(getOperatorByTokenName("]"));
+        if (subscript.getAssignedValueTag() != null) {
+            open.assignValue(subscript.getAssignedValueTag());
+            valueSetNodes.add(subscript.getId());
+        }
     }
 }

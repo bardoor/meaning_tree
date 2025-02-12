@@ -328,6 +328,10 @@ public class PythonTokenizer extends LanguageTokenizer {
                 }
                 grp1.setMetadata(tok, OperandPosition.LEFT);
                 grp2.setMetadata(tok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    tok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
             }
             case AssignmentExpression assignment -> {
                 if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
@@ -344,6 +348,10 @@ public class PythonTokenizer extends LanguageTokenizer {
                 }
                 grp1.setMetadata(tok, OperandPosition.LEFT);
                 grp2.setMetadata(tok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    tok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
             }
             case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {
@@ -366,7 +374,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         }
         int posStop = result.size();
         TokenGroup resultGroup =  new TokenGroup(posStart, posStop, result);
-        if (node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
+        if (!(node instanceof ParenthesizedExpression) && node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
             resultGroup.assignValue(node.getAssignedValueTag());
             valueSetNodes.add(node.getId());
         }
@@ -565,6 +573,10 @@ public class PythonTokenizer extends LanguageTokenizer {
                 default -> throw new IllegalStateException("Unexpected value: " + comparison.getComparisons().get(i));
             };
             OperatorToken token = getOperatorByTokenName(operator);
+            if (comparison.getAssignedValueTag() != null) {
+                token.assignValue(comparison.getAssignedValueTag());
+                valueSetNodes.add(comparison.getId());
+            }
             result.add(token);
             if (i == 0) {
                 operand.setMetadata(token, OperandPosition.LEFT);
@@ -590,5 +602,9 @@ public class PythonTokenizer extends LanguageTokenizer {
         TokenGroup centerOperand = tokenizeExtended(subscript.getIndex(), result);
         centerOperand.setMetadata(open, OperandPosition.CENTER);
         result.add(getOperatorByTokenName("]"));
+        if (subscript.getAssignedValueTag() != null) {
+            open.assignValue(subscript.getAssignedValueTag());
+            valueSetNodes.add(subscript.getId());
+        }
     }
 }
