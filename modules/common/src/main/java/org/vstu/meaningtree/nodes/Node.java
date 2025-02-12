@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes;
 
+import org.apache.jena.sparql.expr.NodeValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.utils.Experimental;
@@ -221,6 +222,7 @@ abstract public class Node implements Serializable, Cloneable {
      * @param obj - любой объект
      */
     public void setAssignedValueTag(@Nullable Object obj) {
+        removeLabel(NodeLabel.VALUE);
         _labels.add(new NodeLabel(NodeLabel.VALUE, obj));
     }
 

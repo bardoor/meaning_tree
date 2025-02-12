@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.Objects;
@@ -38,5 +39,16 @@ public class ParenthesizedExpression extends Expression {
         ParenthesizedExpression obj = (ParenthesizedExpression) super.clone();
         obj._expr = _expr.clone();
         return obj;
+    }
+
+    @Override
+    public void setAssignedValueTag(@Nullable Object obj) {
+        _expr.setAssignedValueTag(obj);
+    }
+
+    @Nullable
+    @Override
+    public Object getAssignedValueTag() {
+        return _expr.getAssignedValueTag();
     }
 }
