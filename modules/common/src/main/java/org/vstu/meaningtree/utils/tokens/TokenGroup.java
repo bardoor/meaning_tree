@@ -62,8 +62,7 @@ public class TokenGroup implements Iterable<Token> {
         for (int i = start; i < stop; i++) {
             Token t = source.get(i);
             if (!(t instanceof OperandToken)) {
-                source.set(i, new OperandToken(t.value, t.type));
-                source.get(i).assignValue(t.getAssignedValue());
+                source.set(i, t.asOperand());
             }
             OperandToken op = ((OperandToken)source.get(i));
             if (op.operandOf() == null) {

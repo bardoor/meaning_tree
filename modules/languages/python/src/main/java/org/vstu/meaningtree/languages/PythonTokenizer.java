@@ -16,8 +16,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
-import org.vstu.meaningtree.nodes.expressions.literals.NullLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
@@ -48,6 +47,15 @@ public class PythonTokenizer extends LanguageTokenizer {
 
         put("CALL_(", braces.getFirst());
         put("CALL_)", braces.getLast());
+
+        List<OperatorToken> collection = OperatorToken.makeComplex(2,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"[", "]"},
+                new TokenType[] {TokenType.INITIALIZER_LIST_OPENING_BRACE, TokenType.INITIALIZER_LIST_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("LIST_OPEN", collection.getFirst());
+        put("LIST_CLOSE", collection.getLast());
 
         List<OperatorToken> subscript = OperatorToken.makeComplex(2,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
@@ -292,6 +300,8 @@ public class PythonTokenizer extends LanguageTokenizer {
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
+            case PlainCollectionLiteral plain -> tokenizePlainCollectionLiteral(plain, result);
+            case DictionaryLiteral dct -> tokenizeDictCollectionLiteral(dct, result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
@@ -381,6 +391,45 @@ public class PythonTokenizer extends LanguageTokenizer {
         return resultGroup;
     }
 
+    private void tokenizePlainCollectionLiteral(PlainCollectionLiteral literal, TokenList result) {
+        String[] tokens = switch (literal) {
+            case SetLiteral ignored -> new String[] {"{", "}"};
+            case UnmodifiableListLiteral ignored -> new String[] {"(", ")"};
+            default -> new String[] {"[", "]"};
+        };
+        OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone(tokens[0]);
+        for (Expression item : literal.getList()) {
+            tokenizeExtended(item, result);
+            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+        }
+        if (literal.getList().isEmpty() && literal instanceof UnmodifiableListLiteral) {
+            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+        }
+        if (!literal.getList().isEmpty() && !(literal instanceof UnmodifiableListLiteral)) result.removeLast();
+        result.add(getOperatorByTokenName("LIST_CLOSE").clone(tokens[1]));
+        if (literal.getAssignedValueTag() != null) {
+            tok.assignValue(literal.getAssignedValueTag());
+            valueSetNodes.add(literal.getId());
+        }
+    }
+
+    private void tokenizeDictCollectionLiteral(DictionaryLiteral literal, TokenList result) {
+        OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone("{");
+        for (Map.Entry<Expression, Expression> item : literal.getDictionary().entrySet()) {
+            tokenizeExtended(item.getKey(), result);
+            result.add(new Token(":", TokenType.SEPARATOR).setOwner(tok));
+            tokenizeExtended(item.getValue(), result);
+            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+        }
+        if (!literal.getDictionary().isEmpty()) result.removeLast();
+        result.add(getOperatorByTokenName("LIST_CLOSE").clone("}"));
+        if (literal.getAssignedValueTag() != null) {
+            tok.assignValue(literal.getAssignedValueTag());
+            valueSetNodes.add(literal.getId());
+        }
+    }
+
+
     private void tokenizeNewExpr(ObjectNewExpression newExpr, TokenList result) {
         TokenGroup complexName = tokenizeExtended(newExpr.getType(), result);
         OperatorToken tok = getOperatorByTokenName("CALL_(");
@@ -388,7 +437,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         result.add(tok);
         for (Expression expr : newExpr.getConstructorArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(new Token(",", TokenType.COMMA));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!newExpr.getConstructorArguments().isEmpty()) result.removeLast();
@@ -415,7 +464,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         result.add(tok);
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(new Token(",", TokenType.COMMA));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();

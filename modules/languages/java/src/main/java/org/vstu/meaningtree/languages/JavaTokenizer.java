@@ -16,6 +16,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.ArrayLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
@@ -51,6 +52,15 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("CALL_)", braces.getLast());
 
         put("CAST", new OperatorToken("CAST", TokenType.CAST, 1, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
+
+        List<OperatorToken> collection = OperatorToken.makeComplex(1,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"{", "}"},
+                new TokenType[] {TokenType.INITIALIZER_LIST_OPENING_BRACE, TokenType.INITIALIZER_LIST_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("{", collection.getFirst());
+        put("}", collection.getLast());
 
         List<OperatorToken> subscript = OperatorToken.makeComplex(1,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
@@ -311,6 +321,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
+            case ArrayLiteral plain -> tokenizeNew(plain.toArrayNew(), result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
@@ -404,7 +415,7 @@ public class JavaTokenizer extends LanguageTokenizer {
                 result.add(newTok);
                 for (Expression expr : objNew.getConstructorArguments()) {
                     TokenGroup operand = tokenizeExtended(expr, result);
-                    result.add(new Token(",", TokenType.SEPARATOR));
+                    result.add(new Token(",", TokenType.SEPARATOR).setOwner(newTok));
                     operand.setMetadata(newTok, OperandPosition.CENTER);
                 }
                 if (!objNew.getConstructorArguments().isEmpty()) result.removeLast();
@@ -415,31 +426,31 @@ public class JavaTokenizer extends LanguageTokenizer {
                 }
             }
             case ArrayNewExpression arrNew -> {
-                if (arrNew.getInitializer() != null) {
-                    TokenList lst = tokenizeExtended(newExpr.getType());
-                    String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
-                    OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "[");
-                    result.add(newTok);
-                    for (int i = 0; i < arrNew.getShape().getDimensionCount(); i++) {
-                        if (arrNew.getShape().getDimension(i) != null) {
-                            TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
-                            operand.setMetadata(newTok, OperandPosition.CENTER);
-                        }
-                        result.add(new Token("][", TokenType.SEPARATOR));
+                TokenList lst = tokenizeExtended(newExpr.getType());
+                String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
+                OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "[");
+                result.add(newTok);
+                for (int i = 0; i < arrNew.getShape().getDimensionCount(); i++) {
+                    if (arrNew.getShape().getDimension(i) != null) {
+                        TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
+                        operand.setMetadata(newTok, OperandPosition.CENTER);
                     }
-                    result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
-                    if (arrNew.getAssignedValueTag() != null) {
-                        newTok.assignValue(arrNew.getAssignedValueTag());
-                        valueSetNodes.add(arrNew.getId());
-                    }
+                    result.add(new Token("][", TokenType.SEPARATOR));
+                }
+                result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
+                if (arrNew.getAssignedValueTag() != null) {
+                    newTok.assignValue(arrNew.getAssignedValueTag());
+                    valueSetNodes.add(arrNew.getId());
                 }
                 if (arrNew.getInitializer() != null) {
-                    result.add(new Token("{", TokenType.INITIALIZER_LIST_OPENING_BRACE));
+                    OperatorToken tok = getOperatorByTokenName("{");
+                    tok.setMetadata(newTok, OperandPosition.RIGHT);
+                    result.add(tok);
                     for (Expression expr : arrNew.getInitializer().getValues()) {
                         tokenizeExtended(expr, result);
-                        result.add(new Token(",", TokenType.SEPARATOR));
+                        result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
                     }
-                    result.add(new Token("}", TokenType.INITIALIZER_LIST_CLOSING_BRACE));
+                    result.add(getOperatorByTokenName("}"));
                 }
             }
             default -> throw new MeaningTreeException("New expression of unknown type");
@@ -463,7 +474,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         result.add(tok);
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(new Token(",", TokenType.COMMA));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
@@ -567,6 +578,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             valueSetNodes.add(access.getId());
         }
     }
+
 
     private void tokenizeTernary(TernaryOperator ternary, TokenList result) {
         TokenGroup cond = tokenizeExtended(ternary.getCondition(), result);
