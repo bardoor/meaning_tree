@@ -482,7 +482,7 @@ public class CppTokenizer extends LanguageTokenizer {
         result.add(tok);
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
@@ -497,7 +497,7 @@ public class CppTokenizer extends LanguageTokenizer {
         OperatorToken tok = getOperatorByTokenName("{");
         for (Expression item : literal.getList()) {
             tokenizeExtended(item, result);
-            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (!literal.getList().isEmpty()) result.removeLast();
         result.add(getOperatorByTokenName("}"));
@@ -511,7 +511,7 @@ public class CppTokenizer extends LanguageTokenizer {
         OperatorToken tok = getOperatorByTokenName("{");
         for (Expression item : literal.asPairsListLiteral()) {
             tokenizeExtended(item, result);
-            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (!literal.getDictionary().isEmpty()) result.removeLast();
         result.add(getOperatorByTokenName("}"));
@@ -568,7 +568,7 @@ public class CppTokenizer extends LanguageTokenizer {
                 result.add(newTok);
                 for (Expression expr : objNew.getConstructorArguments()) {
                     TokenGroup operand = tokenizeExtended(expr, result);
-                    result.add(new Token(",", TokenType.SEPARATOR).setOwner(newTok));
+                    result.add(new Token(",", TokenType.COMMA).setOwner(newTok));
                     operand.setMetadata(newTok, OperandPosition.CENTER);
                 }
                 if (!objNew.getConstructorArguments().isEmpty()) result.removeLast();
@@ -602,7 +602,7 @@ public class CppTokenizer extends LanguageTokenizer {
                     result.add(tok);
                     for (Expression expr : arrNew.getInitializer().getValues()) {
                         tokenizeExtended(expr, result);
-                        result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+                        result.add(new Token(",", TokenType.COMMA).setOwner(tok));
                     }
                     result.add(getOperatorByTokenName("}"));
                 }

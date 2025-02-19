@@ -400,10 +400,10 @@ public class PythonTokenizer extends LanguageTokenizer {
         OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone(tokens[0]);
         for (Expression item : literal.getList()) {
             tokenizeExtended(item, result);
-            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (literal.getList().isEmpty() && literal instanceof UnmodifiableListLiteral) {
-            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (!literal.getList().isEmpty() && !(literal instanceof UnmodifiableListLiteral)) result.removeLast();
         result.add(getOperatorByTokenName("LIST_CLOSE").clone(tokens[1]));
@@ -419,7 +419,7 @@ public class PythonTokenizer extends LanguageTokenizer {
             tokenizeExtended(item.getKey(), result);
             result.add(new Token(":", TokenType.SEPARATOR).setOwner(tok));
             tokenizeExtended(item.getValue(), result);
-            result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (!literal.getDictionary().isEmpty()) result.removeLast();
         result.add(getOperatorByTokenName("LIST_CLOSE").clone("}"));

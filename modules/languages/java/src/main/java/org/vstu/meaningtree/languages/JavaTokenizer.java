@@ -415,7 +415,7 @@ public class JavaTokenizer extends LanguageTokenizer {
                 result.add(newTok);
                 for (Expression expr : objNew.getConstructorArguments()) {
                     TokenGroup operand = tokenizeExtended(expr, result);
-                    result.add(new Token(",", TokenType.SEPARATOR).setOwner(newTok));
+                    result.add(new Token(",", TokenType.COMMA).setOwner(newTok));
                     operand.setMetadata(newTok, OperandPosition.CENTER);
                 }
                 if (!objNew.getConstructorArguments().isEmpty()) result.removeLast();
@@ -448,7 +448,7 @@ public class JavaTokenizer extends LanguageTokenizer {
                     result.add(tok);
                     for (Expression expr : arrNew.getInitializer().getValues()) {
                         tokenizeExtended(expr, result);
-                        result.add(new Token(",", TokenType.SEPARATOR).setOwner(tok));
+                        result.add(new Token(",", TokenType.COMMA).setOwner(tok));
                     }
                     result.add(getOperatorByTokenName("}"));
                 }
