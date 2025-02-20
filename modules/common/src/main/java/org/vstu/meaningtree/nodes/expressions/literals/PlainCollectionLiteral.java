@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.other.ArrayInitializer;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 
@@ -71,6 +72,6 @@ public abstract class PlainCollectionLiteral extends CollectionLiteral {
             }
             if (item instanceof ArrayNewExpression arr) dimensions += arr.getShape().getDimensionCount();
         }
-        return new ArrayNewExpression(getTypeHint(), new Shape(dimensions, getList()));
+        return new ArrayNewExpression(getTypeHint(), new Shape(dimensions), new ArrayInitializer(getList()));
     }
 }

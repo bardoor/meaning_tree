@@ -72,7 +72,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("]", subscript.getLast());
 
         put("new", new OperatorToken("new", TokenType.OPERATOR, 1, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
-        put(".", new OperatorToken(".", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(".", new OperatorToken(".", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));
 
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX).setFirstOperandToEvaluation(OperandPosition.LEFT));   // Постфиксный инкремент
         put("--", new OperatorToken("--", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX).setFirstOperandToEvaluation(OperandPosition.LEFT));   // Постфиксный декремент

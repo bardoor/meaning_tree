@@ -66,7 +66,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         put("[", subscript.getFirst());
         put("]", subscript.getLast());
 
-        put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));
         put("await", new OperatorToken("await", TokenType.OPERATOR, 3, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
         put("**", new OperatorToken("**", TokenType.OPERATOR, 4, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Возведение в степень
         put("~", new OperatorToken("~", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.UNARY, false)); // Побитовая инверсия
