@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.utils.tokens;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class OperandToken extends Token {
@@ -43,6 +45,20 @@ public class OperandToken extends Token {
 
     public OperatorToken operandOf() {
         return operandOf;
+    }
+
+    public List<OperatorToken> operandOfHierarchy() {
+        List<OperatorToken> ops = new ArrayList<>();
+        OperandToken tmp = this;
+        while (tmp.operandOf() != null) {
+            ops.add(tmp.operandOf());
+            tmp = tmp.operandOf();
+        }
+        return ops.reversed();
+    }
+
+    public boolean isInOperandOf(OperatorToken opTok) {
+        return operandOfHierarchy().contains(opTok);
     }
 
     public OperandPosition operandPosition() {
