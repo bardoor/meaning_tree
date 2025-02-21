@@ -1,5 +1,8 @@
 package org.vstu.meaningtree.utils.tokens;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -47,19 +50,25 @@ public class OperandToken extends Token {
         return operandOf;
     }
 
-    public List<OperatorToken> operandOfHierarchy() {
-        List<OperatorToken> ops = new ArrayList<>();
+    public List<Pair<OperatorToken, OperandPosition>> operandOfHierarchy() {
+        List<Pair<OperatorToken, OperandPosition>> ops = new ArrayList<>();
         OperandToken tmp = this;
         while (tmp.operandOf() != null) {
-            ops.add(tmp.operandOf());
+            ops.add(ImmutablePair.of(tmp.operandOf(), tmp.operandPosition()));
             tmp = tmp.operandOf();
         }
         return ops.reversed();
     }
 
     public boolean isInOperandOf(OperatorToken opTok) {
-        return operandOfHierarchy().contains(opTok);
+        return operandOfHierarchy().stream().map(Pair::getLeft).toList().contains(opTok);
     }
+
+    public boolean isInOperandOf(OperatorToken opTok, OperandPosition pos) {
+        return operandOfHierarchy().stream()
+                .anyMatch(pair -> pair.getLeft().equals(opTok) && pair.getRight().equals(pos));
+    }
+
 
     public OperandPosition operandPosition() {
         return operandPos;
