@@ -45,7 +45,7 @@ abstract public class LanguageParser {
         }
     }
 
-    void setConfig(List<ConfigParameter> params) {
+    public void setConfig(List<ConfigParameter> params) {
         _cfg = params;
     }
 
