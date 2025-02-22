@@ -1,6 +1,5 @@
 package org.vstu.meaningtree;
 
-import org.apache.commons.lang3.IntegerRange;
 import org.apache.thrift.annotation.Nullable;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
@@ -17,11 +16,8 @@ import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class AugletsRefactorProblemsGenerator {
 
@@ -37,24 +33,38 @@ public class AugletsRefactorProblemsGenerator {
         }
 
         boolean hasModified = false;
-        var body = new ArrayList<Node>();
-        for (var node : ((ProgramEntryPoint) rootNode).getBody()) {
+        var currentBody = new CompoundStatement(
+                new SymbolEnvironment(null),
+                ((ProgramEntryPoint) rootNode).getBody()
+        );
+        var newBody = new ArrayList<Node>();
+
+        CompoundStatement compoundBody = (CompoundStatement) generate(currentBody, problemType, opts);
+
+        if (compoundBody != null) {
+            return new MeaningTree(new ProgramEntryPoint(
+                    new SymbolEnvironment(null),
+                    List.of(compoundBody.getNodes()))
+            );
+        }
+
+        for (var node : currentBody.getNodes()) {
            if (modifyOnlyFirst && hasModified) {
-               body.add(node);
+               newBody.add(node);
            }
            else {
                var modifiedNode = generate(node, problemType, opts);
                if (modifiedNode != null) {
-                   body.add(modifiedNode);
+                   newBody.add(modifiedNode);
                    hasModified = true;
                }
                else {
-                   body.add(node);
+                   newBody.add(node);
                }
            }
         }
 
-        return new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), body));
+        return new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), newBody));
     }
 
     private static Node generate(Node node, AugletsRefactorProblemsType problemType, Map<String, String> opts) {
