@@ -19,6 +19,7 @@ import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -27,7 +28,8 @@ public class AugletsRefactorProblemsGenerator {
     public static MeaningTree generate(
             MeaningTree mt,
             AugletsRefactorProblemsType problemType,
-            boolean modifyAll
+            boolean modifyAll,
+            Map<String, String> opts
     ) {
         var rootNode = mt.getRootNode();
         if (!(rootNode instanceof ProgramEntryPoint)) {
@@ -41,7 +43,7 @@ public class AugletsRefactorProblemsGenerator {
                body.add(node);
            }
            else {
-               var modifiedIf = generate(node, problemType);
+               var modifiedIf = generate(node, problemType, opts);
                if (modifiedIf != null) {
                    body.add(modifiedIf);
                    hasModified = true;
@@ -55,7 +57,7 @@ public class AugletsRefactorProblemsGenerator {
         return new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), body));
     }
 
-    private static Node generate(Node node, AugletsRefactorProblemsType problemType) {
+    private static Node generate(Node node, AugletsRefactorProblemsType problemType, Map<String, String> opts) {
         try {
             return switch (problemType) {
                 case ADD_DANGLING_ELSE -> addDanglingEmptyElse((IfStatement) node);
