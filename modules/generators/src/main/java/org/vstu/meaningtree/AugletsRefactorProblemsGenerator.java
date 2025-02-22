@@ -28,7 +28,7 @@ public class AugletsRefactorProblemsGenerator {
     public static MeaningTree generate(
             MeaningTree mt,
             AugletsRefactorProblemsType problemType,
-            boolean modifyAll,
+            boolean modifyOnlyFirst,
             Map<String, String> opts
     ) {
         var rootNode = mt.getRootNode();
@@ -39,7 +39,7 @@ public class AugletsRefactorProblemsGenerator {
         boolean hasModified = false;
         var body = new ArrayList<Node>();
         for (var node : ((ProgramEntryPoint) rootNode).getBody()) {
-           if (!modifyAll && hasModified) {
+           if (modifyOnlyFirst && hasModified) {
                body.add(node);
            }
            else {
