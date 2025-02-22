@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Нужен для представления последовательного представления списка токенов, а не выборки токенов
+ */
 public class TokenList extends ArrayList<Token> {
     public TokenList() {
         super();
@@ -59,27 +62,29 @@ public class TokenList extends ArrayList<Token> {
         return null;
     }
 
-    public boolean isParenthesized(int operatorToken) {
+    public Pair<Integer, Integer> getEnclosingParentheses(int operatorToken) {
         if (!(get(operatorToken) instanceof OperatorToken)) {
-            return false;
+            return ImmutablePair.of(-1, -1);
         }
         for (int i = operatorToken; i >= 0; i--) {
             if (get(i).type == TokenType.OPENING_BRACE) {
                 int brace = 1;
+                int closing = -1;
                 int j = i + 1;
                 for (;j < size() && brace != 0; j++) {
                     if (get(j).type == TokenType.OPENING_BRACE) {
                         brace++;
                     } else if (get(j).type == TokenType.CLOSING_BRACE) {
+                        closing = j;
                         brace--;
                     }
                 }
                 if (brace == 0 && operatorToken > i && operatorToken < j) {
-                    return true;
+                    return ImmutablePair.of(i, closing);
                 }
             }
         }
-        return false;
+        return ImmutablePair.of(-1, -1);
     }
 
     public void setMetadata(OperatorToken token, OperandPosition pos) {
@@ -144,7 +149,7 @@ public class TokenList extends ArrayList<Token> {
         return (TokenList) super.clone();
     }
 
-    public OperandPosition isTransitiveOperator(int operandPos, int operatorPos) {
+    public OperandPosition isOperandInOperatorOperandsHierarchy(int operandPos, int operatorPos) {
         assert get(operandPos) instanceof OperandToken;
         assert get(operatorPos) instanceof OperatorToken;
         OperandToken operand = (OperandToken) get(operandPos);
@@ -184,7 +189,7 @@ public class TokenList extends ArrayList<Token> {
         OperandPosition oldPos = null;
         while (i < size()) {
             OperandPosition pos;
-            if (get(i) instanceof OperandToken operand && (pos = isTransitiveOperator(i, opIndexToken)) != null) {
+            if (get(i) instanceof OperandToken operand && (pos = isOperandInOperatorOperandsHierarchy(i, opIndexToken)) != null) {
                 if (oldPos != null && !oldPos.equals(pos)) {
                     start = i;
                 }
@@ -192,7 +197,7 @@ public class TokenList extends ArrayList<Token> {
                     start = i;
                 }
                 stop = i + 1;
-                while (stop < size() && get(stop) instanceof OperandToken && isTransitiveOperator(stop, opIndexToken) == pos) {
+                while (stop < size() && get(stop) instanceof OperandToken && isOperandInOperatorOperandsHierarchy(stop, opIndexToken) == pos) {
                     stop = i + 1;
                     i++;
                 }

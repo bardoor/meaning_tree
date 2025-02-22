@@ -8,10 +8,12 @@ import java.util.List;
 
 abstract public class LanguageViewer {
     private List<ConfigParameter> _cfg;
+    protected MeaningTree origin;
 
     public abstract String toString(Node node);
 
     public String toString(MeaningTree mt) {
+        origin = mt;
         return toString(mt.getRootNode());
     }
 

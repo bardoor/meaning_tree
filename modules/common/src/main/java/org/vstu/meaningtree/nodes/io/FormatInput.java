@@ -1,25 +1,16 @@
 package org.vstu.meaningtree.nodes.io;
 
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
 
 import java.util.List;
 import java.util.Objects;
 
-public class FormatPrint extends PrintValues {
+public class FormatInput extends InputCommand {
     private final Expression _formatString;
 
-    public FormatPrint(Expression formatString, List<Expression> values) {
-        super(
-                values,
-                StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
-                StringLiteral.fromUnescaped("", StringLiteral.Type.NONE)
-        );
+    public FormatInput(Expression formatString, Expression... values) {
+        super(List.of(values));
         _formatString = formatString;
-    }
-
-    public FormatPrint(Expression formatString, Expression ... values) {
-        this(formatString, List.of(values));
     }
 
     public Expression getFormatString() {
@@ -30,7 +21,7 @@ public class FormatPrint extends PrintValues {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        FormatPrint that = (FormatPrint) o;
+        FormatInput that = (FormatInput) o;
         return Objects.equals(_formatString, that._formatString);
     }
 
@@ -39,3 +30,4 @@ public class FormatPrint extends PrintValues {
         return Objects.hash(super.hashCode(), _formatString);
     }
 }
+

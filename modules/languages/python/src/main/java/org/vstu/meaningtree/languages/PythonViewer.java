@@ -34,6 +34,10 @@ import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.io.FormatInput;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.modules.*;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
@@ -65,7 +69,6 @@ import java.util.stream.Collectors;
 
 
 public class PythonViewer extends LanguageViewer {
-
     @Override
     public String toString(Node node) {
         // Для dummy узлов ничего не выводим
@@ -101,6 +104,8 @@ public class PythonViewer extends LanguageViewer {
             case CompoundStatement exprNode -> blockToString(exprNode, tab);
             case CompoundComparison compound -> compoundComparisonToString(compound);
             case Type type -> typeToString(type);
+            case FormatPrint fmt -> throw new UnsupportedViewingException("Format print is not supported in Python");
+            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Python");
             case Identifier identifier -> identifierToString(identifier);
             case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
             case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
@@ -108,16 +113,18 @@ public class PythonViewer extends LanguageViewer {
             case ParenthesizedExpression paren -> String.format("(%s)", toString(paren.getExpression()));
             case ObjectNewExpression newExpr -> callsToString(newExpr);
             case ArrayNewExpression newExpr -> callsToString(newExpr);
+            case MemoryAllocationCall memoryAllocationCall -> toString(memoryAllocationCall.toNew());
+            case MemoryFreeCall freeCall -> toString(freeCall.toDelete());
             case FunctionCall funcCall -> callsToString(funcCall);
-            case BreakStatement breakStmt -> "break";
+            case BreakStatement ignored2 -> "break";
             case DeleteStatement delStmt -> String.format("del %s", toString(delStmt.getTarget()));
-            case DeleteExpression delExpr -> String.format("del %s", toString(delExpr.getTarget()));
+            case DeleteExpression ignored2 -> throw new UnsupportedViewingException("Delete expressions is unsupported on Python");
             case Range range -> rangeToString(range);
-            case ContinueStatement continueStatement -> "continue";
+            case ContinueStatement ignored1 -> "continue";
             case ConstructorCall call -> String.format("%s(%s)", toString(call.getOwner()), argumentsToString(call.getArguments()));
             case Comment comment -> commentToString(comment);
             case Literal literal -> literalToString(literal);
-            case SizeofExpression sizeof -> toString(sizeof.toCall());
+            case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
             case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
@@ -137,6 +144,7 @@ public class PythonViewer extends LanguageViewer {
             case ArrayInitializer arrayInit -> arrayInitializerToString(arrayInit);
             case Include incl -> String.format("import %s", toString(incl.getFileName()));
             case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
+            case CommaExpression ignored -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence exprSeq -> String.join(", ", exprSeq.getExpressions().stream().map((Expression nd) -> toString(nd, tab)).toList().toArray(new String[0]));
             case MultipleAssignmentStatement stmtSequence -> assignmentToString(stmtSequence);
             case CastTypeExpression cast -> callsToString(cast);
@@ -525,14 +533,34 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
-        if (!(expr.getLValue() instanceof Identifier)) {
+        if (!(expr.getLValue() instanceof SimpleIdentifier) || (expr.getRValue() instanceof AssignmentExpression)) {
             if (getConfigParameter("expressionMode").getBooleanValue()) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
             } else {
-                throw new UnsupportedViewingException("Assignment expressions in Python supports only identifiers");
+                throw new UnsupportedViewingException("Assignment expressions in Python supports only simple identifiers");
             }
         }
-        return String.format("%s := %s", toString(expr.getLValue()), toString(expr.getRValue()));
+        AugmentedAssignmentOperator augOp = expr.getAugmentedOperator();
+        String operator = switch (augOp) {
+            case ADD -> "+";
+            case SUB -> "-";
+            case MUL -> "*";
+            case DIV -> "/";
+            case FLOOR_DIV -> "//";
+            case BITWISE_AND -> "&";
+            case BITWISE_OR -> "|";
+            case BITWISE_XOR -> "^";
+            case BITWISE_SHIFT_LEFT -> "<<";
+            case BITWISE_SHIFT_RIGHT -> ">>";
+            case MOD -> "%";
+            case POW -> "**";
+            default -> "=";
+        };
+        String prefix = "";
+        if (!operator.equals("=")) {
+            prefix = toString(expr.getLValue()) + " " + operator + " ";
+        }
+        return String.format("%s := %s%s", toString(expr.getLValue()), prefix, toString(expr.getRValue()));
     }
 
     private String assignmentToString(AssignmentStatement stmt) {
@@ -552,7 +580,11 @@ public class PythonViewer extends LanguageViewer {
             case POW -> "**=";
             default -> "=";
         };
-        return String.format("%s %s %s", toString(stmt.getLValue()), operator, toString(stmt.getRValue()));
+        if (stmt.getRValue() instanceof AssignmentExpression assign) {
+            return String.format("%s %s %s", toString(stmt.getLValue()), operator, toString(assign.toStatement()));
+        } else {
+            return String.format("%s %s %s", toString(stmt.getLValue()), operator, toString(stmt.getRValue()));
+        }
     }
 
     private String literalToString(Literal literal) {
@@ -721,8 +753,14 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof ShortCircuitOrOp) {
             return "or";
         } else if (node instanceof EqOp) {
+            if (node.getRight() instanceof NullLiteral) {
+                return "is";
+            }
             return "==";
         } else if (node instanceof NotEqOp) {
+            if (node.getRight() instanceof NullLiteral) {
+                return "is not";
+            }
             return "!=";
         } else if (node instanceof GeOp) {
             return ">=";
@@ -738,8 +776,9 @@ public class PythonViewer extends LanguageViewer {
             return "in";
         } else if (node instanceof InstanceOfOp op) {
             return "CALL_(";
+        } else {
+            return null;
         }
-        throw new IllegalStateException("Unexpected type of binary operator: " + node.getClass().getName());
     }
 
     private String binaryOpToString(BinaryExpression node) {
@@ -775,6 +814,9 @@ public class PythonViewer extends LanguageViewer {
     private String preferExplicitAndOpToString(Node node) {
         if (node instanceof ShortCircuitAndOp op) {
             return String.format("%s and %s", preferExplicitAndOpToString(op.getLeft()), preferExplicitAndOpToString(op.getRight()));
+        } else if (node instanceof CompoundComparison op && getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+           return preferExplicitAndOpToString(BinaryExpression.fromManyOperands
+                   (op.getComparisons().toArray(new BinaryComparison[0]), 0, ShortCircuitAndOp.class));
         } else {
             return toString(node);
         }
@@ -858,9 +900,21 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof InversionOp) {
             pattern = "~%s";
         } else if (node instanceof PostfixDecrementOp || node instanceof PrefixDecrementOp) {
-            pattern = "%s -= 1";
+            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            Node parent = origin == null ? null : origin.findParentOfNode(node);
+            if (exprRepr || parent instanceof Expression) {
+                return String.format("%s := %s + 1", toString(expr), toString(expr));
+            } else {
+                pattern = "%s -= 1";
+            }
         } else if (node instanceof PostfixIncrementOp || node instanceof PrefixIncrementOp) {
-            pattern = "%s += 1";
+            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            Node parent = origin == null ? null : origin.findParentOfNode(node);
+            if (exprRepr || parent instanceof Expression) {
+                return String.format("%s := %s + 1", toString(expr), toString(expr));
+            } else {
+                pattern = "%s += 1";
+            }
         } else if (node instanceof PointerPackOp || node instanceof PointerUnpackOp) {
             return toString(node);
         }

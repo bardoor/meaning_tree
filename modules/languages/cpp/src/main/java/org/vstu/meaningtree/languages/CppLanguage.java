@@ -13,6 +13,7 @@ import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
@@ -37,6 +38,9 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.io.*;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
@@ -51,14 +55,14 @@ import org.vstu.meaningtree.nodes.types.user.GenericClass;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 public class CppLanguage extends LanguageParser {
     private final TSLanguage _language;
     private final TSParser _parser;
     private final Map<String, UserType> _userTypes;
+
+    private int binaryRecursiveFlag = -1;
 
     public CppLanguage() {
         _language = new TreeSitterCpp();
@@ -70,9 +74,12 @@ public class CppLanguage extends LanguageParser {
     @Override
     public TSTree getTSTree() {
         TSTree tree = _parser.parseString(null, _code);
+        /*
+        TODO: only for test
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+        */
         return tree;
     }
 
@@ -84,7 +91,11 @@ public class CppLanguage extends LanguageParser {
         if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
-        return new MeaningTree(fromTSNode(rootNode));
+        Node node = fromTSNode(rootNode);
+        if (node instanceof AssignmentExpression expr) {
+            node = expr.toStatement();
+        }
+        return new MeaningTree(node);
     }
 
     @Override
@@ -217,7 +228,15 @@ public class CppLanguage extends LanguageParser {
         Expression argument = (Expression) fromTSNode(node.getChildByFieldName("argument"));
         if (op.startsWith("&")) {
             if (argument instanceof AddOp binOp) {
-                return new IndexExpression(binOp.getLeft(), binOp.getRight());
+                Expression leftmost = binOp.getLeft();
+                List<Expression> args = new ArrayList<>();
+                args.add(binOp.getRight());
+                while (leftmost instanceof AddOp leftmostOp) {
+                    leftmost = leftmostOp.getLeft();
+                    args.add(leftmostOp.getRight());
+                }
+                return new IndexExpression(leftmost, BinaryExpression.
+                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class), true);
             }
             return new PointerPackOp(argument);
         } else if (op.startsWith("*")) {
@@ -295,10 +314,13 @@ public class CppLanguage extends LanguageParser {
         return switch (type) {
             case "int" -> new IntType();
             case "int8_t" -> new IntType(8);
-            case "size_t" -> new IntType(32, true);
+            case "uint8_t" -> new IntType(8, true);
+            case "size_t", "uint64_t" -> new IntType(64, true);
             case "int16_t" -> new IntType(16);
             case "int32_t", "time32_t" -> new IntType(32);
             case "int64_t", "time64_t" -> new IntType(64);
+            case "uint16_t" -> new IntType(16, true);
+            case "uint32_t" -> new IntType(32, true);
             case "double" -> new FloatType(64);
             case "float" -> new FloatType(32);
             case "char" -> new CharacterType(8);
@@ -398,7 +420,8 @@ public class CppLanguage extends LanguageParser {
     private Type parseSizedTypeSpecifier(TSNode node) {
         String type = getCodePiece(node);
         String subType = node.getChildByFieldName("type").isNull() ? "int" : getCodePiece(node.getChildByFieldName("type"));
-        if (type.matches(".*(long|int|short|unsigned).*")) {
+
+        if (type.matches(".*(long|int|short|unsigned|signed).*")) {
             boolean isUnsigned = false;
             int size = 32;
             if (type.contains("unsigned")) {
@@ -412,8 +435,10 @@ public class CppLanguage extends LanguageParser {
             if (size > 64) {
                 size = 64;
             }
-            if (subType.equals("int")) {
+            if (subType.equals("int") || subType.equals("short") || subType.equals("long")) {
                 return new IntType(size, isUnsigned);
+            } else if (subType.equals("char")) {
+                return new CharacterType();
             } else {
                 return new FloatType(size);
             }
@@ -484,7 +509,7 @@ public class CppLanguage extends LanguageParser {
         }
         expressions.add((Expression) fromTSNode(tsRight));
 
-        return new ExpressionSequence(expressions);
+        return new CommaExpression(expressions);
     }
 
     @NotNull
@@ -495,9 +520,17 @@ public class CppLanguage extends LanguageParser {
         return new TernaryOperator(condition, consequence, alternative);
     }
 
+    public Expression sanitizeFromStd(Expression expr) {
+        if (expr instanceof QualifiedIdentifier qual && qual.getScope().equalsIdentifier("std")) {
+            return qual.getMember();
+        }
+        return expr;
+    }
+
     @NotNull
     private Node fromCallExpression(@NotNull TSNode node) {
         Expression functionName = (Expression) fromTSNode(node.getChildByFieldName("function"));
+        Expression clearFunctionName = sanitizeFromStd(functionName);
 
         TSNode tsArguments = node.getChildByFieldName("arguments");
         List<Expression> arguments = new ArrayList<>();
@@ -507,7 +540,13 @@ public class CppLanguage extends LanguageParser {
             arguments.add(argument);
         }
 
-        if (functionName.toString().equals("pow") && arguments.size() == 2) {
+        if (functionName instanceof ParenthesizedExpression p
+                && p.getExpression() instanceof SimpleIdentifier ident
+                && arguments.size() == 1) {
+            return new CastTypeExpression(new Class(ident), arguments.getFirst());
+        }
+
+        if (clearFunctionName.toString().equals("pow") && arguments.size() == 2) {
             return new PowOp(arguments.getFirst(), arguments.getLast());
         }
 
@@ -520,6 +559,58 @@ public class CppLanguage extends LanguageParser {
         if (functionName instanceof MemberAccess memAccess) {
             return new MethodCall(memAccess.getExpression(), memAccess.getMember(), arguments);
         }
+
+        if (clearFunctionName.toString().equals("printf")) {
+            return new FormatPrint(arguments.getFirst(), arguments.subList(1, arguments.size()).toArray(new Expression[0]));
+        }
+
+        if (functionName.toString().equals("scanf") || clearFunctionName.toString().equals("scanf_s")) {
+            return new FormatInput(arguments.getFirst(), arguments.subList(1, arguments.size()).toArray(new Expression[0]));
+        }
+
+        if ((clearFunctionName.toString().equals("puts") || clearFunctionName.toString().equals("puts_s")) && arguments.size() == 1) {
+            return new PrintValues(arguments,
+                    StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
+                    StringLiteral.fromUnescaped("", StringLiteral.Type.NONE));
+        }
+
+        if (clearFunctionName.toString().equals("gets") || clearFunctionName.toString().equals("gets_s")) {
+            return new PointerInputCommand(arguments.getFirst(), arguments.subList(1, arguments.size()));
+        }
+
+        if ((clearFunctionName.toString().equals("malloc") || clearFunctionName.toString().equals("сalloc") ||
+                clearFunctionName.toString().equals("_malloc") || clearFunctionName.toString().equals("_сalloc"))
+                && arguments.size() == 1) {
+            Type foundType = null;
+            Expression count = new IntegerLiteral(1);
+            for (Expression arg : arguments) {
+                if (arg instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
+                    foundType = type;
+                } else if (arg instanceof MulOp mulOp) {
+                    if (mulOp.getLeft() instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
+                        foundType = type;
+                    }
+                    if (!(mulOp.getRight() instanceof SizeofExpression)) {
+                        count = mulOp.getRight();
+                    }
+
+                    if (mulOp.getRight() instanceof SizeofExpression sizeOf && sizeOf.getExpression() instanceof Type type) {
+                        foundType = type;
+                    }
+                    if (!(mulOp.getLeft() instanceof SizeofExpression)) {
+                        count = mulOp.getLeft();
+                    }
+                }
+            }
+            if (foundType != null) {
+                return new MemoryAllocationCall(foundType, count, functionName.toString().equals("сalloc"));
+            }
+        }
+
+        if (functionName.toString().equals("free") && arguments.size() == 1) {
+            return new MemoryFreeCall(arguments.getFirst());
+        }
+
         return new FunctionCall(functionName, arguments);
     }
 
@@ -563,9 +654,15 @@ public class CppLanguage extends LanguageParser {
 
     @NotNull
     private Node fromBinaryExpression(@NotNull TSNode node) {
+        if (binaryRecursiveFlag == -1) {
+            binaryRecursiveFlag = node.getEndByte();
+        }
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("left"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("right"));
         TSNode operator = node.getChildByFieldName("operator");
+        if (binaryRecursiveFlag == node.getEndByte()) {
+            binaryRecursiveFlag = -1;
+        }
 
         return switch (getCodePiece(operator)) {
             case "+" -> new AddOp(left, right);
@@ -617,7 +714,23 @@ public class CppLanguage extends LanguageParser {
             case "&" -> new BitwiseAndOp(left, right);
             case "|" -> new BitwiseOrOp(left, right);
             case "^" -> new XorOp(left, right);
-            case "<<" -> new LeftShiftOp(left, right);
+            case "<<" -> {
+                LeftShiftOp lshift = new LeftShiftOp(left, right);
+                if (binaryRecursiveFlag == -1) {
+                    Expression fName = lshift.getLeftmost();
+                    List<Expression> exprs = lshift.getRecursivePlainOperands();
+                    boolean isEndl = sanitizeFromStd(exprs.getLast()).equalsIdentifier("endl");
+                    if (sanitizeFromStd(fName).equalsIdentifier("cout")) {
+                        yield new PrintValues(exprs.subList(1, exprs.size() - (isEndl ? 1 : 0)),
+                                StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
+                                StringLiteral.fromUnescaped(isEndl ? "\n" : "", StringLiteral.Type.NONE)
+                        );
+                    } else if (sanitizeFromStd(fName).equalsIdentifier("cin")) {
+                        yield new InputCommand(exprs.subList(1, exprs.size()));
+                    }
+                }
+                yield lshift;
+            }
             case ">>" -> new RightShiftOp(left, right);
             case "<=>" -> new ThreeWayComparisonOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
@@ -794,10 +907,20 @@ public class CppLanguage extends LanguageParser {
             default -> throw new IllegalStateException("Unexpected augmented assignment type: " + operatorType);
         };
 
-        // Если только одно выражение и присвоение указателю, то нет смысла что-либо присваивать
-        if (left instanceof PointerUnpackOp
-                && getConfigParameter("expressionMode").getBooleanValue()) {
-            return right;
+        if (left instanceof PointerUnpackOp ptrOp) {
+            if (ptrOp.getArgument() instanceof ParenthesizedExpression p && p.getExpression() instanceof AddOp binOp) {
+                Expression leftmost = binOp.getLeft();
+                List<Expression> args = new ArrayList<>();
+                args.add(binOp.getRight());
+                while (leftmost instanceof AddOp op) {
+                    leftmost = op.getLeft();
+                    args.add(op.getRight());
+                }
+                left = new IndexExpression(leftmost, BinaryExpression.
+                        fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class), true);
+            } else if (getConfigParameter("expressionMode").getBooleanValue()) {
+                return right;
+            }
         }
 
         return new AssignmentExpression(left, right, augmentedAssignmentOperator);

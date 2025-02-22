@@ -4,6 +4,7 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -17,9 +18,12 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.types.NoReturn;
@@ -57,6 +61,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case SizeofExpression sizeOf -> serialize(sizeOf);
             case Shape shape -> serialize(shape);
             case ProgramEntryPoint entryPoint -> serialize(entryPoint);
+            case DefinitionArgument defArg -> serialize(defArg);
             case CastTypeExpression castType -> serialize(castType);
             default -> serializeDefault(node);
         };
@@ -64,6 +69,13 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             result.values.put("assignedValueTag", node.getAssignedValueTag());
         }
         return result;
+    }
+
+    public SerializedNode serialize(DefinitionArgument defArg) {
+        return new SerializedNode("DefinitionArgument", new HashMap<>() {{
+            put("name", serialize(defArg.getName()));
+            put("value", serialize(defArg.getInitialExpression()));
+        }});
     }
 
     public SerializedNode serialize(SizeofExpression sizeOf) {
@@ -226,9 +238,16 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
                 if (p.separator != null) put("separator", serialize(p.separator));
                 if (p.end != null) put("end", serialize(p.end));
             }
+            if (call instanceof FormatPrint p) {
+                put("formatString", serialize(p.getFormatString()));
+            }
         }}, new HashMap<>() {{
-            if (call instanceof PrintCommand || call instanceof InputCommand) {
+            if (call instanceof PrintCommand || call instanceof InputCommand
+                    || call instanceof MemoryAllocationCall || call instanceof MemoryFreeCall) {
                 put("spec", call.getClass().getSimpleName());
+            }
+            if (call instanceof MemoryAllocationCall m) {
+                put("clearAlloc", m.isClearAllocation());
             }
         }});
     }
@@ -324,6 +343,8 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
         return new SerializedNode("IndexExpression", new HashMap<>() {{
             put("expr", serialize(index.getExpr()));
             put("index", serialize(index.getIndex()));
+        }}, new HashMap<>() {{
+            put("preferPointers", index.isPreferPointerRepresentation());
         }});
     }
 
@@ -359,7 +380,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     }
 
     public SerializedNode serialize(ExpressionSequence seq) {
-        return new SerializedNode("ExpressionSequence", new HashMap<>() {{
+        return new SerializedNode(seq.getClass().getSimpleName(), new HashMap<>() {{
             put("exprs", serialize(seq.getExpressions()));
         }});
     }

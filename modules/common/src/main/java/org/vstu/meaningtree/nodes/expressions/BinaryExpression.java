@@ -4,6 +4,8 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 abstract public class BinaryExpression extends Expression {
@@ -45,6 +47,34 @@ abstract public class BinaryExpression extends Expression {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new MeaningTreeException(e);
         }
+    }
+
+    public Expression getLeftmost() {
+        Expression expr = this;
+        while (expr.getClass().equals(this.getClass())) {
+            expr = ((BinaryExpression)expr).getLeft();
+        }
+        return expr;
+    }
+
+    public List<Expression> getRecursivePlainOperands() {
+        ArrayList<Expression> exprs = new ArrayList<>();
+        exprs.add(this.getRight());
+        Expression expr = this.getLeft();
+        while (expr.getClass().equals(this.getClass())) {
+            exprs.add(((BinaryExpression)expr).getRight());
+            expr = ((BinaryExpression)expr).getLeft();
+        }
+        exprs.add(expr);
+        return exprs.reversed();
+    }
+
+    public Expression getRightmost() {
+        Expression expr = this;
+        while (expr.getClass().equals(this.getClass())) {
+            expr = ((BinaryExpression)expr).getRight();
+        }
+        return expr;
     }
 
     @Override

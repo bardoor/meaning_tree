@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
@@ -15,6 +16,8 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.DictionaryLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.PlainCollectionLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
@@ -37,7 +40,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class CppTokenizer extends LanguageTokenizer {
-    private static final List<String> stopNodes = List.of("user_defined_literal", "char_literal");
+    private static final List<String> stopNodes = List.of("user_defined_literal", "char_literal", "string_literal");
     private Set<Long> valueSetNodes = new HashSet<>();
 
     protected static final Map<String, OperatorToken> operators = new HashMap<>() {{
@@ -54,6 +57,15 @@ public class CppTokenizer extends LanguageTokenizer {
         put("CALL_(", braces.getFirst());
         put("CALL_)", braces.getLast());
 
+        List<OperatorToken> collection = OperatorToken.makeComplex(2,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"{", "}"},
+                new TokenType[] {TokenType.INITIALIZER_LIST_OPENING_BRACE, TokenType.INITIALIZER_LIST_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("{", collection.getFirst());
+        put("}", collection.getLast());
+
         List<OperatorToken> subscript = OperatorToken.makeComplex(2,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
                 new String[] {"[", "]"},
@@ -64,11 +76,11 @@ public class CppTokenizer extends LanguageTokenizer {
         put("]", subscript.getLast());
 
         put("->", new OperatorToken("->", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
-        put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
-        put("--", new OperatorToken("--", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
-        put("++U", new OperatorToken("++", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.RIGHT));
-        put("--U", new OperatorToken("--", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.RIGHT));
+        put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));
+        put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.LEFT));
+        put("--", new OperatorToken("--", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.LEFT));
+        put("++U", new OperatorToken("++", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
+        put("--U", new OperatorToken("--", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("UMINUS", new OperatorToken("-", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("UPLUS", new OperatorToken("+", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("POINTER_&", new OperatorToken("&", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
@@ -128,7 +140,7 @@ public class CppTokenizer extends LanguageTokenizer {
         put("^=", new OperatorToken("^=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
         put("|=", new OperatorToken("|=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
 
-        put(",", new OperatorToken(",", TokenType.COMMA, 17, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(",", new OperatorToken(",", TokenType.COMMA, 17, OperatorAssociativity.LEFT, OperatorArity.BINARY, true));
     }};
 
 
@@ -271,6 +283,8 @@ public class CppTokenizer extends LanguageTokenizer {
             tokenType = TokenType.CLOSING_BRACE;
         } else if (type.equals(";")) {
             tokenType = TokenType.SEPARATOR;
+        } else if (type.equals(",")) {
+            tokenType = TokenType.COMMA;
         } else if (List.of("identifier", "namespace_identifier", "type_identifier", "field_identifier").contains(type)) {
             if (!parent.isNull() && parent.getType().equals("call_expression")) {
                 tokenType = TokenType.CALLABLE_IDENTIFIER;
@@ -309,6 +323,8 @@ public class CppTokenizer extends LanguageTokenizer {
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case NewExpression newExpr -> tokenizeNew(newExpr, result);
             case CastTypeExpression castType -> tokenizeCast(castType, result);
+            case PlainCollectionLiteral plain -> tokenizePlainCollectionLiteral(plain, result);
+            case DictionaryLiteral dict -> tokenizeDictCollectionLiteral(dict, result);
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
             }
@@ -332,26 +348,44 @@ public class CppTokenizer extends LanguageTokenizer {
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
             case AssignmentExpression assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                result.add(getOperatorByTokenName("="));
-                tokenizeExtended(assignment.getRValue(), result);
+                OperatorToken opTok = getOperatorByTokenName("=");
+                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
+                result.add(opTok);
+                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
+                group1.setMetadata(opTok, OperandPosition.LEFT);
+                group2.setMetadata(opTok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    opTok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
             }
             case AssignmentStatement assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                result.add(getOperatorByTokenName("="));
-                tokenizeExtended(assignment.getRValue(), result);
+                OperatorToken opTok = getOperatorByTokenName("=");
+                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
+                result.add(opTok);
+                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
+                group1.setMetadata(opTok, OperandPosition.LEFT);
+                group2.setMetadata(opTok, OperandPosition.RIGHT);
                 result.add(new Token(";", TokenType.SEPARATOR));
+                if (assignment.getAssignedValueTag() != null) {
+                    opTok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
             }
             case ExpressionSequence sequence -> {
                 List<Expression> exprs = sequence.getExpressions();
                 if (!sequence.getExpressions().isEmpty()) {
                     if (sequence.getExpressions().size() == 1) {
-                        tokenizeExtended(sequence.getExpressions().getFirst());
+                        tokenizeExtended(sequence.getExpressions().getFirst(), result);
                     } else {
                         int i;
                         OperatorToken op;
                         TokenGroup op1 = tokenizeExtended(exprs.getFirst(), result);
                         op = getOperatorByTokenName(",");
+                        if (sequence.getAssignedValueTag() != null) {
+                            op.assignValue(sequence.getAssignedValueTag());
+                            valueSetNodes.add(sequence.getId());
+                        }
                         result.add(op);
                         TokenGroup op2 = tokenizeExtended(exprs.get(1), result);
                         op1.setMetadata(op, OperandPosition.LEFT);
@@ -365,6 +399,8 @@ public class CppTokenizer extends LanguageTokenizer {
                             op = newOp;
                         }
                     }
+                } else {
+                    throw new UnsupportedViewingException("Unsupported expression sequence in index");
                 }
             }
             case ExpressionStatement exprStmt -> {
@@ -379,7 +415,7 @@ public class CppTokenizer extends LanguageTokenizer {
         }
         int posStop = result.size();
         TokenGroup resultGroup =  new TokenGroup(posStart, posStop, result);
-        if (node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
+        if (!(node instanceof ParenthesizedExpression) && node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
             resultGroup.assignValue(node.getAssignedValueTag());
             valueSetNodes.add(node.getId());
         }
@@ -393,6 +429,10 @@ public class CppTokenizer extends LanguageTokenizer {
         result.add(op);
         TokenGroup arg = tokenizeExtended(cast.getValue(), result);
         arg.setMetadata(op, OperandPosition.RIGHT);
+        if (cast.getAssignedValueTag() != null) {
+            arg.assignValue(cast.getAssignedValueTag());
+            valueSetNodes.add(cast.getId());
+        }
     }
 
     private void tokenizeCompoundComparison(CompoundComparison comparison, TokenList result) {
@@ -419,14 +459,19 @@ public class CppTokenizer extends LanguageTokenizer {
         TokenGroup centerOperand = tokenizeExtended(subscript.getIndex(), result);
         centerOperand.setMetadata(open, OperandPosition.CENTER);
         result.add(getOperatorByTokenName("]"));
+        if (subscript.getAssignedValueTag() != null) {
+            open.assignValue(subscript.getAssignedValueTag());
+            valueSetNodes.add(subscript.getId());
+        }
     }
 
     private void tokenizeCall(FunctionCall call, TokenList result) {
         TokenGroup complexName = null;
         OperatorToken tok = getOperatorByTokenName("CALL_(");
+        tok.additionalOpType = call instanceof MethodCall ? OperatorType.METHOD_CALL : OperatorType.OTHER;
         if (call instanceof MethodCall method) {
             complexName = tokenizeExtended(method.getObject(), result);
-            result.add(new Token("." + ((SimpleIdentifier)method.getFunctionName()).getName(), TokenType.CALLABLE_IDENTIFIER));
+            tok = tok.clone("." + ((SimpleIdentifier)method.getFunctionName()).getName() + "(");
         } else {
             if (!(call.getFunction() instanceof SimpleIdentifier)) {
                 throw new UnsupportedParsingException("This language supports only simple identifier as function name");
@@ -437,7 +482,7 @@ public class CppTokenizer extends LanguageTokenizer {
         result.add(tok);
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(new Token(",", TokenType.SEPARATOR));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
@@ -445,6 +490,34 @@ public class CppTokenizer extends LanguageTokenizer {
         if (call.getAssignedValueTag() != null) {
             tok.assignValue(call.getAssignedValueTag());
             valueSetNodes.add(call.getId());
+        }
+    }
+
+    private void tokenizePlainCollectionLiteral(PlainCollectionLiteral literal, TokenList result) {
+        OperatorToken tok = getOperatorByTokenName("{");
+        for (Expression item : literal.getList()) {
+            tokenizeExtended(item, result);
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
+        }
+        if (!literal.getList().isEmpty()) result.removeLast();
+        result.add(getOperatorByTokenName("}"));
+        if (literal.getAssignedValueTag() != null) {
+            tok.assignValue(literal.getAssignedValueTag());
+            valueSetNodes.add(literal.getId());
+        }
+    }
+
+    private void tokenizeDictCollectionLiteral(DictionaryLiteral literal, TokenList result) {
+        OperatorToken tok = getOperatorByTokenName("{");
+        for (Expression item : literal.asPairsListLiteral()) {
+            tokenizeExtended(item, result);
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
+        }
+        if (!literal.getDictionary().isEmpty()) result.removeLast();
+        result.add(getOperatorByTokenName("}"));
+        if (literal.getAssignedValueTag() != null) {
+            tok.assignValue(literal.getAssignedValueTag());
+            valueSetNodes.add(literal.getId());
         }
     }
 
@@ -491,35 +564,47 @@ public class CppTokenizer extends LanguageTokenizer {
             case ObjectNewExpression objNew -> {
                 TokenList lst = tokenizeExtended(newExpr.getType());
                 String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
-                OperatorToken newTok = getOperatorByTokenName("new").clone("new" + typeName + "(");
+                OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "(");
                 result.add(newTok);
                 for (Expression expr : objNew.getConstructorArguments()) {
                     TokenGroup operand = tokenizeExtended(expr, result);
-                    result.add(getOperatorByTokenName(","));
+                    result.add(new Token(",", TokenType.COMMA).setOwner(newTok));
                     operand.setMetadata(newTok, OperandPosition.CENTER);
                 }
+                if (!objNew.getConstructorArguments().isEmpty()) result.removeLast();
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
+                if (newExpr.getAssignedValueTag() != null) {
+                    newTok.assignValue(newExpr.getAssignedValueTag());
+                    valueSetNodes.add(newExpr.getId());
+                }
             }
             case ArrayNewExpression arrNew -> {
-                TokenList lst = tokenizeExtended(newExpr.getType());
-                String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
-                OperatorToken newTok = getOperatorByTokenName("new").clone("new" + typeName + "[");
-                result.add(newTok);
-                for (int i = 0; i < arrNew.getShape().getDimensionCount(); i++) {
-                    if (arrNew.getShape().getDimension(i) != null) {
-                        TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
-                        operand.setMetadata(newTok, OperandPosition.CENTER);
+                if (arrNew.getInitializer() == null) {
+                    TokenList lst = tokenizeExtended(newExpr.getType());
+                    String typeName = lst.stream().map((Token t) -> t.value).collect(Collectors.joining(" "));
+                    OperatorToken newTok = getOperatorByTokenName("new").clone("new " + typeName + "[");
+                    if (arrNew.getAssignedValueTag() != null) {
+                        newTok.assignValue(arrNew.getAssignedValueTag());
+                        valueSetNodes.add(arrNew.getId());
                     }
-                    result.add(new Token("][", TokenType.SEPARATOR));
+                    result.add(newTok);
+                    for (int i = 0; i < arrNew.getShape().getDimensionCount(); i++) {
+                        if (arrNew.getShape().getDimension(i) != null) {
+                            TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
+                            operand.setMetadata(newTok, OperandPosition.CENTER);
+                        }
+                        result.add(new Token("][", TokenType.SEPARATOR));
+                    }
+                    result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
                 }
-                result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
                 if (arrNew.getInitializer() != null) {
-                    result.add(new Token("{", TokenType.COMPOUND_OPENING_BRACE));
+                    OperatorToken tok = getOperatorByTokenName("{");
+                    result.add(tok);
                     for (Expression expr : arrNew.getInitializer().getValues()) {
                         tokenizeExtended(expr, result);
-                        result.add(getOperatorByTokenName(","));
+                        result.add(new Token(",", TokenType.COMMA).setOwner(tok));
                     }
-                    result.add(new Token("}", TokenType.COMPOUND_OPENING_BRACE));
+                    result.add(getOperatorByTokenName("}"));
                 }
             }
             default -> throw new MeaningTreeException("New expression of unknown type");
@@ -552,7 +637,7 @@ public class CppTokenizer extends LanguageTokenizer {
             default -> null;
         };
         if (binOp instanceof ContainsOp) {
-            tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()));
+            tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()), result);
             return;
         }
         if (binOp instanceof InstanceOfOp ins) {
@@ -567,7 +652,7 @@ public class CppTokenizer extends LanguageTokenizer {
             result.add(getOperatorByTokenName("CALL_)"));
             OperatorToken eq = getOperatorByTokenName("!=");
             op.setMetadata(eq, OperandPosition.LEFT);
-            OperandToken nullptr = new OperandToken("NULL", TokenType.IDENTIFIER);
+            OperandToken nullptr = new OperandToken("nullptr", TokenType.IDENTIFIER);
             nullptr.setMetadata(eq, OperandPosition.RIGHT);
             return;
         }

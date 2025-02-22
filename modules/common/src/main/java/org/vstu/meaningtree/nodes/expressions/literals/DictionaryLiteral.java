@@ -3,13 +3,13 @@ package org.vstu.meaningtree.nodes.expressions.literals;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.nodes.expressions.Literal;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.SequencedMap;
 
-public class DictionaryLiteral extends Literal {
+public class DictionaryLiteral extends CollectionLiteral {
     private SequencedMap<Expression, Expression> _content;
     private @Nullable Type keyTypeHint;
     private @Nullable Type valueTypeHint;
@@ -65,5 +65,10 @@ public class DictionaryLiteral extends Literal {
         if (keyTypeHint != null) obj.keyTypeHint = keyTypeHint.clone();
         if (valueTypeHint != null) obj.valueTypeHint = valueTypeHint.clone();
         return obj;
+    }
+
+    public List<UnmodifiableListLiteral> asPairsListLiteral() {
+        return getDictionary().entrySet().stream().map(entry ->
+                new UnmodifiableListLiteral(entry.getKey(), entry.getValue())).toList();
     }
 }

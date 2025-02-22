@@ -1,6 +1,8 @@
 package org.vstu.meaningtree.languages;
 
 import org.treesitter.TSNode;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
@@ -14,6 +16,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.*;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
@@ -22,8 +25,7 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
-import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
-import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
+import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.utils.NodeLabel;
@@ -46,6 +48,15 @@ public class PythonTokenizer extends LanguageTokenizer {
         put("CALL_(", braces.getFirst());
         put("CALL_)", braces.getLast());
 
+        List<OperatorToken> collection = OperatorToken.makeComplex(2,
+                OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
+                new String[] {"[", "]"},
+                new TokenType[] {TokenType.INITIALIZER_LIST_OPENING_BRACE, TokenType.INITIALIZER_LIST_CLOSING_BRACE},
+                new OperatorTokenPosition[]{OperatorTokenPosition.AROUND, OperatorTokenPosition.AROUND});
+
+        put("LIST_OPEN", collection.getFirst());
+        put("LIST_CLOSE", collection.getLast());
+
         List<OperatorToken> subscript = OperatorToken.makeComplex(2,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
                 new String[] {"[", "]"},
@@ -55,7 +66,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         put("[", subscript.getFirst());
         put("]", subscript.getLast());
 
-        put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));
         put("await", new OperatorToken("await", TokenType.OPERATOR, 3, OperatorAssociativity.LEFT, OperatorArity.UNARY, false));
         put("**", new OperatorToken("**", TokenType.OPERATOR, 4, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Возведение в степень
         put("~", new OperatorToken("~", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.UNARY, false)); // Побитовая инверсия
@@ -96,6 +107,20 @@ public class PythonTokenizer extends LanguageTokenizer {
 
         put("lambda", new OperatorToken("lambda", TokenType.KEYWORD, 17, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Лямбда-выражения
         put(":=", new OperatorToken(":=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Моржовый оператор
+        put("=", new OperatorToken("=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // сделано ради CompPrehension
+        put("+=", new OperatorToken("+=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("-=", new OperatorToken("-=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("*=", new OperatorToken("*=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("/=", new OperatorToken("/=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("//=", new OperatorToken("//=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("@=", new OperatorToken("@=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("%=", new OperatorToken("%=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("**=", new OperatorToken("**=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put(">>=", new OperatorToken(">>=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("<<=", new OperatorToken("<<=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("&=", new OperatorToken("&=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("^=", new OperatorToken("^=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
+        put("|=", new OperatorToken("|=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
     }};
 
 
@@ -248,11 +273,17 @@ public class PythonTokenizer extends LanguageTokenizer {
     @Override
     public TokenList tokenizeExtended(Node node) {
         TokenList result = new TokenList();
+        if (node instanceof AssignmentExpression assign) {
+            node = assign.toStatement();
+        }
         tokenizeExtended(node, result);
         return result;
     }
 
     public TokenGroup tokenizeExtended(Node node, TokenList result) {
+        if (node == null) {
+            throw new MeaningTreeException("Null node passed");
+        }
         if (node.hasLabel(NodeLabel.DUMMY)) {
             return new TokenGroup(0, 0, result);
         }
@@ -263,23 +294,26 @@ public class PythonTokenizer extends LanguageTokenizer {
             case PointerPackOp packOp -> tokenizeExtended(packOp.getArgument(), result);
             case PointerUnpackOp unpackOp -> tokenizeExtended(unpackOp.getArgument(), result);
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
-            case SizeofExpression sizeOf -> tokenizeCall(sizeOf.toCall(), result);
+            case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
             case FunctionCall call -> tokenizeCall(call, result);
+            case ObjectNewExpression newExpr -> tokenizeNewExpr(newExpr, result);
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
+            case PlainCollectionLiteral plain -> tokenizePlainCollectionLiteral(plain, result);
+            case DictionaryLiteral dct -> tokenizeDictCollectionLiteral(dct, result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
             }
             case QualifiedIdentifier ident -> {
-                tokenizeExtended(ident.getScope());
+                tokenizeExtended(ident.getScope(), result);
                 result.add(getOperatorByTokenName("."));
-                tokenizeExtended(ident.getMember());
+                tokenizeExtended(ident.getMember(), result);
             }
             case ScopedIdentifier ident -> {
                 for (SimpleIdentifier simple : ident.getScopeResolution()) {
-                    tokenizeExtended(simple);
+                    tokenizeExtended(simple, result);
                     result.add(getOperatorByTokenName("."));
                 }
                 if (!ident.getScopeResolution().isEmpty()) {
@@ -291,16 +325,45 @@ public class PythonTokenizer extends LanguageTokenizer {
                 tokenizeExtended(paren.getExpression(), result);
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
-            case AssignmentExpression assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                result.add(getOperatorByTokenName(":="));
-                tokenizeExtended(assignment.getRValue(), result);
-            }
             case AssignmentStatement assignment -> {
-                tokenizeExtended(assignment.getLValue(), result);
-                result.add(new Token("=", TokenType.STATEMENT_TOKEN));
-                tokenizeExtended(assignment.getRValue(), result);
+                TokenGroup grp1 = tokenizeExtended(assignment.getLValue(), result);
+                String token = assignment.getAugmentedOperator().getValue();
+                OperatorToken tok = getOperatorByTokenName(token);
+                result.add(tok);
+                TokenGroup grp2;
+                if (assignment.getRValue() instanceof AssignmentExpression assign) {
+                    grp2 = tokenizeExtended(assign.toStatement(), result);
+                } else {
+                    grp2 = tokenizeExtended(assignment.getRValue(), result);
+                }
+                grp1.setMetadata(tok, OperandPosition.LEFT);
+                grp2.setMetadata(tok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    tok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
             }
+            case AssignmentExpression assignment -> {
+                if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
+                    throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
+                }
+                TokenGroup grp1 = tokenizeExtended(assignment.getLValue(), result);
+                OperatorToken tok = getOperatorByTokenName(":=");
+                result.add(tok);
+                TokenGroup grp2;
+                if (assignment.getRValue() instanceof AssignmentExpression assign) {
+                    grp2 = tokenizeExtended(assign.toStatement(), result);
+                } else {
+                    grp2 = tokenizeExtended(assignment.getRValue(), result);
+                }
+                grp1.setMetadata(tok, OperandPosition.LEFT);
+                grp2.setMetadata(tok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    tok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
+            }
+            case CommaExpression comma -> throw new UnsupportedViewingException("Comma is unsupported in this language");
             case ExpressionSequence sequence -> {
                 for (Expression expr : sequence.getExpressions()) {
                     tokenizeExtended(expr, result);
@@ -321,11 +384,68 @@ public class PythonTokenizer extends LanguageTokenizer {
         }
         int posStop = result.size();
         TokenGroup resultGroup =  new TokenGroup(posStart, posStop, result);
-        if (node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
+        if (!(node instanceof ParenthesizedExpression) && node.getAssignedValueTag() != null && !valueSetNodes.contains(node.getId())) {
             resultGroup.assignValue(node.getAssignedValueTag());
             valueSetNodes.add(node.getId());
         }
         return resultGroup;
+    }
+
+    private void tokenizePlainCollectionLiteral(PlainCollectionLiteral literal, TokenList result) {
+        String[] tokens = switch (literal) {
+            case SetLiteral ignored -> new String[] {"{", "}"};
+            case UnmodifiableListLiteral ignored -> new String[] {"(", ")"};
+            default -> new String[] {"[", "]"};
+        };
+        OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone(tokens[0]);
+        for (Expression item : literal.getList()) {
+            tokenizeExtended(item, result);
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
+        }
+        if (literal.getList().isEmpty() && literal instanceof UnmodifiableListLiteral) {
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
+        }
+        if (!literal.getList().isEmpty() && !(literal instanceof UnmodifiableListLiteral)) result.removeLast();
+        result.add(getOperatorByTokenName("LIST_CLOSE").clone(tokens[1]));
+        if (literal.getAssignedValueTag() != null) {
+            tok.assignValue(literal.getAssignedValueTag());
+            valueSetNodes.add(literal.getId());
+        }
+    }
+
+    private void tokenizeDictCollectionLiteral(DictionaryLiteral literal, TokenList result) {
+        OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone("{");
+        for (Map.Entry<Expression, Expression> item : literal.getDictionary().entrySet()) {
+            tokenizeExtended(item.getKey(), result);
+            result.add(new Token(":", TokenType.SEPARATOR).setOwner(tok));
+            tokenizeExtended(item.getValue(), result);
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
+        }
+        if (!literal.getDictionary().isEmpty()) result.removeLast();
+        result.add(getOperatorByTokenName("LIST_CLOSE").clone("}"));
+        if (literal.getAssignedValueTag() != null) {
+            tok.assignValue(literal.getAssignedValueTag());
+            valueSetNodes.add(literal.getId());
+        }
+    }
+
+
+    private void tokenizeNewExpr(ObjectNewExpression newExpr, TokenList result) {
+        TokenGroup complexName = tokenizeExtended(newExpr.getType(), result);
+        OperatorToken tok = getOperatorByTokenName("CALL_(");
+        if (complexName != null) complexName.setMetadata(tok, OperandPosition.LEFT);
+        result.add(tok);
+        for (Expression expr : newExpr.getConstructorArguments()) {
+            TokenGroup operand = tokenizeExtended(expr, result);
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
+            operand.setMetadata(tok, OperandPosition.CENTER);
+        }
+        if (!newExpr.getConstructorArguments().isEmpty()) result.removeLast();
+        result.add(getOperatorByTokenName("CALL_)"));
+        if (newExpr.getAssignedValueTag() != null) {
+            tok.assignValue(newExpr.getAssignedValueTag());
+            valueSetNodes.add(newExpr.getId());
+        }
     }
 
     private void tokenizeInstanceOf(InstanceOfOp ins, TokenList result) {
@@ -344,7 +464,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         result.add(tok);
         for (Expression expr : call.getArguments()) {
             TokenGroup operand = tokenizeExtended(expr, result);
-            result.add(new Token(",", TokenType.COMMA));
+            result.add(new Token(",", TokenType.COMMA).setOwner(tok));
             operand.setMetadata(tok, OperandPosition.CENTER);
         }
         if (!call.getArguments().isEmpty()) result.removeLast();
@@ -363,6 +483,28 @@ public class PythonTokenizer extends LanguageTokenizer {
             case UnaryPlusOp op -> "UPLUS";
             default -> null;
         };
+
+        switch (unaryOp) {
+            case PrefixDecrementOp prefixDecrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new SubOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            case PostfixDecrementOp postfixDecrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new SubOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            case PrefixIncrementOp prefixIncrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new AddOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            case PostfixIncrementOp postfixIncrementOp -> {
+                tokenizeExtended(new AssignmentExpression(unaryOp.getArgument(), new AddOp(unaryOp.getArgument(), new IntegerLiteral(1))), result);
+                return;
+            }
+            default -> {
+            }
+        }
+
         if (operator == null) {
             String s = viewer.toString(unaryOp);
             result.addAll(tokenize(s));
@@ -387,7 +529,12 @@ public class PythonTokenizer extends LanguageTokenizer {
             case DivOp op -> "/";
             case LtOp op -> "<";
             case GtOp op -> ">";
-            case NotEqOp op -> "!=";
+            case NotEqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is not";
+                }
+                yield "!=";
+            }
             case GeOp op -> ">=";
             case PowOp op -> "**";
             case LeOp op -> "<=";
@@ -399,7 +546,12 @@ public class PythonTokenizer extends LanguageTokenizer {
             case XorOp op -> "^";
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
-            case EqOp op -> "==";
+            case EqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is";
+                }
+                yield "==";
+            }
             case ModOp op -> "%";
             case MatMulOp op -> "@";
             case ReferenceEqOp op -> op.isNegative() ? "is" : "is not";
@@ -470,6 +622,10 @@ public class PythonTokenizer extends LanguageTokenizer {
                 default -> throw new IllegalStateException("Unexpected value: " + comparison.getComparisons().get(i));
             };
             OperatorToken token = getOperatorByTokenName(operator);
+            if (comparison.getAssignedValueTag() != null) {
+                token.assignValue(comparison.getAssignedValueTag());
+                valueSetNodes.add(comparison.getId());
+            }
             result.add(token);
             if (i == 0) {
                 operand.setMetadata(token, OperandPosition.LEFT);
@@ -495,5 +651,9 @@ public class PythonTokenizer extends LanguageTokenizer {
         TokenGroup centerOperand = tokenizeExtended(subscript.getIndex(), result);
         centerOperand.setMetadata(open, OperandPosition.CENTER);
         result.add(getOperatorByTokenName("]"));
+        if (subscript.getAssignedValueTag() != null) {
+            open.assignValue(subscript.getAssignedValueTag());
+            valueSetNodes.add(subscript.getId());
+        }
     }
 }

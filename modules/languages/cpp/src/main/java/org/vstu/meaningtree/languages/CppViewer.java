@@ -7,6 +7,7 @@ import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
@@ -32,6 +33,9 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.io.*;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
@@ -50,6 +54,7 @@ import org.vstu.meaningtree.utils.NodeLabel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
@@ -76,6 +81,10 @@ public class CppViewer extends LanguageViewer {
             case IndexExpression indexExpression -> toStringIndexExpression(indexExpression);
             case ExpressionSequence commaExpression -> toStringCommaExpression(commaExpression);
             case TernaryOperator ternaryOperator -> toStringTernaryOperator(ternaryOperator);
+            case MemoryAllocationCall mAlloc -> toStringMemoryAllocation(mAlloc);
+            case MemoryFreeCall mFree -> toStringMemoryFree(mFree);
+            case InputCommand inputCommand -> toStringInput(inputCommand);
+            case PrintCommand formatInput -> toStringPrint(formatInput);
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
             case AssignmentExpression assignmentExpression -> toStringAssignmentExpression(assignmentExpression);
@@ -86,7 +95,7 @@ public class CppViewer extends LanguageViewer {
             case FloorDivOp floorDivOp -> toStringFloorDiv(floorDivOp);
             case UnaryExpression unaryExpression -> toStringUnaryExpression(unaryExpression);
             case BinaryExpression binaryExpression -> toStringBinaryExpression(binaryExpression);
-            case NullLiteral nullLit -> "NULL";
+            case NullLiteral nullLit -> "nullptr";
             case StringLiteral sl -> toStringStringLiteral(sl);
             case CharacterLiteral cl -> toStringCharLiteral(cl);
             case BoolLiteral bl -> bl.getValue() ? "true" : "false";
@@ -99,11 +108,48 @@ public class CppViewer extends LanguageViewer {
             case DeleteStatement del -> toStringDelete(del.toExpression()) + ";";
             case MemberAccess memAccess -> toStringMemberAccess(memAccess);
             case CompoundComparison cmpCmp -> toStringCompoundComparison(cmpCmp);
+            case DefinitionArgument defArg -> toString(defArg.getInitialExpression());
             case Comment cmnt -> toStringComment(cmnt);
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    private String toStringMemoryFree(MemoryFreeCall mFree) {
+        return String.format("free(%s)", toString(mFree.getArguments().getFirst()));
+    }
+
+    private String toStringMemoryAllocation(MemoryAllocationCall mAlloc) {
+        if (mAlloc.isClearAllocation()) {
+            return String.format("calloc(%s)", toString(new MulOp(mAlloc.getType(), mAlloc.getCount())));
+        }
+        return String.format("malloc(%s)", toString(new MulOp(mAlloc.getType(), mAlloc.getCount())));
+    }
+
+    private String toStringPrint(PrintCommand print) {
+        if (print instanceof FormatPrint fmt) {
+            if (fmt.getArguments().isEmpty()) {
+                return String.format("printf(%s)", toString(fmt.getFormatString()));
+            }
+            return String.format("printf(%s, %s)", toString(fmt.getFormatString()), toStringFunctionCallArgumentsList(fmt.getArguments()));
+        }
+        String res = String.format("std::cout << %s", print.getArguments().stream().map(this::toString).collect(Collectors.joining(" << ")));
+        if (print instanceof PrintValues pVal) {
+            assert pVal.separator != null;
+            res += pVal.separator.getUnescapedValue().equals("\n") ? "<< std::endl" : "";
+        }
+        return res;
+    }
+
+    private String toStringInput(InputCommand inputCommand) {
+        if (inputCommand instanceof FormatInput fmt) {
+            if (fmt.getArguments().isEmpty()) {
+                return String.format("scanf(%s)", toString(fmt.getFormatString()));
+            }
+            return String.format("scanf(%s, %s)", toString(fmt.getFormatString()), toStringFunctionCallArgumentsList(fmt.getArguments()));
+        }
+        return String.format("std::cin << %s", toString(inputCommand.getArguments().getFirst()));
     }
 
     private String toStringCharLiteral(CharacterLiteral cl) {
@@ -313,7 +359,11 @@ public class CppViewer extends LanguageViewer {
     private String toStringIndexExpression(@NotNull IndexExpression indexExpression) {
         String base = toString(indexExpression.getExpr());
         String indices = toString(indexExpression.getIndex());
-        return "%s[%s]".formatted(base, indices);
+        if (indexExpression.isPreferPointerRepresentation()) {
+            return "*(%s + %s)".formatted(base, indices);
+        } else {
+            return "%s[%s]".formatted(base, indices);
+        }
     }
 
     @NotNull
@@ -344,9 +394,11 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringFunctionCallArgumentsList(@NotNull List<Expression> arguments) {
+        if (arguments.isEmpty()) {
+            return "";
+        }
         StringBuilder builder = new StringBuilder();
 
-        builder.append("(");
 
         for (Expression argument : arguments) {
             builder
@@ -359,7 +411,6 @@ public class CppViewer extends LanguageViewer {
             builder.deleteCharAt(builder.length() - 1);
         }
 
-        builder.append(")");
 
         return builder.toString();
     }
@@ -367,7 +418,7 @@ public class CppViewer extends LanguageViewer {
     @NotNull
     private String toStringFunctionCall(@NotNull FunctionCall functionCall) {
         String functionName = toString(functionCall.getFunction());
-        return functionName + toStringFunctionCallArgumentsList(functionCall.getArguments());
+        return functionName + "(" + toStringFunctionCallArgumentsList(functionCall.getArguments()) + ")";
     }
 
     @NotNull
@@ -510,7 +561,7 @@ public class CppViewer extends LanguageViewer {
                 yield String.format("%s &", toStringType(ref.getTargetType()));
             }
             case DictionaryType dct -> String.format("std::map<%s, %s>", toStringType(dct.getKeyType()), toStringType(dct.getValueType()));
-            case ListType lst -> String.format("std::list<%s>", toStringType(lst.getItemType()));
+            case ListType lst -> String.format("std::vector<%s>", toStringType(lst.getItemType()));
             case ArrayType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
             case SetType set ->  String.format("std::set<%s>", toStringType(set.getItemType()));
             case StringType str -> "std::string"; // TODO: пока нет способа хорошо представить юникод-строки
@@ -588,7 +639,7 @@ public class CppViewer extends LanguageViewer {
             String neg = op.isNegative() ? "!=" : "==";
             return String.format("%s %s %s", toString(new PointerPackOp(op.getLeft())), neg, toString(new PointerPackOp(op.getRight())));
         } else if (binaryExpression instanceof InstanceOfOp op) {
-            return String.format("dynamic_cast<%s>(%s) != NULL", toString(op.getType()), toString(op.getLeft()));
+            return String.format("dynamic_cast<%s>(%s) != nullptr", toString(op.getType()), toString(op.getLeft()));
         } else if (binaryExpression instanceof FloorDivOp op) {
             return String.format("(long) (%s / %s)", toString(op.getLeft()), toString(op.getRight()));
         }

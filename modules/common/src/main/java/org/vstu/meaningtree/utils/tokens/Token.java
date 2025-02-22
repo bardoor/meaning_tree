@@ -1,10 +1,14 @@
 package org.vstu.meaningtree.utils.tokens;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Objects;
 
 public class Token {
     public final String value;
     public final TokenType type;
+
+    public Token belongsTo = null;
 
     protected static int idCounter = 0;
 
@@ -30,7 +34,7 @@ public class Token {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Token token = (Token) o;
-        return Objects.equals(value, token.value) && type == token.type && Objects.equals(assignedValue, token.assignedValue);
+        return Objects.equals(value, token.value) && type == token.type && belongsTo.equals(token.belongsTo) && Objects.equals(assignedValue, token.assignedValue);
     }
 
     /**
@@ -48,7 +52,7 @@ public class Token {
 
     @Override
     public int hashCode() {
-        return Objects.hash(value, type, assignedValue, id);
+        return Objects.hash(value, type, assignedValue, id, belongsTo);
     }
 
     public void assignValue(Object tag) {
@@ -59,6 +63,16 @@ public class Token {
         return assignedValue;
     }
 
+    public Token setOwner(Token t) {
+        this.belongsTo = t;
+        return this;
+    }
+
+    @Nullable
+    public Token belongsTo() {
+        return this.belongsTo;
+    }
+
     public int getId() {
         return id;
     }
@@ -66,12 +80,21 @@ public class Token {
     public Token clone() {
         Token copy = new Token(value, type);
         copy.assignValue(assignedValue);
+        copy.setOwner(belongsTo);
         return copy;
     }
 
     public Token clone(String newName) {
         Token copy = new Token(newName, type);
         copy.assignValue(assignedValue);
+        copy.setOwner(belongsTo);
+        return copy;
+    }
+
+    public OperandToken asOperand() {
+        OperandToken copy = new OperandToken(value, type);
+        copy.assignValue(assignedValue);
+        copy.setOwner(belongsTo);
         return copy;
     }
 }

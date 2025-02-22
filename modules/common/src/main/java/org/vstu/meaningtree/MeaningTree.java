@@ -38,6 +38,15 @@ public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info>
         return nodes;
     }
 
+    public Node findParentOfNode(Node node) {
+        for (Node.Info inf : this) {
+            if (inf.node().equals(node)) {
+                return inf.parent();
+            }
+        }
+        return null;
+    }
+
     public String generateDot() {
         return normalizeDot("graph MeaningTree {\ndpi=255;\n" + _rootNode.generateDot() + "}");
     }

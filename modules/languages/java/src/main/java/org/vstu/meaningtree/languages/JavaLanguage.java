@@ -72,8 +72,6 @@ import org.vstu.meaningtree.nodes.types.user.GenericClass;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 public class JavaLanguage extends LanguageParser {
@@ -93,9 +91,12 @@ public class JavaLanguage extends LanguageParser {
     @Override
     public TSTree getTSTree() {
         TSTree tree = _parser.parseString(null, _code);
+        /*
+        TODO: only for test
         try {
             tree.printDotGraphs(new File("TSTree.dot"));
         } catch (IOException e) { }
+        */
         return tree;
     }
 
@@ -106,7 +107,11 @@ public class JavaLanguage extends LanguageParser {
         if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
-        return new MeaningTree(fromTSNode(rootNode));
+        Node node = fromTSNode(rootNode);
+        if (node instanceof AssignmentExpression expr) {
+            node = expr.toStatement();
+        }
+        return new MeaningTree(node);
     }
 
     @Override
@@ -813,8 +818,8 @@ public class JavaLanguage extends LanguageParser {
             case "&=" -> AugmentedAssignmentOperator.BITWISE_AND;
             case "|=" -> AugmentedAssignmentOperator.BITWISE_OR;
             case "^=" -> AugmentedAssignmentOperator.BITWISE_XOR;
-            case "<<=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_LEFT;
-            case ">>=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_RIGHT;
+            case "<<=", "<<<=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_LEFT;
+            case ">>=", ">>>=" -> AugmentedAssignmentOperator.BITWISE_SHIFT_RIGHT;
             case "%=" -> AugmentedAssignmentOperator.MOD;
             default -> throw new IllegalStateException("Unexpected augmented assignment type: " + operatorType);
         };
@@ -1196,7 +1201,7 @@ public class JavaLanguage extends LanguageParser {
                         !(nodes[0] instanceof Expression) && getConfigParameter("expressionMode").getBooleanValue()
                         )
         ) {
-            throw new MeaningTreeException("Cannot parse the code as expression in expression mode");
+            throw new UnsupportedParsingException("Cannot parse the code as expression in expression mode");
         }
 
         */
@@ -1316,8 +1321,8 @@ public class JavaLanguage extends LanguageParser {
             case "&" -> new BitwiseAndOp(left, right);
             case "|" -> new BitwiseOrOp(left, right);
             case "^" -> new XorOp(left, right);
-            case "<<" -> new LeftShiftOp(left, right);
-            case ">>" -> new RightShiftOp(left, right);
+            case "<<", "<<<" -> new LeftShiftOp(left, right);
+            case ">>", ">>>" -> new RightShiftOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }

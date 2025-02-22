@@ -51,7 +51,7 @@ group: LiteralsTest
             null;
 
         c++:
-            NULL;
+            nullptr;
 
 
     case: TrueLiteral
@@ -725,7 +725,7 @@ group: SimpleStatements
 
     case: ListDeclaration
         c++:
-            std::list<int> a = {1, 2, 3};
+            std::vector<int> a = {1, 2, 3};
 
         java:
             java.util.ArrayList<Integer> a = new java.util.ArrayList<Integer>(java.util.List.of(1, 2, 3));

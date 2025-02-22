@@ -5,6 +5,7 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
@@ -22,8 +23,11 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.types.NoReturn;
@@ -58,10 +62,11 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "Sizeof" -> deserializeSizeof(serialized);
             case "AssignmentStatement" -> deserializeAssignmentStmt(serialized);
             case "AssignmentExpression" -> deserializeAssignmentExpr(serialized);
-            case "ExpressionSequence" -> deserializeExprSequence(serialized);
+            case "ExpressionSequence", "CommaExpression" -> deserializeExprSequence(serialized);
             case "ExpressionStatement" -> deserializeExprStmt(serialized);
             case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
             case "Shape" -> deserializeShape(serialized);
+            case "DefinitionArgument" -> deserializeDefArg(serialized);
             case "BooleanType", "StringType", "CharacterType",
                  "FloatType", "IntType", "PointerType",
                  "ReferenceType", "ArrayType", "ListType",
@@ -74,6 +79,12 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    private Node deserializeDefArg(SerializedNode serialized) {
+        return new DefinitionArgument((SimpleIdentifier) deserialize(serialized.fields.get("name")),
+                (Expression) deserialize(serialized.fields.get("value"))
+                );
     }
 
     private Node deserializeSizeof(SerializedNode serialized) {
@@ -161,6 +172,9 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeExprSequence(SerializedNode serialized) {
+        if (serialized.nodeName.equals("CommaExpression")) {
+            return new CommaExpression((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("exprs")));
+        }
         return new ExpressionSequence((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("exprs")));
     }
 
@@ -186,7 +200,8 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
 
     private Node deserializeIndex(SerializedNode serialized) {
         return new IndexExpression((Expression) deserialize(serialized.fields.get("expr")),
-                (Expression) deserialize(serialized.fields.get("index"))
+                (Expression) deserialize(serialized.fields.get("index")),
+                serialized.values.containsKey("preferPointers") && (boolean) serialized.values.get("preferPointers")
                 );
     }
 
@@ -240,13 +255,27 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                             serialized.fields.containsKey("end") ? (StringLiteral) deserialize(serialized.fields.get("end")) : null
                     );
                 }
+                case "FormatPrint" -> {
+                    List<Expression> exprs = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new FormatPrint((Expression) deserialize(serialized.fields.get("formatString")),
+                            exprs);
+                }
                 case "InputCommand" -> {
                     return new InputCommand((List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args")));
+                }
+                case "MemoryAllocationCall" -> {
+                    List<Expression> args = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new MemoryAllocationCall((Type) args.getFirst(), args.get(1), (boolean) serialized.values.get("clearAlloc"));
+                }
+                case "MemoryFreeCall" -> {
+                    List<Expression> args = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new MemoryFreeCall(args.getFirst());
+
                 }
             }
         }
         return new FunctionCall(
-                (Identifier) deserialize(serialized.fields.get("name")),
+                (Expression) deserialize(serialized.fields.get("name")),
                 (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"))
         );
     }
@@ -288,10 +317,10 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
         if (BinaryExpression.class.isAssignableFrom(clazz)) {
             try {
                 if (clazz.equals(ReferenceEqOp.class) || clazz.equals(ContainsOp.class)) {
-                    return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class, Boolean.class).newInstance(
+                    return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class, boolean.class).newInstance(
                             deserialize(serialized.fields.get("left")),
                             deserialize(serialized.fields.get("right")),
-                            deserialize(serialized.fields.get("negative"))
+                            serialized.values.get("negative")
                     );
                 }
                 return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class).newInstance(
@@ -300,6 +329,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                         );
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                      NoSuchMethodException e) {
+                e.printStackTrace();
             }
         }
 
