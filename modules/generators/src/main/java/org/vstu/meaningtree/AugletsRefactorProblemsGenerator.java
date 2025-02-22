@@ -80,11 +80,92 @@ public class AugletsRefactorProblemsGenerator {
                         convertWithRedundantConditionChecks((IfStatement) node);
                 case ADD_DUPLICATED_CASE_BODIES ->
                         addDuplicatedCaseBodies((SwitchStatement) node);
+                case ADD_REDUNDANT_CONDITION_CHECK_AFTER_LOOP ->
+                        addRedundantConditionCheckAfterLoop((CompoundStatement) node, opts);
             };
+        } catch (ClassCastException castException) {
+            return null;
         }
-        catch (ClassCastException castException) {
-            return node;
+    }
+
+    /**
+     * Добавляет избыточную проверку условия после первого цикла <b>while</b> в составном операторе.
+     *
+     * <p>Пример:
+     * <pre><code>
+     * // До модификации
+     * {
+     *     ...
+     *     while (a < b) {
+     *         // тело цикла
+     *     }
+     *     stmt1;
+     *     stmt2;
+     *     stmt3;
+     *     stmt4;
+     *     ...
+     * }
+     *
+     * // После модификации (при n = 3)
+     * {
+     *     ...
+     *     while (a < b) {
+     *         // тело цикла
+     *     }
+     *     if (!(a < b)) {
+     *         stmt1;
+     *         stmt2;
+     *         stmt3;
+     *     }
+     *     stmt4;
+     *     ...
+     * }
+     * </code></pre>
+     *
+     * @param compoundStatement составной оператор, содержащий набор операторов для анализа
+     * @param opts набор опций, где ключ <code>n</code> задаёт число операторов, включаемых в тело нового оператора <b>if</b> (по умолчанию 3)
+     * @return модифицированный составной оператор с добавленным оператором <b>if</b>, или {@code null}, если цикл <b>while</b> не найден или нет операторов для включения
+     */
+    public static CompoundStatement addRedundantConditionCheckAfterLoop(CompoundStatement compoundStatement, Map<String, String> opts) {
+        var converted = new ArrayList<Node>();
+
+        // Ищем первый цикл while и извлекаем его условие,
+        // для создания ветвления с негативным условием
+        var nodes = List.of(compoundStatement.getNodes());
+        Expression loopCondition = null;
+        int i;
+        for (i = 0; i < nodes.size(); i++) {
+            Node node = nodes.get(i);
+            converted.add(node);
+
+            if (node instanceof WhileLoop loop) {
+                loopCondition = loop.getCondition();
+                i++;
+                break;
+            }
         }
+
+        if (loopCondition == null)
+            return null;
+
+        // Определяем, сколько операторов после станут телом ветвления:
+        // берем число n из конфигурации и определяем, сколько будет извлечено
+        int n = opts.containsKey("n") ? Integer.parseInt(opts.get("n")) : 3;
+        n = Math.min(n, compoundStatement.getLength() - converted.size());
+        // Если цикл был последней инструкцией в блоке, ничего не делаем
+        if (n == 0)
+            return null;
+
+        var ifCondition = makeNegativeCondition(loopCondition);
+        var ifBody = new CompoundStatement(new SymbolEnvironment(null), nodes.subList(i, i + n));
+        var ifStatement = new IfStatement(ifCondition, ifBody, null);
+        converted.add(ifStatement);
+
+        // Остаток операторов просто добавляем
+        for (int j = i + n; j < nodes.size(); j++)
+            converted.add(nodes.get(j));
+
+        return new CompoundStatement(new SymbolEnvironment(null), converted);
     }
 
     /**
