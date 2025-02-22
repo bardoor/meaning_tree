@@ -43,9 +43,9 @@ public class AugletsRefactorProblemsGenerator {
                body.add(node);
            }
            else {
-               var modifiedIf = generate(node, problemType, opts);
-               if (modifiedIf != null) {
-                   body.add(modifiedIf);
+               var modifiedNode = generate(node, problemType, opts);
+               if (modifiedNode != null) {
+                   body.add(modifiedNode);
                    hasModified = true;
                }
                else {
