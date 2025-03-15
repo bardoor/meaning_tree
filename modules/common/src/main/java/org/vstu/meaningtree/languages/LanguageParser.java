@@ -25,6 +25,8 @@ abstract public class LanguageParser {
 
     public abstract MeaningTree getMeaningTree(String code);
 
+    public abstract MeaningTree getMeaningTree(TSNode node, String code);
+
     protected synchronized MeaningTree getMeaningTree(String code, Map<int[], Object> values) {
         _byteValueTags = values;
         return getMeaningTree(code);

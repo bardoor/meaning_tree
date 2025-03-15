@@ -164,6 +164,12 @@ public class PythonLanguage extends LanguageParser {
         return createdNode;
     }
 
+    @Override
+    public MeaningTree getMeaningTree(TSNode node, String code) {
+        _code = code;
+        return new MeaningTree(fromTSNode(node));
+    }
+
     private Node fromAssertTSNode(TSNode node) {
         return new FunctionCall(new SimpleIdentifier("assert"), (Expression)
                 fromTSNode(node.getNamedChild(0)));

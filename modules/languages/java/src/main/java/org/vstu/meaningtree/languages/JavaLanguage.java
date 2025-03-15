@@ -147,6 +147,12 @@ public class JavaLanguage extends LanguageParser {
         }
     }
 
+    @Override
+    public MeaningTree getMeaningTree(TSNode node, String code) {
+        _code = code;
+        return new MeaningTree(fromTSNode(node));
+    }
+
     private Node fromTSNode(TSNode node) {
         Objects.requireNonNull(node);
 
