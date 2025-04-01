@@ -2,11 +2,13 @@ package org.vstu.meaningtree.languages;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.tokens.Token;
 import org.vstu.meaningtree.utils.tokens.TokenGroup;
 import org.vstu.meaningtree.utils.tokens.TokenList;
@@ -63,6 +65,20 @@ public abstract class LanguageTranslator {
 
     public MeaningTree getMeaningTree(String code) {
         return _language.getMeaningTree(prepareCode(code));
+    }
+
+    @Experimental
+    public MeaningTree getMeaningTree(TSNode node, String code) {
+        return _language.getMeaningTree(node, code);
+    }
+
+    @Experimental
+    public Pair<Boolean, MeaningTree> tryGetMeaningTree(TSNode node, String code) {
+        try {
+            return ImmutablePair.of(true, getMeaningTree(node, code));
+        } catch (UnsupportedParsingException e) {
+            return ImmutablePair.of(false, null);
+        }
     }
 
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(String code) {

@@ -99,6 +99,12 @@ public class CppLanguage extends LanguageParser {
     }
 
     @Override
+    public MeaningTree getMeaningTree(TSNode node, String code) {
+        _code = code;
+        return new MeaningTree(fromTSNode(node));
+    }
+
+    @Override
     public TSNode getRootNode() {
         TSNode result = super.getRootNode();
         if (getConfigParameter("expressionMode").getBooleanValue()) {

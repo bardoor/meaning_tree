@@ -28,11 +28,10 @@
     </properties>
 
     <dependencies>
-        <!-- add tree sitter -->
         <dependency>
             <groupId>io.github.bonede</groupId>
             <artifactId>tree-sitter</artifactId>
-            <version>0.24.4</version>
+            <version>0.24.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
