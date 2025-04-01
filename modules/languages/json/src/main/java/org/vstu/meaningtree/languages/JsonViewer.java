@@ -616,5 +616,184 @@ public class JsonViewer extends LanguageViewer {
 
         return json;
     }
-    
+
+
+    /* -----------------------------
+    |          Statements           |
+    ------------------------------ */
+
+    @NotNull
+    private JsonObject toJson(@NotNull AssignmentStatement stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "assignment_statement");
+        json.add("target", toJson(stmt.getLValue()));
+        json.add("value", toJson(stmt.getRValue()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull VariableDeclaration stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "variable_declaration");
+
+        JsonArray declarators = new JsonArray();
+        for (VariableDeclarator varDecl : stmt.getDeclarators()) {
+            JsonObject jsonDeclaration = new JsonObject();
+            jsonDeclaration.add("identifier", toJson(varDecl.getIdentifier()));
+            if (varDecl.getRValue() != null) {
+                jsonDeclaration.add("rvalue", toJson(varDecl.getRValue()));
+            }
+            declarators.add(jsonDeclaration);
+        }
+
+        json.add("declarators", declarators);
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull CompoundStatement stmt) {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", "compound_statement");
+
+        JsonArray statements = new JsonArray();
+        for (var statement : stmt.getNodes()) {
+            statements.add(toJson(statement));
+        }
+
+        json.add("statements", statements);
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ExpressionStatement stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "expression_statement");
+        json.add("expression", toJson(stmt.getExpression()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull IfStatement stmt) {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", "if_statement");
+
+        JsonArray branches = new JsonArray();
+        for (var branch : stmt.getBranches()) {
+            JsonObject branchJson = new JsonObject();
+
+            if (branch.getCondition() != null) {
+                branchJson.add("condition", toJson(branch.getCondition()));
+            }
+            else {
+                branchJson.addProperty("is_else", true);
+            }
+
+            branchJson.add("body", toJson(branch.getBody()));
+            branches.add(branchJson);
+        }
+
+        json.add("branches", branches);
+        return json;
+    }
+
+    // TODO: сделать это как таковое
+    @NotNull
+    private JsonObject toJson(@NotNull GeneralForLoop stmt) {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", "general_for_loop");
+
+        /*
+        if (stmt.getInitializer() != null) {
+            json.add("initializer", toJson(stmt.getInitializer()));
+        }
+         */
+
+        if (stmt.getCondition() != null) {
+            json.add("condition", toJson(stmt.getCondition()));
+        }
+
+        if (stmt.getUpdate() != null) {
+            json.add("update", toJson(stmt.getUpdate()));
+        }
+
+        json.add("body", toJson(stmt.getBody()));
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull RangeForLoop stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "range_for_loop");
+        json.add("identifier", toJson(stmt.getIdentifier()));
+        json.add("range", toJson(stmt.getRange()));
+        json.add("body", toJson(stmt.getBody()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull WhileLoop stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "while_loop");
+        json.add("condition", toJson(stmt.getCondition()));
+        json.add("body", toJson(stmt.getBody()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull BreakStatement stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "break_statement");
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ContinueStatement stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "continue_statement");
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull SwitchStatement stmt) {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", "switch_statement");
+        json.add("expression", toJson(stmt.getTargetExpression()));
+
+        JsonArray cases = new JsonArray();
+        for (var switchCase : stmt.getCases()) {
+            cases.add(toJson(switchCase.getBody()));
+        }
+
+        if (stmt.hasDefaultCase()) {
+            json.add("default", toJson(Objects.requireNonNull(stmt.getDefaultCase())));
+        }
+
+        json.add("cases", cases);
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull DoWhileLoop stmt) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "do_while_loop");
+        json.add("body", toJson(stmt.getBody()));
+        json.add("condition", toJson(stmt.getCondition()));
+
+        return json;
+    }
+
 }
