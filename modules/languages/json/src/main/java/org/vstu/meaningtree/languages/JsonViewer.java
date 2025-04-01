@@ -36,7 +36,11 @@ import java.util.Objects;
 public class JsonViewer extends LanguageViewer {
     @Override
     public String toString(Node node) {
-        JsonObject json = switch (node) {
+        return toJson(node).toString();
+    }
+
+    public JsonObject toJson(Node node) {
+        return switch (node) {
             // Operators
             case AddOp op -> toJson(op);
             case SubOp op -> toJson(op);
@@ -107,8 +111,6 @@ public class JsonViewer extends LanguageViewer {
 
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
-
-        return json.toString();
     }
 
 
