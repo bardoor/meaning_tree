@@ -113,6 +113,365 @@ public class JsonViewer extends LanguageViewer {
 
 
     /* -----------------------------
+    |          Operators            |
+    ------------------------------ */
+
+    @NotNull
+    private JsonObject toJson(@NotNull AddOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "add_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull SubOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "sub_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull MulOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "mul_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull DivOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "div_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ModOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "mod_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull MatMulOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "matrix_mul_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull FloorDivOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "floor_div_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull PowOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "pow_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull EqOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "eq_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull GeOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "ge_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull GtOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "gt_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull LeOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "le_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull LtOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "lt_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull NotEqOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "not_eq_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ReferenceEqOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "reference_eq_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ShortCircuitAndOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "short_circuit_and_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ShortCircuitOrOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "short_circuit_or_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull NotOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "unary_operator");
+        json.add("operand", toJson(op.getArgument()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull UnaryMinusOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "unary_minus_operator");
+        json.add("operand", toJson(op.getArgument()));
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull UnaryPlusOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "unary_plus_operator");
+        json.add("operand", toJson(op.getArgument()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull PostfixIncrementOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "unary_postfix_inc_operator");
+        json.add("operand", toJson(op.getArgument()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull PostfixDecrementOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "unary_postfix_dec_operator");
+        json.add("operand", toJson(op.getArgument()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull PrefixIncrementOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "unary_prefix_inc_operator");
+        json.add("operand", toJson(op.getArgument()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull PrefixDecrementOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "unary_prefix_dec_operator");
+        json.add("operand", toJson(op.getArgument()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull BitwiseAndOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "bitwise_and_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull BitwiseOrOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "bitwise_or_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull XorOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "xor_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull InversionOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "inversion_operator");
+        json.add("operand", toJson(op.getArgument()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull LeftShiftOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "left_shift_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull RightShiftOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "right_shift_operator");
+        json.add("left_operand", toJson(op.getLeft()));
+        json.add("right_operand", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull InstanceOfOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "instance_of_operator");
+        json.add("expression", toJson(op.getLeft()));
+        json.add("type", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ContainsOp op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "contains_operator");
+        json.add("element", toJson(op.getLeft()));
+        json.add("collection", toJson(op.getRight()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull TernaryOperator op) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "ternary_operator");
+        json.add("condition", toJson(op.getCondition()));
+        json.add("true_expression", toJson(op.getThenExpr()));
+        json.add("false_expression", toJson(op.getElseExpr()));
+
+        return json;
+    }
+
+    /* -----------------------------
     |           Literals            |
     ------------------------------ */
 
