@@ -83,7 +83,6 @@ public class CppViewer extends LanguageViewer {
             case TernaryOperator ternaryOperator -> toStringTernaryOperator(ternaryOperator);
             case MemoryAllocationCall mAlloc -> toStringMemoryAllocation(mAlloc);
             case MemoryFreeCall mFree -> toStringMemoryFree(mFree);
-            case InputCommand inputCommand -> toStringInput(inputCommand);
             case PrintCommand formatInput -> toStringPrint(formatInput);
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
@@ -140,16 +139,6 @@ public class CppViewer extends LanguageViewer {
             res += pVal.separator.getUnescapedValue().equals("\n") ? "<< std::endl" : "";
         }
         return res;
-    }
-
-    private String toStringInput(InputCommand inputCommand) {
-        if (inputCommand instanceof FormatInput fmt) {
-            if (fmt.getArguments().isEmpty()) {
-                return String.format("scanf(%s)", toString(fmt.getFormatString()));
-            }
-            return String.format("scanf(%s, %s)", toString(fmt.getFormatString()), toStringFunctionCallArgumentsList(fmt.getArguments()));
-        }
-        return String.format("std::cin << %s", toString(inputCommand.getArguments().getFirst()));
     }
 
     private String toStringCharLiteral(CharacterLiteral cl) {
