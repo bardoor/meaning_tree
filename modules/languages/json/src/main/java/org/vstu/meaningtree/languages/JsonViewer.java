@@ -796,4 +796,35 @@ public class JsonViewer extends LanguageViewer {
         return json;
     }
 
+
+    /* -----------------------------
+    |            Other              |
+    ------------------------------ */
+
+    @NotNull
+    private JsonObject toJson(@NotNull ProgramEntryPoint entryPoint) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "program_entry_point");
+
+        JsonArray body = new JsonArray();
+        for (var entry : entryPoint.getBody()) {
+            body.add(toJson(entry));
+        }
+
+        json.add("body", body);
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull Comment comment) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "comment");
+        json.addProperty("content", comment.getUnescapedContent());
+        json.addProperty("is_multiline", comment.isMultiline());
+
+        return json;
+    }
+
 }
