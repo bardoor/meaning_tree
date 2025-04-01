@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import jakarta.json.Json;
+import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Comment;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
@@ -75,9 +76,9 @@ public class JsonViewer extends LanguageViewer {
             case FloatLiteral l -> toJson(l);
             case IntegerLiteral l -> toJson(l);
             case StringLiteral l -> toJson(l);
-            case NullLiteral nullLiteral -> toJson(nullLiteral);
-            case BoolLiteral boolLiteral -> toJson(boolLiteral);
-            case CharacterLiteral characterLiteral -> toJson(characterLiteral);
+            case NullLiteral l -> toJson(l);
+            case BoolLiteral l -> toJson(l);
+            case CharacterLiteral l -> toJson(l);
 
             // Expressions
             case ParenthesizedExpression expr -> toJson(expr);
@@ -108,6 +109,72 @@ public class JsonViewer extends LanguageViewer {
         };
 
         return json.toString();
+    }
+
+
+    /* -----------------------------
+    |           Literals            |
+    ------------------------------ */
+
+    @NotNull
+    private JsonObject toJson(@NotNull FloatLiteral floatLiteral) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "float_literal");
+        json.addProperty("value", floatLiteral.getValue());
+        json.addProperty("is_double", floatLiteral.isDoublePrecision());
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull IntegerLiteral integerLiteral) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "int_literal");
+        json.addProperty("value", integerLiteral.getLongValue());
+        json.addProperty("repr", integerLiteral.getIntegerRepresentation().toString());
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull StringLiteral stringLiteral) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "string_literal");
+        json.addProperty("value", stringLiteral.getUnescapedValue());
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull NullLiteral nullLiteral) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "null_literal");
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull BoolLiteral boolLiteral) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "bool_literal");
+        json.addProperty("value", boolLiteral.getValue());
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull CharacterLiteral characterLiteral) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "char_literal");
+        json.addProperty("value", characterLiteral.getValue());
+
+        return json;
     }
 
 }
