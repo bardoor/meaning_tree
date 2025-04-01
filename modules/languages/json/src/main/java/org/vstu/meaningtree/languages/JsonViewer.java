@@ -536,4 +536,85 @@ public class JsonViewer extends LanguageViewer {
         return json;
     }
 
+
+    /* -----------------------------
+    |         Expressions           |
+    ------------------------------ */
+
+    @NotNull
+    private JsonObject toJson(@NotNull ParenthesizedExpression expr) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "parenthesized_expression");
+        json.add("expression", toJson(expr.getExpression()));
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull SimpleIdentifier expr) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "identifier");
+        json.addProperty("name", expr.getName());
+
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull AssignmentExpression expr) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "assignment_expression");
+        json.add("target", toJson(expr.getLValue()));
+        json.add("value", toJson(expr.getRValue()));
+
+        return json;
+    }
+
+    // TODO: Я думаю это не работает но сейчас 2 часа ночи...
+    @NotNull
+    private JsonObject toJson(@NotNull CompoundComparison cmp) {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", "compound_comparison");
+        
+        JsonArray comparisons = new JsonArray();
+        for (var comparison : cmp.getComparisons()) {
+            JsonObject jsonComparison = new JsonObject();
+            jsonComparison.add("left", toJson(comparison.getLeft()));
+            jsonComparison.addProperty("operator", comparison.getClass().getSimpleName());
+            jsonComparison.add("right", toJson(comparison.getRight()));
+        }
+        
+        json.add("comparisons", comparisons);
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull FunctionCall funcCall) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "function_call");
+        json.add("function", toJson(funcCall.getFunction()));
+        
+        JsonArray args = new JsonArray();
+        for (var arg : funcCall.getArguments()) {
+            args.add(toJson(arg));
+        }
+        
+        json.add("arguments", args);
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull IndexExpression indexExpression) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "index_expression");
+        json.add("expr", toJson(indexExpression.getExpr()));
+        json.add("index", toJson(indexExpression.getIndex()));
+
+        return json;
+    }
+    
 }
