@@ -27,4 +27,9 @@ public class BoolLiteral extends Literal {
     public boolean getValue() {
         return _state;
     }
+
+    @Override
+    public boolean evaluatesToBoolean() {
+        return true;
+    }
 }

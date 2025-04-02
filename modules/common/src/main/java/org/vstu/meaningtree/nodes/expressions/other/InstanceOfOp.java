@@ -12,4 +12,9 @@ public class InstanceOfOp extends BinaryExpression {
     public Type getType() {
         return (Type) getRight();
     }
+
+    @Override
+    public boolean evaluatesToBoolean() {
+        return true;
+    }
 }

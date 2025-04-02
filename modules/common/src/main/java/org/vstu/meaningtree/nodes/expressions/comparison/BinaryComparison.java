@@ -1,12 +1,17 @@
 package org.vstu.meaningtree.nodes.expressions.comparison;
 
-import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 
 public abstract class BinaryComparison extends BinaryExpression {
 
     public BinaryComparison(Expression left, Expression right) {
         super(left, right);
+    }
+
+    @Override
+    public boolean evaluatesToBoolean() {
+        return true;
     }
 
     public Expression inverse() {

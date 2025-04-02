@@ -11,4 +11,8 @@ abstract public class Expression extends Node {
     public boolean equalsIdentifier(String name) {
         return equals(new SimpleIdentifier(name));
     }
+
+    public boolean evaluatesToBoolean() {
+        return false;
+    }
 }
