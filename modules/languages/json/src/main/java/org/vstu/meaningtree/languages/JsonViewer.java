@@ -691,9 +691,6 @@ public class JsonViewer extends LanguageViewer {
             if (branch.getCondition() != null) {
                 branchJson.add("condition", toJson(branch.getCondition()));
             }
-            else {
-                branchJson.addProperty("is_else", true);
-            }
 
             branchJson.add("body", toJson(branch.getBody()));
             branches.add(branchJson);
