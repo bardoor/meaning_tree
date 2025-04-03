@@ -1,9 +1,6 @@
 package org.vstu.meaningtree;
 
-import org.vstu.meaningtree.languages.CppTranslator;
-import org.vstu.meaningtree.languages.JavaTranslator;
-import org.vstu.meaningtree.languages.LanguageTranslator;
-import org.vstu.meaningtree.languages.PythonTranslator;
+import org.vstu.meaningtree.languages.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -12,6 +9,7 @@ import java.util.Map;
 public enum SupportedLanguage {
     JAVA("java"),
     PYTHON("python"),
+    JSON("json"),
     CPP("c++");
 
     private final String stringValue;
@@ -31,6 +29,7 @@ public enum SupportedLanguage {
         translators.put(JAVA, JavaTranslator.class);
         translators.put(CPP, CppTranslator.class);
         translators.put(PYTHON, PythonTranslator.class);
+        translators.put(JSON, JsonTranslator.class);
     }
 
     public static Map<SupportedLanguage, Class<? extends LanguageTranslator>> getMap() {
