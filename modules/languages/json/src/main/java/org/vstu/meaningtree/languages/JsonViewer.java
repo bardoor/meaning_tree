@@ -91,6 +91,7 @@ public class JsonViewer extends LanguageViewer {
             case CompoundComparison cmp -> toJson(cmp);
             case FunctionCall funcCall -> toJson(funcCall);
             case IndexExpression indexExpression -> toJson(indexExpression);
+            case Range range -> toJson(range);
 
             // Statements
             case AssignmentStatement stmt -> toJson(stmt);
@@ -721,6 +722,23 @@ public class JsonViewer extends LanguageViewer {
         }
 
         json.add("body", toJson(stmt.getBody()));
+        return json;
+    }
+
+    @NotNull
+    private JsonObject toJson(@NotNull Range range) {
+        JsonObject json = new JsonObject();
+
+        json.addProperty("type", "range");
+        json.add("start", toJson(range.getStart()));
+        json.add("stop", toJson(range.getStop()));
+        json.add("step", toJson(range.getStep()));
+
+        json.addProperty("isExcludingStart", range.isExcludingStart());
+        json.addProperty("isExcludingEnd", range.isExcludingEnd());
+    
+        json.addProperty("rangeType", range.getType().name().toLowerCase());
+
         return json;
     }
 
