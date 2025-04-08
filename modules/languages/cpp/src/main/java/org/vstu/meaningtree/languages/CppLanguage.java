@@ -13,10 +13,7 @@ import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
-import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
-import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
-import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
+import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -465,7 +462,10 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    private NumericLiteral fromUserDefinedLiteral(@NotNull TSNode node) {
+    private Literal fromUserDefinedLiteral(@NotNull TSNode node) {
+        if (node.getChildByFieldName("number_literal").isNull()) {
+            throw new UnsupportedParsingException("Only number literals are supported");
+        }
         String value = getCodePiece(node.getChildByFieldName("number_literal"));
         String literalSuffix = getCodePiece(node.getChildByFieldName("literal_suffix"));
 
