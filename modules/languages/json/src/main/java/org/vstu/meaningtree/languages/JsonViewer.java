@@ -40,7 +40,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     public JsonObject toJson(Node node) {
-        return switch (node) {
+        var json = switch (node) {
             // Operators
             case AddOp op -> toJson(op);
             case SubOp op -> toJson(op);
@@ -112,6 +112,10 @@ public class JsonViewer extends LanguageViewer {
 
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
+
+        json.addProperty("id", node.getId());
+
+        return json;
     }
 
 
