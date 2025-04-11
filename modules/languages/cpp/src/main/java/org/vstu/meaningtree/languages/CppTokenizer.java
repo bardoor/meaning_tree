@@ -46,8 +46,6 @@ public class CppTokenizer extends LanguageTokenizer {
     protected static final Map<String, OperatorToken> operators = new HashMap<>() {{
         put("::", new OperatorToken("::", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
 
-        put("CAST", new OperatorToken("CAST", TokenType.CAST, 2, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
-
         List<OperatorToken> braces = OperatorToken.makeComplex(2,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
                 new String[] {"(", ")"},
@@ -79,6 +77,7 @@ public class CppTokenizer extends LanguageTokenizer {
         put(".", new OperatorToken(".", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.LEFT));
         put("--", new OperatorToken("--", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false).setFirstOperandToEvaluation(OperandPosition.LEFT));
+        put("CAST", new OperatorToken("CAST", TokenType.CAST, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("++U", new OperatorToken("++", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("--U", new OperatorToken("--", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("UMINUS", new OperatorToken("-", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
