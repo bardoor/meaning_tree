@@ -39,7 +39,7 @@ public enum SupportedLanguage {
 
     public static SupportedLanguage fromString(String s) {
         for (SupportedLanguage lang : translators.keySet()) {
-            if (lang.toString().equals(s)) {
+            if (lang.toString().equals(s.toLowerCase())) {
                 return lang;
             }
         }
