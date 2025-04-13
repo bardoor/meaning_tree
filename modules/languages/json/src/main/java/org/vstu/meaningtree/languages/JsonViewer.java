@@ -24,6 +24,7 @@ import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
 import org.vstu.meaningtree.nodes.statements.loops.DoWhileLoop;
 import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
 import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
@@ -99,6 +100,7 @@ public class JsonViewer extends LanguageViewer {
             case CompoundStatement stmt -> toJson(stmt);
             case ExpressionStatement stmt -> toJson(stmt);
             case IfStatement stmt -> toJson(stmt);
+            case ConditionBranch stmt -> toJson(stmt);
             case GeneralForLoop stmt -> toJson(stmt);
             case RangeForLoop rangeLoop -> toJson(rangeLoop);
             case WhileLoop whileLoop -> toJson(whileLoop);
@@ -691,19 +693,28 @@ public class JsonViewer extends LanguageViewer {
 
         JsonArray branches = new JsonArray();
         for (var branch : stmt.getBranches()) {
-            JsonObject branchJson = new JsonObject();
-
-            if (branch.getCondition() != null) {
-                branchJson.add("condition", toJson(branch.getCondition()));
-            }
-
-            branchJson.add("body", toJson(branch.getBody()));
-            branches.add(branchJson);
+            branches.add(toJson(branch));
         }
 
         json.add("branches", branches);
         return json;
     }
+
+    @NotNull
+    private JsonObject toJson(@NotNull ConditionBranch branch) {
+        JsonObject branchJson = new JsonObject();
+
+        if (branch.getCondition() != null) {
+            branchJson.add("condition", toJson(branch.getCondition()));
+        }
+
+        branchJson.add("body", toJson(branch.getBody()));
+        branchJson.addProperty("id", branch.getId());
+        branchJson.addProperty("type", "condition_branch");
+
+        return branchJson;
+    }
+
 
     // TODO: сделать это как таковое
     @NotNull
