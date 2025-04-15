@@ -75,21 +75,27 @@ import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 import java.util.*;
 
 public class JavaLanguage extends LanguageParser {
-    private final TSLanguage _language;
-    private final TSParser _parser;
+    private TSLanguage _language;
+    private TSParser _parser;
     private final Map<String, UserType> _userTypes;
     private SymbolEnvironment currentContext;
 
     public JavaLanguage() {
-        _language = new TreeSitterJava();
-        _parser = new TSParser();
-        _parser.setLanguage(_language);
         _userTypes = new HashMap<>();
         currentContext = new SymbolEnvironment(null);
     }
 
+    private void _initBackend() {
+        if (_language == null) {
+            _language = new TreeSitterJava();
+            _parser = new TSParser();
+            _parser.setLanguage(_language);
+        }
+    }
+
     @Override
     public TSTree getTSTree() {
+        _initBackend();
         TSTree tree = _parser.parseString(null, _code);
         /*
         TODO: only for test

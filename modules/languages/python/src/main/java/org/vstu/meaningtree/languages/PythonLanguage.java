@@ -74,14 +74,12 @@ import java.util.stream.Stream;
 
 public class PythonLanguage extends LanguageParser {
     private SymbolEnvironment currentContext;
+    private TSLanguage _language;
+    private TSParser _parser;
 
     @Override
     public TSTree getTSTree() {
-        TSParser parser = new TSParser();
-        TSLanguage pyLanguage = new TreeSitterPython();
-        parser.setLanguage(pyLanguage);
-
-        TSTree tree = parser.parseString(null, _code);
+        _initBackend();
 
         /*
         TODO: only for test
@@ -90,7 +88,15 @@ public class PythonLanguage extends LanguageParser {
         } catch (IOException e) { }
         */
 
-        return tree;
+        return _parser.parseString(null, _code);
+    }
+
+    private void _initBackend() {
+        if (_language == null) {
+            _language = new TreeSitterPython();
+            _parser = new TSParser();
+            _parser.setLanguage(_language);
+        }
     }
 
     @Override
