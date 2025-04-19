@@ -1,6 +1,5 @@
 package org.vstu.meaningtree.nodes;
 
-import org.apache.jena.sparql.expr.NodeValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.utils.Experimental;
@@ -26,12 +25,32 @@ abstract public class Node implements Serializable, Cloneable {
     }
 
     /**
-     * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
-     * В случае, если не в массиве, то имеет значение -1
+     * @param index признак того, что поле, в коллекции. Индекс - для последовательных коллекций, ключ - для словарей.
+     * В случае, если не в коллекции - null
      */
-    public record Info(Node node, Node parent, int pos, String fieldName) {
+    public record Info(Node node, Node parent, Object index, String fieldName) {
         public String readableFieldName() {
             return fieldName.startsWith("_") ? fieldName.replaceFirst("_", "") : fieldName;
+        }
+
+        public long id() {
+            return node.getId();
+        }
+
+        public boolean isInCollection() {
+            return index != null;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Info info)) return false;
+            return index == info.index && node.uniquenessEquals(info.node)
+                    && Objects.equals(parent, info.parent) && Objects.equals(fieldName, info.fieldName);
+        }
+
+        @Override
+        public int hashCode() {
+            return node.hashCode();
         }
     }
 

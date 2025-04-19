@@ -47,7 +47,7 @@ public class NodeIterator implements Iterator<Node.Info> {
         }
     }
 
-    private int getFieldIndex(Object target, Node node) {
+    private Object getFieldIndex(Object target, Node node) {
         if (target instanceof List collection) {
             return collection.indexOf(node);
         } else if (target instanceof Node[] array) {
@@ -57,7 +57,7 @@ public class NodeIterator implements Iterator<Node.Info> {
                 }
             }
         }
-        return -1;
+        return null;
     }
 
     private void ensureIteratorNotEmpty() {
@@ -95,11 +95,11 @@ public class NodeIterator implements Iterator<Node.Info> {
             if (current.getValue() instanceof Node) {
                 pushIterator(current.getValue());
                 ensureIteratorNotEmpty();
-                result = new Node.Info((Node) current.getValue(), parent, -1, fieldName);
+                result = new Node.Info((Node) current.getValue(), parent, current.getKey(), fieldName);
             } else {
                 pushIterator(current.getKey());
                 ensureIteratorNotEmpty();
-                result = new Node.Info((Node) current.getKey(), parent, -1, fieldName);
+                result = new Node.Info((Node) current.getKey(), parent, current.getKey(), fieldName);
             }
         } else {
             throw new MeaningTreeException("Iterator is broken. Report this case to developers");
@@ -111,7 +111,7 @@ public class NodeIterator implements Iterator<Node.Info> {
     public Node.Info next() {
         if (!giveSelf) {
             giveSelf = true;
-            return new Node.Info(parent, null, -1, "root");
+            return new Node.Info(parent, null, null, "root");
         }
         if (!hasNext()) {
             throw new NoSuchElementException("Iteration ended");
@@ -125,7 +125,7 @@ public class NodeIterator implements Iterator<Node.Info> {
             pushIterator(target);
             ensureIteratorNotEmpty();
             if (target instanceof Node node) {
-                return new Node.Info(node, parent, -1, getChildren(ptr));
+                return new Node.Info(node, parent, null, getChildren(ptr));
             }
         }
         Node.Info result = getAt(ptr);

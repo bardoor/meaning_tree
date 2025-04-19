@@ -2,16 +2,15 @@ package org.vstu.meaningtree;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.NodeIterator;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info> {
     private Node _rootNode;
+    private TreeMap<Long, Node.Info> _index = null;
 
     public MeaningTree(Node rootNode) {
         _rootNode = rootNode;
@@ -23,13 +22,54 @@ public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info>
 
     public void changeRoot(Node node) {_rootNode = node;}
 
+    public void makeIndex() {
+        TreeMap<Long, Node.Info> treeMap = new TreeMap<>();
+        for (Node.Info node : this) {
+            if (node != null) {
+                treeMap.put(node.node().getId(), node);
+            }
+        }
+        _index = treeMap;
+    }
+
+    @Experimental
+    public boolean substitute(long sourceId, Node target) {
+        Node.Info source = getNodeById(sourceId);
+
+        if (source == null) {
+            return false;
+        }
+
+        if (source.parent() != null && !source.isInCollection()) {
+            source.parent().substituteChildren(source.fieldName(), target);
+        } else if (source.parent() != null) {
+            source.parent().substituteNodeChildren(source.fieldName(), target, source.index());
+        } else if (source.id() == _rootNode.getId()) {
+            changeRoot(target);
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    public Node.Info getNodeById(long id) {
+        if (_index == null) {
+            makeIndex();
+        }
+        return _index.getOrDefault(id, null);
+    }
+
     @Override
     @NotNull
     /**
      * Итератор может выдавать нулевые ссылки
      */
     public Iterator<Node.Info> iterator() {
-        return new NodeIterator(_rootNode, true);
+        if (_index == null) {
+            return new NodeIterator(_rootNode, true);
+        } else {
+            return _index.sequencedValues().iterator();
+        }
     }
 
     public List<Node.Info> walk() {
