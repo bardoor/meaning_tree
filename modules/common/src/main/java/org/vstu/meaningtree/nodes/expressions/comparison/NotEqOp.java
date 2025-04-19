@@ -11,4 +11,9 @@ public class NotEqOp extends BinaryComparison {
     public String generateDot() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public Expression tryInvert() {
+        return new EqOp(this.getLeft(), this.getRight());
+    }
 }
