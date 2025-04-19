@@ -287,9 +287,34 @@ public class PythonTokenizer extends LanguageTokenizer {
         if (node.hasLabel(NodeLabel.DUMMY)) {
             return new TokenGroup(0, 0, result);
         }
+        if (node instanceof BinaryExpression) {
+            node = this.viewer.parenFiller.makeNewExpression((BinaryExpression) node);
+        } else if (node instanceof UnaryExpression) {
+            node = this.viewer.parenFiller.makeNewExpression((UnaryExpression) node);
+        }
         int posStart = result.size();
         switch (node) {
             case InstanceOfOp ins -> tokenizeInstanceOf(ins, result);
+            case AssignmentExpression assignment -> {
+                if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
+                    throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
+                }
+                TokenGroup grp1 = tokenizeExtended(assignment.getLValue(), result);
+                OperatorToken tok = getOperatorByTokenName(":=");
+                result.add(tok);
+                TokenGroup grp2;
+                if (assignment.getRValue() instanceof AssignmentExpression assign) {
+                    grp2 = tokenizeExtended(assign.toStatement(), result);
+                } else {
+                    grp2 = tokenizeExtended(assignment.getRValue(), result);
+                }
+                grp1.setMetadata(tok, OperandPosition.LEFT);
+                grp2.setMetadata(tok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    tok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
+            }
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
             case PointerPackOp packOp -> tokenizeExtended(packOp.getArgument(), result);
             case PointerUnpackOp unpackOp -> tokenizeExtended(unpackOp.getArgument(), result);
@@ -329,26 +354,6 @@ public class PythonTokenizer extends LanguageTokenizer {
                 TokenGroup grp1 = tokenizeExtended(assignment.getLValue(), result);
                 String token = assignment.getAugmentedOperator().getValue();
                 OperatorToken tok = getOperatorByTokenName(token);
-                result.add(tok);
-                TokenGroup grp2;
-                if (assignment.getRValue() instanceof AssignmentExpression assign) {
-                    grp2 = tokenizeExtended(assign.toStatement(), result);
-                } else {
-                    grp2 = tokenizeExtended(assignment.getRValue(), result);
-                }
-                grp1.setMetadata(tok, OperandPosition.LEFT);
-                grp2.setMetadata(tok, OperandPosition.RIGHT);
-                if (assignment.getAssignedValueTag() != null) {
-                    tok.assignValue(assignment.getAssignedValueTag());
-                    valueSetNodes.add(assignment.getId());
-                }
-            }
-            case AssignmentExpression assignment -> {
-                if (!(assignment.getLValue() instanceof SimpleIdentifier) || assignment.getRValue() instanceof AssignmentExpression) {
-                    throw new UnsupportedViewingException("Assignment expression in Python supports only identifiers");
-                }
-                TokenGroup grp1 = tokenizeExtended(assignment.getLValue(), result);
-                OperatorToken tok = getOperatorByTokenName(":=");
                 result.add(tok);
                 TokenGroup grp2;
                 if (assignment.getRValue() instanceof AssignmentExpression assign) {

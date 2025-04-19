@@ -29,8 +29,10 @@ import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
@@ -60,6 +62,7 @@ import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.utils.NodeLabel;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
+import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,6 +72,10 @@ import java.util.stream.Collectors;
 
 
 public class PythonViewer extends LanguageViewer {
+    public PythonViewer(LanguageTranslator translator) {
+        super(translator);
+    }
+
     @Override
     public String toString(Node node) {
         // Для dummy узлов ничего не выводим
@@ -95,6 +102,7 @@ public class PythonViewer extends LanguageViewer {
     public String toString(Node node, Tab tab) {
         return switch (node) {
             case ProgramEntryPoint programEntryPoint -> entryPointToString(programEntryPoint, tab);
+            case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case BinaryComparison cmpNode -> comparisonToString(cmpNode);
             case BinaryExpression binaryExpression -> binaryOpToString(binaryExpression);
             case IfStatement ifStatement -> conditionToString(ifStatement, tab);
@@ -125,7 +133,6 @@ public class PythonViewer extends LanguageViewer {
             case Comment comment -> commentToString(comment);
             case Literal literal -> literalToString(literal);
             case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
-            case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
             case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
             case ForLoop forLoop -> loopToString(forLoop, tab);
@@ -533,6 +540,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
+        expr = (AssignmentExpression) parenFiller.makeNewExpression(expr);
         if (!(expr.getLValue() instanceof SimpleIdentifier) || (expr.getRValue() instanceof AssignmentExpression)) {
             if (getConfigParameter("expressionMode").getBooleanValue()) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
@@ -721,79 +729,13 @@ public class PythonViewer extends LanguageViewer {
         return String.format("range(%s, %s, %s)", toString(start), toString(stop), toString(step));
     }
 
-    protected String tokenOfBinaryOp(BinaryExpression node) {
-        if (node instanceof AddOp) {
-            return "+";
-        } else if (node instanceof SubOp) {
-            return "-";
-        } else if (node instanceof MulOp) {
-            return "*";
-        } else if (node instanceof DivOp) {
-            return "/";
-        } else if (node instanceof PowOp) {
-            return "**";
-        } else if (node instanceof FloorDivOp) {
-            return "//";
-        } else if (node instanceof ModOp) {
-            return "%";
-        } else if (node instanceof BitwiseAndOp) {
-            return "&";
-        } else if (node instanceof BitwiseOrOp) {
-            return "|";
-        } else if (node instanceof RightShiftOp) {
-            return ">>";
-        } else if (node instanceof LeftShiftOp) {
-            return "<<";
-        } else if (node instanceof XorOp) {
-            return "^";
-        } else if (node instanceof MatMulOp) {
-            return "@";
-        } else if (node instanceof ShortCircuitAndOp) {
-            return "and";
-        } else if (node instanceof ShortCircuitOrOp) {
-            return "or";
-        } else if (node instanceof EqOp) {
-            if (node.getRight() instanceof NullLiteral) {
-                return "is";
-            }
-            return "==";
-        } else if (node instanceof NotEqOp) {
-            if (node.getRight() instanceof NullLiteral) {
-                return "is not";
-            }
-            return "!=";
-        } else if (node instanceof GeOp) {
-            return ">=";
-        } else if (node instanceof LeOp) {
-            return "<=";
-        } else if (node instanceof GtOp) {
-            return ">";
-        } else if (node instanceof LtOp) {
-            return "<";
-        } else if (node instanceof ReferenceEqOp eq) {
-            return "is";
-        } else if (node instanceof ContainsOp cnt) {
-            return "in";
-        } else if (node instanceof InstanceOfOp op) {
-            return "CALL_(";
-        } else {
-            return null;
-        }
-    }
-
     private String binaryOpToString(BinaryExpression node) {
+        node = parenFiller.makeNewExpression(node);
         String pattern = "";
         Expression left = node.getLeft();
         Expression right = node.getRight();
-        String token = tokenOfBinaryOp(node);
-        if (left instanceof BinaryExpression leftBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        }
-        if (right instanceof BinaryExpression rightBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        }
+        String token = mapToToken(node).value;
+        
         if (node instanceof ShortCircuitAndOp) {
             Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
             if (result instanceof CompoundComparison
@@ -886,6 +828,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String unaryToString(UnaryExpression node) {
+        node = parenFiller.makeNewExpression(node);
         String pattern = "";
         Expression expr = node.getArgument();
         if (node instanceof UnaryPlusOp) {
@@ -959,18 +902,11 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String comparisonToString(BinaryComparison node) {
+        node = (BinaryComparison) parenFiller.makeNewExpression(node);
         String pattern = "";
         Expression left = node.getLeft();
         Expression right = node.getRight();
-        String token = tokenOfBinaryOp(node);
-        if (left instanceof BinaryExpression leftBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        }
-        if (right instanceof BinaryExpression rightBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        }
+        String token = mapToToken(node).value;
         if (node instanceof ReferenceEqOp eq) {
             if (eq.isNegative()) {
                 pattern = "%s is not %s";
@@ -1010,5 +946,91 @@ public class PythonViewer extends LanguageViewer {
             sb.append(toString(cmp.getRight()));
         }
         return sb.toString();
+    }
+
+    public OperatorToken mapToToken(Expression expr) {
+        String tok = switch (expr) {
+            case AddOp op -> "+";
+            case SubOp op -> "-";
+            case MulOp op -> "*";
+            case DivOp op -> "/";
+            case ModOp op -> "%";
+            case PowOp op -> "**";
+            case MatMulOp op -> "@";
+            case ContainsOp op -> {
+                if (op.isNegative()) {
+                    yield "not in";
+                }
+                yield "in";
+            }
+            case FloorDivOp op -> "//";
+            case ReferenceEqOp op -> {
+                if (op.isNegative()) {
+                    yield "is not";
+                }
+                yield "is";
+            }
+            case EqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is";
+                }
+                yield "==";
+            }
+            case NotEqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is not";
+                }
+                yield "!=";
+            }
+            case GeOp op -> ">=";
+            case LeOp op -> "<=";
+            case LtOp op -> "<";
+            case GtOp op -> ">";
+            case InstanceOfOp op -> "CALL_(";
+            case ShortCircuitAndOp op -> "and";
+            case ShortCircuitOrOp op -> "or";
+            case BitwiseAndOp op -> "&";
+            case BitwiseOrOp op -> "|";
+            case LeftShiftOp op -> "<<";
+            case RightShiftOp op -> ">>";
+            case FunctionCall op -> "CALL_(";
+            case TernaryOperator op -> "if";
+            case PointerMemberAccess op -> "->";
+            case NewExpression op -> "new";
+            case MemberAccess op -> ".";
+            case XorOp op -> "^";
+            case IndexExpression op -> "[";
+            case ThreeWayComparisonOp op -> "<=>";
+            case AssignmentExpression as -> {
+                AugmentedAssignmentOperator op = as.getAugmentedOperator();
+                yield switch (op) {
+                    case NONE -> ":=";
+                    case ADD -> "+=";
+                    case SUB -> "-=";
+                    case MUL -> "*=";
+                    // В Java тип деления определяется не видом операции, а типом операндов,
+                    // поэтому один и тот же оператор
+                    case DIV, FLOOR_DIV -> "/=";
+                    case BITWISE_AND -> "&=";
+                    case BITWISE_OR -> "|=";
+                    case BITWISE_XOR -> "^=";
+                    case BITWISE_SHIFT_LEFT -> "<<=";
+                    case BITWISE_SHIFT_RIGHT -> ">>=";
+                    case MOD -> "%=";
+                    default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+                };
+            }
+            // unary section
+            case NotOp op -> "not";
+            case InversionOp op -> "~";
+            case UnaryMinusOp op -> "UMINUS";
+            case UnaryPlusOp op -> "UPLUS";
+            case PostfixIncrementOp op -> "+=";
+            case PrefixIncrementOp op -> "+=";
+            case PostfixDecrementOp op -> "-=";
+            case PrefixDecrementOp op -> "-=";
+            default -> null;
+        };
+        return translator.getTokenizer().getOperatorByTokenName(tok);
     }
 }

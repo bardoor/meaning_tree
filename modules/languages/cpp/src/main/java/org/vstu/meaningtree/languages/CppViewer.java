@@ -50,6 +50,7 @@ import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
 import org.vstu.meaningtree.nodes.types.containers.ListType;
 import org.vstu.meaningtree.nodes.types.containers.SetType;
 import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,9 @@ import java.util.stream.Collectors;
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
 public class CppViewer extends LanguageViewer {
+    public CppViewer(LanguageTranslator translator) {
+        super(translator);
+    }
 
     @NotNull
     @Override
@@ -429,6 +433,7 @@ public class CppViewer extends LanguageViewer {
     @NotNull
     private String toStringAssignmentExpression(@NotNull AssignmentExpression assign) {
         AugmentedAssignmentOperator op = assign.getAugmentedOperator();
+        assign = (AssignmentExpression) parenFiller.makeNewExpression(assign);
         Expression left = assign.getLValue();
         Expression right = assign.getRValue();
 
@@ -455,21 +460,6 @@ public class CppViewer extends LanguageViewer {
             default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
         };
 
-        if (left instanceof BinaryExpression leftBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > CppTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > CppTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
 
         String l = toString(left);
         String r = toString(right);
@@ -599,6 +589,7 @@ public class CppViewer extends LanguageViewer {
                 && p.getExpression() instanceof InstanceOfOp op) {
             return String.format("dynamic_cast<%s>(%s) == nullptr", toString(op.getRight()), toString(op.getLeft()));
         }
+        unaryExpression = parenFiller.makeNewExpression(unaryExpression);
 
         String operator = switch (unaryExpression) {
             case NotOp op -> "!";
@@ -618,7 +609,6 @@ public class CppViewer extends LanguageViewer {
                 || unaryExpression instanceof PostfixIncrementOp) {
             return toString(unaryExpression.getArgument()) + operator;
         }
-
         return operator + toString(unaryExpression.getArgument());
     }
 
@@ -644,6 +634,7 @@ public class CppViewer extends LanguageViewer {
             return String.format("(long) (%s / %s)", toString(op.getLeft()), toString(op.getRight()));
         }
 
+        binaryExpression = parenFiller.makeNewExpression(binaryExpression);
         Expression left = binaryExpression.getLeft();
         Expression right = binaryExpression.getRight();
 
@@ -670,22 +661,6 @@ public class CppViewer extends LanguageViewer {
             default -> throw new IllegalStateException("Unexpected value: " + binaryExpression);
         };
 
-        if (left instanceof BinaryExpression leftBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
-
         return "%s %s %s".formatted(
                 toString(left),
                 operator,
@@ -693,8 +668,8 @@ public class CppViewer extends LanguageViewer {
         );
     }
 
-    private String tokenOfBinaryOp(BinaryExpression leftBinOp) {
-        return switch (leftBinOp) {
+    public OperatorToken mapToToken(Expression expr) {
+        String tok = switch (expr) {
             case AddOp op -> "+";
             case SubOp op -> "-";
             case MulOp op -> "*";
@@ -702,42 +677,65 @@ public class CppViewer extends LanguageViewer {
             case ModOp op -> "%";
             case EqOp op -> "==";
             case NotEqOp op -> "!=";
+            case PowOp op -> "CALL_(";
+            case MatMulOp op -> "CALL_(";
+            case ContainsOp op -> "CALL_(";
             case GeOp op -> ">=";
             case ReferenceEqOp op -> "==";
             case LeOp op -> "<=";
             case LtOp op -> "<";
             case GtOp op -> ">";
-            case InstanceOfOp op -> "instanceof";
+            case InstanceOfOp op -> "CALL_(";
             case ShortCircuitAndOp op -> "&&";
             case ShortCircuitOrOp op -> "||";
             case BitwiseAndOp op -> "&";
             case BitwiseOrOp op -> "|";
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
+            case FunctionCall op -> "CALL_(";
+            case TernaryOperator op -> "?";
+            case PointerMemberAccess op -> "->";
+            case NewExpression op -> "new";
+            case DeleteExpression op -> "delete";
+            case CommaExpression op -> ",";
+            case QualifiedIdentifier op -> "::";
+            case MemberAccess op -> ".";
             case XorOp op -> "^";
+            case IndexExpression op -> "[";
             case ThreeWayComparisonOp op -> "<=>";
+            case AssignmentExpression as -> {
+                AugmentedAssignmentOperator op = as.getAugmentedOperator();
+                yield switch (op) {
+                    case NONE -> "=";
+                    case ADD -> "+=";
+                    case SUB -> "-=";
+                    case MUL -> "*=";
+                    // В Java тип деления определяется не видом операции, а типом операндов,
+                    // поэтому один и тот же оператор
+                    case DIV, FLOOR_DIV -> "/=";
+                    case BITWISE_AND -> "&=";
+                    case BITWISE_OR -> "|=";
+                    case BITWISE_XOR -> "^=";
+                    case BITWISE_SHIFT_LEFT -> "<<=";
+                    case BITWISE_SHIFT_RIGHT -> ">>=";
+                    case MOD -> "%=";
+                    default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+                };
+            }
             case FloorDivOp op -> "CALL_("; // чтобы взять токен такого же приоритета, решение не очень
-            default -> throw new IllegalStateException("Unexpected type of binary operator: " + leftBinOp.getClass().getName());
+            // unary section
+            case NotOp op -> "!";
+            case InversionOp op -> "~";
+            case UnaryMinusOp op -> "UMINUS";
+            case UnaryPlusOp op -> "UPLUS";
+            case PostfixIncrementOp op -> "++";
+            case PrefixIncrementOp op -> "++U";
+            case PostfixDecrementOp op -> "--";
+            case PrefixDecrementOp op -> "--U";
+            case PointerPackOp op -> "POINTER_&";
+            case PointerUnpackOp op -> "POINTER_*";
+            default -> null;
         };
-    }
-
-    public String tokenOfBinaryOp(AssignmentExpression expr) {
-        AugmentedAssignmentOperator op = expr.getAugmentedOperator();
-        return switch (op) {
-            case NONE -> "=";
-            case ADD -> "+=";
-            case SUB -> "-=";
-            case MUL -> "*=";
-            // В Java тип деления определяется не видом операции, а типом операндов,
-            // поэтому один и тот же оператор
-            case DIV, FLOOR_DIV -> "/=";
-            case BITWISE_AND -> "&=";
-            case BITWISE_OR -> "|=";
-            case BITWISE_XOR -> "^=";
-            case BITWISE_SHIFT_LEFT -> "<<=";
-            case BITWISE_SHIFT_RIGHT -> ">>=";
-            case MOD -> "%=";
-            default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
-        };
+        return translator.getTokenizer().getOperatorByTokenName(tok);
     }
 }

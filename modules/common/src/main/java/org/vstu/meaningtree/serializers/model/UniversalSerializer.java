@@ -31,9 +31,9 @@ import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.nodes.types.user.*;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.Enum;
-import org.vstu.meaningtree.nodes.types.user.*;
 
 import java.util.*;
 
@@ -41,6 +41,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     @Override
     public SerializedNode serialize(Node node) {
         SerializedNode result =  switch (node) {
+            case AssignmentExpression expr -> serialize(expr);
             case BinaryExpression expr -> serialize(expr);
             case UnaryExpression expr -> serialize(expr);
             case ParenthesizedExpression expr -> serialize(expr);
@@ -53,7 +54,6 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case IndexExpression expr -> serialize(expr);
             case CompoundComparison compound -> serialize(compound);
             case AssignmentStatement stmt -> serialize(stmt);
-            case AssignmentExpression expr -> serialize(expr);
             case ExpressionSequence sequence -> serialize(sequence);
             case ExpressionStatement stmt -> serialize(stmt);
             case MemberAccess member -> serialize(member);

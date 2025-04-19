@@ -257,10 +257,10 @@ public class HindleyMilner {
         return switch (expression) {
             case Literal literal -> inference(literal);
             case SimpleIdentifier identifier -> inference(identifier, scope);
+            case AssignmentExpression assignmentExpression -> inference(assignmentExpression, scope);
             case UnaryExpression unaryExpression -> inference(unaryExpression, scope);
             case BinaryExpression binaryExpression -> inference(binaryExpression, scope);
             case ParenthesizedExpression parenthesizedExpression -> inference(parenthesizedExpression.getExpression(), scope);
-            case AssignmentExpression assignmentExpression -> inference(assignmentExpression, scope);
             case CompoundComparison compoundComparison -> inference(compoundComparison, scope);
             case TernaryOperator ternaryOperator -> inference(ternaryOperator, scope);
             case Range range -> inference(range, scope);

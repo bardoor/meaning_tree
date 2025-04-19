@@ -8,11 +8,13 @@ import java.util.Map;
 
 public class PythonTranslator extends LanguageTranslator {
     public PythonTranslator(Map<String, String> rawStringConfig) {
-        super(new PythonLanguage(), new PythonViewer(), rawStringConfig);
+        super(new PythonLanguage(), null, rawStringConfig);
+        this.setViewer(new PythonViewer(this));
     }
 
     public PythonTranslator() {
-        super(new PythonLanguage(), new PythonViewer(), new HashMap<>());
+        super(new PythonLanguage(), null, new HashMap<>());
+        this.setViewer(new PythonViewer(this));
     }
 
     @Override

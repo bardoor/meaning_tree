@@ -2,24 +2,22 @@ package org.vstu.meaningtree.nodes.expressions.other;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 
 import java.util.Objects;
 
-public class AssignmentExpression extends Expression implements HasInitialization {
-    private Expression _lvalue;
-    private Expression _rvalue;
+public class AssignmentExpression extends BinaryExpression implements HasInitialization {
     private final AugmentedAssignmentOperator _op;
 
     public AssignmentExpression(Expression id, Expression value, AugmentedAssignmentOperator op) {
-        _lvalue = id;
-        _rvalue = value;
+        super(id, value);
         _op = op;
     }
 
     public AssignmentStatement toStatement() {
-        return new AssignmentStatement(_lvalue, _rvalue, _op);
+        return new AssignmentStatement(_left, _right, _op);
     }
 
     public AssignmentExpression(Expression id, Expression value) {
@@ -31,11 +29,11 @@ public class AssignmentExpression extends Expression implements HasInitializatio
     }
 
     public Expression getLValue() {
-        return _lvalue;
+        return _left;
     }
 
     public Expression getRValue() {
-        return _rvalue;
+        return _right;
     }
 
     @Override
@@ -44,11 +42,11 @@ public class AssignmentExpression extends Expression implements HasInitializatio
 
         builder.append(String.format("%s [label=\"%s\"];\n", _id, _op.toString()));
 
-        builder.append(_lvalue.generateDot());
-        builder.append(_rvalue.generateDot());
+        builder.append(_left.generateDot());
+        builder.append(_right.generateDot());
 
-        builder.append(String.format("%s -- %s;\n", _id, _lvalue.getId()));
-        builder.append(String.format("%s -- %s;\n", _id, _rvalue.getId()));
+        builder.append(String.format("%s -- %s;\n", _id, _left.getId()));
+        builder.append(String.format("%s -- %s;\n", _id, _right.getId()));
 
         return builder.toString();
     }
@@ -58,19 +56,19 @@ public class AssignmentExpression extends Expression implements HasInitializatio
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AssignmentExpression that = (AssignmentExpression) o;
-        return Objects.equals(_lvalue, that._lvalue) && Objects.equals(_rvalue, that._rvalue) && _op == that._op;
+        return Objects.equals(_left, that._left) && Objects.equals(_right, that._right) && _op == that._op;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _lvalue, _rvalue, _op);
+        return Objects.hash(super.hashCode(), _left, _right, _op);
     }
 
     @Override
     public AssignmentExpression clone() {
         AssignmentExpression obj = (AssignmentExpression) super.clone();
-        obj._lvalue = _lvalue.clone();
-        obj._rvalue = _rvalue.clone();
+        obj._left = _left.clone();
+        obj._right = _right.clone();
         return obj;
     }
 }

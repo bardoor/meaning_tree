@@ -15,6 +15,7 @@ import java.util.Map;
 abstract public class LanguageParser {
     protected String _code = "";
     private List<ConfigParameter> _cfg;
+    protected LanguageTranslator translator;
     protected Map<int[], Object> _byteValueTags = new HashMap<>();
 
     public abstract TSTree getTSTree();

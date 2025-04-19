@@ -307,11 +307,28 @@ public class CppTokenizer extends LanguageTokenizer {
     }
 
     public TokenGroup tokenizeExtended(Node node, TokenList result) {
+        if (node instanceof BinaryExpression) {
+            node = this.viewer.parenFiller.makeNewExpression((BinaryExpression) node);
+        } else if (node instanceof UnaryExpression) {
+            node = this.viewer.parenFiller.makeNewExpression((UnaryExpression) node);
+        }
         if (node.hasLabel(NodeLabel.DUMMY)) {
             return new TokenGroup(0, 0, result);
         }
         int posStart = result.size();
         switch (node) {
+            case AssignmentExpression assignment -> {
+                OperatorToken opTok = getOperatorByTokenName("=");
+                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
+                result.add(opTok);
+                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
+                group1.setMetadata(opTok, OperandPosition.LEFT);
+                group2.setMetadata(opTok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    opTok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
+            }
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
             case FunctionCall call -> tokenizeCall(call, result);
@@ -345,18 +362,6 @@ public class CppTokenizer extends LanguageTokenizer {
                 result.add(new Token("(", TokenType.OPENING_BRACE));
                 tokenizeExtended(paren.getExpression(), result);
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
-            }
-            case AssignmentExpression assignment -> {
-                OperatorToken opTok = getOperatorByTokenName("=");
-                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
-                result.add(opTok);
-                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
-                group1.setMetadata(opTok, OperandPosition.LEFT);
-                group2.setMetadata(opTok, OperandPosition.RIGHT);
-                if (assignment.getAssignedValueTag() != null) {
-                    opTok.assignValue(assignment.getAssignedValueTag());
-                    valueSetNodes.add(assignment.getId());
-                }
             }
             case AssignmentStatement assignment -> {
                 OperatorToken opTok = getOperatorByTokenName("=");

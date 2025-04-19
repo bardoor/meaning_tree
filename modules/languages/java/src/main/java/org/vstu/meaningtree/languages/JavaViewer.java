@@ -21,6 +21,7 @@ import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -35,8 +36,10 @@ import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
@@ -66,6 +69,7 @@ import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -106,11 +110,12 @@ public class JavaViewer extends LanguageViewer {
         _currentScope.addMethod(methodName, returnType);
     }
 
-    public JavaViewer(int indentSpaceCount,
+    public JavaViewer(LanguageTranslator translator, int indentSpaceCount,
                       boolean openBracketOnSameLine,
                       boolean bracketsAroundCaseBranches,
                       boolean autoVariableDeclaration
     ) {
+        super(translator);
         _indentation = " ".repeat(indentSpaceCount);
         _indentLevel = 0;
         _openBracketOnSameLine = openBracketOnSameLine;
@@ -120,10 +125,14 @@ public class JavaViewer extends LanguageViewer {
         _autoVariableDeclaration = autoVariableDeclaration;
     }
 
-    public JavaViewer() { this(4, true, false, false); }
+    public JavaViewer(LanguageTranslator translator) { this(translator, 4, true, false, false); }
 
     @Override
     public String toString(Node node) {
+        if (node instanceof UnaryExpression expr) {
+            node = parenFiller.makeNewExpression(expr);
+        }
+
         Objects.requireNonNull(node);
 
         // Для dummy узлов ничего не выводим
@@ -1014,38 +1023,28 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(BinaryExpression expr, String sign) {
+        expr = parenFiller.makeNewExpression(expr);
         Expression left = expr.getLeft();
         Expression right = expr.getRight();
         if (expr instanceof PowOp) {
             return toString(new MethodCall(new SimpleIdentifier("Math"),
                     new SimpleIdentifier("pow"), left, right));
         }
-        if (left instanceof BinaryExpression leftBinOp
-                && tokenOfBinaryOp(leftBinOp) != null && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-            && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && tokenOfBinaryOp(rightBinOp) != null && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
 
         return String.format("%s %s %s", toString(left), sign, toString(right));
     }
 
-    private String tokenOfBinaryOp(BinaryExpression leftBinOp) {
-        return switch (leftBinOp) {
+    @Override
+    public OperatorToken mapToToken(Expression expr) {
+        String tok = switch (expr) {
             case AddOp op -> "+";
             case SubOp op -> "-";
             case MulOp op -> "*";
             case DivOp op -> "/";
             case ModOp op -> "%";
+            case PowOp op -> "CALL_(";
+            case MatMulOp op -> "CALL_(";
+            case ContainsOp op -> "CALL_(";
             case EqOp op -> "==";
             case NotEqOp op -> "!=";
             case GeOp op -> ">=";
@@ -1060,29 +1059,47 @@ public class JavaViewer extends LanguageViewer {
             case BitwiseOrOp op -> "|";
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
+            case FunctionCall op -> "CALL_(";
+            case TernaryOperator op -> "?";
+            case PointerMemberAccess op -> ".";
+            case NewExpression op -> "new";
+            case QualifiedIdentifier op -> "::";
+            case MemberAccess op -> ".";
             case XorOp op -> "^";
+            case IndexExpression op -> "[";
+            case ThreeWayComparisonOp op -> "<=>";
+            case AssignmentExpression as -> {
+                AugmentedAssignmentOperator op = as.getAugmentedOperator();
+                yield switch (op) {
+                    case NONE -> "=";
+                    case ADD -> "+=";
+                    case SUB -> "-=";
+                    case MUL -> "*=";
+                    // В Java тип деления определяется не видом операции, а типом операндов,
+                    // поэтому один и тот же оператор
+                    case DIV, FLOOR_DIV -> "/=";
+                    case BITWISE_AND -> "&=";
+                    case BITWISE_OR -> "|=";
+                    case BITWISE_XOR -> "^=";
+                    case BITWISE_SHIFT_LEFT -> "<<=";
+                    case BITWISE_SHIFT_RIGHT -> ">>=";
+                    case MOD -> "%=";
+                    default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+                };
+            }
+            case FloorDivOp op -> "CALL_("; // чтобы взять токен такого же приоритета, решение не очень
+            // unary section
+            case NotOp op -> "!";
+            case InversionOp op -> "~";
+            case UnaryMinusOp op -> "UMINUS";
+            case UnaryPlusOp op -> "UPLUS";
+            case PostfixIncrementOp op -> "++";
+            case PrefixIncrementOp op -> "++U";
+            case PostfixDecrementOp op -> "--";
+            case PrefixDecrementOp op -> "--U";
             default -> null;
         };
-    }
-
-    public String tokenOfBinaryOp(AssignmentExpression expr) {
-        AugmentedAssignmentOperator op = expr.getAugmentedOperator();
-        return switch (op) {
-            case NONE -> "=";
-            case ADD -> "+=";
-            case SUB -> "-=";
-            case MUL -> "*=";
-            // В Java тип деления определяется не видом операции, а типом операндов,
-            // поэтому один и тот же оператор
-            case DIV, FLOOR_DIV -> "/=";
-            case BITWISE_AND -> "&=";
-            case BITWISE_OR -> "|=";
-            case BITWISE_XOR -> "^=";
-            case BITWISE_SHIFT_LEFT -> "<<=";
-            case BITWISE_SHIFT_RIGHT -> ">>=";
-            case MOD -> "%=";
-            default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
-        };
+        return translator.getTokenizer().getOperatorByTokenName(tok);
     }
 
     public String toString(AddOp op) {
@@ -1181,22 +1198,6 @@ public class JavaViewer extends LanguageViewer {
             default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
         };
 
-        if (left instanceof BinaryExpression leftBinOp
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
-
         if (right instanceof IntegerLiteral integerLiteral
                 && (long) integerLiteral.getValue() == 1
                 && (o.equals("+=") || o.equals("-="))) {
@@ -1213,6 +1214,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(AssignmentExpression expr) {
+        expr = (AssignmentExpression) parenFiller.makeNewExpression(expr);
         return toString(expr.getAugmentedOperator(), expr.getLValue(), expr.getRValue());
     }
 
@@ -1486,6 +1488,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(BinaryComparison binComp) {
+        binComp = (BinaryComparison) parenFiller.makeNewExpression(binComp);
         return switch (binComp) {
             case EqOp op -> toString(op);
             case GeOp op -> toString(op);
