@@ -20,6 +20,9 @@ public class ParenthesesFiller {
         expr = expr.clone();
 
         OperatorToken tok = _mapper.apply(expr);
+        if (tok == null) {
+            return expr;
+        }
 
         Expression left = expr.getLeft();
         OperatorToken tokLeft = _mapper.apply(expr.getLeft());
@@ -27,17 +30,18 @@ public class ParenthesesFiller {
         Expression right = expr.getRight();
         OperatorToken tokRight = _mapper.apply(expr.getRight());
 
+
         if (left instanceof BinaryExpression leftBinOp
                 && tokLeft.precedence > tok.precedence) {
             left = new ParenthesizedExpression(leftBinOp);
         }
 
-        if (right instanceof BinaryExpression rightBinOp
+        if (tokRight != null && right instanceof BinaryExpression rightBinOp
                 && tokRight.precedence > tok.precedence) {
             right = new ParenthesizedExpression(rightBinOp);
         }
 
-        if (right instanceof BinaryExpression rightBinOp) {
+        if (tokRight != null && right instanceof BinaryExpression rightBinOp) {
             if (tok.precedence == tokRight.precedence
                     && tok.assoc == tokRight.assoc && tok.assoc == OperatorAssociativity.LEFT
             ) {
@@ -45,7 +49,7 @@ public class ParenthesesFiller {
             }
         }
 
-        if (left instanceof BinaryExpression leftBinOp) {
+        if (tokLeft != null && left instanceof BinaryExpression leftBinOp) {
             if (tok.precedence == tokLeft.precedence
                     && tok.assoc == tokLeft.assoc && tok.assoc == OperatorAssociativity.RIGHT
             ) {
@@ -63,6 +67,9 @@ public class ParenthesesFiller {
         Expression arg = expr.getArgument();
         OperatorToken tok = _mapper.apply(expr);
         OperatorToken argTok = _mapper.apply(arg);
+        if (tok == null || argTok == null) {
+            return expr;
+        }
 
         if (arg instanceof BinaryExpression ||
                 (arg instanceof UnaryExpression && argTok.precedence < tok.precedence)
