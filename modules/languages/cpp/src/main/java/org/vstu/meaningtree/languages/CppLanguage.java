@@ -171,6 +171,8 @@ public class CppLanguage extends LanguageParser {
             case "pointer_expression" -> fromPointerExpression(node);
             case "this" -> new SelfReference("this");
             case "offsetof_expression" -> fromOffsetOf(node);
+            case "preproc_defined" -> new FunctionCall(new SimpleIdentifier("defined"), (Expression)
+                    fromTSNode(node.getNamedChild(0)));
             case "comment" -> fromComment(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
