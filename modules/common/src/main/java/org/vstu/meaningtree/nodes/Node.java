@@ -3,15 +3,16 @@ package org.vstu.meaningtree.nodes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.utils.Experimental;
+import org.vstu.meaningtree.utils.Label;
+import org.vstu.meaningtree.utils.LabelAttachable;
 import org.vstu.meaningtree.utils.NodeIterator;
-import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-abstract public class Node implements Serializable, Cloneable {
+abstract public class Node implements Serializable, Cloneable, LabelAttachable {
     protected static AtomicLong _id_generator = new AtomicLong();
     protected long _id = _id_generator.incrementAndGet();
 
@@ -54,7 +55,7 @@ abstract public class Node implements Serializable, Cloneable {
         }
     }
 
-    private Set<NodeLabel> _labels = new HashSet<>();
+    private Set<Label> _labels = new HashSet<>();
 
     /**
      * Проверяет значение узлов по значению
@@ -241,8 +242,8 @@ abstract public class Node implements Serializable, Cloneable {
      * @param obj - любой объект
      */
     public void setAssignedValueTag(@Nullable Object obj) {
-        removeLabel(NodeLabel.VALUE);
-        _labels.add(new NodeLabel(NodeLabel.VALUE, obj));
+        removeLabel(Label.VALUE);
+        _labels.add(new Label(Label.VALUE, obj));
     }
 
     /**
@@ -251,7 +252,7 @@ abstract public class Node implements Serializable, Cloneable {
      */
     @Nullable
     public Object getAssignedValueTag() {
-        NodeLabel label = getLabel(NodeLabel.VALUE);
+        Label label = getLabel(Label.VALUE);
         if (label != null) {
             return label.getAttribute();
         } else {
@@ -280,50 +281,24 @@ abstract public class Node implements Serializable, Cloneable {
         return result.stream().filter(Objects::nonNull).toList();
     }
 
-    public void setLabel(NodeLabel label) {
+    @Override
+    public void setLabel(Label label) {
         _labels.add(label);
     }
 
-    public void setLabel(short id) {
-        _labels.add(new NodeLabel(id));
+    @Override
+    public Label getLabel(short id) {
+        return _labels.stream().filter((Label l) -> l.getId() == id).findFirst().orElse(null);
     }
 
-    public NodeLabel getLabel(short id) {
-        return _labels.stream().filter((NodeLabel l) -> l.getId() == id).findFirst().orElse(null);
-    }
-
+    @Override
     public boolean hasLabel(short id) {
-        return _labels.stream().anyMatch((NodeLabel l) -> l.getId() == id);
+        return _labels.stream().anyMatch((Label l) -> l.getId() == id);
     }
 
-    /**
-     * Переключает состояние метки
-     * @param id - айди метки
-     * @param val - атрибут
-     * @return убрана или установлена метка после вызова этой функции
-     */
-    public boolean toggleLabel(short id, Object val) {
-        NodeLabel label = getLabel(id);
-        if (label != null) {
-            _labels.remove(label);
-            return false;
-        } else {
-            _labels.add(new NodeLabel(id));
-            return true;
-        }
-    }
-
-    /**
-     * Переключает состояние метки
-     * @param id - айди метки
-     * @return убрана или установлена метка после вызова этой функции
-     */
-    public boolean toggleLabel(short id) {
-        return toggleLabel(id, null);
-    }
-
-    public boolean removeLabel(short id) {
-        return _labels.remove(getLabel(id));
+    @Override
+    public boolean removeLabel(Label label) {
+        return _labels.remove(label);
     }
 
     @Deprecated

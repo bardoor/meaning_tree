@@ -68,7 +68,7 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.*;
@@ -136,7 +136,7 @@ public class JavaViewer extends LanguageViewer {
         Objects.requireNonNull(node);
 
         // Для dummy узлов ничего не выводим
-        if (node.hasLabel(NodeLabel.DUMMY)) {
+        if (node.hasLabel(Label.DUMMY)) {
             return "";
         }
 

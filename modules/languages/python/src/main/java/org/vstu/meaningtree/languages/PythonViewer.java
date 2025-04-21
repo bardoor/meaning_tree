@@ -60,7 +60,7 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
@@ -79,7 +79,7 @@ public class PythonViewer extends LanguageViewer {
     @Override
     public String toString(Node node) {
         // Для dummy узлов ничего не выводим
-        if (node.hasLabel(NodeLabel.DUMMY)) {
+        if (node.hasLabel(Label.DUMMY)) {
             return "";
         }
 

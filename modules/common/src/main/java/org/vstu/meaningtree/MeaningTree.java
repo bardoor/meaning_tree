@@ -3,14 +3,17 @@ package org.vstu.meaningtree;
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.Experimental;
+import org.vstu.meaningtree.utils.Label;
+import org.vstu.meaningtree.utils.LabelAttachable;
 import org.vstu.meaningtree.utils.NodeIterator;
 
 import java.io.Serializable;
 import java.util.*;
 
-public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info> {
+public class MeaningTree implements Serializable, LabelAttachable, Cloneable, Iterable<Node.Info> {
     private Node _rootNode;
     private TreeMap<Long, Node.Info> _index = null;
+    private Set<Label> _labels = new HashSet<>();
 
     public MeaningTree(Node rootNode) {
         _rootNode = rootNode;
@@ -126,6 +129,26 @@ public class MeaningTree implements Serializable, Cloneable, Iterable<Node.Info>
     @Override
     public MeaningTree clone() {
         return new MeaningTree(_rootNode.clone());
+    }
+
+    @Override
+    public void setLabel(Label label) {
+        _labels.add(label);
+    }
+
+    @Override
+    public Label getLabel(short id) {
+        return _labels.stream().filter((Label l) -> l.getId() == id).findFirst().orElse(null);
+    }
+
+    @Override
+    public boolean hasLabel(short id) {
+        return _labels.stream().anyMatch((Label l) -> l.getId() == id);
+    }
+
+    @Override
+    public boolean removeLabel(Label label) {
+        return _labels.remove(label);
     }
 }
 

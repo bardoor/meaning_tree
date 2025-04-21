@@ -49,7 +49,7 @@ import org.vstu.meaningtree.nodes.types.containers.ArrayType;
 import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
 import org.vstu.meaningtree.nodes.types.containers.ListType;
 import org.vstu.meaningtree.nodes.types.containers.SetType;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.ArrayList;
@@ -74,7 +74,7 @@ public class CppViewer extends LanguageViewer {
     @Override
     public String toString(@NotNull Node node) {
         // Для dummy узлов ничего не выводим
-        if (node.hasLabel(NodeLabel.DUMMY)) {
+        if (node.hasLabel(Label.DUMMY)) {
             return "";
         }
 

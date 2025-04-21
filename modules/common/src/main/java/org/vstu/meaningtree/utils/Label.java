@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Специальные метки для узла дерева
  */
-public class NodeLabel {
+public class Label {
     /**
      * Метка, которая использует атрибут и позволяет привязать к узлу любое значение для любых целей
      */
@@ -16,15 +16,22 @@ public class NodeLabel {
      */
     public static final short DUMMY = 1;
 
+    /**
+     * Пометка для пользовательского кода, указывает, что узел изменился после каких-то манипуляций (мутация).
+     * Устанавливается пользовательским кодом по соглашениям, определенным в нем.
+     * Может иметь атрибут в виде short кода, принятого пользователем для уточнения мутации
+     */
+    public static final short MUTATION_FLAG = 2;
+
     private short id;
     private Object attribute = null;
 
-    public NodeLabel(short id, Object attribute) {
+    public Label(short id, Object attribute) {
         this.attribute = attribute;
         this.id = id;
     }
 
-    public NodeLabel(short id) {
+    public Label(short id) {
         this.id = id;
     }
 
@@ -42,8 +49,8 @@ public class NodeLabel {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof NodeLabel)) return false;
-        return ((NodeLabel)o).id == this.id;
+        if (!(o instanceof Label)) return false;
+        return ((Label)o).id == this.id;
     }
 
     @Override
