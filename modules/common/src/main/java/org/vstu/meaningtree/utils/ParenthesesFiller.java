@@ -10,6 +10,8 @@ import org.vstu.meaningtree.utils.tokens.OperatorToken;
 import java.util.function.Function;
 
 public class ParenthesesFiller {
+    // Warning: Приоритет в токенах от высшего (1) к низшему!!
+
     private Function<Expression, OperatorToken> _mapper;
 
     public ParenthesesFiller(Function<Expression, OperatorToken> mapperNodeToOperatorToken) {
@@ -72,7 +74,7 @@ public class ParenthesesFiller {
         }
 
         if (arg instanceof BinaryExpression ||
-                (arg instanceof UnaryExpression && argTok.precedence < tok.precedence)
+                (arg instanceof UnaryExpression && argTok.precedence > tok.precedence)
         ) {
             arg = new ParenthesizedExpression(arg);
         }
