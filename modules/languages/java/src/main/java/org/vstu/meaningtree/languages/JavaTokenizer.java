@@ -161,11 +161,11 @@ public class JavaTokenizer extends LanguageTokenizer {
             }
         }
 
-        if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().isNull() && node.getParent().getType().equals("method_invocation")) {
+        if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().getParent().isNull() && node.getParent().getParent().getType().equals("method_invocation")) {
             return operators.get("CALL_(").clone();
         }
 
-        if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().isNull() && node.getParent().getType().equals("method_invocation")) {
+        if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().getParent().isNull() && node.getParent().getParent().getType().equals("method_invocation")) {
             return operators.get("CALL_)").clone();
         }
 
@@ -551,6 +551,11 @@ public class JavaTokenizer extends LanguageTokenizer {
             case InstanceOfOp op -> "instanceof";
             default -> null;
         };
+        if (binOp instanceof PowOp) {
+            tokenizeExtended(new MethodCall(new SimpleIdentifier("Math"),
+                    new SimpleIdentifier("pow"), binOp.getLeft(), binOp.getRight()), result);
+            return;
+        }
         if (binOp instanceof ContainsOp) {
             tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()), result);
             return;

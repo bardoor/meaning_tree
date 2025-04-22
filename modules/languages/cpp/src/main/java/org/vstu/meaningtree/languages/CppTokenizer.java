@@ -212,11 +212,11 @@ public class CppTokenizer extends LanguageTokenizer {
             }
         }
 
-        if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().isNull() && node.getParent().getType().equals("call_expression")) {
+        if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().getParent().isNull() && node.getParent().getParent().getType().equals("call_expression")) {
             return operators.get("CALL_(").clone();
         }
 
-        if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().isNull() && node.getParent().getType().equals("call_expression")) {
+        if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().getParent().isNull() && node.getParent().getParent().getType().equals("call_expression")) {
             return operators.get("CALL_)").clone();
         }
 
@@ -640,6 +640,11 @@ public class CppTokenizer extends LanguageTokenizer {
             case ThreeWayComparisonOp op -> "<=>";
             default -> null;
         };
+        if (binOp instanceof PowOp) {
+            tokenizeExtended(new FunctionCall(
+                    new SimpleIdentifier("pow"), binOp.getLeft(), binOp.getRight()), result);
+            return;
+        }
         if (binOp instanceof ContainsOp) {
             tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()), result);
             return;
