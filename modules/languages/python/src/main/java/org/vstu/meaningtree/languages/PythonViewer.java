@@ -32,7 +32,6 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
-import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
@@ -115,9 +114,18 @@ public class PythonViewer extends LanguageViewer {
             case FormatPrint fmt -> throw new UnsupportedViewingException("Format print is not supported in Python");
             case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Python");
             case Identifier identifier -> identifierToString(identifier);
-            case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
-            case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
-            case TernaryOperator ternary -> String.format("%s if %s else %s", toString(ternary.getThenExpr()), toString(ternary.getCondition()), toString(ternary.getElseExpr()));
+            case IndexExpression indexExpr -> {
+                indexExpr = parenFiller.process(indexExpr);
+                yield String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
+            }
+            case MemberAccess memAccess -> {
+                memAccess = parenFiller.process(memAccess);
+                yield String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
+            }
+            case TernaryOperator ternary -> {
+                ternary = parenFiller.process(ternary);
+                yield String.format("%s if %s else %s", toString(ternary.getThenExpr()), toString(ternary.getCondition()), toString(ternary.getElseExpr()));
+            }
             case ParenthesizedExpression paren -> String.format("(%s)", toString(paren.getExpression()));
             case ObjectNewExpression newExpr -> callsToString(newExpr);
             case ArrayNewExpression newExpr -> callsToString(newExpr);
@@ -540,7 +548,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
-        expr = (AssignmentExpression) parenFiller.makeNewExpression(expr);
+        expr = (AssignmentExpression) parenFiller.process(expr);
         if (!(expr.getLValue() instanceof SimpleIdentifier) || (expr.getRValue() instanceof AssignmentExpression)) {
             if (getConfigParameter("expressionMode").getBooleanValue()) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
@@ -730,7 +738,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String binaryOpToString(BinaryExpression node) {
-        node = parenFiller.makeNewExpression(node);
+        node = parenFiller.process(node);
         String pattern = "";
         Expression left = node.getLeft();
         Expression right = node.getRight();
@@ -780,16 +788,21 @@ public class PythonViewer extends LanguageViewer {
                 }
             }
             case ObjectNewExpression newExpr -> {
-                return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
+                FunctionCall call = new FunctionCall(newExpr.getType(), newExpr.getConstructorArguments());
+                return callsToString(call);
             }
             case MethodCall funcCall -> {
-                return String.format("%s.%s(%s)", toString(funcCall.getObject()), toString(funcCall.getFunction()), argumentsToString(funcCall.getArguments()));
+                MemberAccess memAcc = parenFiller.process(new MemberAccess(funcCall.getObject(),
+                        (SimpleIdentifier) funcCall.getFunctionName()));
+                return String.format("%s(%s)", toString(memAcc), argumentsToString(funcCall.getArguments()));
             }
             case FunctionCall funcCall -> {
+                funcCall = parenFiller.process(funcCall);
                 return String.format("%s(%s)", toString(PythonSpecificFeatures.getFunctionExpression(funcCall)), argumentsToString(funcCall.getArguments()));
             }
             case CastTypeExpression cast -> {
-                return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));
+                FunctionCall call = new FunctionCall(cast.getCastType(), cast.getValue());
+                return callsToString(call);
             }
             case null, default -> throw new MeaningTreeException("Not a callable object");
         }
@@ -828,7 +841,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String unaryToString(UnaryExpression node) {
-        node = parenFiller.makeNewExpression(node);
+        node = parenFiller.process(node);
         String pattern = "";
         Expression expr = node.getArgument();
         if (node instanceof UnaryPlusOp) {
@@ -902,7 +915,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String comparisonToString(BinaryComparison node) {
-        node = (BinaryComparison) parenFiller.makeNewExpression(node);
+        node = (BinaryComparison) parenFiller.process(node);
         String pattern = "";
         Expression left = node.getLeft();
         Expression right = node.getRight();
@@ -986,6 +999,7 @@ public class PythonViewer extends LanguageViewer {
             case LeOp op -> "<=";
             case LtOp op -> "<";
             case GtOp op -> ">";
+            case ScopedIdentifier op -> ".";
             case InstanceOfOp op -> "CALL_(";
             case ShortCircuitAndOp op -> "and";
             case ShortCircuitOrOp op -> "or";
@@ -995,7 +1009,6 @@ public class PythonViewer extends LanguageViewer {
             case RightShiftOp op -> ">>";
             case FunctionCall op -> "CALL_(";
             case TernaryOperator op -> "if";
-            case PointerMemberAccess op -> "->";
             case NewExpression op -> "new";
             case MemberAccess op -> ".";
             case XorOp op -> "^";

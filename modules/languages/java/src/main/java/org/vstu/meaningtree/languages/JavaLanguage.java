@@ -519,6 +519,9 @@ public class JavaLanguage extends LanguageParser {
         }
 
         Identifier methodName = fromIdentifierTSNode(nameNode);
+        if (!(methodName instanceof SimpleIdentifier)) {
+            throw new UnsupportedParsingException("methodName must be simple identifier");
+        }
 
         List<Expression> arguments = new ArrayList<>();
         for (int i = 0; i < argumentsNode.getNamedChildCount(); i++) {
@@ -532,7 +535,7 @@ public class JavaLanguage extends LanguageParser {
         }
 
         Expression object = (Expression) fromTSNode(objectNode);
-        return new MethodCall(object, methodName, arguments);
+        return new MethodCall(object, (SimpleIdentifier) methodName, arguments);
     }
 
     private boolean isStaticImport(TSNode importDeclaration) {

@@ -39,7 +39,6 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
-import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
@@ -130,7 +129,7 @@ public class JavaViewer extends LanguageViewer {
     @Override
     public String toString(Node node) {
         if (node instanceof UnaryExpression expr) {
-            node = parenFiller.makeNewExpression(expr);
+            node = parenFiller.process(expr);
         }
 
         Objects.requireNonNull(node);
@@ -581,6 +580,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(TernaryOperator ternaryOperator) {
+        ternaryOperator = parenFiller.process(ternaryOperator);
         String condition = toString(ternaryOperator.getCondition());
         String consequence = toString(ternaryOperator.getThenExpr());
         String alternative = toString(ternaryOperator.getElseExpr());
@@ -588,6 +588,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(IndexExpression indexExpression) {
+        indexExpression = parenFiller.process(indexExpression);
         Expression arrayName = indexExpression.getExpr();
         String name = toString(arrayName);
         String index = toString(indexExpression.getIndex());
@@ -595,6 +596,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(CastTypeExpression castTypeExpression) {
+        castTypeExpression = parenFiller.process(castTypeExpression);
         String castType = toString(castTypeExpression.getCastType());
         String value = toString(castTypeExpression.getValue());
         return "(%s) %s".formatted(castType, value);
@@ -646,6 +648,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(MemberAccess memberAccess) {
+        memberAccess = parenFiller.process(memberAccess);
         String object = toString(memberAccess.getExpression());
         String member = toString(memberAccess.getMember());
         return "%s.%s".formatted(object, member);
@@ -1023,7 +1026,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(BinaryExpression expr, String sign) {
-        expr = parenFiller.makeNewExpression(expr);
+        expr = parenFiller.process(expr);
         Expression left = expr.getLeft();
         Expression right = expr.getRight();
         if (expr instanceof PowOp) {
@@ -1039,6 +1042,7 @@ public class JavaViewer extends LanguageViewer {
         String tok = switch (expr) {
             case AddOp op -> "+";
             case SubOp op -> "-";
+            case ScopedIdentifier op -> ".";
             case MulOp op -> "*";
             case DivOp op -> "/";
             case ModOp op -> "%";
@@ -1046,6 +1050,7 @@ public class JavaViewer extends LanguageViewer {
             case MatMulOp op -> "CALL_(";
             case ContainsOp op -> "CALL_(";
             case EqOp op -> "==";
+            case CastTypeExpression op -> "CAST";
             case NotEqOp op -> "!=";
             case GeOp op -> ">=";
             case ReferenceEqOp op -> "==";
@@ -1061,7 +1066,6 @@ public class JavaViewer extends LanguageViewer {
             case RightShiftOp op -> ">>";
             case FunctionCall op -> "CALL_(";
             case TernaryOperator op -> "?";
-            case PointerMemberAccess op -> ".";
             case NewExpression op -> "new";
             case QualifiedIdentifier op -> "::";
             case MemberAccess op -> ".";
@@ -1214,7 +1218,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(AssignmentExpression expr) {
-        expr = (AssignmentExpression) parenFiller.makeNewExpression(expr);
+        expr = (AssignmentExpression) parenFiller.process(expr);
         return toString(expr.getAugmentedOperator(), expr.getLValue(), expr.getRValue());
     }
 
@@ -1488,7 +1492,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(BinaryComparison binComp) {
-        binComp = (BinaryComparison) parenFiller.makeNewExpression(binComp);
+        binComp = (BinaryComparison) parenFiller.process(binComp);
         return switch (binComp) {
             case EqOp op -> toString(op);
             case GeOp op -> toString(op);
@@ -1812,11 +1816,12 @@ public class JavaViewer extends LanguageViewer {
         return builder.toString();
     }
 
-    public String toString(QualifiedIdentifier scopedIdent) {
+    public String toString(QualifiedIdentifier qualIdent) {
+        qualIdent = parenFiller.process(qualIdent);
         StringBuilder builder = new StringBuilder();
-        builder.append(toString(scopedIdent.getScope()));
+        builder.append(toString(qualIdent.getScope()));
         builder.append("::");
-        builder.append(toString(scopedIdent.getMember()));
+        builder.append(toString(qualIdent.getMember()));
         return builder.toString();
     }
 

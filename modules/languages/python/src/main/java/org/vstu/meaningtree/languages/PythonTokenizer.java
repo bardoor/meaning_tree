@@ -287,10 +287,20 @@ public class PythonTokenizer extends LanguageTokenizer {
         if (node.hasLabel(Label.DUMMY)) {
             return new TokenGroup(0, 0, result);
         }
-        if (node instanceof BinaryExpression) {
-            node = this.viewer.parenFiller.makeNewExpression((BinaryExpression) node);
-        } else if (node instanceof UnaryExpression) {
-            node = this.viewer.parenFiller.makeNewExpression((UnaryExpression) node);
+        if (node instanceof BinaryExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof UnaryExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof IndexExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof CastTypeExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof MemberAccess expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof TernaryOperator expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof FunctionCall expr) {
+            node = this.viewer.parenFiller.process(expr);
         }
         int posStart = result.size();
         switch (node) {

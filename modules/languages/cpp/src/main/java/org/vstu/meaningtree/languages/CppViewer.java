@@ -190,6 +190,7 @@ public class CppViewer extends LanguageViewer {
     }
 
     private String toStringMemberAccess(MemberAccess memAccess) {
+        memAccess = parenFiller.process(memAccess);
         String token = memAccess instanceof PointerMemberAccess ? "->" : ".";
         return String.format("%s%s%s",toString(memAccess.getExpression()), token, toString(memAccess.getMember()));
     }
@@ -260,6 +261,7 @@ public class CppViewer extends LanguageViewer {
     }
 
     private String toStringCast(CastTypeExpression cast) {
+        cast = parenFiller.process(cast);
         return String.format("(%s)%s", toString(cast.getCastType()), toString(cast.getValue()));
     }
 
@@ -361,6 +363,7 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringIndexExpression(@NotNull IndexExpression indexExpression) {
+        indexExpression = parenFiller.process(indexExpression);
         String base = toString(indexExpression.getExpr());
         String indices = toString(indexExpression.getIndex());
         if (indexExpression.isPreferPointerRepresentation()) {
@@ -390,6 +393,7 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringTernaryOperator(@NotNull TernaryOperator ternaryOperator) {
+        ternaryOperator = parenFiller.process(ternaryOperator);
         String condition = toString(ternaryOperator.getCondition());
         String then = toString(ternaryOperator.getThenExpr());
         String else_ = toString(ternaryOperator.getElseExpr());
@@ -433,7 +437,7 @@ public class CppViewer extends LanguageViewer {
     @NotNull
     private String toStringAssignmentExpression(@NotNull AssignmentExpression assign) {
         AugmentedAssignmentOperator op = assign.getAugmentedOperator();
-        assign = (AssignmentExpression) parenFiller.makeNewExpression(assign);
+        assign = (AssignmentExpression) parenFiller.process(assign);
         Expression left = assign.getLValue();
         Expression right = assign.getRValue();
 
@@ -484,7 +488,10 @@ public class CppViewer extends LanguageViewer {
         return switch (identifier) {
             case SimpleIdentifier simpleIdentifier -> simpleIdentifier.getName();
             case ScopedIdentifier scopedIdentifier -> String.join(".", scopedIdentifier.getScopeResolution().stream().map(this::toStringIdentifier).toList());
-            case QualifiedIdentifier qualifiedIdentifier -> String.format("%s::%s", this.toStringIdentifier(qualifiedIdentifier.getScope()), this.toStringIdentifier(qualifiedIdentifier.getMember()));
+            case QualifiedIdentifier qualifiedIdentifier -> {
+                qualifiedIdentifier = parenFiller.process(qualifiedIdentifier);
+                yield String.format("%s::%s", this.toStringIdentifier(qualifiedIdentifier.getScope()), this.toStringIdentifier(qualifiedIdentifier.getMember()));
+            }
             default -> throw new IllegalStateException("Unexpected value: " + identifier);
         };
     }
@@ -589,7 +596,7 @@ public class CppViewer extends LanguageViewer {
                 && p.getExpression() instanceof InstanceOfOp op) {
             return String.format("dynamic_cast<%s>(%s) == nullptr", toString(op.getRight()), toString(op.getLeft()));
         }
-        unaryExpression = parenFiller.makeNewExpression(unaryExpression);
+        unaryExpression = parenFiller.process(unaryExpression);
 
         String operator = switch (unaryExpression) {
             case NotOp op -> "!";
@@ -634,7 +641,7 @@ public class CppViewer extends LanguageViewer {
             return String.format("(long) (%s / %s)", toString(op.getLeft()), toString(op.getRight()));
         }
 
-        binaryExpression = parenFiller.makeNewExpression(binaryExpression);
+        binaryExpression = parenFiller.process(binaryExpression);
         Expression left = binaryExpression.getLeft();
         Expression right = binaryExpression.getRight();
 
@@ -683,6 +690,8 @@ public class CppViewer extends LanguageViewer {
             case GeOp op -> ">=";
             case ReferenceEqOp op -> "==";
             case LeOp op -> "<=";
+            case CastTypeExpression op -> "CAST";
+            case ScopedIdentifier op -> ".";
             case LtOp op -> "<";
             case GtOp op -> ">";
             case InstanceOfOp op -> "CALL_(";
