@@ -32,6 +32,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.types.builtin.PointerType;
 import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
@@ -343,7 +344,12 @@ public class CppTokenizer extends LanguageTokenizer {
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
             case UnaryExpression unaryOp -> tokenizeUnary(unaryOp, result);
             case FunctionCall call -> tokenizeCall(call, result);
-            case SizeofExpression sizeOf -> tokenizeCall(sizeOf.toCall(), result);
+            case SizeofExpression sizeOf -> {
+                OperatorToken op = getOperatorByTokenName("sizeof");
+                result.add(op);
+                TokenGroup grp = tokenizeExtended(new ParenthesizedExpression(sizeOf.getExpression()), result);
+                grp.setMetadata(op, OperandPosition.RIGHT);
+            }
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
@@ -351,6 +357,10 @@ public class CppTokenizer extends LanguageTokenizer {
             case NewExpression newExpr -> tokenizeNew(newExpr, result);
             case CastTypeExpression castType -> tokenizeCast(castType, result);
             case PlainCollectionLiteral plain -> tokenizePlainCollectionLiteral(plain, result);
+            case PointerType type -> {
+                tokenizeExtended(type.getTargetType(), result);
+                result.add(new Token("*", TokenType.KEYWORD));
+            }
             case DictionaryLiteral dict -> tokenizeDictCollectionLiteral(dict, result);
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
