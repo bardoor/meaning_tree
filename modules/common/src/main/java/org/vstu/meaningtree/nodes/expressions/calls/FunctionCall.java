@@ -1,14 +1,18 @@
 package org.vstu.meaningtree.nodes.expressions.calls;
 
+import org.vstu.meaningtree.exceptions.IllegalUsageException;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
+import org.vstu.meaningtree.nodes.interfaces.Callable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class FunctionCall extends Expression {
+public class FunctionCall extends Expression implements Callable {
     protected Expression _function;
 
     public Expression getFunction() {
@@ -26,19 +30,24 @@ public class FunctionCall extends Expression {
     }
 
     public FunctionCall(Expression function, List<Expression> arguments) {
+        if (function instanceof MemberAccess) {
+            throw new IllegalUsageException("Use MethodCall instead this node");
+        }
         this._function = function;
         this._arguments = arguments;
     }
 
     public boolean hasFunctionName() {
-        return _function instanceof Identifier;
+        return _function instanceof SimpleIdentifier || (_function instanceof ParenthesizedExpression paren && paren.getExpression() instanceof SimpleIdentifier);
     }
 
-    public Identifier getFunctionName() {
+    public SimpleIdentifier getFunctionName() {
         if (hasFunctionName()) {
-            return (Identifier) _function;
+            if (_function instanceof ParenthesizedExpression paren) {
+                return (SimpleIdentifier) paren.getExpression();
+            }
+            return (SimpleIdentifier) _function;
         }
-
         throw new MeaningTreeException("Function does not have identifier of call");
     }
 
@@ -66,5 +75,10 @@ public class FunctionCall extends Expression {
         obj._function = _function.clone();
         obj._arguments = new ArrayList<>(_arguments.stream().map(Expression::clone).toList());
         return obj;
+    }
+
+    @Override
+    public Expression getCallableName() {
+        return _function;
     }
 }

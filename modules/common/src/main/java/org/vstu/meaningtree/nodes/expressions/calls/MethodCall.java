@@ -1,7 +1,8 @@
 package org.vstu.meaningtree.nodes.expressions.calls;
 
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
 
 import java.util.List;
 import java.util.Objects;
@@ -9,14 +10,19 @@ import java.util.Objects;
 public class MethodCall extends FunctionCall {
     private Expression _object;
 
-    public MethodCall(Expression object, Identifier methodName, Expression... arguments) {
+    public MethodCall(Expression object, SimpleIdentifier methodName, Expression... arguments) {
         super(methodName, arguments);
         _object = object;
     }
 
-    public MethodCall(Expression object, Identifier methodName, List<Expression> arguments) {
+    public MethodCall(Expression object, SimpleIdentifier methodName, List<Expression> arguments) {
         super(methodName, arguments);
         _object = object;
+    }
+
+    @Override
+    public Expression getCallableName() {
+        return new MemberAccess(_object, getFunctionName());
     }
 
     public Expression getObject() {

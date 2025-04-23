@@ -2,12 +2,13 @@ package org.vstu.meaningtree.nodes.expressions.calls;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.nodes.interfaces.Callable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ConstructorCall extends Expression {
+public class ConstructorCall extends Expression implements Callable {
     protected List<Expression> _arguments;
     protected Type constructorOwner;
 
@@ -21,7 +22,7 @@ public class ConstructorCall extends Expression {
     }
 
     public List<Expression> getArguments() {
-        return _arguments;
+        return List.copyOf(_arguments);
     }
 
     public Type getOwner() {
@@ -47,5 +48,10 @@ public class ConstructorCall extends Expression {
         obj._arguments = new ArrayList<>(_arguments.stream().map(Expression::clone).toList());
         obj.constructorOwner = constructorOwner.clone();
         return obj;
+    }
+
+    @Override
+    public Expression getCallableName() {
+        return getOwner();
     }
 }
