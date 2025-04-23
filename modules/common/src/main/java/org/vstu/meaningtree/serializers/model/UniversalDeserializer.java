@@ -352,6 +352,11 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                             deserialize(serialized.fields.get("right")),
                             serialized.values.get("negative")
                     );
+                } else if (clazz.equals(InstanceOfOp.class)) {
+                    return (Node) clazz.getDeclaredConstructor(Expression.class, Type.class).newInstance(
+                            deserialize(serialized.fields.get("left")),
+                            deserialize(serialized.fields.get("right"))
+                    );
                 }
                 return (Node) clazz.getDeclaredConstructor(Expression.class, Expression.class).newInstance(
                         deserialize(serialized.fields.get("left")),
