@@ -23,6 +23,22 @@ public class Label {
      */
     public static final short MUTATION_FLAG = 2;
 
+    /**
+     * Показывает, из какого языка создано дерево изначально. Содержит id из enum SupportedLanguage
+     */
+    public static final short ORIGIN = 3;
+
+    /**
+     * Зарезервированный номер. Применяется в случае, если метка была не распознана
+     */
+    protected static final short UNKNOWN = Short.MAX_VALUE;
+
+    /**
+     * Зарезервированный номер. Применяется, если владелец метки имеет ошибку
+     */
+    protected static final short ERROR = Short.MIN_VALUE;
+
+
     private short id;
     private Object attribute = null;
 

@@ -333,4 +333,9 @@ abstract public class Node implements Serializable, Cloneable, LabelAttachable {
             }
         }
     }
+
+    @Override
+    public Set<Label> getAllLabels() {
+        return Set.copyOf(_labels);
+    }
 }

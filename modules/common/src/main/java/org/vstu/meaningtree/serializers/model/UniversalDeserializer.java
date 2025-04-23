@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.serializers.model;
 
+import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
@@ -23,6 +24,7 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
+import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
@@ -64,7 +66,8 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "AssignmentExpression" -> deserializeAssignmentExpr(serialized);
             case "ExpressionSequence", "CommaExpression" -> deserializeExprSequence(serialized);
             case "ExpressionStatement" -> deserializeExprStmt(serialized);
-            case "MemberAccess", "PointerMemberAccess" -> deserializeMemberAccess(serialized);
+            case "PointerMemberAccess" -> deserializePointerMemberAccess(serialized);
+            case "MemberAccess"-> deserializeMemberAccess(serialized);
             case "Shape" -> deserializeShape(serialized);
             case "DefinitionArgument" -> deserializeDefArg(serialized);
             case "BooleanType", "StringType", "CharacterType",
@@ -75,10 +78,30 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                  "GenericClass", "UnknownType", "NoReturn" -> deserializeType(serialized);
             default -> deserializeOther(serialized);
         };
+        for (AbstractSerializedNode listItem : (SerializedListNode) serialized.fields.getOrDefault("labels", new SerializedListNode())) {
+            SerializedLabel label = (SerializedLabel) listItem;
+            node.setLabel(label.toObject());
+        }
+        // Backward compatibility
         if (abstractSerialized.values.containsKey("assignedValueTag")) {
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    @Override
+    public MeaningTree deserializeTree(AbstractSerializedNode serialized) {
+        SerializedNode rawTree = (SerializedNode) serialized;
+        if (rawTree.nodeName.equals("MeaningTree")) {
+            MeaningTree mt = new MeaningTree(deserialize(rawTree.fields.get("rootNode")));
+            for (AbstractSerializedNode serializedNode : (SerializedListNode) rawTree.fields.get("labels")) {
+                SerializedLabel label = (SerializedLabel) serializedNode;
+                mt.setLabel(label.toObject());
+            }
+            return mt;
+        } else {
+            return new MeaningTree(deserialize(serialized));
+        }
     }
 
     private Node deserializeDefArg(SerializedNode serialized) {
@@ -167,6 +190,13 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
         );
     }
 
+    private Node deserializePointerMemberAccess(SerializedNode serialized) {
+        return new PointerMemberAccess(
+                (Expression) deserialize(serialized.fields.get("owner")),
+                (SimpleIdentifier) deserialize(serialized.fields.get("member"))
+        );
+    }
+
     private Node deserializeExprStmt(SerializedNode serialized) {
         return new ExpressionStatement((Expression) deserialize(serialized.fields.get("expr")));
     }
@@ -239,7 +269,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     private Node deserializeMethodCall(SerializedNode serialized) {
         return new MethodCall(
                 (Expression) deserialize(serialized.fields.get("object")),
-                (Identifier) deserialize(serialized.fields.get("name")),
+                (SimpleIdentifier) deserialize(serialized.fields.get("name")),
                 (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"))
                 );
     }

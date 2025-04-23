@@ -9,6 +9,7 @@ import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.Experimental;
+import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.tokens.Token;
 import org.vstu.meaningtree.utils.tokens.TokenGroup;
 import org.vstu.meaningtree.utils.tokens.TokenList;
@@ -23,6 +24,8 @@ public abstract class LanguageTranslator {
     protected LanguageParser _language;
     protected LanguageViewer _viewer;
     private ArrayList<ConfigParameter> _declaredConfigParams = new ArrayList<>();
+
+    public abstract int getLanguageId();
 
     private static ConfigParameter[] getPredefinedCommonConfig() {
         return new ConfigParameter[] {
@@ -68,7 +71,9 @@ public abstract class LanguageTranslator {
     }
 
     public MeaningTree getMeaningTree(String code) {
-        return _language.getMeaningTree(prepareCode(code));
+        MeaningTree mt = _language.getMeaningTree(prepareCode(code));
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
     }
 
     protected void setViewer(LanguageViewer viewer) {
@@ -89,7 +94,9 @@ public abstract class LanguageTranslator {
 
     @Experimental
     public MeaningTree getMeaningTree(TSNode node, String code) {
-        return _language.getMeaningTree(node, code);
+        MeaningTree mt = _language.getMeaningTree(node, code);
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
     }
 
     @Experimental
@@ -110,11 +117,15 @@ public abstract class LanguageTranslator {
     }
 
     protected MeaningTree getMeaningTree(String code, HashMap<int[], Object> values) {
-        return _language.getMeaningTree(prepareCode(code), values);
+        MeaningTree mt = _language.getMeaningTree(prepareCode(code), values);
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList) {
-        return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
+        MeaningTree mt = getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
     }
 
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(TokenList tokens) {

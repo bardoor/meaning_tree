@@ -1,5 +1,7 @@
 package org.vstu.meaningtree.utils;
 
+import java.util.Set;
+
 public interface LabelAttachable {
     /**
      * Переключает состояние метки
@@ -41,4 +43,6 @@ public interface LabelAttachable {
     }
 
     boolean removeLabel(Label label);
+
+    Set<Label> getAllLabels();
 }

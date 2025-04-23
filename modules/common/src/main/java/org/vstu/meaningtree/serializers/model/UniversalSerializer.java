@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.serializers.model;
 
+import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
@@ -34,6 +35,7 @@ import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.nodes.types.user.*;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.Enum;
+import org.vstu.meaningtree.utils.Label;
 
 import java.util.*;
 
@@ -65,10 +67,19 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case CastTypeExpression castType -> serialize(castType);
             default -> serializeDefault(node);
         };
-        if (node.getAssignedValueTag() != null) {
-            result.values.put("assignedValueTag", node.getAssignedValueTag());
+        Collection<Label> labels = node.getAllLabels();
+        if (!labels.isEmpty()) {
+            result.fields.put("labels", serialize(labels));
         }
         return result;
+    }
+
+    @Override
+    public AbstractSerializedNode serialize(MeaningTree mt) {
+        return new SerializedNode("MeaningTree", new HashMap<>() {{
+            put("rootNode", serialize(mt.getRootNode()));
+            put("labels", serialize(mt.getAllLabels()));
+        }});
     }
 
     public SerializedNode serialize(DefinitionArgument defArg) {
@@ -183,6 +194,10 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     public SerializedListNode serialize(List<? extends Node> nodes) {
         return new SerializedListNode(nodes.stream().map((Node node) -> serialize(node)).toList());
+    }
+
+    public SerializedListNode serialize(Collection<? extends Label> nodes) {
+        return new SerializedListNode(nodes.stream().map((Label label) -> new SerializedLabel(label)).toList());
     }
 
     public SerializedListNode serialize(Node[] nodes) {

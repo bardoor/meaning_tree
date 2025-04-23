@@ -3,6 +3,7 @@ package org.vstu.meaningtree.serializers.rdf;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
+import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.serializers.model.*;
 
@@ -40,9 +41,9 @@ public class RDFDeserializer implements Deserializer<Model> {
         boolean isListNode = resource.hasProperty(RDF.type, model.createResource(NS + "ListNode"));
 
         if (isListNode) {
-            List<SerializedNode> nodes = new ArrayList<>();
+            List<AbstractSerializedNode> nodes = new ArrayList<>();
             RDFList list = resource.getPropertyResourceValue(model.createProperty(NS, "hasFieldList")).as(RDFList.class);
-            list.iterator().forEachRemaining(item -> nodes.add((SerializedNode) deserializeNode(model, item.asResource())));
+            list.iterator().forEachRemaining(item -> nodes.add(deserializeNode(model, item.asResource())));
             return new SerializedListNode(nodes);
         } else {
             String nodeName = resource.getPropertyResourceValue(model.createProperty(NS, "nodeType")).getLocalName();
@@ -62,6 +63,9 @@ public class RDFDeserializer implements Deserializer<Model> {
                             deserializeNode(model, fieldResource));
                 }
             }
+            if (nodeName.equals("MeaningTreeLabel")) {
+                return new SerializedLabel(values);
+            }
             return new SerializedNode(nodeName, fields, values);
         }
     }
@@ -69,6 +73,13 @@ public class RDFDeserializer implements Deserializer<Model> {
     @Override
     public Node deserialize(Model serialized) {
         return new UniversalDeserializer().deserialize(deserialize(serialized,
+                serialized.getResource(NS + "MeaningTree").getPropertyResourceValue(serialized.createProperty(NS, "hasField")))
+        );
+    }
+
+    @Override
+    public MeaningTree deserializeTree(Model serialized) {
+        return new UniversalDeserializer().deserializeTree(deserialize(serialized,
                 serialized.getResource(NS + "MeaningTree").getPropertyResourceValue(serialized.createProperty(NS, "hasField")))
         );
     }

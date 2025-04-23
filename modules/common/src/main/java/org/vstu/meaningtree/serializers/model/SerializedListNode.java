@@ -1,9 +1,11 @@
 package org.vstu.meaningtree.serializers.model;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
-public class SerializedListNode extends AbstractSerializedNode {
-    public final List<SerializedNode> nodes;
+public class SerializedListNode extends AbstractSerializedNode implements Iterable<AbstractSerializedNode> {
+    public final List<AbstractSerializedNode> nodes;
 
     @Override
     public boolean equals(Object o) {
@@ -19,12 +21,12 @@ public class SerializedListNode extends AbstractSerializedNode {
         return Objects.hash(super.hashCode(), nodes);
     }
 
-    public SerializedListNode(SerializedNode ... nodes) {
+    public SerializedListNode(AbstractSerializedNode ... nodes) {
         super(new HashMap<>());
         this.nodes = Arrays.asList(nodes);
     }
 
-    public SerializedListNode(List<SerializedNode> list) {
+    public SerializedListNode(List<? extends AbstractSerializedNode> list) {
         super(new HashMap<>());
         nodes = new ArrayList<>(list);
     }
@@ -32,5 +34,10 @@ public class SerializedListNode extends AbstractSerializedNode {
     @Override
     public boolean hasManyNodes() {
         return true;
+    }
+
+    @Override
+    public @NotNull Iterator<AbstractSerializedNode> iterator() {
+        return nodes.iterator();
     }
 }

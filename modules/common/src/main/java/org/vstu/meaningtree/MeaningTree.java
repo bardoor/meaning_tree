@@ -128,7 +128,9 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
 
     @Override
     public MeaningTree clone() {
-        return new MeaningTree(_rootNode.clone());
+        MeaningTree mt = new MeaningTree(_rootNode.clone());
+        mt._labels = new HashSet<>(this._labels);
+        return mt;
     }
 
     @Override
@@ -149,6 +151,11 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
     @Override
     public boolean removeLabel(Label label) {
         return _labels.remove(label);
+    }
+
+    @Override
+    public Set<Label> getAllLabels() {
+        return Set.copyOf(_labels);
     }
 }
 
