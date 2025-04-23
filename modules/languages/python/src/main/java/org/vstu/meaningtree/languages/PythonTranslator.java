@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PythonTranslator extends LanguageTranslator {
+    public static final int ID = 1;
+
     public PythonTranslator(Map<String, String> rawStringConfig) {
         super(new PythonLanguage(), null, rawStringConfig);
         this.setViewer(new PythonViewer(this));
@@ -15,6 +17,11 @@ public class PythonTranslator extends LanguageTranslator {
     public PythonTranslator() {
         super(new PythonLanguage(), null, new HashMap<>());
         this.setViewer(new PythonViewer(this));
+    }
+
+    @Override
+    public int getLanguageId() {
+        return ID;
     }
 
     @Override

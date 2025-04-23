@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CppTranslator extends LanguageTranslator {
+    public static final int ID = 0;
+
     public CppTranslator(Map<String, String> rawConfig) {
         super(new CppLanguage(), null, rawConfig);
         this.setViewer(new CppViewer(this));
@@ -17,6 +19,11 @@ public class CppTranslator extends LanguageTranslator {
     public CppTranslator() {
         super(new CppLanguage(), null, new HashMap<>());
         this.setViewer(new CppViewer(this));
+    }
+
+    @Override
+    public int getLanguageId() {
+        return ID;
     }
 
     @Override
