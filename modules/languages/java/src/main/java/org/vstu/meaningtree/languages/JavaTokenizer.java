@@ -319,6 +319,8 @@ public class JavaTokenizer extends LanguageTokenizer {
             node = this.viewer.parenFiller.process(expr);
         } else if (node instanceof QualifiedIdentifier expr) {
             node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof MethodCall call) {
+            node = this.viewer.parenFiller.process(call);
         }
 
         if (node.hasLabel(Label.DUMMY)) {

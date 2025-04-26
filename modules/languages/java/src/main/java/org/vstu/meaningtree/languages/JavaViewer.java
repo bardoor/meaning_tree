@@ -671,6 +671,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(MethodCall methodCall) {
+        methodCall = parenFiller.process(methodCall);
         String object = toString(methodCall.getObject());
         String methodName = toString(methodCall.getFunctionName());
 

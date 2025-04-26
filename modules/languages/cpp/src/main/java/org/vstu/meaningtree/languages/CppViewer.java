@@ -15,6 +15,7 @@ import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
@@ -425,6 +426,9 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringFunctionCall(@NotNull FunctionCall functionCall) {
+        if (functionCall instanceof MethodCall call) {
+            functionCall = parenFiller.process(call);
+        }
         String functionName = toString(functionCall.getFunction());
         return functionName + "(" + toStringFunctionCallArgumentsList(functionCall.getArguments()) + ")";
     }

@@ -797,7 +797,7 @@ public class PythonViewer extends LanguageViewer {
                 return String.format("%s(%s)", toString(memAcc), argumentsToString(funcCall.getArguments()));
             }
             case FunctionCall funcCall -> {
-                funcCall = parenFiller.process(funcCall);
+                funcCall = parenFiller.processForPython(funcCall);
                 return String.format("%s(%s)", toString(PythonSpecificFeatures.getFunctionExpression(funcCall)), argumentsToString(funcCall.getArguments()));
             }
             case CastTypeExpression cast -> {

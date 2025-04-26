@@ -300,7 +300,7 @@ public class PythonTokenizer extends LanguageTokenizer {
         } else if (node instanceof TernaryOperator expr) {
             node = this.viewer.parenFiller.process(expr);
         } else if (node instanceof FunctionCall expr) {
-            node = this.viewer.parenFiller.process(expr);
+            node = this.viewer.parenFiller.processForPython(expr);
         }
         int posStart = result.size();
         switch (node) {

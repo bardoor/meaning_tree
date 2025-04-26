@@ -29,7 +29,7 @@ public class ParenthesesFiller {
 
     public IndexExpression process(IndexExpression expr) {
         OperatorToken tok = _mapper.apply(expr);
-        Expression arg = prepareUnary(tok, expr.getExpr());
+        Expression arg = prepareOperand(tok, expr.getExpr());
         if (!arg.uniquenessEquals(expr.getExpr())) {
             expr = expr.clone();
             expr.substituteChildren("_expr", arg);
@@ -39,7 +39,7 @@ public class ParenthesesFiller {
 
     public CastTypeExpression process(CastTypeExpression expr) {
         OperatorToken tok = _mapper.apply(expr);
-        Expression arg = prepareUnary(tok, expr.getValue());
+        Expression arg = prepareOperand(tok, expr.getValue());
         if (!arg.uniquenessEquals(expr.getValue())) {
             expr = expr.clone();
             expr.substituteChildren("_value", arg);
@@ -49,7 +49,7 @@ public class ParenthesesFiller {
 
     public MemberAccess process(MemberAccess expr) {
         OperatorToken tok = _mapper.apply(expr);
-        Expression arg = prepareUnary(tok, expr.getExpression());
+        Expression arg = prepareOperand(tok, expr.getExpression());
         if (!arg.uniquenessEquals(expr.getExpression())) {
             expr = expr.clone();
             expr.substituteChildren("_expr", arg);
@@ -57,12 +57,28 @@ public class ParenthesesFiller {
         return expr;
     }
 
-    public FunctionCall process(FunctionCall expr) {
-        if (expr.getFunction() == null || expr instanceof MethodCall) {
+    public MethodCall process(MethodCall expr) {
+        if (expr.getObject() == null) {
             return expr;
         }
         OperatorToken tok = _mapper.apply(expr);
-        Expression arg = prepareUnary(tok, expr.getFunction());
+        Expression arg = prepareOperand(tok, expr.getObject());
+        if (!arg.uniquenessEquals(expr.getObject())) {
+            expr = expr.clone();
+            expr.substituteChildren("_object", arg);
+        }
+        return expr;
+    }
+
+    public FunctionCall processForPython(FunctionCall expr) {
+        if (expr instanceof MethodCall call) {
+            return process(call);
+        }
+        if (expr.getFunction() == null) {
+            return expr;
+        }
+        OperatorToken tok = _mapper.apply(expr);
+        Expression arg = prepareOperand(tok, expr.getFunction());
         if (!arg.uniquenessEquals(expr.getFunction())) {
             expr = expr.clone();
             expr.substituteChildren("_function", arg);
@@ -72,9 +88,9 @@ public class ParenthesesFiller {
 
     public TernaryOperator process(TernaryOperator expr) {
         OperatorToken tok = _mapper.apply(expr);
-        Expression cond = prepareUnary(tok, expr.getCondition());
-        Expression then = prepareUnary(tok, expr.getThenExpr());
-        Expression elseBranch = prepareUnary(tok, expr.getElseExpr());
+        Expression cond = prepareOperand(tok, expr.getCondition());
+        Expression then = prepareOperand(tok, expr.getThenExpr());
+        Expression elseBranch = prepareOperand(tok, expr.getElseExpr());
         expr = expr.clone();
         if (!expr.getCondition().uniquenessEquals(cond)) expr.substituteChildren("_condition", cond);
         if (!expr.getThenExpr().uniquenessEquals(then)) expr.substituteChildren("_thenExpr", then);
@@ -100,7 +116,7 @@ public class ParenthesesFiller {
 
     public UnaryExpression process(UnaryExpression expr) {
         OperatorToken tok = _mapper.apply(expr);
-        Expression arg = prepareUnary(tok, expr.getArgument());
+        Expression arg = prepareOperand(tok, expr.getArgument());
         if (!arg.uniquenessEquals(expr.getArgument())) {
             expr = expr.clone();
             expr.substituteChildren("_argument", arg);
@@ -110,7 +126,7 @@ public class ParenthesesFiller {
 
     public QualifiedIdentifier process(QualifiedIdentifier qual) {
         OperatorToken tok = _mapper.apply(qual);
-        Expression arg = prepareUnary(tok, qual.getScope());
+        Expression arg = prepareOperand(tok, qual.getScope());
         if (!arg.uniquenessEquals(qual.getScope())) {
             qual = qual.clone();
             qual.substituteChildren("_scope", arg);
@@ -118,13 +134,15 @@ public class ParenthesesFiller {
         return qual;
     }
 
-    private Expression prepareUnary(OperatorToken tok, Expression arg) {
+    private Expression prepareOperand(OperatorToken tok, Expression arg) {
         OperatorToken argTok = _mapper.apply(arg);
         if (tok == null || argTok == null) {
             return arg;
         }
-        if (arg instanceof BinaryExpression || argTok.precedence > tok.precedence ||
-                (arg instanceof UnaryExpression && tok.arity != OperatorArity.UNARY)) {
+        if (argTok.precedence > tok.precedence ||
+                (arg instanceof UnaryExpression && tok.arity != OperatorArity.UNARY) ||
+                (arg instanceof BinaryExpression && tok.arity == OperatorArity.UNARY)
+        ) {
             arg = new ParenthesizedExpression(arg);
         }
         return arg;
@@ -135,14 +153,12 @@ public class ParenthesesFiller {
         OperatorToken tokRight = _mapper.apply(right);
 
 
-        if (left instanceof BinaryExpression leftBinOp
-                && tokLeft.precedence > tok.precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
+        if (tokLeft != null && tokLeft.precedence > tok.precedence && !(left instanceof ParenthesizedExpression)) {
+            left = new ParenthesizedExpression(left);
         }
 
-        if (tokRight != null && right instanceof BinaryExpression rightBinOp
-                && tokRight.precedence > tok.precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
+        if (tokRight != null && tokRight.precedence > tok.precedence && !(right instanceof ParenthesizedExpression)) {
+            right = new ParenthesizedExpression(right);
         }
 
         if (tokRight != null && right instanceof BinaryExpression rightBinOp) {
