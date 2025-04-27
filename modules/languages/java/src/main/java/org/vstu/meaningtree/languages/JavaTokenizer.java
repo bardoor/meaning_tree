@@ -30,6 +30,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.types.builtin.IntType;
 import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
@@ -564,6 +565,10 @@ public class JavaTokenizer extends LanguageTokenizer {
             case InstanceOfOp op -> "instanceof";
             default -> null;
         };
+        if (binOp instanceof FloorDivOp) {
+            tokenizeExtended(new CastTypeExpression(new IntType(64), new DivOp(binOp.getLeft(), binOp.getRight())), result);
+            return;
+        }
         if (binOp instanceof PowOp) {
             tokenizeExtended(new MethodCall(new SimpleIdentifier("Math"),
                     new SimpleIdentifier("pow"), binOp.getLeft(), binOp.getRight()), result);

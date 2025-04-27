@@ -32,6 +32,7 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.types.builtin.IntType;
 import org.vstu.meaningtree.nodes.types.builtin.PointerType;
 import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
@@ -664,6 +665,10 @@ public class CppTokenizer extends LanguageTokenizer {
             case ThreeWayComparisonOp op -> "<=>";
             default -> null;
         };
+        if (binOp instanceof FloorDivOp) {
+            tokenizeExtended(new CastTypeExpression(new IntType(64), new DivOp(binOp.getLeft(), binOp.getRight())), result);
+            return;
+        }
         if (binOp instanceof PowOp) {
             tokenizeExtended(new FunctionCall(
                     new SimpleIdentifier("pow"), binOp.getLeft(), binOp.getRight()), result);
