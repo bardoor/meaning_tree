@@ -77,7 +77,7 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
 
     public List<Node.Info> walk() {
         ArrayList<Node.Info> nodes = new ArrayList<>(_rootNode.walkChildren());
-        nodes.addFirst(new Node.Info(_rootNode, null, -1, "root"));
+        nodes.addFirst(new Node.Info(_rootNode, null, -1, "root", 0));
         return nodes;
     }
 
