@@ -29,7 +29,7 @@ abstract public class Node implements Serializable, Cloneable, LabelAttachable {
      * @param index признак того, что поле, в коллекции. Индекс - для последовательных коллекций, ключ - для словарей.
      * В случае, если не в коллекции - null
      */
-    public record Info(Node node, Node parent, Object index, String fieldName) {
+    public record Info(Node node, Node parent, Object index, String fieldName, int depth) {
         public String readableFieldName() {
             return fieldName.startsWith("_") ? fieldName.replaceFirst("_", "") : fieldName;
         }

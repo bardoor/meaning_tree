@@ -10,11 +10,16 @@ import java.util.*;
  */
 public class NodeIterator implements Iterator<Node.Info> {
     private int ptr = -1;
+    private int depth = 0;
     private Node parent;
     private SortedMap<String, Object> children;
     private ArrayDeque<Iterator<?>> iteratorQueue = new ArrayDeque<>();
 
     private boolean giveSelf;
+
+    protected void setDepth(int depth) {
+        this.depth = depth;
+    }
 
     public NodeIterator(Node node, boolean giveSelf) {
         parent = node;
@@ -32,6 +37,7 @@ public class NodeIterator implements Iterator<Node.Info> {
     }
 
     private void pushIterator(Object target) {
+        int initialSize = iteratorQueue.size();
         if (target instanceof Node node) {
             iteratorQueue.addLast(node.iterateChildren());
         } else if (target instanceof Node[] array) {
@@ -44,6 +50,9 @@ public class NodeIterator implements Iterator<Node.Info> {
             if (opt.isPresent() && opt.get() instanceof Node node) {
                 iteratorQueue.addLast(node.iterateChildren());
             }
+        }
+        if (initialSize != iteratorQueue.size() && iteratorQueue.getLast() instanceof NodeIterator it) {
+            it.setDepth(depth + 1);
         }
     }
 
@@ -88,18 +97,18 @@ public class NodeIterator implements Iterator<Node.Info> {
                 pushIterator(current);
                 ensureIteratorNotEmpty();
             }
-            return result != null ? result : new Node.Info(current, parent, getFieldIndex(target, current), fieldName);
+            return result != null ? result : new Node.Info(current, parent, getFieldIndex(target, current), fieldName, depth);
         } else if (target instanceof Map && iterator.hasNext()) {
             Map.Entry<?, ?> current = (Map.Entry<?, ?>) iterator.next();
             ensureIteratorNotEmpty();
             if (current.getValue() instanceof Node) {
                 pushIterator(current.getValue());
                 ensureIteratorNotEmpty();
-                result = new Node.Info((Node) current.getValue(), parent, current.getKey(), fieldName);
+                result = new Node.Info((Node) current.getValue(), parent, current.getKey(), fieldName, depth);
             } else {
                 pushIterator(current.getKey());
                 ensureIteratorNotEmpty();
-                result = new Node.Info((Node) current.getKey(), parent, current.getKey(), fieldName);
+                result = new Node.Info((Node) current.getKey(), parent, current.getKey(), fieldName, depth);
             }
         } else {
             throw new MeaningTreeException("Iterator is broken. Report this case to developers");
@@ -111,7 +120,7 @@ public class NodeIterator implements Iterator<Node.Info> {
     public Node.Info next() {
         if (!giveSelf) {
             giveSelf = true;
-            return new Node.Info(parent, null, null, "root");
+            return new Node.Info(parent, null, null, "root", depth);
         }
         if (!hasNext()) {
             throw new NoSuchElementException("Iteration ended");
@@ -125,7 +134,7 @@ public class NodeIterator implements Iterator<Node.Info> {
             pushIterator(target);
             ensureIteratorNotEmpty();
             if (target instanceof Node node) {
-                return new Node.Info(node, parent, null, getChildren(ptr));
+                return new Node.Info(node, parent, null, getChildren(ptr), depth);
             }
         }
         Node.Info result = getAt(ptr);
