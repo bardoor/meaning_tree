@@ -2,12 +2,13 @@ package org.vstu.meaningtree.nodes.io;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.List;
 import java.util.Objects;
 
 public class FormatPrint extends PrintValues {
-    private final Expression _formatString;
+    @TreeNode private Expression formatString;
 
     public FormatPrint(Expression formatString, List<Expression> values) {
         super(
@@ -15,7 +16,7 @@ public class FormatPrint extends PrintValues {
                 StringLiteral.fromUnescaped("", StringLiteral.Type.NONE),
                 StringLiteral.fromUnescaped("", StringLiteral.Type.NONE)
         );
-        _formatString = formatString;
+        this.formatString = formatString;
     }
 
     public FormatPrint(Expression formatString, Expression ... values) {
@@ -23,7 +24,7 @@ public class FormatPrint extends PrintValues {
     }
 
     public Expression getFormatString() {
-        return _formatString;
+        return formatString;
     }
 
     @Override
@@ -31,11 +32,11 @@ public class FormatPrint extends PrintValues {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         FormatPrint that = (FormatPrint) o;
-        return Objects.equals(_formatString, that._formatString);
+        return Objects.equals(formatString, that.formatString);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _formatString);
+        return Objects.hash(super.hashCode(), formatString);
     }
 }

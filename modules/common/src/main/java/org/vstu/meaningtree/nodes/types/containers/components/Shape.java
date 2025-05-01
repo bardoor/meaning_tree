@@ -3,6 +3,7 @@ package org.vstu.meaningtree.nodes.types.containers.components;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,15 +11,15 @@ import java.util.Objects;
 
 public class Shape extends Node {
     // Количество измерений
-    private final int _dimensionCount;
+    private final int dimensionCount;
     // Размер каждого измерения
-    private List<Expression> _dimensions;
+    @TreeNode private List<Expression> dimensions;
 
     public Shape(int dimensionCount) {
-        _dimensionCount = dimensionCount;
-        _dimensions = new ArrayList<>();
+        this.dimensionCount = dimensionCount;
+        dimensions = new ArrayList<>();
         for (int i = 0; i < dimensionCount; i++) {
-            _dimensions.add(null);
+            dimensions.add(null);
         };
     }
 
@@ -31,18 +32,18 @@ public class Shape extends Node {
             throw new IllegalArgumentException();
         }
 
-        _dimensionCount = dimensionCount;
-        _dimensions = new ArrayList<>(dimensions);
+        this.dimensionCount = dimensionCount;
+        this.dimensions = new ArrayList<>(dimensions);
     }
 
     public int getDimensionCount() {
-        return _dimensionCount;
+        return dimensionCount;
     }
 
     @Nullable
     public Expression getDimension(int index) {
         try {
-            return _dimensions.get(index);
+            return dimensions.get(index);
         }
         catch (IndexOutOfBoundsException exception) {
             return null;
@@ -50,7 +51,7 @@ public class Shape extends Node {
     }
 
     public List<Expression> getDimensions() {
-        return _dimensions;
+        return dimensions;
     }
 
     @Override
@@ -58,18 +59,18 @@ public class Shape extends Node {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Shape shape = (Shape) o;
-        return _dimensionCount == shape._dimensionCount && Objects.equals(_dimensions, shape._dimensions);
+        return dimensionCount == shape.dimensionCount && Objects.equals(dimensions, shape.dimensions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _dimensionCount, _dimensions);
+        return Objects.hash(super.hashCode(), dimensionCount, dimensions);
     }
 
     @Override
     public Shape clone() {
         Shape obj = (Shape) super.clone();
-        obj._dimensions = new ArrayList<>(_dimensions.stream().map(Expression::clone).toList());
+        obj.dimensions = new ArrayList<>(dimensions.stream().map(Expression::clone).toList());
         return obj;
     }
 }

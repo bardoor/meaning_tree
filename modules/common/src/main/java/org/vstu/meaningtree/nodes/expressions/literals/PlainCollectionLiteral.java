@@ -7,17 +7,18 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.ArrayInitializer;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public abstract class PlainCollectionLiteral extends CollectionLiteral {
-    private List<Expression> _content;
-    private Type typeHint = new UnknownType();
+    @TreeNode private List<Expression> content;
+    @TreeNode private Type typeHint = new UnknownType();
 
     public PlainCollectionLiteral(Expression ... content) {
-        _content = List.of(content);
+        this.content = List.of(content);
     }
 
     public void setTypeHint(Type type) {
@@ -29,10 +30,11 @@ public abstract class PlainCollectionLiteral extends CollectionLiteral {
         return typeHint;
     }
 
-    public PlainCollectionLiteral(List<Expression> exprs) {_content = new ArrayList<>(exprs);}
+    public PlainCollectionLiteral(List<Expression> exprs) {
+        content = new ArrayList<>(exprs);}
 
     public List<Expression> getList() {
-        return List.copyOf(_content);
+        return List.copyOf(content);
     }
 
     @Override
@@ -45,19 +47,19 @@ public abstract class PlainCollectionLiteral extends CollectionLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PlainCollectionLiteral that = (PlainCollectionLiteral) o;
-        return Objects.equals(_content, that._content);
+        return Objects.equals(content, that.content);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _content);
+        return Objects.hash(super.hashCode(), content);
     }
 
     @Override
     public PlainCollectionLiteral clone() {
         PlainCollectionLiteral obj = (PlainCollectionLiteral) super.clone();
         if (typeHint != null) obj.typeHint = typeHint.clone();
-        obj._content = new ArrayList<>(_content.stream().map(Expression::clone).toList());
+        obj.content = new ArrayList<>(content.stream().map(Expression::clone).toList());
         return obj;
     }
 

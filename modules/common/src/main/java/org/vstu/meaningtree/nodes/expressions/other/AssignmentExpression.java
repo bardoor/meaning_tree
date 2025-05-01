@@ -9,15 +9,15 @@ import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import java.util.Objects;
 
 public class AssignmentExpression extends BinaryExpression implements HasInitialization {
-    private final AugmentedAssignmentOperator _op;
+    private AugmentedAssignmentOperator operatorType;
 
     public AssignmentExpression(Expression id, Expression value, AugmentedAssignmentOperator op) {
         super(id, value);
-        _op = op;
+        operatorType = op;
     }
 
     public AssignmentStatement toStatement() {
-        return new AssignmentStatement(_left, _right, _op);
+        return new AssignmentStatement(left, right, operatorType);
     }
 
     public AssignmentExpression(Expression id, Expression value) {
@@ -25,28 +25,28 @@ public class AssignmentExpression extends BinaryExpression implements HasInitial
     }
 
     public AugmentedAssignmentOperator getAugmentedOperator() {
-        return _op;
+        return operatorType;
     }
 
     public Expression getLValue() {
-        return _left;
+        return left;
     }
 
     public Expression getRValue() {
-        return _right;
+        return right;
     }
 
     @Override
     public String generateDot() {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(String.format("%s [label=\"%s\"];\n", _id, _op.toString()));
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, operatorType.toString()));
 
-        builder.append(_left.generateDot());
-        builder.append(_right.generateDot());
+        builder.append(left.generateDot());
+        builder.append(right.generateDot());
 
-        builder.append(String.format("%s -- %s;\n", _id, _left.getId()));
-        builder.append(String.format("%s -- %s;\n", _id, _right.getId()));
+        builder.append(String.format("%s -- %s;\n", _id, left.getId()));
+        builder.append(String.format("%s -- %s;\n", _id, right.getId()));
 
         return builder.toString();
     }
@@ -56,19 +56,19 @@ public class AssignmentExpression extends BinaryExpression implements HasInitial
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AssignmentExpression that = (AssignmentExpression) o;
-        return Objects.equals(_left, that._left) && Objects.equals(_right, that._right) && _op == that._op;
+        return Objects.equals(left, that.left) && Objects.equals(right, that.right) && operatorType == that.operatorType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _left, _right, _op);
+        return Objects.hash(super.hashCode(), left, right, operatorType);
     }
 
     @Override
     public AssignmentExpression clone() {
         AssignmentExpression obj = (AssignmentExpression) super.clone();
-        obj._left = _left.clone();
-        obj._right = _right.clone();
+        obj.left = left.clone();
+        obj.right = right.clone();
         return obj;
     }
 }

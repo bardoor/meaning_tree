@@ -1,18 +1,19 @@
 package org.vstu.meaningtree.nodes.types.builtin;
 
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 public class ReferenceType extends Type {
-    private Type _targetType;
+    @TreeNode private Type targetType;
 
     public ReferenceType(Type target) {
-        _targetType = target;
+        targetType = target;
     }
 
     public Type getTargetType() {
-        return _targetType;
+        return targetType;
     }
 
     @Override
@@ -20,18 +21,18 @@ public class ReferenceType extends Type {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ReferenceType that = (ReferenceType) o;
-        return Objects.equals(_targetType, that._targetType);
+        return Objects.equals(targetType, that.targetType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _targetType);
+        return Objects.hash(super.hashCode(), targetType);
     }
 
     @Override
     public ReferenceType clone() {
         ReferenceType obj = (ReferenceType) super.clone();
-        obj._targetType = _targetType.clone();
+        obj.targetType = targetType.clone();
         return obj;
     }
 }

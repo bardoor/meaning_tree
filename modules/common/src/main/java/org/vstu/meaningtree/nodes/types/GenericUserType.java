@@ -3,21 +3,22 @@ package org.vstu.meaningtree.nodes.types;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.interfaces.Generic;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Arrays;
 import java.util.Objects;
 
 public class GenericUserType extends UserType implements Generic {
-    private Type[] _templateParameters;
+    @TreeNode private Type[] templateParameters;
 
     public GenericUserType(Identifier name, Type ... templateParameters) {
         super(name);
-        _templateParameters = templateParameters;
+        this.templateParameters = templateParameters;
     }
 
     @Override
     public Type[] getTypeParameters() {
-        return _templateParameters;
+        return templateParameters;
     }
 
     @Override
@@ -30,22 +31,22 @@ public class GenericUserType extends UserType implements Generic {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         GenericUserType that = (GenericUserType) o;
-        return Objects.deepEquals(_templateParameters, that._templateParameters);
+        return Objects.deepEquals(templateParameters, that.templateParameters);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), Arrays.hashCode(_templateParameters));
+        return Objects.hash(super.hashCode(), Arrays.hashCode(templateParameters));
     }
 
     @Override
     public GenericUserType clone() {
         GenericUserType obj = (GenericUserType) super.clone();
-        Type[] newTemplateParameters = new Type[_templateParameters.length];
-        for (int i = 0; i < _templateParameters.length; i++) {
-            newTemplateParameters[i] = _templateParameters[i].clone();
+        Type[] newTemplateParameters = new Type[templateParameters.length];
+        for (int i = 0; i < templateParameters.length; i++) {
+            newTemplateParameters[i] = templateParameters[i].clone();
         }
-        obj._templateParameters = newTemplateParameters;
+        obj.templateParameters = newTemplateParameters;
         return obj;
     }
 }

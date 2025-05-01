@@ -2,24 +2,25 @@ package org.vstu.meaningtree.nodes.expressions.other;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 public class CastTypeExpression extends Expression {
-    private Type _castType;
-    private Expression _value;
+    @TreeNode private Type castType;
+    @TreeNode private Expression value;
 
     public CastTypeExpression(Type castType, Expression value) {
-        _castType = castType;
-        _value = value;
+        this.castType = castType;
+        this.value = value;
     }
 
     public Type getCastType() {
-        return _castType;
+        return castType;
     }
 
     public Expression getValue() {
-        return _value;
+        return value;
     }
 
     @Override
@@ -27,19 +28,19 @@ public class CastTypeExpression extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CastTypeExpression that = (CastTypeExpression) o;
-        return Objects.equals(_castType, that._castType) && Objects.equals(_value, that._value);
+        return Objects.equals(castType, that.castType) && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _castType, _value);
+        return Objects.hash(super.hashCode(), castType, value);
     }
 
     @Override
     public CastTypeExpression clone() {
         CastTypeExpression obj = (CastTypeExpression) super.clone();
-        obj._castType = _castType.clone();
-        obj._value = _value.clone();
+        obj.castType = castType.clone();
+        obj.value = value.clone();
         return obj;
     }
 }

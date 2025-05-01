@@ -7,20 +7,21 @@ import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.List;
 
 public class ClassDeclaration extends Declaration {
-    protected final List<DeclarationModifier> _modifiers;
-    protected final Identifier _name;
-    protected final List<Type> _parentTypes;
-    protected final List<Type> _typeParameters; // for generic type
+    protected List<DeclarationModifier> modifiers;
+    @TreeNode protected Identifier name;
+    @TreeNode protected List<Type> parentTypes;
+    @TreeNode protected List<Type> typeParameters; // for generic type
 
     public ClassDeclaration(List<DeclarationModifier> modifiers, Identifier name, List<Type> typeParameters, Type ... parents) {
-        _modifiers = List.copyOf(modifiers);
-        _name = name;
-        _typeParameters = List.copyOf(typeParameters);
-        _parentTypes = List.of(parents);
+        this.modifiers = List.copyOf(modifiers);
+        this.name = name;
+        this.typeParameters = List.copyOf(typeParameters);
+        parentTypes = List.of(parents);
     }
 
     public ClassDeclaration(List<DeclarationModifier> modifiers, Identifier name, Type ... parents) {
@@ -36,30 +37,30 @@ public class ClassDeclaration extends Declaration {
     }
 
     public List<DeclarationModifier> getModifiers() {
-        return _modifiers;
+        return modifiers;
     }
 
     public List<Type> getParents() {
-        return _parentTypes;
+        return parentTypes;
     }
 
     public Identifier getName() {
-        return _name;
+        return name;
     }
 
     public List<Type> getTypeParameters() {
-        return _typeParameters;
+        return typeParameters;
     }
 
     public boolean isGeneric() {
-        return !_typeParameters.isEmpty();
+        return !typeParameters.isEmpty();
     }
 
     public UserType getTypeNode() {
         if (isGeneric()) {
-            return new GenericClass(_name, getTypeParameters().toArray(new Type[0]));
+            return new GenericClass(name, getTypeParameters().toArray(new Type[0]));
         }
-        return new Class(_name);
+        return new Class(name);
     }
 
     @Override

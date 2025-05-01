@@ -2,24 +2,25 @@ package org.vstu.meaningtree.nodes.statements.assignments;
 
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.List;
 import java.util.Objects;
 
 public class MultipleAssignmentStatement extends Statement implements HasInitialization {
     // Множественное присваивание (применяется в Python)
-    private final List<AssignmentStatement> _statements;
+    @TreeNode private List<AssignmentStatement> statements;
 
     public MultipleAssignmentStatement(AssignmentStatement ... stmts) {
         this(List.of(stmts));
     }
 
     public MultipleAssignmentStatement(List<AssignmentStatement> stmts) {
-        _statements = List.copyOf(stmts);
+        statements = List.copyOf(stmts);
     }
 
     public List<AssignmentStatement> getStatements() {
-        return _statements;
+        return statements;
     }
 
     @Override
@@ -27,11 +28,11 @@ public class MultipleAssignmentStatement extends Statement implements HasInitial
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         MultipleAssignmentStatement that = (MultipleAssignmentStatement) o;
-        return Objects.equals(_statements, that._statements);
+        return Objects.equals(statements, that.statements);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _statements);
+        return Objects.hash(super.hashCode(), statements);
     }
 }

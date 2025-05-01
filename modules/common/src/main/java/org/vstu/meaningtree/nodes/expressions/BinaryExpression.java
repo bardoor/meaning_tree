@@ -2,6 +2,7 @@ package org.vstu.meaningtree.nodes.expressions;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -9,29 +10,29 @@ import java.util.List;
 import java.util.Objects;
 
 abstract public class BinaryExpression extends Expression {
-    protected Expression _left;
-    protected Expression _right;
+    @TreeNode protected Expression left;
+    @TreeNode protected Expression right;
 
     public BinaryExpression(Expression left, Expression right) {
-        _left = left;
-        _right = right;
+        this.left = left;
+        this.right = right;
     }
 
     public Expression getLeft() {
-        return _left;
+        return left;
     }
 
     public Expression getRight() {
-        return _right;
+        return right;
     }
 
     @Override
     public String generateDot() {
         return String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName())
-                + _left.generateDot()
-                + _right.generateDot()
-                + String.format("%s -- %s;\n", _id, _left.getId())
-                + String.format("%s -- %s;\n", _id, _right.getId());
+                + left.generateDot()
+                + right.generateDot()
+                + String.format("%s -- %s;\n", _id, left.getId())
+                + String.format("%s -- %s;\n", _id, right.getId());
     }
 
     public static Expression fromManyOperands(Expression[] array, int startIndex, Class<? extends BinaryExpression> whatClassNeeded){
@@ -82,19 +83,19 @@ abstract public class BinaryExpression extends Expression {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         BinaryExpression that = (BinaryExpression) o;
-        return Objects.equals(_left, that._left) && Objects.equals(_right, that._right);
+        return Objects.equals(left, that.left) && Objects.equals(right, that.right);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _left, _right);
+        return Objects.hash(super.hashCode(), left, right);
     }
 
     @Override
     public BinaryExpression clone() {
         BinaryExpression obj = (BinaryExpression) super.clone();
-        obj._left = _left.clone();
-        obj._right = _right.clone();
+        obj.left = left.clone();
+        obj.right = right.clone();
         return obj;
     }
 }

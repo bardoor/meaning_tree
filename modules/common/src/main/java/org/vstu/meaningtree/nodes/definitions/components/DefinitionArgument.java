@@ -2,44 +2,45 @@ package org.vstu.meaningtree.nodes.definitions.components;
 
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 public class DefinitionArgument extends Expression {
     public SimpleIdentifier getName() {
-        return _name;
+        return name;
     }
 
-    private SimpleIdentifier _name;
-    private Expression _initial;
+    @TreeNode private SimpleIdentifier name;
+    @TreeNode private Expression initial;
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         DefinitionArgument that = (DefinitionArgument) o;
-        return Objects.equals(_name, that._name) && Objects.equals(_initial, that._initial);
+        return Objects.equals(name, that.name) && Objects.equals(initial, that.initial);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _name, _initial);
+        return Objects.hash(super.hashCode(), name, initial);
     }
 
     public DefinitionArgument(SimpleIdentifier name, Expression initial) {
         super();
-        _name = name;
-        _initial = Objects.requireNonNull(initial);
+        this.name = name;
+        this.initial = Objects.requireNonNull(initial);
     }
 
     public Expression getInitialExpression() {
-        return _initial;
+        return initial;
     }
 
     @Override
     public DefinitionArgument clone() {
         DefinitionArgument obj = (DefinitionArgument) super.clone();
-        obj._name = _name.clone();
-        obj._initial = _initial.clone();
+        obj.name = name.clone();
+        obj.initial = initial.clone();
         return obj;
     }
 

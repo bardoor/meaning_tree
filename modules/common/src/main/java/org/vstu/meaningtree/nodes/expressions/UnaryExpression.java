@@ -1,25 +1,26 @@
 package org.vstu.meaningtree.nodes.expressions;
 
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 abstract public class UnaryExpression extends Expression {
-    private Expression _argument;
+    @TreeNode private Expression argument;
 
     public UnaryExpression(Expression argument) {
-        _argument = argument;
+        this.argument = argument;
     }
 
     public Expression getArgument() {
-        return _argument;
+        return argument;
     }
 
     @Override
     public String generateDot() {
         return String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName())
-                + _argument.generateDot()
-                + String.format("%s -- %s;\n", _id, _argument.getId());
+                + argument.generateDot()
+                + String.format("%s -- %s;\n", _id, argument.getId());
     }
 
     @Override
@@ -27,18 +28,18 @@ abstract public class UnaryExpression extends Expression {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         UnaryExpression that = (UnaryExpression) o;
-        return Objects.equals(_argument, that._argument);
+        return Objects.equals(argument, that.argument);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _argument);
+        return Objects.hash(super.hashCode(), argument);
     }
 
     @Override
     public UnaryExpression clone() {
         UnaryExpression obj = (UnaryExpression) super.clone();
-        obj._argument = _argument.clone();
+        obj.argument = argument.clone();
         return obj;
     }
 }

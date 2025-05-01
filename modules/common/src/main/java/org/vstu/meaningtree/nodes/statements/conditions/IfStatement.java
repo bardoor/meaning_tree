@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
+import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
@@ -11,30 +12,30 @@ import java.util.List;
 import java.util.Objects;
 
 public class IfStatement extends Statement {
-    private final List<ConditionBranch> _branches;
+    @TreeNode private List<ConditionBranch> branches;
 
     @Nullable
     private Statement _elseBranch;
 
     public IfStatement(Expression condition, @Nullable Statement thenBranch, @Nullable Statement elseBranch) {
         _elseBranch = elseBranch;
-        _branches = new ArrayList<>();
-        _branches.add(new ConditionBranch(condition, thenBranch));
+        branches = new ArrayList<>();
+        branches.add(new ConditionBranch(condition, thenBranch));
     }
 
     public IfStatement(List<ConditionBranch> branches, @Nullable Statement elseBranch) {
         _elseBranch = elseBranch;
-        _branches = new ArrayList<>(branches);
+        this.branches = new ArrayList<>(branches);
     }
 
     public IfStatement(Expression condition, Statement thenBranch) {
-        _branches = new ArrayList<>();
-        _branches.add(new ConditionBranch(condition, thenBranch));
+        branches = new ArrayList<>();
+        branches.add(new ConditionBranch(condition, thenBranch));
         _elseBranch = null;
     }
 
     public List<ConditionBranch> getBranches() {
-        return _branches;
+        return branches;
     }
 
     public Statement getElseBranch() {
@@ -50,7 +51,7 @@ public class IfStatement extends Statement {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
 
-        for (ConditionBranch branch : _branches) {
+        for (ConditionBranch branch : branches) {
             builder.append(branch.generateDot());
             builder.append(String.format("%s -- %s;\n", _id, branch.getId()));
         }
@@ -64,7 +65,7 @@ public class IfStatement extends Statement {
     }
 
     public void makeCompoundBranches(SymbolEnvironment env) {
-        for (ConditionBranch branch : _branches) {
+        for (ConditionBranch branch : branches) {
             branch.makeCompoundBody(env);
         }
     }

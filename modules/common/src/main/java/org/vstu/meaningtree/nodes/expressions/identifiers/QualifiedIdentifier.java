@@ -1,24 +1,25 @@
 package org.vstu.meaningtree.nodes.expressions.identifiers;
 
 import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 public class QualifiedIdentifier extends Identifier {
-    private Identifier _scope;
-    private SimpleIdentifier _member;
+    @TreeNode private Identifier scope;
+    @TreeNode private SimpleIdentifier member;
 
     public QualifiedIdentifier(Identifier scope, SimpleIdentifier member) {
-        _scope = scope;
-        _member = member;
+        this.scope = scope;
+        this.member = member;
     }
 
     public Identifier getScope() {
-        return _scope;
+        return scope;
     }
 
     public SimpleIdentifier getMember() {
-        return _member;
+        return member;
     }
 
     @Override
@@ -31,29 +32,29 @@ public class QualifiedIdentifier extends Identifier {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         QualifiedIdentifier that = (QualifiedIdentifier) o;
-        return Objects.equals(_scope, that._scope) && Objects.equals(_member, that._member);
+        return Objects.equals(scope, that.scope) && Objects.equals(member, that.member);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _scope, _member);
+        return Objects.hash(super.hashCode(), scope, member);
     }
 
     @Override
     public QualifiedIdentifier clone() {
         QualifiedIdentifier obj = (QualifiedIdentifier) super.clone();
-        obj._scope = _scope.clone();
-        obj._member = _member.clone();
+        obj.scope = scope.clone();
+        obj.member = member.clone();
         return obj;
     }
 
     @Override
     public boolean contains(Identifier other) {
-        return _scope.contains(other) || _member.equals(other);
+        return scope.contains(other) || member.equals(other);
     }
 
     @Override
     public int contentSize() {
-        return _scope.contentSize() + 1;
+        return scope.contentSize() + 1;
     }
 }

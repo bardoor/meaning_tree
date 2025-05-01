@@ -3,6 +3,7 @@ package org.vstu.meaningtree.nodes.expressions.literals;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,12 +11,12 @@ import java.util.Objects;
 import java.util.SequencedMap;
 
 public class DictionaryLiteral extends CollectionLiteral {
-    private SequencedMap<Expression, Expression> _content;
-    private @Nullable Type keyTypeHint;
-    private @Nullable Type valueTypeHint;
+    @TreeNode(type = TreeNode.Type.MAP_NODE_KEY_VALUE) private SequencedMap<Expression, Expression> content;
+    @TreeNode @Nullable private Type keyTypeHint;
+    @TreeNode @Nullable private Type valueTypeHint;
 
     public DictionaryLiteral(SequencedMap<Expression, Expression> content) {
-        this._content = new LinkedHashMap<>(content);
+        this.content = new LinkedHashMap<>(content);
     }
 
     public void setKeyTypeHint(@Nullable Type type) {
@@ -37,7 +38,7 @@ public class DictionaryLiteral extends CollectionLiteral {
     }
 
     public SequencedMap<Expression, Expression> getDictionary() {
-        return new LinkedHashMap<>(_content);
+        return new LinkedHashMap<>(content);
     }
 
     @Override
@@ -50,18 +51,18 @@ public class DictionaryLiteral extends CollectionLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DictionaryLiteral that = (DictionaryLiteral) o;
-        return Objects.equals(_content, that._content);
+        return Objects.equals(content, that.content);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _content);
+        return Objects.hash(super.hashCode(), content);
     }
 
     @Override
     public DictionaryLiteral clone() {
         DictionaryLiteral obj = (DictionaryLiteral) super.clone();
-        obj._content = new LinkedHashMap<>(_content);
+        obj.content = new LinkedHashMap<>(content);
         if (keyTypeHint != null) obj.keyTypeHint = keyTypeHint.clone();
         if (valueTypeHint != null) obj.valueTypeHint = valueTypeHint.clone();
         return obj;

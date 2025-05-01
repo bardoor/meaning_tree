@@ -5,12 +5,13 @@ import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.types.UserType;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.List;
 
 public class MethodDeclaration extends FunctionDeclaration {
-    private final UserType _owner;
-    private final List<DeclarationModifier> _modifiers;
+    @TreeNode private UserType owner;
+    private List<DeclarationModifier> modifiers;
 
     public MethodDeclaration(UserType owner,
                              Identifier name,
@@ -30,15 +31,15 @@ public class MethodDeclaration extends FunctionDeclaration {
                              List<DeclarationArgument> arguments
     ) {
         super(name, returnType, annotations, arguments);
-        _owner = owner;
-        _modifiers = List.copyOf(modifiers);
+        this.owner = owner;
+        this.modifiers = List.copyOf(modifiers);
     }
 
     public UserType getOwner() {
-        return _owner;
+        return owner;
     }
 
     public List<DeclarationModifier> getModifiers() {
-        return _modifiers;
+        return modifiers;
     }
 }

@@ -5,18 +5,19 @@ import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 public class AssignmentStatement extends Statement implements HasInitialization {
-    private final Expression _lvalue;
-    private final Expression _rvalue;
-    private final AugmentedAssignmentOperator _op;
+    @TreeNode private Expression lvalue;
+    @TreeNode private Expression rvalue;
+    @TreeNode private AugmentedAssignmentOperator operatorType;
 
     public AssignmentStatement(Expression id, Expression value, AugmentedAssignmentOperator op) {
-        _lvalue = id;
-        _rvalue = value;
-        _op = op;
+        lvalue = id;
+        rvalue = value;
+        operatorType = op;
     }
 
     public AssignmentStatement(Expression id, Expression value) {
@@ -24,32 +25,32 @@ public class AssignmentStatement extends Statement implements HasInitialization 
     }
 
     public AugmentedAssignmentOperator getAugmentedOperator() {
-        return _op;
+        return operatorType;
     }
 
     public Expression getLValue() {
-        return _lvalue;
+        return lvalue;
     }
 
     public Expression getRValue() {
-        return _rvalue;
+        return rvalue;
     }
 
     public AssignmentExpression toExpression() {
-        return new AssignmentExpression(_lvalue, _rvalue, _op);
+        return new AssignmentExpression(lvalue, rvalue, operatorType);
     }
 
     @Override
     public String generateDot() {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(String.format("%s [label=\"%s\"];\n", _id, _op.toString()));
+        builder.append(String.format("%s [label=\"%s\"];\n", _id, operatorType.toString()));
 
-        builder.append(_lvalue.generateDot());
-        builder.append(_rvalue.generateDot());
+        builder.append(lvalue.generateDot());
+        builder.append(rvalue.generateDot());
 
-        builder.append(String.format("%s -- %s;\n", _id, _lvalue.getId()));
-        builder.append(String.format("%s -- %s;\n", _id, _rvalue.getId()));
+        builder.append(String.format("%s -- %s;\n", _id, lvalue.getId()));
+        builder.append(String.format("%s -- %s;\n", _id, rvalue.getId()));
 
         return builder.toString();
     }
@@ -59,11 +60,11 @@ public class AssignmentStatement extends Statement implements HasInitialization 
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         AssignmentStatement that = (AssignmentStatement) o;
-        return Objects.equals(_lvalue, that._lvalue) && Objects.equals(_rvalue, that._rvalue) && _op == that._op;
+        return Objects.equals(lvalue, that.lvalue) && Objects.equals(rvalue, that.rvalue) && operatorType == that.operatorType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _lvalue, _rvalue, _op);
+        return Objects.hash(super.hashCode(), lvalue, rvalue, operatorType);
     }
 }

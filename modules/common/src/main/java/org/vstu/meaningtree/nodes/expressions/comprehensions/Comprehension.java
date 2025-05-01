@@ -3,19 +3,18 @@ package org.vstu.meaningtree.nodes.expressions.comprehensions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.Expression;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 public abstract class Comprehension extends Expression {
-    @NotNull
-    protected ComprehensionItem _item;
+    @TreeNode @NotNull protected ComprehensionItem item;
 
-    @Nullable
-    protected Expression _condition;
+    @TreeNode @Nullable protected Expression condition;
 
     protected Comprehension(@NotNull ComprehensionItem item, @Nullable Expression condition) {
-        _item = item;
-        _condition = condition;
+        this.item = item;
+        this.condition = condition;
     }
 
     public interface ComprehensionItem extends Cloneable {
@@ -41,11 +40,11 @@ public abstract class Comprehension extends Expression {
     };
 
     public ComprehensionItem getItem() {
-        return _item;
+        return item;
     }
 
     public boolean hasCondition() {
-        return _condition != null;
+        return condition != null;
     }
 
     @Override
@@ -53,24 +52,24 @@ public abstract class Comprehension extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Comprehension that = (Comprehension) o;
-        return Objects.equals(_item, that._item) && Objects.equals(_condition, that._condition);
+        return Objects.equals(item, that.item) && Objects.equals(condition, that.condition);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _item, _condition);
+        return Objects.hash(super.hashCode(), item, condition);
     }
 
     @NotNull
     public Expression getCondition() {
-        return Objects.requireNonNull(_condition, "Comprehension does not have condition");
+        return Objects.requireNonNull(condition, "Comprehension does not have condition");
     }
 
     @Override
     public Comprehension clone() {
         Comprehension obj = (Comprehension) super.clone();
-        obj._condition = _condition.clone();
-        obj._item = _item.clone();
+        obj.condition = condition.clone();
+        obj.item = item.clone();
         return obj;
     }
 }

@@ -2,29 +2,30 @@ package org.vstu.meaningtree.nodes.types.containers;
 
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.interfaces.Generic;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 public class DictionaryType extends Type implements Generic {
-    private Type _keyType;
-    private Type _valueType;
+    @TreeNode private Type keyType;
+    @TreeNode private Type valueType;
 
     public DictionaryType(Type keyType, Type valueType) {
-        _keyType = keyType;
-        _valueType = valueType;
+        this.keyType = keyType;
+        this.valueType = valueType;
     }
 
     public Type getKeyType() {
-        return _keyType;
+        return keyType;
     }
 
     public Type getValueType() {
-        return _valueType;
+        return valueType;
     }
 
     @Override
     public Type[] getTypeParameters() {
-        return new Type[] {_keyType, _valueType};
+        return new Type[] {keyType, valueType};
     }
 
     @Override
@@ -37,19 +38,19 @@ public class DictionaryType extends Type implements Generic {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         DictionaryType that = (DictionaryType) o;
-        return Objects.equals(_keyType, that._keyType) && Objects.equals(_valueType, that._valueType);
+        return Objects.equals(keyType, that.keyType) && Objects.equals(valueType, that.valueType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _keyType, _valueType);
+        return Objects.hash(super.hashCode(), keyType, valueType);
     }
 
     @Override
     public DictionaryType clone() {
         DictionaryType obj = (DictionaryType) super.clone();
-        obj._keyType = _keyType.clone();
-        obj._valueType = _valueType.clone();
+        obj.keyType = keyType.clone();
+        obj.valueType = valueType.clone();
         return obj;
     }
 }

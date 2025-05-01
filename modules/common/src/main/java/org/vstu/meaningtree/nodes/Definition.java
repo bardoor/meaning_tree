@@ -1,8 +1,9 @@
 package org.vstu.meaningtree.nodes;
 
-public abstract class Definition extends Node {
-    private final Declaration _decl;
+import org.vstu.meaningtree.utils.TreeNode;
 
+public abstract class Definition extends Node {
+    @TreeNode private Declaration _decl;
 
     protected Definition(Declaration decl) {
         _decl = decl;

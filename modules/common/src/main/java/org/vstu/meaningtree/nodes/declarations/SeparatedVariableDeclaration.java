@@ -4,6 +4,7 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Declaration;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,24 +15,24 @@ public class SeparatedVariableDeclaration extends Declaration {
      * Неподдерживаемые языки должны разбивать это на разные statements
      */
 
-    private List<VariableDeclaration> _decls;
+    @TreeNode private List<VariableDeclaration> declarations;
 
     public SeparatedVariableDeclaration(VariableDeclaration decl1, VariableDeclaration ... decl) {
-        _decls = new ArrayList<>();
-        _decls.add(decl1);
-        _decls.addAll(List.of(decl));
+        declarations = new ArrayList<>();
+        declarations.add(decl1);
+        declarations.addAll(List.of(decl));
     }
 
     public SeparatedVariableDeclaration(List<VariableDeclaration> decl) {
         if (decl == null || decl.isEmpty()) {
             throw new MeaningTreeException("Required at least one argument at separate variable declaration");
         }
-        _decls = new ArrayList<>(decl);
+        declarations = new ArrayList<>(decl);
     }
 
     public boolean canBeReduced() {
-        Type t = _decls.getFirst().getType();
-        for (VariableDeclaration decl : _decls) {
+        Type t = declarations.getFirst().getType();
+        for (VariableDeclaration decl : declarations) {
             if (!t.equals(decl.getType())) {
                 return false;
             }
@@ -43,9 +44,9 @@ public class SeparatedVariableDeclaration extends Declaration {
         if (!canBeReduced()) {
             return null;
         }
-        Type t = _decls.getFirst().getType();
+        Type t = declarations.getFirst().getType();
         List<VariableDeclarator> decls = new ArrayList<>();
-        for (VariableDeclaration decl : _decls) {
+        for (VariableDeclaration decl : this.declarations) {
             decls.addAll(List.of(decl.getDeclarators()));
         }
         return new VariableDeclaration(t, decls);

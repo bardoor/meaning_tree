@@ -3,36 +3,37 @@ package org.vstu.meaningtree.nodes.expressions.comprehensions;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.other.Range;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 
 public class RangeBasedComprehension extends Comprehension {
-    private Range _range;
-    private SimpleIdentifier _identifier;
+    @TreeNode private Range range;
+    @TreeNode private SimpleIdentifier identifier;
 
 
     public RangeBasedComprehension(ComprehensionItem item, SimpleIdentifier rangeVariable, Range range, Expression condition) {
         super(item, condition);
-        _identifier = rangeVariable;
-        _range = range;
+        identifier = rangeVariable;
+        this.range = range;
     }
 
     public SimpleIdentifier getRangeVariableIdentifier() {
-        return _identifier;
+        return identifier;
     }
 
-    public Range getRange() {return _range;}
+    public Range getRange() {return range;}
 
     public RangeBasedComprehension clone() {
         RangeBasedComprehension obj = (RangeBasedComprehension) super.clone();
-        obj._range = _range.clone();
-        obj._identifier = _identifier.clone();
+        obj.range = range.clone();
+        obj.identifier = identifier.clone();
         return obj;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _range, _identifier);
+        return Objects.hash(super.hashCode(), range, identifier);
     }
 }

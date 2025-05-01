@@ -2,9 +2,10 @@ package org.vstu.meaningtree.nodes.modules;
 
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
+import org.vstu.meaningtree.utils.TreeNode;
 
 public class Include extends Node {
-    private StringLiteral filename;
+    @TreeNode private StringLiteral filename;
 
     public enum IncludeType {
         // #include "defs.h"

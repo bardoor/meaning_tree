@@ -6,37 +6,35 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 public class GeneralForLoop extends ForLoop {
-    @Nullable
-    private final HasInitialization _initializer;
+    @TreeNode @Nullable private HasInitialization initializer;
 
-    @Nullable
-    private final Expression _condition;
+    @TreeNode @Nullable private Expression condition;
 
-    @Nullable
-    private final Expression _update;
-    private Statement _body;
+    @TreeNode @Nullable private final Expression update;
+    @TreeNode private Statement body;
 
     public GeneralForLoop(@Nullable HasInitialization initializer, @Nullable Expression condition,
                           @Nullable Expression update, Statement body) {
-        this._initializer = initializer;
-        this._condition = condition;
-        this._update = update;
-        this._body = body;
+        this.initializer = initializer;
+        this.condition = condition;
+        this.update = update;
+        this.body = body;
     }
 
     @Override
     public CompoundStatement makeCompoundBody(SymbolEnvironment env) {
-        if (!(_body instanceof CompoundStatement)) {
-            _body = new CompoundStatement(new SymbolEnvironment(env), getBody());
+        if (!(body instanceof CompoundStatement)) {
+            body = new CompoundStatement(new SymbolEnvironment(env), getBody());
         }
-        return (CompoundStatement) _body;
+        return (CompoundStatement) body;
     }
 
     public boolean hasInitializer() {
-        return _initializer != null;
+        return initializer != null;
     }
 
     public HasInitialization getInitializer() {
@@ -44,11 +42,11 @@ public class GeneralForLoop extends ForLoop {
             throw new MeaningTreeException("No initializer");
         }
 
-        return _initializer;
+        return initializer;
     }
 
     public boolean hasCondition() {
-        return _condition != null;
+        return condition != null;
     }
 
     public Expression getCondition() {
@@ -56,11 +54,11 @@ public class GeneralForLoop extends ForLoop {
             throw new MeaningTreeException("No condition");
         }
 
-        return _condition;
+        return condition;
     }
 
     public boolean hasUpdate() {
-        return _update != null;
+        return update != null;
     }
 
     public Expression getUpdate() {
@@ -68,11 +66,11 @@ public class GeneralForLoop extends ForLoop {
             throw new MeaningTreeException("No update");
         }
 
-        return _update;
+        return update;
     }
 
     public Statement getBody() {
-        return _body;
+        return body;
     }
 
     @Override

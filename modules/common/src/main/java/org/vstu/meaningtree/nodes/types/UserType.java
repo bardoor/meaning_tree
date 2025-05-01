@@ -5,11 +5,12 @@ import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
 public abstract class UserType extends Type {
-    private Identifier _name;
+    @TreeNode private Identifier name;
 
     public SimpleIdentifier getName() {
         if (getQualifiedName() instanceof QualifiedIdentifier qualified) {
@@ -17,16 +18,16 @@ public abstract class UserType extends Type {
         } else if (getQualifiedName() instanceof ScopedIdentifier scoped) {
             return scoped.getScopeResolution().getLast();
         }
-        return (SimpleIdentifier) _name;
+        return (SimpleIdentifier) name;
     }
 
     // Например, для вывода имени вместе с namespace. Может быть QualifiedIdentifier в случае C++, либо ScopedIdentifier в случае Java и Python
     public Identifier getQualifiedName() {
-        return _name;
+        return name;
     }
 
     protected UserType(Identifier name) {
-        _name = name;
+        this.name = name;
     }
 
     @Override
@@ -44,13 +45,13 @@ public abstract class UserType extends Type {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _name);
+        return Objects.hash(super.hashCode(), name);
     }
 
     @Override
     public UserType clone() {
         UserType obj = (UserType) super.clone();
-        obj._name = _name.clone();
+        obj.name = name.clone();
         return obj;
     }
 }

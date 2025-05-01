@@ -9,16 +9,17 @@ import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.types.UserType;
+import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements HasBodyStatement {
-    protected CompoundStatement _body;
+    @TreeNode protected CompoundStatement body;
 
     public FunctionDefinition(FunctionDeclaration declaration, CompoundStatement body) {
         super(declaration);
-        _body = body;
+        this.body = body;
     }
 
     public Identifier getName() {
@@ -41,11 +42,11 @@ public class FunctionDefinition extends Definition implements HasBodyStatement {
     }
 
     public CompoundStatement getBody() {
-        return _body;
+        return body;
     }
 
     @Override
     public CompoundStatement makeCompoundBody(SymbolEnvironment env) {
-        return _body;
+        return body;
     }
 }

@@ -2,6 +2,7 @@ package org.vstu.meaningtree.nodes.statements.assignments;
 
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.List;
 import java.util.Objects;
@@ -12,10 +13,10 @@ public class CompoundAssignmentStatement extends Node implements HasInitializati
      * Example: for(a = 1, b = 3; i < 3; i++)
      */
 
-    private final List<AssignmentStatement> _assignments;
+    @TreeNode private List<AssignmentStatement> assignments;
 
     public CompoundAssignmentStatement(AssignmentStatement ... assignments) {
-        this._assignments = List.of(assignments);
+        this.assignments = List.of(assignments);
     }
 
     @Override
@@ -24,7 +25,7 @@ public class CompoundAssignmentStatement extends Node implements HasInitializati
     }
 
     public AssignmentStatement[] getAssignments() {
-        return _assignments.toArray(new AssignmentStatement[0]);
+        return assignments.toArray(new AssignmentStatement[0]);
     }
 
     @Override
@@ -32,11 +33,11 @@ public class CompoundAssignmentStatement extends Node implements HasInitializati
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         CompoundAssignmentStatement that = (CompoundAssignmentStatement) o;
-        return Objects.equals(_assignments, that._assignments);
+        return Objects.equals(assignments, that.assignments);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _assignments);
+        return Objects.hash(super.hashCode(), assignments);
     }
 }

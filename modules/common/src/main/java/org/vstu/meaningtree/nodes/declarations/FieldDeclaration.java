@@ -9,16 +9,16 @@ import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import java.util.List;
 
 public class FieldDeclaration extends VariableDeclaration {
-    private final List<DeclarationModifier> _modifiers;
+    private List<DeclarationModifier> modifiers;
 
     public FieldDeclaration(Type type, SimpleIdentifier name, List<DeclarationModifier> modifiers) {
         super(type, name);
-        _modifiers = List.copyOf(modifiers);
+        this.modifiers = List.copyOf(modifiers);
     }
 
     public FieldDeclaration(Type type, SimpleIdentifier name, Expression value, List<DeclarationModifier> modifiers) {
         super(type, name, value);
-        _modifiers = List.copyOf(modifiers);
+        this.modifiers = List.copyOf(modifiers);
     }
 
 
@@ -28,7 +28,7 @@ public class FieldDeclaration extends VariableDeclaration {
 
     public FieldDeclaration(Type type, List<DeclarationModifier> modifiers, List<VariableDeclarator> declarators) {
         super(type, declarators);
-        _modifiers = List.copyOf(modifiers);
+        this.modifiers = List.copyOf(modifiers);
     }
 
     public FieldDeclaration(Type type, SimpleIdentifier name) {
@@ -45,6 +45,6 @@ public class FieldDeclaration extends VariableDeclaration {
     }
 
     public List<DeclarationModifier> getModifiers() {
-        return _modifiers;
+        return modifiers;
     }
 }

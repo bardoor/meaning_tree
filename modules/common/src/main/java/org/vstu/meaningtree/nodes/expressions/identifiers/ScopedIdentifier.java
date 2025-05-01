@@ -2,24 +2,25 @@ package org.vstu.meaningtree.nodes.expressions.identifiers;
 
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.other.MemberAccess;
+import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class ScopedIdentifier extends Identifier {
-    private List<SimpleIdentifier> _scopeResolutionList;
+    @TreeNode private List<SimpleIdentifier> scopeResolutionList;
 
     public ScopedIdentifier(SimpleIdentifier... identifiers) {
-        _scopeResolutionList = List.of(identifiers);
+        scopeResolutionList = List.of(identifiers);
     }
 
     public ScopedIdentifier(List<SimpleIdentifier> identifiers) {
-        _scopeResolutionList = List.copyOf(identifiers);
+        scopeResolutionList = List.copyOf(identifiers);
     }
 
     public List<SimpleIdentifier> getScopeResolution() {
-        return _scopeResolutionList;
+        return scopeResolutionList;
     }
 
     @Override
@@ -32,37 +33,37 @@ public class ScopedIdentifier extends Identifier {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ScopedIdentifier that = (ScopedIdentifier) o;
-        return Objects.equals(_scopeResolutionList, that._scopeResolutionList);
+        return Objects.equals(scopeResolutionList, that.scopeResolutionList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _scopeResolutionList);
+        return Objects.hash(super.hashCode(), scopeResolutionList);
     }
 
     @Override
     public ScopedIdentifier clone() {
         ScopedIdentifier obj = (ScopedIdentifier) super.clone();
-        obj._scopeResolutionList = new ArrayList<>(_scopeResolutionList.stream().map(SimpleIdentifier::clone).toList());
+        obj.scopeResolutionList = new ArrayList<>(scopeResolutionList.stream().map(SimpleIdentifier::clone).toList());
         return obj;
     }
 
     @Override
     public boolean contains(Identifier other) {
-        return _scopeResolutionList.contains(other);
+        return scopeResolutionList.contains(other);
     }
 
     @Override
     public int contentSize() {
-        return _scopeResolutionList.size();
+        return scopeResolutionList.size();
     }
 
     public MemberAccess toMemberAccess() {
-        if (_scopeResolutionList.size() == 2) {
-            return new MemberAccess(_scopeResolutionList.getFirst(), _scopeResolutionList.getLast());
+        if (scopeResolutionList.size() == 2) {
+            return new MemberAccess(scopeResolutionList.getFirst(), scopeResolutionList.getLast());
         }
         return new MemberAccess(
-                new ScopedIdentifier(_scopeResolutionList.subList(0, _scopeResolutionList.size() - 1))
-                        .toMemberAccess(), _scopeResolutionList.getLast());
+                new ScopedIdentifier(scopeResolutionList.subList(0, scopeResolutionList.size() - 1))
+                        .toMemberAccess(), scopeResolutionList.getLast());
     }
 }
