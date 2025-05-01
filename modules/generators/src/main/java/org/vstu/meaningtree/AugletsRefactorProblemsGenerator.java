@@ -13,6 +13,8 @@ import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.*;
 import org.vstu.meaningtree.nodes.statements.loops.DoWhileLoop;
 import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.utils.auglets.AugletProblem;
+import org.vstu.meaningtree.utils.auglets.AugletsMeta;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
@@ -20,8 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 public class AugletsRefactorProblemsGenerator {
+    private static AugletsMeta _meta = new AugletsMeta();
 
-    public static MeaningTree generate(
+    public static AugletProblem generate(
             MeaningTree mt,
             AugletsRefactorProblemsType problemType,
             boolean modifyOnlyFirst,
@@ -42,10 +45,11 @@ public class AugletsRefactorProblemsGenerator {
         CompoundStatement compoundBody = (CompoundStatement) generate(currentBody, problemType, opts);
 
         if (compoundBody != null) {
-            return new MeaningTree(new ProgramEntryPoint(
+            MeaningTree meaningTree = new MeaningTree(new ProgramEntryPoint(
                     new SymbolEnvironment(null),
                     List.of(compoundBody.getNodes()))
             );
+            return new AugletProblem(meaningTree, null);
         }
 
         for (var node : currentBody.getNodes()) {
@@ -64,7 +68,8 @@ public class AugletsRefactorProblemsGenerator {
            }
         }
 
-        return new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), newBody));
+        MeaningTree meaningTree = new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), newBody));
+        return new AugletProblem(meaningTree, _meta);
     }
 
     private static Node generate(Node node, AugletsRefactorProblemsType problemType, Map<String, String> opts) {
@@ -178,6 +183,7 @@ public class AugletsRefactorProblemsGenerator {
     public static IfStatement addDanglingEmptyElse(IfStatement ifStatement) {
         if (!ifStatement.hasElseBranch()) {
             var emptyElse = new CompoundStatement(new SymbolEnvironment(null));
+            _meta.uniqueProblemNodes().add(emptyElse);
             return new IfStatement(ifStatement.getBranches(), emptyElse);
         }
         else {
