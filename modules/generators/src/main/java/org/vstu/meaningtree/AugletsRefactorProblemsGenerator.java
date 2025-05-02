@@ -13,8 +13,6 @@ import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.*;
 import org.vstu.meaningtree.nodes.statements.loops.DoWhileLoop;
 import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
-import org.vstu.meaningtree.utils.auglets.AugletProblem;
-import org.vstu.meaningtree.utils.auglets.AugletsMeta;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
@@ -45,11 +43,11 @@ public class AugletsRefactorProblemsGenerator {
         CompoundStatement compoundBody = (CompoundStatement) generate(currentBody, problemType, opts);
 
         if (compoundBody != null) {
-            MeaningTree meaningTree = new MeaningTree(new ProgramEntryPoint(
+            MeaningTree newMt = new MeaningTree(new ProgramEntryPoint(
                     new SymbolEnvironment(null),
                     List.of(compoundBody.getNodes()))
             );
-            return new AugletProblem(meaningTree, null);
+            return new AugletProblem(mt, newMt);
         }
 
         for (var node : currentBody.getNodes()) {
@@ -68,8 +66,8 @@ public class AugletsRefactorProblemsGenerator {
            }
         }
 
-        MeaningTree meaningTree = new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), newBody));
-        return new AugletProblem(meaningTree, _meta);
+        MeaningTree newMt = new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), newBody));
+        return new AugletProblem(mt, newMt, _meta);
     }
 
     private static Node generate(Node node, AugletsRefactorProblemsType problemType, Map<String, String> opts) {
