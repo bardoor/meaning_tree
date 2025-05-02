@@ -116,7 +116,7 @@ public class AugletsSerializer {
     }
 
     private String toString(SimpleIdentifier identifier) {
-        return variable(identifier);
+        return variableIdentify(identifier);
     }
 
     private String toString(VariableDeclaration varDecl) {
@@ -129,8 +129,8 @@ public class AugletsSerializer {
         var varDeclBuilder = new StringBuilder();
 
         varDeclBuilder
-                .append(type(varDecl.getType()))
-                .append(variable(decl.getIdentifier()));
+                .append(typeIdentify(varDecl.getType()))
+                .append(variableIdentify(decl.getIdentifier()));
 
         if (decl.hasInitialization()) {
             var rvalue = decl.getRValue();
@@ -200,7 +200,7 @@ public class AugletsSerializer {
         };
     }
 
-    private String type(Type type) {
+    private String typeIdentify(Type type) {
         var typeName = switch (type) {
             case IntType t -> "int";
             case StringType t -> "string";
@@ -221,14 +221,14 @@ public class AugletsSerializer {
         return res;
     }
 
-    private String variable(SimpleIdentifier identifier) {
+    private String variableIdentify(SimpleIdentifier identifier) {
         var varName = identifier.toString();
 
         if (_variableMapping.containsKey(varName)) {
             return _variableMapping.get(varName);
         }
 
-        var res =  "<" + _variableNumber + "#" + varName + "#>";
+        var res =  "<V" + _variableNumber + "#" + varName + "#>";
         _variableNumber++;
         _variableMapping.put(varName, res);
 
