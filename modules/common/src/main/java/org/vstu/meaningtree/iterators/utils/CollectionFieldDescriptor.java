@@ -29,7 +29,7 @@ public class CollectionFieldDescriptor extends FieldDescriptor implements Iterab
 
     @Override
     public FieldDescriptor clone() {
-        return new CollectionFieldDescriptor(owner, fieldName, field, readOnly);
+        return new CollectionFieldDescriptor(owner, name, field, readOnly);
     }
 
     @Override

@@ -14,7 +14,7 @@ public class NodeFieldDescriptor extends FieldDescriptor implements Iterable<Fie
 
     @Override
     public FieldDescriptor clone() {
-        return new NodeFieldDescriptor(owner, fieldName, field, readOnly);
+        return new NodeFieldDescriptor(owner, name, field, readOnly);
     }
 
     @Override

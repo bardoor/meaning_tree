@@ -94,7 +94,7 @@ public class DFSNodeIterator implements Iterator<NodeInfo> {
 
             stack.pop();
             int depth = stack.size();
-            return new NodeInfo(frame.node, frame.parentField == null ? null : frame.parentField.owner, frame.parentField, depth);
+            return new NodeInfo(frame.node, frame.parentField == null ? null : frame.parentField.getOwner(), frame.parentField, depth);
         }
 
         throw new NoSuchElementException();

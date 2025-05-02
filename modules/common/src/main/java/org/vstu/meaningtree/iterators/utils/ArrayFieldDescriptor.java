@@ -16,7 +16,7 @@ public class ArrayFieldDescriptor extends FieldDescriptor implements Iterable<No
 
     @Override
     public FieldDescriptor clone() {
-        return new ArrayFieldDescriptor(owner, fieldName, field, readOnly);
+        return new ArrayFieldDescriptor(owner, name, field, readOnly);
     }
 
     public int length() throws IllegalAccessException {

@@ -66,7 +66,7 @@ public class NodeIterator implements Iterator<NodeInfo> {
     public NodeInfo next() {
         if (giveRoot) {
             giveRoot = false;
-            return new NodeInfo(root, parent == null ? null : parent.owner, parent, 0);
+            return new NodeInfo(root, parent == null ? null : parent.getOwner(), parent, 0);
         }
         if (currentNested != null && currentNested.hasNext()) {
             return currentNested.next();
