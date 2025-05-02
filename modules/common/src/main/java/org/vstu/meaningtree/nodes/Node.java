@@ -31,6 +31,15 @@ abstract public class Node implements Serializable, Cloneable, LabelAttachable, 
         return new DFSNodeIterator(this, false);
     }
 
+    public List<NodeInfo> iterate(boolean includeSelf) {
+        ArrayList<NodeInfo> list = new ArrayList<>();
+        var iterator = new DFSNodeIterator(this, includeSelf);
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
+        return list.reversed();
+    }
+
     private Set<Label> _labels = new HashSet<>();
 
     /**

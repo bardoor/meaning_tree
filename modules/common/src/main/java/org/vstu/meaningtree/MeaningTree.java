@@ -132,5 +132,18 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, No
     public Set<Label> getAllLabels() {
         return Set.copyOf(_labels);
     }
+
+    public List<Node> allChildren() {
+        ArrayList<Node> children = new ArrayList<>();
+        children.addAll(rootNode.allChildren());
+        children.add(rootNode);
+        return children;
+    }
+
+    public List<NodeInfo> iterate() {
+        ArrayList<NodeInfo> children = new ArrayList<>();
+        children.addAll(rootNode.iterate(true));
+        return children;
+    }
 }
 
