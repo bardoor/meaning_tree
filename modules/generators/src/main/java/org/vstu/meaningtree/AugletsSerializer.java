@@ -1,49 +1,122 @@
 package org.vstu.meaningtree;
 
-import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.literals.NumericLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class AugletsSerializer {
-    private AugletsMeta _meta;
     private int _variableNumber = 0;
     private final Map<String, String> _variableMapping = new HashMap<>();
     private int _typeNumber = 0;
     private final Map<String, String> _typeMapping = new HashMap<>();
+    private final Circumflexer _circumflexer = new Circumflexer();
 
     public String serialize(AugletProblem problem) {
-        if (_meta == null) {
-            throw new IllegalStateException("Meta was not set. Please call AugletsSerializer.setMeta() first");
-        }
+        _circumflexer.setProblem(problem);
+        _circumflexer.problemMode();
+        var problemStr = toString(
+                problem.problemMeaningTree().getRootNode()
+        );
 
-        var problemStr = toString(problem.problemMeaningTree().getRootNode(), problem.meta().uniqueProblemNodes());
-        var solutionStr = toString(problem.solutionMeaningTree().getRootNode(), problem.meta().uniqueSolutionNodes());
+        _circumflexer.solutionMode();
+        var solutionStr = toString(
+                problem.solutionMeaningTree().getRootNode()
+        );
 
         _variableMapping.clear();
         _typeMapping.clear();
-        return problemStr + solutionStr;
+
+        return problemStr + "\n solution: \n" + solutionStr;
     }
 
-    // Наладить диспетчеризацию как нибудь
-    private String toString(Node node, List<Node> uniqueNodes) {
+    private String toString(Node node) {
+        var nodeStr = dispatchNode(node);
+
+        return _circumflexer.circumflexifyUnique(nodeStr, node);
+    }
+
+    private String dispatchNode(Node node) {
+        System.out.println("dispatchNode: " + node.getClass().getSimpleName());
+
         return switch (node) {
             case VariableDeclaration varDecl -> toString(varDecl);
-            default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
+            case ProgramEntryPoint entryPoint -> toString(entryPoint);
+            case IfStatement ifStatement -> toString(ifStatement);
+            case SimpleIdentifier simpleIdentifier -> toString(simpleIdentifier);
+            case NumericLiteral numericLiteral -> toString(numericLiteral);
+            case CompoundStatement compoundStatement -> toString(compoundStatement);
+            case AssignmentStatement assignmentStatement -> toString(assignmentStatement);
+            case BinaryExpression expr -> toString(expr);
+            case UnaryExpression expr -> toString(expr);
+            default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass().getSimpleName()));
         };
+    }
+
+    private String toString(ProgramEntryPoint entryPoint) {
+        var entryPointBuilder = new StringBuilder();
+
+        entryPointBuilder.append("<V0><T0>{");
+
+        for (var stmt : entryPoint.getBody()) {
+            entryPointBuilder.append(toString(stmt));
+        }
+
+        entryPointBuilder.append("}");
+        return entryPointBuilder.toString();
+    }
+
+    private String toString(IfStatement ifStatement) {
+        var ifStatementBuilder = new StringBuilder();
+
+        var branches = ifStatement.getBranches();
+        var ifBranch = branches.getFirst();
+
+        ifStatementBuilder
+                .append("if(")
+                .append(toString(ifBranch.getCondition()))
+                .append("){")
+                .append(toString(ifBranch.getBody()))
+                .append("}");
+
+        for (var elseIfBranch : branches.subList(1, branches.size())) {
+            ifStatementBuilder
+                    .append("else if (")
+                    .append(toString(elseIfBranch.getCondition()))
+                    .append("){")
+                    .append(toString(elseIfBranch.getBody()))
+                    .append("}");
+        }
+
+        if (ifStatement.hasElseBranch()) {
+            var elseBranch = ifStatement.getElseBranch();
+            ifStatementBuilder
+                    .append("else {")
+                    .append(toString(elseBranch))
+                    .append("}");
+        }
+
+        return ifStatementBuilder.toString();
+    }
+
+    private String toString(SimpleIdentifier identifier) {
+        return variable(identifier);
     }
 
     private String toString(VariableDeclaration varDecl) {
@@ -52,19 +125,37 @@ public class AugletsSerializer {
         }
 
         var decl = varDecl.getDeclarators()[0];
-        var expr = toString(decl.getRValue());
 
-        return type(varDecl.getType()) + variable(decl.getIdentifier());
+        var varDeclBuilder = new StringBuilder();
+
+        varDeclBuilder
+                .append(type(varDecl.getType()))
+                .append(variable(decl.getIdentifier()));
+
+        if (decl.hasInitialization()) {
+            var rvalue = decl.getRValue();
+            varDeclBuilder.append("=").append(toString(rvalue));
+        }
+
+        return varDeclBuilder.toString();
     }
 
-    private String toString(Expression expression) {
-        return switch (expression) {
-            case BinaryExpression binaryExpression -> toString(binaryExpression);
-            case UnaryExpression unaryExpression -> toString(unaryExpression);
-            default -> throw new IllegalStateException(
-                    String.format("Expression %s is not supported", expression.getClass())
-            );
-        };
+    private String toString(NumericLiteral literal) {
+        return literal.getStringValue(false);
+    }
+
+    private String toString(CompoundStatement compoundStatement) {
+        var compoundStatementBuilder = new StringBuilder();
+
+        for (var stmt : compoundStatement.getNodes()) {
+            compoundStatementBuilder.append(toString(stmt)).append(";");
+        }
+
+        return compoundStatementBuilder.toString();
+    }
+
+    private String toString(AssignmentStatement assignmentStatement) {
+        return toString(assignmentStatement.getLValue()) + "=" + toString(assignmentStatement.getRValue());
     }
 
     private String toString(BinaryExpression binaryExpression) {
