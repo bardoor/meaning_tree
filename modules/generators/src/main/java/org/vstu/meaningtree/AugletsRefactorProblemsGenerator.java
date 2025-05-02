@@ -47,7 +47,7 @@ public class AugletsRefactorProblemsGenerator {
                     new SymbolEnvironment(null),
                     List.of(compoundBody.getNodes()))
             );
-            return new AugletProblem(mt, newMt);
+            return new AugletProblem(newMt, mt, problemType);
         }
 
         for (var node : currentBody.getNodes()) {
@@ -67,7 +67,7 @@ public class AugletsRefactorProblemsGenerator {
         }
 
         MeaningTree newMt = new MeaningTree(new ProgramEntryPoint(new SymbolEnvironment(null), newBody));
-        return new AugletProblem(mt, newMt, _meta);
+        return new AugletProblem(newMt, mt, _meta, problemType);
     }
 
     private static Node generate(Node node, AugletsRefactorProblemsType problemType, Map<String, String> opts) {

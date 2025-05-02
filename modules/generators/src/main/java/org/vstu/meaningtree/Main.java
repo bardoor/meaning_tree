@@ -15,21 +15,14 @@ public class Main {
         var code = "while (a < b) { variable++; }";
         var mt = language.getMeaningTree(code);
 
-        var modifedMt = AugletsRefactorProblemsGenerator.generate(
+        var auglet = AugletsRefactorProblemsGenerator.generate(
                 mt,
                 AugletsRefactorProblemsType.WRAP_WHILE_LOOP_AND_REPLACE_IT_WITH_DO_WHILE,
                 true,
                 Map.of()
         );
 
-        modifedMt = AugletsRefactorProblemsGenerator.generate(
-                modifedMt,
-                AugletsRefactorProblemsType.ADD_DANGLING_ELSE,
-                true,
-                Map.of()
-        );
-
-        var convertedCode = viewer.toString(modifedMt);
+        var convertedCode = viewer.toString(auglet.problemMeaningTree());
         System.out.println(convertedCode);
     }
 }

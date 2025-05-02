@@ -5,8 +5,9 @@ import org.jetbrains.annotations.Nullable;
 public record AugletProblem(
         MeaningTree problemMeaningTree,
         MeaningTree solutionMeaningTree,
-        AugletsMeta meta) {
-    public AugletProblem(MeaningTree problem, MeaningTree solution) {
-        this(problem, solution, new AugletsMeta());
+        AugletsMeta meta,
+        AugletsRefactorProblemsType problemType) {
+    public AugletProblem(MeaningTree problem, MeaningTree solution, AugletsRefactorProblemsType problemType) {
+        this(problem, solution, new AugletsMeta(), problemType);
     }
 }
