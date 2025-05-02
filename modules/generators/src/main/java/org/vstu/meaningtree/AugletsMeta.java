@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.utils.auglets;
+package org.vstu.meaningtree;
 
 import org.vstu.meaningtree.nodes.Node;
 
