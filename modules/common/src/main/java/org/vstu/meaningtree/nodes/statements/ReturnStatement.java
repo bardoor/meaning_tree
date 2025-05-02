@@ -1,9 +1,9 @@
 package org.vstu.meaningtree.nodes.statements;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
-import org.vstu.meaningtree.utils.TreeNode;
 
 public class ReturnStatement extends Statement {
     @TreeNode private Expression expression;

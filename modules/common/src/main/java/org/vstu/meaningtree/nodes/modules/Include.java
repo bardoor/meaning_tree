@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.modules;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
-import org.vstu.meaningtree.utils.TreeNode;
 
 public class Include extends Node {
     @TreeNode private StringLiteral filename;

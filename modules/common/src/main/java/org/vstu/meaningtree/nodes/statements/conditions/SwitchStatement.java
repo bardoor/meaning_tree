@@ -2,12 +2,12 @@ package org.vstu.meaningtree.nodes.statements.conditions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
 import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
 import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
-import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;

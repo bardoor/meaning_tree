@@ -330,7 +330,7 @@ public class JavaViewer extends LanguageViewer {
         var argumentsBuilder = new StringBuilder();
 
         builder.append("String.format(\"");
-        for (Expression stringPart : interpolatedStringLiteral) {
+        for (Expression stringPart : interpolatedStringLiteral.components()) {
             Type exprType = HindleyMilner.inference(stringPart, _typeScope);
             switch (exprType) {
                 case StringType stringType -> {
@@ -589,7 +589,7 @@ public class JavaViewer extends LanguageViewer {
 
     private String toString(IndexExpression indexExpression) {
         indexExpression = parenFiller.process(indexExpression);
-        Expression arrayName = indexExpression.getExpr();
+        Expression arrayName = indexExpression.getExpression();
         String name = toString(arrayName);
         String index = toString(indexExpression.getIndex());
         return "%s[%s]".formatted(name, index);
@@ -1425,7 +1425,7 @@ public class JavaViewer extends LanguageViewer {
         StringBuilder builder = new StringBuilder();
         builder.append("{\n");
         increaseIndentLevel();
-        for (Node node : stmt) {
+        for (Node node : stmt.getNodes()) {
             String s = toString(node);
             if (s.isEmpty()) {
                 continue;

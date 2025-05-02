@@ -1,17 +1,15 @@
 package org.vstu.meaningtree.nodes.statements;
 
-import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.interfaces.HasSymbolScope;
-import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-public class CompoundStatement extends Statement implements Iterable<Node>, HasSymbolScope {
+public class CompoundStatement extends Statement implements HasSymbolScope {
     @TreeNode private List<Node> nodes;
     private final SymbolEnvironment _env;
 
@@ -33,12 +31,6 @@ public class CompoundStatement extends Statement implements Iterable<Node>, HasS
             builder.append(String.format("%s -- %s;\n", _id, node.getId()));
         }
         return builder.toString();
-    }
-
-    @NotNull
-    @Override
-    public Iterator<Node> iterator() {
-        return nodes.iterator();
     }
 
     public int getLength() {

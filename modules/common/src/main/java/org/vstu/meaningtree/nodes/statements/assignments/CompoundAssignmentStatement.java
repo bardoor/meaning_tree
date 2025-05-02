@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.statements.assignments;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.List;
 import java.util.Objects;

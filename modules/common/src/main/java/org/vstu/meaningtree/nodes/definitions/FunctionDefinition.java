@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.definitions;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Definition;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
@@ -9,7 +10,6 @@ import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.interfaces.HasBodyStatement;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.types.UserType;
-import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.List;

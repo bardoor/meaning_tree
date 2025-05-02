@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.nodes.definitions;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Definition;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
@@ -8,7 +9,6 @@ import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +45,7 @@ public class ClassDefinition extends Definition {
 
     @Nullable
     public MethodDefinition findMethod(String methodName) {
-        for (Node node : body) {
+        for (Node node : body.getNodes()) {
             if (!(node instanceof MethodDefinition methodDefinition)) {
                 continue;
             }

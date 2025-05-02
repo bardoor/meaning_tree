@@ -191,7 +191,7 @@ public class PythonLanguage extends LanguageParser {
         TSNode body = node.getChildByFieldName("body");
         Comprehension.ComprehensionItem item;
         if (body.getType().equals("pair")) {
-            item = new Comprehension.KeyValuePair(
+            item = new KeyValuePair(
                     (Expression) fromTSNode(body.getChildByFieldName("key")),
                     (Expression) fromTSNode(body.getChildByFieldName("value")));
         } else {
@@ -616,7 +616,7 @@ public class PythonLanguage extends LanguageParser {
         CompoundStatement compound = fromCompoundTSNode(node, currentContext);
         Node entryPointNode = null;
         IfStatement entryPointIf = null;
-        for (Node programNode : compound) {
+        for (Node programNode : compound.getNodes()) {
             if (programNode instanceof IfStatement ifStmt) {
                 ConditionBranch mainBranch = ifStmt.getBranches().get(0);
                 if (mainBranch.getCondition() instanceof EqOp eqOp) {
@@ -855,7 +855,7 @@ public class PythonLanguage extends LanguageParser {
         for (int i = 0; i < node.getChildCount(); i++) {
             Node treeNode = fromTSNode(node.getChild(i));
             if (treeNode instanceof PseudoCompoundStatement pcs) {
-                for (Node subnode : pcs) {
+                for (Node subnode : pcs.getNodes()) {
                     builder.put(subnode);
                 }
             } else if (treeNode != null) {

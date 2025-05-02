@@ -1,9 +1,9 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,16 +11,16 @@ import java.util.List;
 import java.util.Objects;
 
 public class MemberAccess extends Expression {
-    @TreeNode protected Expression expr;
+    @TreeNode protected Expression expression;
     @TreeNode protected SimpleIdentifier member;
 
     public MemberAccess(Expression expr, SimpleIdentifier member) {
-        this.expr = expr;
+        this.expression = expr;
         this.member = member;
     }
 
     public Expression getExpression() {
-        return expr;
+        return expression;
     }
 
     public SimpleIdentifier getMember() {
@@ -35,7 +35,7 @@ public class MemberAccess extends Expression {
     public ScopedIdentifier toScopedIdentifier() {
         List<SimpleIdentifier> idents = new ArrayList<>();
         idents.add(member);
-        _unwrapScoped(expr, idents);
+        _unwrapScoped(expression, idents);
         Collections.reverse(idents);
         return new ScopedIdentifier(idents.toArray(new SimpleIdentifier[0]));
     }
@@ -62,18 +62,18 @@ public class MemberAccess extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MemberAccess that = (MemberAccess) o;
-        return Objects.equals(expr, that.expr) && Objects.equals(member, that.member);
+        return Objects.equals(expression, that.expression) && Objects.equals(member, that.member);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), expr, member);
+        return Objects.hash(super.hashCode(), expression, member);
     }
 
     @Override
     public MemberAccess clone() {
         MemberAccess obj = (MemberAccess) super.clone();
-        obj.expr = expr.clone();
+        obj.expression = expression.clone();
         obj.member = member.clone();
         return obj;
     }

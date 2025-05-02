@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.io;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.literals.StringLiteral;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.List;
 import java.util.Objects;

@@ -199,7 +199,7 @@ public class CppViewer extends LanguageViewer {
     private String fromInterpolatedString(InterpolatedStringLiteral interpolatedStringLiteral) {
         StringBuilder builder = new StringBuilder("std::format(\"");
         List<Expression> dynamicExprs = new ArrayList<>();
-        for (Expression expr : interpolatedStringLiteral) {
+        for (Expression expr : interpolatedStringLiteral.components()) {
             if (expr instanceof StringLiteral str) {
                 builder.append(str.getEscapedValue());
             } else {
@@ -365,7 +365,7 @@ public class CppViewer extends LanguageViewer {
     @NotNull
     private String toStringIndexExpression(@NotNull IndexExpression indexExpression) {
         indexExpression = parenFiller.process(indexExpression);
-        String base = toString(indexExpression.getExpr());
+        String base = toString(indexExpression.getExpression());
         String indices = toString(indexExpression.getIndex());
         if (indexExpression.isPreferPointerRepresentation()) {
             return "*(%s + %s)".formatted(base, indices);

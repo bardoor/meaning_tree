@@ -643,7 +643,7 @@ public class JavaTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeSubscript(IndexExpression subscript, TokenList result) {
-        TokenGroup leftOperand = tokenizeExtended(subscript.getExpr(), result);
+        TokenGroup leftOperand = tokenizeExtended(subscript.getExpression(), result);
         OperatorToken open = getOperatorByTokenName("[");
         result.add(open);
         leftOperand.setMetadata(open, OperandPosition.LEFT);

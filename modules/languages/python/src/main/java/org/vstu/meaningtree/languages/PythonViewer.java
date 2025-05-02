@@ -116,7 +116,7 @@ public class PythonViewer extends LanguageViewer {
             case Identifier identifier -> identifierToString(identifier);
             case IndexExpression indexExpr -> {
                 indexExpr = parenFiller.process(indexExpr);
-                yield String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
+                yield String.format("%s[%s]", toString(indexExpr.getExpression()), toString(indexExpr.getIndex()));
             }
             case MemberAccess memAccess -> {
                 memAccess = parenFiller.process(memAccess);
@@ -193,14 +193,14 @@ public class PythonViewer extends LanguageViewer {
     private String comprehensionToString(Comprehension compr) {
         char startBracket = '[';
         char endBracket = ']';
-        if (compr.getItem() instanceof Comprehension.KeyValuePair || compr.getItem() instanceof Comprehension.SetItem) {
+        if (compr.getItem() instanceof KeyValuePair || compr.getItem() instanceof Comprehension.SetItem) {
             startBracket = '{';
             endBracket = '}';
         }
 
         StringBuilder comprehension = new StringBuilder();
         comprehension.append(startBracket);
-        if (compr.getItem() instanceof Comprehension.KeyValuePair pair) {
+        if (compr.getItem() instanceof KeyValuePair pair) {
             comprehension.append(String.format("%s: %s", toString(pair.key()), toString(pair.value())));
         } else if (compr.getItem() instanceof Comprehension.SetItem item) {
             comprehension.append(toString(item.value()));
@@ -626,7 +626,7 @@ public class PythonViewer extends LanguageViewer {
                 default -> prefix += "";
             }
             StringBuilder builder = new StringBuilder();
-            for (Expression expr : interpolation) {
+            for (Expression expr : interpolation.components()) {
                 if (expr instanceof StringLiteral simpleString) {
                     if (interpolation.getStringType().equals(StringLiteral.Type.RAW)) {
                         builder.append(simpleString.getUnescapedValue());
@@ -883,7 +883,7 @@ public class PythonViewer extends LanguageViewer {
         if (node.getNodes().length == 0) {
             return tab.toString().concat("pass");
         }
-        for (Node child : node) {
+        for (Node child : node.getNodes()) {
             builder.append(tab);
             if (child instanceof CompoundStatement) {
                 // Схлопываем лишний таб, так как блоки как самостоятельная сущность в Python не поддерживаются

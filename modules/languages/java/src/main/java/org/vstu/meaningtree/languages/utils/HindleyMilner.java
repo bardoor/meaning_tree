@@ -86,9 +86,7 @@ public class HindleyMilner {
 
     @NotNull
     private static List<Expression> expressionChildren(@NotNull Expression expression) {
-        return expression
-                .getChildren()
-                .values()
+        return expression.allChildren()
                 .stream()
                 .map(node -> (Expression) node)
                 .toList();
@@ -362,9 +360,7 @@ public class HindleyMilner {
                 case VariableDeclaration variableDeclaration -> inference(variableDeclaration, scope);
                 case VariableDeclarator variableDeclarator -> inference(variableDeclarator, scope);
                 case null, default -> {
-                    List<Node> nodes_ = node
-                            .getChildren()
-                            .values()
+                    List<Node> nodes_ = node.allChildren()
                             .stream()
                             .map(obj -> (Node) obj)
                             .toList();

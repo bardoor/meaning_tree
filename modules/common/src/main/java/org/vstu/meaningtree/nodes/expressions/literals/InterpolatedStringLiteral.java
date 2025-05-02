@@ -1,16 +1,14 @@
 package org.vstu.meaningtree.nodes.expressions.literals;
 
-import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.Literal;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-public class InterpolatedStringLiteral extends Literal implements Iterable<Expression> {
+public class InterpolatedStringLiteral extends Literal {
     // Содержит подставляемые в строку выражения, а также статичные StringLiteral
     @TreeNode private List<Expression> components;
     private StringLiteral.Type type;
@@ -30,12 +28,6 @@ public class InterpolatedStringLiteral extends Literal implements Iterable<Expre
     }
 
     public List<Expression> components() {return components;}
-
-    @NotNull
-    @Override
-    public Iterator<Expression> iterator() {
-        return components.iterator();
-    }
 
     @Override
     public boolean equals(Object o) {

@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.types.containers;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.interfaces.Generic;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 

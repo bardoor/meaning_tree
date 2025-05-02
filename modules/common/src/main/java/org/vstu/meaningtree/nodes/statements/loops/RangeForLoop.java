@@ -1,11 +1,11 @@
 package org.vstu.meaningtree.nodes.statements.loops;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.other.Range;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 /**

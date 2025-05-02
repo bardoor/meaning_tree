@@ -2,8 +2,8 @@ package org.vstu.meaningtree.nodes.expressions.comprehensions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.Objects;
 
@@ -17,24 +17,19 @@ public abstract class Comprehension extends Expression {
         this.condition = condition;
     }
 
-    public interface ComprehensionItem extends Cloneable {
-        ComprehensionItem clone();
+    public interface ComprehensionItem {
+        ComprehensionItem cloneItem();
     }
 
-    public record KeyValuePair(Expression key, Expression value) implements ComprehensionItem {
-        public KeyValuePair clone() {
-            return new KeyValuePair(key.clone(), value.clone());
-        }
-    };
 
     public record ListItem(Expression value) implements ComprehensionItem {
-        public ListItem clone() {
+        public ListItem cloneItem() {
             return new ListItem(value.clone());
         }
     };
 
     public record SetItem(Expression value) implements ComprehensionItem {
-        public SetItem clone() {
+        public SetItem cloneItem() {
             return new SetItem(value.clone());
         }
     };
@@ -69,7 +64,7 @@ public abstract class Comprehension extends Expression {
     public Comprehension clone() {
         Comprehension obj = (Comprehension) super.clone();
         obj.condition = condition.clone();
-        obj.item = item.clone();
+        obj.item = item.cloneItem();
         return obj;
     }
 }

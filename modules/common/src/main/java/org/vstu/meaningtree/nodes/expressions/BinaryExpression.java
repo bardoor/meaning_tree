@@ -1,8 +1,8 @@
 package org.vstu.meaningtree.nodes.expressions;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;

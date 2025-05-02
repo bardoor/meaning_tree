@@ -2,6 +2,10 @@ package org.vstu.meaningtree.serializers.model;
 
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.iterators.utils.ArrayFieldDescriptor;
+import org.vstu.meaningtree.iterators.utils.CollectionFieldDescriptor;
+import org.vstu.meaningtree.iterators.utils.FieldDescriptor;
+import org.vstu.meaningtree.iterators.utils.NodeFieldDescriptor;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
@@ -334,16 +338,17 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     private SerializedNode serializeDefault(Node node) {
         HashMap<String, AbstractSerializedNode> nodes = new HashMap<>();
-        for (Map.Entry<String, Object> child : node.getChildren().entrySet()) {
-            if (child.getValue() instanceof List) {
-                nodes.put(child.getKey(), serialize((List<Node>) child.getValue()));
-            } else if (child.getValue() instanceof Node[]) {
-                nodes.put(child.getKey(), serialize((Node[]) child.getValue()));
-            } else if (child.getValue() instanceof Node) {
-                nodes.put(child.getKey(), serialize((Node) child.getValue()));
-            } else if (child.getValue() instanceof Optional opt && opt.isPresent()) {
-                nodes.put(child.getKey(), serialize((Node)opt.get()));
-            }
+        for (Map.Entry<String, FieldDescriptor> child : node.getFieldDescriptors().entrySet()) {
+            try {
+                if (child.getValue() instanceof CollectionFieldDescriptor collectionFd) {
+                    nodes.put(child.getKey(), serialize(collectionFd.asList()));
+                } else if (child.getValue() instanceof ArrayFieldDescriptor arrayFd) {
+                    nodes.put(child.getKey(), serialize(arrayFd.getAsCopiedList()));
+                } else if (child.getValue() instanceof NodeFieldDescriptor nodeFd) {
+                    nodes.put(child.getKey(), serialize(nodeFd.get()));
+                }
+            } catch (IllegalAccessException e) {}
+
         }
         return new SerializedNode(node.getNodeUniqueName(), nodes);
     }
@@ -356,7 +361,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     public SerializedNode serialize(IndexExpression index) {
         return new SerializedNode("IndexExpression", new HashMap<>() {{
-            put("expr", serialize(index.getExpr()));
+            put("expr", serialize(index.getExpression()));
             put("index", serialize(index.getIndex()));
         }}, new HashMap<>() {{
             put("preferPointers", index.isPreferPointerRepresentation());

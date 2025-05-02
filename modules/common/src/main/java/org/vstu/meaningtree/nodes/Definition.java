@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes;
 
-import org.vstu.meaningtree.utils.TreeNode;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 
 public abstract class Definition extends Node {
     @TreeNode private Declaration _decl;

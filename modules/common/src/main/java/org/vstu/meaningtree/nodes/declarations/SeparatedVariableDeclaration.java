@@ -1,10 +1,10 @@
 package org.vstu.meaningtree.nodes.declarations;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Declaration;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
 import java.util.List;

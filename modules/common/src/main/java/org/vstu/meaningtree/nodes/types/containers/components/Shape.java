@@ -1,9 +1,9 @@
 package org.vstu.meaningtree.nodes.types.containers.components;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
-import org.vstu.meaningtree.utils.TreeNode;
 
 import java.util.ArrayList;
 import java.util.List;

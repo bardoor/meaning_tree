@@ -1,22 +1,26 @@
 package org.vstu.meaningtree.nodes.expressions.literals;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
-import org.vstu.meaningtree.utils.TreeNode;
+import org.vstu.meaningtree.nodes.expressions.other.KeyValuePair;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.SequencedMap;
+import java.util.stream.Collectors;
 
 public class DictionaryLiteral extends CollectionLiteral {
-    @TreeNode(type = TreeNode.Type.MAP_NODE_KEY_VALUE) private SequencedMap<Expression, Expression> content;
+    @TreeNode private List<KeyValuePair> content;
     @TreeNode @Nullable private Type keyTypeHint;
     @TreeNode @Nullable private Type valueTypeHint;
 
     public DictionaryLiteral(SequencedMap<Expression, Expression> content) {
-        this.content = new LinkedHashMap<>(content);
+        this.content = content.entrySet().stream()
+                .map(e -> new KeyValuePair(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
     }
 
     public void setKeyTypeHint(@Nullable Type type) {
@@ -38,7 +42,15 @@ public class DictionaryLiteral extends CollectionLiteral {
     }
 
     public SequencedMap<Expression, Expression> getDictionary() {
-        return new LinkedHashMap<>(content);
+        var map = new LinkedHashMap<Expression, Expression>();
+        for (KeyValuePair kvp : content) {
+            map.put(kvp.key(), kvp.value());
+        }
+        return map;
+    }
+
+    public List<KeyValuePair> getContent() {
+        return content;
     }
 
     @Override
@@ -62,7 +74,7 @@ public class DictionaryLiteral extends CollectionLiteral {
     @Override
     public DictionaryLiteral clone() {
         DictionaryLiteral obj = (DictionaryLiteral) super.clone();
-        obj.content = new LinkedHashMap<>(content);
+        obj.content = content.stream().map(KeyValuePair::clone).collect(Collectors.toList());
         if (keyTypeHint != null) obj.keyTypeHint = keyTypeHint.clone();
         if (valueTypeHint != null) obj.valueTypeHint = valueTypeHint.clone();
         return obj;

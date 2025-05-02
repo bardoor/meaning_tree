@@ -2,11 +2,11 @@ package org.vstu.meaningtree.nodes.statements.loops;
 
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
-import org.vstu.meaningtree.utils.TreeNode;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 public class GeneralForLoop extends ForLoop {

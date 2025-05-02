@@ -29,10 +29,10 @@ public class ParenthesesFiller {
 
     public IndexExpression process(IndexExpression expr) {
         OperatorToken tok = _mapper.apply(expr);
-        Expression arg = prepareOperand(tok, expr.getExpr());
-        if (!arg.uniquenessEquals(expr.getExpr())) {
+        Expression arg = prepareOperand(tok, expr.getExpression());
+        if (!arg.uniquenessEquals(expr.getExpression())) {
             expr = expr.clone();
-            expr.substituteChildren("_expr", arg);
+            expr.getFieldDescriptor("expression").substitute(arg);
         }
         return expr;
     }
@@ -42,7 +42,7 @@ public class ParenthesesFiller {
         Expression arg = prepareOperand(tok, expr.getValue());
         if (!arg.uniquenessEquals(expr.getValue())) {
             expr = expr.clone();
-            expr.substituteChildren("_value", arg);
+            expr.getFieldDescriptor("value").substitute(arg);
         }
         return expr;
     }
@@ -52,7 +52,7 @@ public class ParenthesesFiller {
         Expression arg = prepareOperand(tok, expr.getExpression());
         if (!arg.uniquenessEquals(expr.getExpression())) {
             expr = expr.clone();
-            expr.substituteChildren("_expr", arg);
+            expr.getFieldDescriptor("expression").substitute(arg);
         }
         return expr;
     }
@@ -65,7 +65,7 @@ public class ParenthesesFiller {
         Expression arg = prepareOperand(tok, expr.getObject());
         if (!arg.uniquenessEquals(expr.getObject())) {
             expr = expr.clone();
-            expr.substituteChildren("_object", arg);
+            expr.getFieldDescriptor("object").substitute(arg);
         }
         return expr;
     }
@@ -81,7 +81,7 @@ public class ParenthesesFiller {
         Expression arg = prepareOperand(tok, expr.getFunction());
         if (!arg.uniquenessEquals(expr.getFunction())) {
             expr = expr.clone();
-            expr.substituteChildren("_function", arg);
+            expr.getFieldDescriptor("function").substitute(arg);
         }
         return expr;
     }
@@ -92,9 +92,9 @@ public class ParenthesesFiller {
         Expression then = prepareOperand(tok, expr.getThenExpr());
         Expression elseBranch = prepareOperand(tok, expr.getElseExpr());
         expr = expr.clone();
-        if (!expr.getCondition().uniquenessEquals(cond)) expr.substituteChildren("_condition", cond);
-        if (!expr.getThenExpr().uniquenessEquals(then)) expr.substituteChildren("_thenExpr", then);
-        if (!expr.getElseExpr().uniquenessEquals(elseBranch)) expr.substituteChildren("_elseExpr", elseBranch);
+        if (!expr.getCondition().uniquenessEquals(cond)) expr.getFieldDescriptor("condition").substitute(cond);
+        if (!expr.getThenExpr().uniquenessEquals(then)) expr.getFieldDescriptor("thenExpr").substitute(then);
+        if (!expr.getElseExpr().uniquenessEquals(elseBranch)) expr.getFieldDescriptor("elseExpr").substitute(elseBranch);
         return expr;
     }
 
@@ -107,8 +107,8 @@ public class ParenthesesFiller {
         Pair<Expression, Expression> pair = prepareBinary(tok, expr.getLeft(), expr.getRight());
         if (!pair.getLeft().uniquenessEquals(expr.getLeft()) || !pair.getRight().uniquenessEquals(expr.getRight())) {
             expr = expr.clone();
-            expr.substituteChildren("_left", pair.getLeft());
-            expr.substituteChildren("_right", pair.getRight());
+            expr.getFieldDescriptor("left").substitute(pair.getLeft());
+            expr.getFieldDescriptor("right").substitute(pair.getRight());
         }
 
         return expr;
@@ -119,7 +119,7 @@ public class ParenthesesFiller {
         Expression arg = prepareOperand(tok, expr.getArgument());
         if (!arg.uniquenessEquals(expr.getArgument())) {
             expr = expr.clone();
-            expr.substituteChildren("_argument", arg);
+            expr.getFieldDescriptor("argument").substitute(arg);
         }
         return expr;
     }
@@ -129,7 +129,7 @@ public class ParenthesesFiller {
         Expression arg = prepareOperand(tok, qual.getScope());
         if (!arg.uniquenessEquals(qual.getScope())) {
             qual = qual.clone();
-            qual.substituteChildren("_scope", arg);
+            qual.getFieldDescriptor("scope").substitute(arg);
         }
         return qual;
     }
