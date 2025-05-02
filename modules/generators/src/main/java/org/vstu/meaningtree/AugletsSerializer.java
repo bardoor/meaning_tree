@@ -35,15 +35,23 @@ public class AugletsSerializer {
                 problem.problemMeaningTree().getRootNode()
         );
 
+        reset();
+
         _circumflexer.solutionMode();
         var solutionStr = toString(
                 problem.solutionMeaningTree().getRootNode()
         );
 
-        _variableMapping.clear();
-        _typeMapping.clear();
+        reset();
 
         return problemStr + "\n solution: \n" + solutionStr;
+    }
+
+    private void reset() {
+        _variableNumber = 0;
+        _typeNumber = 0;
+        _typeMapping.clear();
+        _variableMapping.clear();
     }
 
     private String toString(Node node) {
