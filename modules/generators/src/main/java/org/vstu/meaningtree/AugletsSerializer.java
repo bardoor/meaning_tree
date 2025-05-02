@@ -4,7 +4,14 @@ import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
+import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
+import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
+import org.vstu.meaningtree.nodes.expressions.math.*;
+import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 
 import java.util.HashMap;
@@ -48,6 +55,58 @@ public class AugletsSerializer {
         var expr = toString(decl.getRValue());
 
         return type(varDecl.getType()) + variable(decl.getIdentifier());
+    }
+
+    private String toString(Expression expression) {
+        return switch (expression) {
+            case BinaryExpression binaryExpression -> toString(binaryExpression);
+            case UnaryExpression unaryExpression -> toString(unaryExpression);
+            default -> throw new IllegalStateException(
+                    String.format("Expression %s is not supported", expression.getClass())
+            );
+        };
+    }
+
+    private String toString(BinaryExpression binaryExpression) {
+        var opSymbol = switch (binaryExpression) {
+            case AddOp _               -> "+";
+            case SubOp _               -> "-";
+            case MulOp _               -> "*";
+            case DivOp _               -> "/";
+            case ModOp _               -> "%";
+            case FloorDivOp _          -> "/";
+            case EqOp _                -> "==";
+            case NotEqOp _             -> "!=";
+            case GeOp _                -> ">=";
+            case GtOp _                -> ">";
+            case LeOp _                -> "<=";
+            case LtOp _                -> "<";
+            case ShortCircuitAndOp _   -> "&&";
+            case ShortCircuitOrOp _    -> "||";
+            default -> throw new IllegalArgumentException(
+                    "Unknown binary operator: " + binaryExpression.getClass().getSimpleName());
+        };
+
+        return toString(binaryExpression, opSymbol);
+    }
+
+    private String toString(BinaryExpression expr, String opSymbol) {
+        String left  = toString(expr.getLeft());
+        String right = toString(expr.getRight());
+        return String.format("%s %s %s", left, opSymbol, right);
+    }
+
+    private String toString(UnaryExpression expr) {
+        var arg = expr.getArgument();
+        return switch (expr) {
+            case UnaryPlusOp _ -> "+" + toString(arg);
+            case UnaryMinusOp _ -> "-" + toString(arg);
+            case PrefixIncrementOp _ -> "++" + toString(arg);
+            case PrefixDecrementOp _ -> "--" + toString(arg);
+            case PostfixIncrementOp _ -> toString(arg) + "++";
+            case PostfixDecrementOp _ -> toString(arg) + "--";
+            default -> throw new IllegalStateException("Unexpected value: " + expr);
+        };
     }
 
     private String type(Type type) {
