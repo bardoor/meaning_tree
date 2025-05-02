@@ -7,12 +7,16 @@ import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AugletsSerializer {
     private AugletsMeta _meta;
     private int _variableNumber = 0;
+    private final Map<String, String> _variableMapping = new HashMap<>();
     private int _typeNumber = 0;
+    private final Map<String, String> _typeMapping = new HashMap<>();
 
     public String serialize(AugletProblem problem) {
         if (_meta == null) {
@@ -22,6 +26,8 @@ public class AugletsSerializer {
         var problemStr = toString(problem.problemMeaningTree().getRootNode(), problem.meta().uniqueProblemNodes());
         var solutionStr = toString(problem.solutionMeaningTree().getRootNode(), problem.meta().uniqueSolutionNodes());
 
+        _variableMapping.clear();
+        _typeMapping.clear();
         return problemStr + solutionStr;
     }
 
@@ -54,15 +60,28 @@ public class AugletsSerializer {
             default -> throw new IllegalStateException(String.format("Type %s is not supported", type.getClass()));
         };
 
+        if (_typeMapping.containsKey(typeName)) {
+            return _typeMapping.get(typeName);
+        }
+
         var res =  "<T" + _typeNumber + "#" + typeName + "#>";
         _typeNumber++;
+        _typeMapping.put(typeName, res);
 
         return res;
     }
 
     private String variable(SimpleIdentifier identifier) {
-        var res =  "<" + _variableNumber + "#" + identifier.toString() + "#>";
+        var varName = identifier.toString();
+
+        if (_variableMapping.containsKey(varName)) {
+            return _variableMapping.get(varName);
+        }
+
+        var res =  "<" + _variableNumber + "#" + varName + "#>";
         _variableNumber++;
+        _variableMapping.put(varName, res);
+
         return res;
     }
 
