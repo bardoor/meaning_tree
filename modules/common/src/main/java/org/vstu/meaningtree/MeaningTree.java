@@ -40,7 +40,7 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, No
     }
 
     public NodeInfo getNodeById(long id) {
-        if (_index == null) {
+        if (_index == null || _index.isEmpty()) {
             makeIndex();
         }
         return _index.getOrDefault(id, null);
@@ -144,6 +144,14 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, No
         ArrayList<NodeInfo> children = new ArrayList<>();
         children.addAll(rootNode.iterate(true));
         return children;
+    }
+
+    public boolean substitute(long id, Node node) {
+        NodeInfo nodeInfo = getNodeById(id);
+        if (nodeInfo != null) {
+            return nodeInfo.field().substitute(node);
+        }
+        return false;
     }
 }
 
