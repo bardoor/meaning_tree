@@ -78,7 +78,7 @@ public class AugletsSerializer {
     private String toString(ProgramEntryPoint entryPoint) {
         var entryPointBuilder = new StringBuilder();
 
-        entryPointBuilder.append("<V0><T0>{");
+        entryPointBuilder.append("<V0><F0>{");
 
         for (var stmt : entryPoint.getBody()) {
             entryPointBuilder.append(toString(stmt));
