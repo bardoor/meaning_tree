@@ -23,9 +23,9 @@ import java.util.Map;
 
 public class AugletsSerializer {
     private int _variableNumber = 0;
-    private final Map<String, String> _variableMapping = new HashMap<>();
+    private final Map<String, Integer> _variableMapping = new HashMap<>();
     private int _typeNumber = 0;
-    private final Map<String, String> _typeMapping = new HashMap<>();
+    private final Map<String, Integer> _typeMapping = new HashMap<>();
     private final Circumflexer _circumflexer = new Circumflexer();
 
     public String serialize(AugletProblem problem) {
@@ -53,8 +53,6 @@ public class AugletsSerializer {
     }
 
     private String dispatchNode(Node node) {
-        System.out.println("dispatchNode: " + node.getClass().getSimpleName());
-
         return switch (node) {
             case VariableDeclaration varDecl -> toString(varDecl);
             case ProgramEntryPoint entryPoint -> toString(entryPoint);
@@ -116,7 +114,7 @@ public class AugletsSerializer {
     }
 
     private String toString(SimpleIdentifier identifier) {
-        return variableIdentify(identifier);
+        return variable(identifier);
     }
 
     private String toString(VariableDeclaration varDecl) {
@@ -201,7 +199,16 @@ public class AugletsSerializer {
     }
 
     private String typeIdentify(Type type) {
-        var typeName = switch (type) {
+        var name = typeName(type);
+
+        _typeNumber++;
+        _typeMapping.put(name, _typeNumber);
+
+        return "<T" + _typeNumber + "#" + name + "#>";
+    }
+
+    private String typeName(Type type) {
+        return switch (type) {
             case IntType t -> "int";
             case StringType t -> "string";
             case FloatType t -> "float";
@@ -209,30 +216,33 @@ public class AugletsSerializer {
             case CharacterType t -> "char";
             default -> throw new IllegalStateException(String.format("Type %s is not supported", type.getClass()));
         };
+    }
 
-        if (_typeMapping.containsKey(typeName)) {
-            return _typeMapping.get(typeName);
+    private String type(Type type) {
+        var name = typeName(type);
+        if (!_typeMapping.containsKey(name)) {
+            throw new IllegalStateException(String.format("Type %s was not declared", type.getClass()));
         }
 
-        var res =  "<T" + _typeNumber + "#" + typeName + "#>";
-        _typeNumber++;
-        _typeMapping.put(typeName, res);
-
-        return res;
+        return "<T" + _typeMapping.get(name) + ">";
     }
 
     private String variableIdentify(SimpleIdentifier identifier) {
-        var varName = identifier.toString();
+        var name = identifier.getName();
 
-        if (_variableMapping.containsKey(varName)) {
-            return _variableMapping.get(varName);
-        }
-
-        var res =  "<V" + _variableNumber + "#" + varName + "#>";
         _variableNumber++;
-        _variableMapping.put(varName, res);
+        _variableMapping.put(name, _variableNumber);
 
-        return res;
+        return "<V" + _variableNumber + "#" + name + "#>";
     }
 
+    private String variable(SimpleIdentifier identifier) {
+        var name = identifier.getName();
+
+        if (!_variableMapping.containsKey(name)) {
+            throw new IllegalStateException(String.format("Variable %s was not declared", identifier.getName()));
+        }
+
+        return "<V" + _variableMapping.get(name) + ">";
+    }
 }
