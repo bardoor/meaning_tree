@@ -15,7 +15,7 @@ public class AugletsSerializer {
     private int _typeNumber = 0;
 
     public String serialize(AugletProblem problem) {
-        if (meta == null) {
+        if (_meta == null) {
             throw new IllegalStateException("Meta was not set. Please call AugletsSerializer.setMeta() first");
         }
 
@@ -27,10 +27,10 @@ public class AugletsSerializer {
 
     // Наладить диспетчеризацию как нибудь
     private String toString(Node node, List<Node> uniqueNodes) {
-        return switch(node) {
+        return switch (node) {
             case VariableDeclaration varDecl -> toString(varDecl);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
-        }
+        };
     }
 
     private String toString(VariableDeclaration varDecl) {
