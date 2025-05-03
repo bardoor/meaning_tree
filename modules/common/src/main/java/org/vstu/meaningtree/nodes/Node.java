@@ -200,4 +200,25 @@ abstract public class Node implements Serializable, Cloneable, LabelAttachable, 
         }
         return result;
     }
+
+    public boolean substituteField(String name, Object value) {
+        FieldDescriptor descr = getFieldDescriptor(name);
+        if (descr == null) {
+            return false;
+        }
+        if (descr instanceof CollectionFieldDescriptor colDescr && value instanceof Collection<?>) {
+            return colDescr.substituteCollection((Collection<?>) value);
+        } else if (value instanceof Node node && descr instanceof NodeFieldDescriptor) {
+            return descr.substitute(node);
+        }
+        return false;
+    }
+
+    public boolean substituteCollectionField(String name, Node value, int index) {
+        FieldDescriptor descr = getFieldDescriptor(name);
+        if (descr instanceof CollectionFieldDescriptor || descr instanceof ArrayFieldDescriptor) {
+            descr = descr.withIndex(index);
+        }
+        return descr.substitute(value);
+    }
 }

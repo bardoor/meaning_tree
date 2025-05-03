@@ -50,6 +50,7 @@ public abstract class FieldDescriptor implements Cloneable {
 
     public boolean substitute(Node value) {
         try {
+            ensureWritable();
             field.set(owner, value);
             return true;
         } catch (IllegalAccessException e) {
