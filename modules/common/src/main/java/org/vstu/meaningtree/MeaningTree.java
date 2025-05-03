@@ -149,6 +149,10 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, No
     public boolean substitute(long id, Node node) {
         NodeInfo nodeInfo = getNodeById(id);
         if (nodeInfo != null) {
+            if (rootNode.uniquenessEquals(nodeInfo.node())) {
+                changeRoot(node);
+                return true;
+            }
             return nodeInfo.field().substitute(node);
         }
         return false;
