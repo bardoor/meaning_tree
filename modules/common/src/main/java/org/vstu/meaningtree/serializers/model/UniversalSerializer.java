@@ -66,6 +66,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case NewExpression newExpr -> serialize(newExpr);
             case SizeofExpression sizeOf -> serialize(sizeOf);
             case Shape shape -> serialize(shape);
+            case Range range -> serialize(range);
             case ProgramEntryPoint entryPoint -> serialize(entryPoint);
             case DefinitionArgument defArg -> serialize(defArg);
             case CastTypeExpression castType -> serialize(castType);
@@ -402,6 +403,18 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     public SerializedNode serialize(ExpressionSequence seq) {
         return new SerializedNode(seq.getClass().getSimpleName(), new HashMap<>() {{
             put("exprs", serialize(seq.getExpressions()));
+        }});
+    }
+
+    public SerializedNode serialize(Range range) {
+        return new SerializedNode(range.getClass().getSimpleName(), new HashMap<>() {{
+            put("start", serialize(range.getStart()));
+            put("stop", serialize(range.getStep()));
+            put("step", serialize(range.getStop()));
+        }}, new HashMap<>() {{
+            put("isExcludingStart", range.isExcludingStart());
+            put("isExcludingEnd", range.isExcludingEnd());
+            put("type", range.getType().ordinal());
         }});
     }
 

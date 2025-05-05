@@ -72,7 +72,9 @@ public class FunctionCall extends Expression implements Callable {
     @Override
     public FunctionCall clone() {
         FunctionCall obj = (FunctionCall) super.clone();
-        obj.function = function.clone();
+        if (function != null) {
+            obj.function = function.clone();
+        }
         obj.arguments = new ArrayList<>(arguments.stream().map(Expression::clone).toList());
         return obj;
     }

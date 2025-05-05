@@ -69,6 +69,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "PointerMemberAccess" -> deserializePointerMemberAccess(serialized);
             case "MemberAccess"-> deserializeMemberAccess(serialized);
             case "Shape" -> deserializeShape(serialized);
+            case "Range" -> deserializeRange(serialized);
             case "DefinitionArgument" -> deserializeDefArg(serialized);
             case "BooleanType", "StringType", "CharacterType",
                  "FloatType", "IntType", "PointerType",
@@ -87,6 +88,23 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             node.setAssignedValueTag(abstractSerialized.values.get("assignedValueTag"));
         }
         return node;
+    }
+
+    private Node deserializeRange(SerializedNode serialized) {
+        Range.Type type = switch ((int) serialized.values.get("type")) {
+            case 0 -> Range.Type.UP;
+            case 1 -> Range.Type.DOWN;
+            case 2 -> Range.Type.UNKNOWN;
+            default -> Range.Type.UP;
+        };
+        return new Range(
+                (Expression) deserialize(serialized.fields.get("start")),
+                (Expression) deserialize(serialized.fields.get("stop")),
+                (Expression) deserialize(serialized.fields.get("end")),
+                (boolean) serialized.values.get("isExcludingStart"),
+                (boolean) serialized.values.get("isExcludingEnd"),
+                type
+        );
     }
 
     @Override
