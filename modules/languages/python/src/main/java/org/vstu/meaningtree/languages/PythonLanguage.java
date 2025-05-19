@@ -144,6 +144,8 @@ public class PythonLanguage extends LanguageParser {
             case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
             case "type" -> determineType(node);
+            case "list_splat" -> throw new UnsupportedParsingException("List unpacking is not supported in this version");
+            case "dictionary_splat" -> throw new UnsupportedParsingException("Dictionary unpacking is not supported in this version");
             case "true" -> new BoolLiteral(true);
             case "false" -> new BoolLiteral(false);
             case "call" -> fromFunctionCall(node);

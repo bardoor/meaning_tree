@@ -6,6 +6,7 @@ import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
@@ -354,6 +355,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
             case ArrayLiteral plain -> tokenizeNew(plain.toArrayNew(), result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
+            case DefinitionArgument arg -> tokenizeExtended(arg.getInitialExpression(), result);
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
             }

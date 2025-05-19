@@ -129,13 +129,13 @@ public abstract class LanguageTokenizer {
                 TokenGroup group = collectTokens(node.getChild(i), tokens, true, operands);
 
                 String leftName = getFieldNameByOperandPos(OperandPosition.LEFT, node.getType());
-                String centerName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getType());
-                String rightName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getType());
+                String rightName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getType());
+                String centerName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getType());
 
                 if (!node.getParent().isNull() && parent != null) {
                     String leftParentName = getFieldNameByOperandPos(OperandPosition.LEFT, node.getParent().getType());
-                    String centerParentName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getParent().getType());
-                    String rightParentName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getParent().getType());
+                    String rightParentName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getParent().getType());
+                    String centerParentName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getParent().getType());
 
                     if (leftParentName != null && leftParentName.contains(".")
                             && leftParentName.split("\\.").length == 2

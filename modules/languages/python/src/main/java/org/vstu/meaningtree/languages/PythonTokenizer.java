@@ -6,6 +6,7 @@ import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
@@ -338,6 +339,11 @@ public class PythonTokenizer extends LanguageTokenizer {
             case PlainCollectionLiteral plain -> tokenizePlainCollectionLiteral(plain, result);
             case DictionaryLiteral dct -> tokenizeDictCollectionLiteral(dct, result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
+            case DefinitionArgument arg -> {
+                tokenizeExtended(arg.getName(), result);
+                result.add(new Token("=", TokenType.SEPARATOR));
+                tokenizeExtended(arg.getInitialExpression(), result);
+            }
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
             }
