@@ -855,9 +855,13 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(DeclarationArgument parameter) {
-        String type = toString(parameter.getType());
+        String mid = "";
+        String type = toString(parameter.getElementType());
+        if (parameter.isListUnpacking()) {
+            mid = "...";
+        }
         String name = toString(parameter.getName());
-        return "%s %s".formatted(type, name);
+        return "%s %s %s".formatted(type, mid, name);
     }
 
     // В отличие от всех остальных методов, данный называется так,

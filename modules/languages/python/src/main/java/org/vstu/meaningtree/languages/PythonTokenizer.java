@@ -340,9 +340,19 @@ public class PythonTokenizer extends LanguageTokenizer {
             case DictionaryLiteral dct -> tokenizeDictCollectionLiteral(dct, result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case DefinitionArgument arg -> {
-                tokenizeExtended(arg.getName(), result);
-                result.add(new Token("=", TokenType.SEPARATOR));
-                tokenizeExtended(arg.getInitialExpression(), result);
+                if (arg.isDictUnpacking()) {
+                    result.add(new Token("**", TokenType.SEPARATOR));
+                    tokenizeExtended(arg.getName(), result);
+                } else if (arg.isListUnpacking()) {
+                    result.add(new Token("*", TokenType.SEPARATOR));
+                    tokenizeExtended(arg.getName(), result);
+                } else if (arg.hasVisibleName()) {
+                    tokenizeExtended(arg.getName(), result);
+                    result.add(new Token("=", TokenType.SEPARATOR));
+                    tokenizeExtended(arg.getInitialExpression(), result);
+                } else {
+                    tokenizeExtended(arg.getInitialExpression(), result);
+                }
             }
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));

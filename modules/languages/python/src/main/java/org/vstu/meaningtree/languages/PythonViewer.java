@@ -11,6 +11,7 @@ import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
@@ -157,6 +158,7 @@ public class PythonViewer extends LanguageViewer {
             case ExpressionStatement exprStmt -> toString(exprStmt);
             case ReturnStatement returnStmt -> returnToString(returnStmt);
             case ArrayInitializer arrayInit -> arrayInitializerToString(arrayInit);
+            case DefinitionArgument arg -> definitionArgumentToString(arg);
             case Include incl -> String.format("import %s", toString(incl.getFileName()));
             case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
             case CommaExpression ignored -> throw new UnsupportedViewingException("Comma is unsupported in this language");
@@ -167,6 +169,18 @@ public class PythonViewer extends LanguageViewer {
             case null -> throw new MeaningTreeException("Null node detected");
             default -> throw new UnsupportedViewingException("Unsupported tree element: " + node.getClass().getName());
         };
+    }
+
+    private String definitionArgumentToString(DefinitionArgument arg) {
+        if (arg.isListUnpacking()) {
+            return "*%s".formatted(toString(arg.getInitialExpression()));
+        } else if (arg.isDictUnpacking()) {
+            return "**%s".formatted(toString(arg.getInitialExpression()));
+        } else if (arg.hasVisibleName()) {
+            return "%s=%s".formatted(toString(arg.getName()), toString(arg.getInitialExpression()));
+        } else {
+            return toString(arg.getInitialExpression());
+        }
     }
 
     public String toString(PointerPackOp ptr) {
@@ -315,11 +329,19 @@ public class PythonViewer extends LanguageViewer {
             DeclarationArgument arg = declArgs.get(i);
             if (arg.isListUnpacking()) {
                 function.append('*');
+            } else if (arg.isDictUnpacking()) {
+                function.append("**");
             }
             function.append(toString(arg.getName()));
-            if (!(arg.getType() instanceof UnknownType) && arg.getType() != null) {
+            if (!(arg.getType() instanceof UnknownType) && arg.getType() != null
+                    && !arg.isListUnpacking()
+                    && !arg.isDictUnpacking()) {
                 function.append(": ");
                 function.append(typeToString(arg.getType()));
+            }
+            if (!(arg.getElementType() instanceof UnknownType) && (arg.isListUnpacking() || arg.isDictUnpacking())) {
+                function.append(": ");
+                function.append(typeToString(arg.getElementType()));
             }
         }
         function.append(")");

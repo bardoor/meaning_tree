@@ -144,8 +144,8 @@ public class PythonLanguage extends LanguageParser {
             case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
             case "type" -> determineType(node);
-            case "list_splat" -> throw new UnsupportedParsingException("List unpacking is not supported in this version");
-            case "dictionary_splat" -> throw new UnsupportedParsingException("Dictionary unpacking is not supported in this version");
+            case "list_splat" -> DefinitionArgument.listUnpacking((Expression) fromTSNode(node.getNamedChild(0)));
+            case "dictionary_splat" -> DefinitionArgument.dictUnpacking((Expression) fromTSNode(node.getNamedChild(0)));
             case "true" -> new BoolLiteral(true);
             case "false" -> new BoolLiteral(false);
             case "call" -> fromFunctionCall(node);
@@ -427,6 +427,7 @@ public class PythonLanguage extends LanguageParser {
         Type type = new UnknownType();
         Expression initial = null;
         boolean isListUnpacking = false;
+        boolean isDictUnpacking = false;
         if (namedChild.getType().equals("typed_parameter")) {
             type = determineType(namedChild.getChildByFieldName("type"));
             namedChild = namedChild.getNamedChild(0);
@@ -442,10 +443,18 @@ public class PythonLanguage extends LanguageParser {
         } else if (namedChild.getType().equals("list_splat_pattern")) {
             isListUnpacking = true;
             namedChild = namedChild.getNamedChild(0);
+        } else if (namedChild.getType().equals("dictionary_splat_pattern")) {
+            isDictUnpacking = true;
+            namedChild = namedChild.getNamedChild(0);
         }
 
         SimpleIdentifier identifier = (SimpleIdentifier) fromTSNode(namedChild);
-        return new DeclarationArgument(type, isListUnpacking, identifier, initial);
+        if (isDictUnpacking) {
+            return DeclarationArgument.dictUnpacking(type, identifier);
+        } else if (isListUnpacking) {
+            return DeclarationArgument.listUnpacking(type, identifier);
+        }
+        return new DeclarationArgument(type, identifier, initial);
     }
 
     private ClassDefinition fromClass(TSNode node) {

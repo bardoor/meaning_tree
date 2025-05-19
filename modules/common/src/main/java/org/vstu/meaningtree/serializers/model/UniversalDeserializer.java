@@ -123,6 +123,11 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeDefArg(SerializedNode serialized) {
+        if ((boolean) serialized.values.get("isListUnpacking")) {
+            return DefinitionArgument.listUnpacking((Expression) deserialize(serialized.fields.get("value")));
+        } else if ((boolean) serialized.values.get("isDictUnpacking")) {
+            return DefinitionArgument.dictUnpacking((Expression) deserialize(serialized.fields.get("value")));
+        }
         return new DefinitionArgument((SimpleIdentifier) deserialize(serialized.fields.get("name")),
                 (Expression) deserialize(serialized.fields.get("value"))
                 );
