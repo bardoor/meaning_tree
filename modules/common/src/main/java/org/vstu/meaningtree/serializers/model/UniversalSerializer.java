@@ -89,7 +89,9 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     public SerializedNode serialize(DefinitionArgument defArg) {
         return new SerializedNode("DefinitionArgument", new HashMap<>() {{
-            put("name", serialize(defArg.getName()));
+            if (defArg.getName() != null) {
+                put("name", serialize(defArg.getName()));
+            }
             put("value", serialize(defArg.getInitialExpression()));
         }}, new HashMap<>() {{
             put("isListUnpacking", defArg.isListUnpacking());
