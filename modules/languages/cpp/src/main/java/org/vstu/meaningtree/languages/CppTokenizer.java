@@ -360,11 +360,7 @@ public class CppTokenizer extends LanguageTokenizer {
                 TokenGroup grp = tokenizeExtended(new ParenthesizedExpression(sizeOf.getExpression()), result);
                 grp.setMetadata(op, OperandPosition.RIGHT);
             }
-            case DefinitionArgument arg -> {
-                tokenizeExtended(arg.getName(), result);
-                result.add(new Token("=", TokenType.SEPARATOR));
-                tokenizeExtended(arg.getInitialExpression(), result);
-            }
+            case DefinitionArgument arg -> tokenizeExtended(arg.getInitialExpression(), result);
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
