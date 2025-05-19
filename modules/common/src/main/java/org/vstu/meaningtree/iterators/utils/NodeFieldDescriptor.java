@@ -6,6 +6,7 @@ import org.vstu.meaningtree.nodes.Node;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Optional;
 
 public class NodeFieldDescriptor extends FieldDescriptor implements Iterable<FieldDescriptor> {
     public NodeFieldDescriptor(Node owner, String fieldName, Field field, boolean readOnly) {
@@ -23,6 +24,14 @@ public class NodeFieldDescriptor extends FieldDescriptor implements Iterable<Fie
     }
 
     public Node get() throws IllegalAccessException {
+        if (field.getType() == Optional.class) {
+            var opt = (Optional) field.get(owner);
+            if (opt.isPresent()) {
+                return (Node) opt.get();
+            } else {
+                return null;
+            }
+        }
         return (Node) field.get(owner);
     }
 

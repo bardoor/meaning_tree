@@ -195,6 +195,8 @@ abstract public class Node implements Serializable, Cloneable, LabelAttachable, 
                     result.put(name, new ArrayFieldDescriptor(this, name, field, treeNode.readOnly()));
                 } else if (value instanceof Node) {
                     result.put(name, new NodeFieldDescriptor(this, name, field, treeNode.readOnly()));
+                } else if (value instanceof Optional<?> opt && (opt.isPresent() ? opt.get() instanceof Node : true)) {
+                    result.put(name, new NodeFieldDescriptor(this, name, field, treeNode.readOnly()));
                 }
             }
         }
