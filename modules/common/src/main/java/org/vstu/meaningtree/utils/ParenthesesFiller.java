@@ -140,6 +140,7 @@ public class ParenthesesFiller {
             return arg;
         }
         if (argTok.precedence > tok.precedence ||
+                (arg instanceof BinaryExpression && tok.arity == OperatorArity.TERNARY) ||
                 (arg instanceof UnaryExpression && tok.arity != OperatorArity.UNARY) ||
                 (arg instanceof BinaryExpression && tok.arity == OperatorArity.UNARY)
         ) {
