@@ -97,10 +97,13 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case 2 -> Range.Type.UNKNOWN;
             default -> Range.Type.UP;
         };
+        var start = serialized.fields.getOrDefault("start", null);
+        var stop = serialized.fields.getOrDefault("stop", null);
+        var step = serialized.fields.getOrDefault("step", null);
         return new Range(
-                (Expression) deserialize(serialized.fields.get("start")),
-                (Expression) deserialize(serialized.fields.get("stop")),
-                (Expression) deserialize(serialized.fields.get("end")),
+                start == null ? null : (Expression) deserialize(start),
+                stop == null ? null : (Expression) deserialize(stop),
+                step == null ? null : (Expression) deserialize(step),
                 (boolean) serialized.values.get("isExcludingStart"),
                 (boolean) serialized.values.get("isExcludingEnd"),
                 type

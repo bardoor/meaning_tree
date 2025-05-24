@@ -342,10 +342,10 @@ public class PythonTokenizer extends LanguageTokenizer {
             case DefinitionArgument arg -> {
                 if (arg.isDictUnpacking()) {
                     result.add(new Token("**", TokenType.SEPARATOR));
-                    tokenizeExtended(arg.getName(), result);
+                    tokenizeExtended(arg.getInitialExpression(), result);
                 } else if (arg.isListUnpacking()) {
                     result.add(new Token("*", TokenType.SEPARATOR));
-                    tokenizeExtended(arg.getName(), result);
+                    tokenizeExtended(arg.getInitialExpression(), result);
                 } else if (arg.hasVisibleName()) {
                     tokenizeExtended(arg.getName(), result);
                     result.add(new Token("=", TokenType.SEPARATOR));

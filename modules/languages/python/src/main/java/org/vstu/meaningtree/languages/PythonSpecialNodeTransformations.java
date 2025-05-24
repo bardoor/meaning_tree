@@ -174,6 +174,8 @@ public class PythonSpecialNodeTransformations {
                     graph.addEdge(cmp.getRight(), cmp.getLeft());
                 } else if (cmp instanceof GeOp) {
                     graph.addTaggedEdge(cmp.getRight(), cmp.getLeft());
+                } else {
+                    return expressionNode;
                 }
             }
 

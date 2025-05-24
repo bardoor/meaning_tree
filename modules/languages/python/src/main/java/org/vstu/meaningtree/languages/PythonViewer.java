@@ -767,12 +767,16 @@ public class PythonViewer extends LanguageViewer {
         String token = mapToToken(node).value;
         
         if (node instanceof ShortCircuitAndOp) {
-            Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
-            if (result instanceof CompoundComparison
-                    && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
-                return compoundComparisonToString((CompoundComparison) result);
-            } else {
-                return preferExplicitAndOpToString(result);
+            try {
+                Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
+                if (result instanceof CompoundComparison
+                        && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+                    return compoundComparisonToString((CompoundComparison) result);
+                } else {
+                    return preferExplicitAndOpToString(result);
+                }
+            } catch (MeaningTreeException e) {
+                return preferExplicitAndOpToString(node);
             }
         } else if (node instanceof InstanceOfOp) {
             return String.format("isinstance(%s, %s)", toString(node.getLeft()), toString(node.getRight()));
