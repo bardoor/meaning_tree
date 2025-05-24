@@ -46,10 +46,7 @@ import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
-import org.vstu.meaningtree.nodes.types.containers.ArrayType;
-import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
-import org.vstu.meaningtree.nodes.types.containers.ListType;
-import org.vstu.meaningtree.nodes.types.containers.SetType;
+import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
@@ -562,9 +559,10 @@ public class CppViewer extends LanguageViewer {
                 yield String.format("%s &", toStringType(ref.getTargetType()));
             }
             case DictionaryType dct -> String.format("std::map<%s, %s>", toStringType(dct.getKeyType()), toStringType(dct.getValueType()));
-            case ListType lst -> String.format("std::vector<%s>", toStringType(lst.getItemType()));
             case ArrayType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
+            case UnmodifiableListType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
             case SetType set ->  String.format("std::set<%s>", toStringType(set.getItemType()));
+            case PlainCollectionType lst -> String.format("std::vector<%s>", toStringType(lst.getItemType()));
             case StringType str -> "std::string"; // TODO: пока нет способа хорошо представить юникод-строки
             case GenericUserType gusr -> String.format("%s<%s>", toString(gusr.getQualifiedName()), toStringArguments(List.of(gusr.getTypeParameters())));
             case UserType usr -> toString(usr.getQualifiedName());

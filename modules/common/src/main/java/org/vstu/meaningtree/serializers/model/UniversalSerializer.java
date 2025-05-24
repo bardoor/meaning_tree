@@ -413,9 +413,9 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     public SerializedNode serialize(Range range) {
         return new SerializedNode(range.getClass().getSimpleName(), new HashMap<>() {{
-            put("start", serialize(range.getStart()));
-            put("stop", serialize(range.getStep()));
-            put("step", serialize(range.getStop()));
+            if (range.getStart() != null) put("start", serialize(range.getStart()));
+            if (range.getStep() != null) put("stop", serialize(range.getStep()));
+            if (range.getStop() != null) put("step", serialize(range.getStop()));
         }}, new HashMap<>() {{
             put("isExcludingStart", range.isExcludingStart());
             put("isExcludingEnd", range.isExcludingEnd());
