@@ -583,7 +583,8 @@ public class CppTokenizer extends LanguageTokenizer {
         OperatorToken tok = getOperatorByTokenName("{");
         result.add(tok);
         for (Expression item : literal.getList()) {
-            tokenizeExtended(item, result);
+            TokenGroup grp = tokenizeExtended(item, result);
+            grp.setMetadata(tok, OperandPosition.CENTER);
             result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (!literal.getList().isEmpty()) result.removeLast();

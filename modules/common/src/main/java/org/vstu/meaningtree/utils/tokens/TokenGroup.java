@@ -65,7 +65,7 @@ public class TokenGroup implements Iterable<Token> {
                 source.set(i, t.asOperand());
             }
             OperandToken op = ((OperandToken)source.get(i));
-            if (op.operandOf() == null) {
+            if (op.operandOf() == null && op.belongsTo() == null) {
                 op.setMetadata(token, pos);
             }
         }

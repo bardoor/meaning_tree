@@ -440,7 +440,8 @@ public class PythonTokenizer extends LanguageTokenizer {
         OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone(tokens[0]);
         result.add(tok);
         for (Expression item : literal.getList()) {
-            tokenizeExtended(item, result);
+            TokenGroup grp = tokenizeExtended(item, result);
+            grp.setMetadata(tok, OperandPosition.CENTER);
             result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (literal.getList().isEmpty() && literal instanceof UnmodifiableListLiteral) {
@@ -457,9 +458,11 @@ public class PythonTokenizer extends LanguageTokenizer {
     private void tokenizeDictCollectionLiteral(DictionaryLiteral literal, TokenList result) {
         OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone("{");
         for (Map.Entry<Expression, Expression> item : literal.getDictionary().entrySet()) {
-            tokenizeExtended(item.getKey(), result);
+            TokenGroup grp = tokenizeExtended(item.getKey(), result);
+            grp.setMetadata(tok, OperandPosition.CENTER);
             result.add(new Token(":", TokenType.SEPARATOR).setOwner(tok));
-            tokenizeExtended(item.getValue(), result);
+            grp = tokenizeExtended(item.getValue(), result);
+            grp.setMetadata(tok, OperandPosition.CENTER);
             result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (!literal.getDictionary().isEmpty()) result.removeLast();

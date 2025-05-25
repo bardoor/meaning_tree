@@ -475,7 +475,8 @@ public class JavaTokenizer extends LanguageTokenizer {
                     tok.setMetadata(newTok, OperandPosition.RIGHT);
                     result.add(tok);
                     for (Expression expr : arrNew.getInitializer().getValues()) {
-                        tokenizeExtended(expr, result);
+                        TokenGroup grp = tokenizeExtended(expr, result);
+                        grp.setMetadata(tok, OperandPosition.CENTER);
                         result.add(new Token(",", TokenType.COMMA).setOwner(tok));
                     }
                     if (!arrNew.getInitializer().getValues().isEmpty()) result.removeLast();
