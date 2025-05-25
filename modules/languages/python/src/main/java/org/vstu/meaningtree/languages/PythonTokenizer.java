@@ -338,6 +338,13 @@ public class PythonTokenizer extends LanguageTokenizer {
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
             case PlainCollectionLiteral plain -> tokenizePlainCollectionLiteral(plain, result);
             case DictionaryLiteral dct -> tokenizeDictCollectionLiteral(dct, result);
+            case Range range -> {
+                if (range.getStart() != null) tokenizeExtended(range.getStart(), result);
+                result.add(new Token(":", TokenType.SEPARATOR));
+                if (range.getStop() != null) tokenizeExtended(range.getStop(), result);
+                result.add(new Token(":", TokenType.SEPARATOR));
+                if (range.getStep() != null) tokenizeExtended(range.getStep(), result);
+            }
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case DefinitionArgument arg -> {
                 if (arg.isDictUnpacking()) {
