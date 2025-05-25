@@ -17,7 +17,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.ArrayLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.PlainCollectionLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
@@ -72,6 +72,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("]", subscript.getLast());
 
         put("new", new OperatorToken("new", TokenType.OPERATOR, 1, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
+        get("new").additionalOpType = OperatorType.NEW;
         put(".", new OperatorToken(".", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));
 
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX).setFirstOperandToEvaluation(OperandPosition.LEFT));   // Постфиксный инкремент
@@ -119,6 +120,8 @@ public class JavaTokenizer extends LanguageTokenizer {
         );
         put("?", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.LEFT));  // Тернарный оператор
         put(":", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.LEFT));
+        get("?").additionalOpType = OperatorType.CONDITIONAL;
+        get(":").additionalOpType = OperatorType.CONDITIONAL;
 
         put("=", new OperatorToken("=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));   // Присваивание
         put("+=", new OperatorToken("+=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Сложение с присваиванием
@@ -353,7 +356,7 @@ public class JavaTokenizer extends LanguageTokenizer {
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
-            case ArrayLiteral plain -> tokenizeNew(plain.toArrayNew(), result);
+            case PlainCollectionLiteral plain -> tokenizeNew(plain.toArrayNew(), result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case DefinitionArgument arg -> tokenizeExtended(arg.getInitialExpression(), result);
             case SimpleIdentifier ident -> {
@@ -457,14 +460,17 @@ public class JavaTokenizer extends LanguageTokenizer {
                         TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
                         operand.setMetadata(newTok, OperandPosition.CENTER);
                     }
-                    result.add(new Token("][", TokenType.SEPARATOR));
+                    if (i != arrNew.getShape().getDimensionCount() - 1) {
+                        result.add(new Token("][", TokenType.SEPARATOR));
+                    }
                 }
-                result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
+                result.add(new Token("]", TokenType.SEPARATOR));
                 if (arrNew.getAssignedValueTag() != null) {
                     newTok.assignValue(arrNew.getAssignedValueTag());
                     valueSetNodes.add(arrNew.getId());
                 }
                 if (arrNew.getInitializer() != null) {
+                    newTok.additionalOpType = OperatorType.NEW_ARRAY;
                     OperatorToken tok = getOperatorByTokenName("{");
                     tok.setMetadata(newTok, OperandPosition.RIGHT);
                     result.add(tok);
@@ -472,6 +478,7 @@ public class JavaTokenizer extends LanguageTokenizer {
                         tokenizeExtended(expr, result);
                         result.add(new Token(",", TokenType.COMMA).setOwner(tok));
                     }
+                    if (!arrNew.getInitializer().getValues().isEmpty()) result.removeLast();
                     result.add(getOperatorByTokenName("}"));
                 }
             }

@@ -105,6 +105,8 @@ public class PythonTokenizer extends LanguageTokenizer {
         );
         put("if", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.CENTER)); // Условные выражения
         put("else", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.CENTER)); // Условные выражения
+        get("if").additionalOpType = OperatorType.CONDITIONAL;
+        get("else").additionalOpType = OperatorType.CONDITIONAL;
 
         put("lambda", new OperatorToken("lambda", TokenType.KEYWORD, 17, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Лямбда-выражения
         put(":=", new OperatorToken(":=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Моржовый оператор
@@ -436,6 +438,7 @@ public class PythonTokenizer extends LanguageTokenizer {
             default -> new String[] {"[", "]"};
         };
         OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone(tokens[0]);
+        result.add(tok);
         for (Expression item : literal.getList()) {
             tokenizeExtended(item, result);
             result.add(new Token(",", TokenType.COMMA).setOwner(tok));

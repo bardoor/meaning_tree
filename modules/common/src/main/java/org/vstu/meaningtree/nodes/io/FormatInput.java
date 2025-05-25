@@ -14,6 +14,11 @@ public class FormatInput extends InputCommand {
         this.formatString = formatString;
     }
 
+    public FormatInput(Expression formatString, List<Expression> values) {
+        super(values);
+        this.formatString = formatString;
+    }
+
     public Expression getFormatString() {
         return formatString;
     }

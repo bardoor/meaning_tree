@@ -25,6 +25,7 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
+import org.vstu.meaningtree.nodes.io.FormatInput;
 import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
@@ -318,6 +319,11 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                 case "FormatPrint" -> {
                     List<Expression> exprs = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
                     return new FormatPrint((Expression) deserialize(serialized.fields.get("formatString")),
+                            exprs);
+                }
+                case "FormatInput" -> {
+                    List<Expression> exprs = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new FormatInput((Expression) deserialize(serialized.fields.get("formatString")),
                             exprs);
                 }
                 case "InputCommand" -> {

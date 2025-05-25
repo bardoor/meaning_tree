@@ -23,10 +23,7 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
-import org.vstu.meaningtree.nodes.io.FormatPrint;
-import org.vstu.meaningtree.nodes.io.InputCommand;
-import org.vstu.meaningtree.nodes.io.PrintCommand;
-import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.io.*;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
@@ -265,6 +262,9 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             }
             if (call instanceof FormatPrint p) {
                 put("formatString", serialize(p.getFormatString()));
+            }
+            if (call instanceof FormatInput i) {
+                put("formatString", serialize(i.getFormatString()));
             }
         }}, new HashMap<>() {{
             if (call instanceof PrintCommand || call instanceof InputCommand

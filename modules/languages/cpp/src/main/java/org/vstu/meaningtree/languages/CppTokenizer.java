@@ -31,6 +31,12 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.io.FormatInput;
+import org.vstu.meaningtree.nodes.io.FormatPrint;
+import org.vstu.meaningtree.nodes.io.InputCommand;
+import org.vstu.meaningtree.nodes.io.PrintCommand;
+import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
+import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.types.builtin.IntType;
@@ -91,6 +97,7 @@ public class CppTokenizer extends LanguageTokenizer {
         put("!", new OperatorToken("!", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("sizeof", new OperatorToken("sizeof", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
         put("new", new OperatorToken("new", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
+        get("new").additionalOpType = OperatorType.NEW;
         put("delete", new OperatorToken("delete", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
 
         put("*", new OperatorToken("*", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));
@@ -129,6 +136,8 @@ public class CppTokenizer extends LanguageTokenizer {
         );
         put("?", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.LEFT));  // Тернарный оператор
         put(":", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.LEFT));
+        get("?").additionalOpType = OperatorType.CONDITIONAL;
+        get(":").additionalOpType = OperatorType.CONDITIONAL;
 
         put("=", new OperatorToken("=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
         put("+=", new OperatorToken("+=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));
@@ -512,8 +521,12 @@ public class CppTokenizer extends LanguageTokenizer {
             complexName = tokenizeExtended(method.getObject(), result);
             tok = tok.clone("." + ((SimpleIdentifier)method.getFunctionName()).getName() + "(");
         } else {
-            if (!(call.getFunction() instanceof SimpleIdentifier)) {
+            Expression finalExpr = detectIOCommand(call);
+            if (finalExpr.uniquenessEquals(call) && !(call.getFunction() instanceof SimpleIdentifier)) {
                 throw new UnsupportedParsingException("This language supports only simple identifier as function name");
+            } else if (!finalExpr.uniquenessEquals(call)) {
+                tokenizeExtended(finalExpr, result);
+                return;
             }
             result.add(new Token(((SimpleIdentifier)call.getFunctionName()).getName(), TokenType.CALLABLE_IDENTIFIER));
         }
@@ -530,6 +543,40 @@ public class CppTokenizer extends LanguageTokenizer {
             tok.assignValue(call.getAssignedValueTag());
             valueSetNodes.add(call.getId());
         }
+    }
+
+    private Expression detectIOCommand(FunctionCall call) {
+        if (call instanceof FormatPrint fmt) {
+            if (fmt.getArguments().isEmpty()) {
+                return new FunctionCall(new SimpleIdentifier("printf"), fmt.getFormatString());
+            }
+            var list = new ArrayList<Expression>();
+            list.add(fmt.getFormatString());
+            list.addAll(fmt.getArguments());
+            return new FunctionCall(new SimpleIdentifier("printf"), list.toArray(new Expression[0]));
+        } else if (call instanceof FormatInput fmt) {
+            if (fmt.getArguments().isEmpty()) {
+                return new FunctionCall(new SimpleIdentifier("scanf"), fmt.getFormatString());
+            }
+            var list = new ArrayList<Expression>();
+            list.add(fmt.getFormatString());
+            list.addAll(fmt.getArguments());
+            return new FunctionCall(new SimpleIdentifier("scanf"), list.toArray(new Expression[0]));
+        } else if (call instanceof PrintCommand || call instanceof InputCommand) {
+            ArrayList<Expression> args = new ArrayList<>();
+            if (call instanceof InputCommand) {
+                args.add(new QualifiedIdentifier(new SimpleIdentifier("std"), new SimpleIdentifier("cin")));
+            } else {
+                args.add(new QualifiedIdentifier(new SimpleIdentifier("std"), new SimpleIdentifier("cout")));
+            }
+            args.addAll(call.getArguments());
+            return LeftShiftOp.fromManyOperands(args.toArray(new Expression[0]), 0, LeftShiftOp.class);
+        } else if (call instanceof MemoryAllocationCall m) {
+            return new FunctionCall(m.isClearAllocation() ? new SimpleIdentifier("calloc") : new SimpleIdentifier("malloc"), m.getArguments());
+        } else if (call instanceof MemoryFreeCall m) {
+            return new FunctionCall(new SimpleIdentifier("free"), m.getArguments());
+        }
+        return call;
     }
 
     private void tokenizePlainCollectionLiteral(PlainCollectionLiteral literal, TokenList result) {
@@ -644,6 +691,7 @@ public class CppTokenizer extends LanguageTokenizer {
                         tokenizeExtended(expr, result);
                         result.add(new Token(",", TokenType.COMMA).setOwner(tok));
                     }
+                    if (!arrNew.getInitializer().getValues().isEmpty()) result.removeLast();
                     result.add(getOperatorByTokenName("}"));
                 }
             }

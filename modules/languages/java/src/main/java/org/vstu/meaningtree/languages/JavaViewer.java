@@ -201,7 +201,7 @@ public class JavaViewer extends LanguageViewer {
             case MethodCall methodCall -> toString(methodCall);
             case FormatPrint fmt -> String.format("System.out.printf(%s)", fmt.getFormatString(), toStringExprList(fmt.getArguments()));
             case PrintValues printValues -> toString(printValues);
-            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Python");
+            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Java");
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
