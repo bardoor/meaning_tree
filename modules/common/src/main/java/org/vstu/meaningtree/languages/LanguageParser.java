@@ -52,6 +52,9 @@ abstract public class LanguageParser {
     }
 
     protected ConfigParameter getConfigParameter(String paramName) {
+        if (_cfg == null)
+            return null;
+
         for (ConfigParameter param : _cfg) {
             if (param.getName().equals(paramName)) {
                 return param;

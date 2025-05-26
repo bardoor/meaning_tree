@@ -117,7 +117,9 @@ public class JavaLanguage extends LanguageParser {
     @Override
     public TSNode getRootNode() {
         TSNode result = super.getRootNode();
-        if (getConfigParameter("expressionMode").getBooleanValue()) {
+
+        var configParam = getConfigParameter("expressionMode");
+        if (configParam != null && configParam.getBooleanValue()) {
             // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
             TSNode cls = result.getNamedChild(0);
             assert cls.getType().equals("class_declaration");
