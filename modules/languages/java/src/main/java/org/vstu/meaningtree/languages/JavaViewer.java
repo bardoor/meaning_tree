@@ -265,7 +265,9 @@ public class JavaViewer extends LanguageViewer {
 
     public String toString(ListLiteral list) {
         var builder = new StringBuilder();
-        String typeHint = list.getTypeHint() == null ? "" : toString(list.getTypeHint());
+        // FIX: уби
+        // String typeHint = "list.getTypeHint() == null ? "" : toString(list.getTypeHint());"
+        String typeHint = "";
         builder.append(String.format("new java.util.ArrayList<%s>(java.util.List.of(", typeHint));
         for (Expression expression : list.getList()) {
             builder.append(String.format("%s, ", toString(expression)));
@@ -1797,11 +1799,11 @@ public class JavaViewer extends LanguageViewer {
             */
         }
 
-        if (!entryPoint.hasMainClass()
-                //&& getConfigParameter("translationUnitMode").getBooleanValue()
-        ) {
-            return makeSimpleJavaProgram(nodes);
-        }
+        //if (!entryPoint.hasMainClass()
+        //        //&& getConfigParameter("translationUnitMode").getBooleanValue()
+        //) {
+        //    return makeSimpleJavaProgram(nodes);
+        //}
 
         StringBuilder builder = new StringBuilder();
         for (Node node : nodes) {
