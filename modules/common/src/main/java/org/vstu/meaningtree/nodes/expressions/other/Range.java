@@ -85,12 +85,11 @@ public class Range extends Expression {
         try {
             long start = getStartValueAsLong();
             long stop = getStopValueAsLong();
-            long step = getStepValueAsLong();
 
-            if (start < stop && step > 0) {
+            if (start < stop) {
                 _rangeType = Type.UP;
             }
-            else if (start > stop && step < 0) {
+            else if (start > stop) {
                 _rangeType = Type.DOWN;
             }
             else {

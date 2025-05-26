@@ -1680,7 +1680,12 @@ public class JavaViewer extends LanguageViewer {
 
     private String getForRangeUpdate(RangeForLoop forRangeLoop) {
         if (forRangeLoop.getRange().getType() == Range.Type.UP) {
-            long stepValue = forRangeLoop.getStepValueAsLong();
+            long stepValue;
+            try {
+                stepValue = forRangeLoop.getStepValueAsLong();
+            } catch (IllegalStateException exception) {
+                return String.format("%s += %s", toString(forRangeLoop.getIdentifier()), toString(forRangeLoop.getStep()));
+            }
 
             if (stepValue == 1) {
                 return String.format("%s++", toString(forRangeLoop.getIdentifier()));
@@ -1690,7 +1695,12 @@ public class JavaViewer extends LanguageViewer {
             }
         }
         else if (forRangeLoop.getRange().getType() == Range.Type.DOWN) {
-            long stepValue = forRangeLoop.getStepValueAsLong();
+            long stepValue;
+            try {
+                stepValue = forRangeLoop.getStepValueAsLong();
+            } catch (IllegalStateException exception) {
+                return String.format("%s -= %s", toString(forRangeLoop.getIdentifier()), toString(forRangeLoop.getStep()));
+            }
 
             if (stepValue == 1) {
                 return String.format("%s--", toString(forRangeLoop.getIdentifier()));
