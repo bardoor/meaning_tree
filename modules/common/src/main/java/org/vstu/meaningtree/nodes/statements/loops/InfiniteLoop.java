@@ -8,8 +8,9 @@ import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 public class InfiniteLoop extends Loop {
     private Statement _body;
 
-    public InfiniteLoop(Statement body) {
+    public InfiniteLoop(Statement body, LoopType originalType) {
         _body = body;
+        _originalType = originalType;
     }
 
     @Override
