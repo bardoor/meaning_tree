@@ -43,6 +43,7 @@ import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
@@ -88,8 +89,11 @@ public class CppLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
-            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+        if (!errors.isEmpty()) {
+            var configParam =  getConfigParameter("skipErrors");
+            if (configParam != null && !configParam.getBooleanValue()) {
+                throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+            }
         }
         Node node = fromTSNode(rootNode);
         if (node instanceof AssignmentExpression expr) {
@@ -107,7 +111,8 @@ public class CppLanguage extends LanguageParser {
     @Override
     public TSNode getRootNode() {
         TSNode result = super.getRootNode();
-        if (getConfigParameter("expressionMode").getBooleanValue()) {
+        var configParam = getConfigParameter("expressionMode");
+        if (configParam != null && configParam.getBooleanValue()) {
             // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
             TSNode func = result.getNamedChild(0);
             assert func.getType().equals("function_definition");
@@ -169,6 +174,7 @@ public class CppLanguage extends LanguageParser {
             case "this" -> new SelfReference("this");
             case "offsetof_expression" -> fromOffsetOf(node);
             case "comment" -> fromComment(node);
+            case "if_statement" -> fromIfStatement(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
@@ -742,8 +748,6 @@ public class CppLanguage extends LanguageParser {
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }
-
-
 
     @NotNull
     private Declaration fromDeclaration(@NotNull TSNode node) {
