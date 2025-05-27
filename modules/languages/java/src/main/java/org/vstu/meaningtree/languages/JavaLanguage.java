@@ -207,10 +207,22 @@ public class JavaLanguage extends LanguageParser {
             case "do_statement" -> fromDoStatementTSNode(node);
             case "instanceof_expression" -> fromInstanceOfTSNode(node);
             case "class_literal" -> fromClassLiteralTSNode(node);
+            case "enhanced_for_statement" -> fromEnhancedForStatementTSNode(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromEnhancedForStatementTSNode(TSNode node) {
+        Type type = (Type) fromTSNode(node.getChildByFieldName("type"));
+        SimpleIdentifier iterVarId = (SimpleIdentifier) fromTSNode(node.getChildByFieldName("name"));
+        Expression iterable = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+
+        VariableDeclaration varDecl = new VariableDeclaration(type, iterVarId);
+
+        return new ForEachLoop(varDecl, iterable, body);
     }
 
     private Node fromClassLiteralTSNode(TSNode node) {
