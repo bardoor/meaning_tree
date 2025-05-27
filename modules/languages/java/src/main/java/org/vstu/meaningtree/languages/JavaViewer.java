@@ -251,7 +251,7 @@ public class JavaViewer extends LanguageViewer {
             case PointerUnpackOp ptr -> toString(ptr);
             case ContainsOp op -> toString(op);
             case ReferenceEqOp op -> toString(op);
-            default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
+            default -> throw new UnsupportedViewingException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
 

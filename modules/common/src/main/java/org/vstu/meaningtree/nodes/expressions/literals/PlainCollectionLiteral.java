@@ -34,7 +34,7 @@ public abstract class PlainCollectionLiteral extends CollectionLiteral {
         content = new ArrayList<>(exprs);}
 
     public List<Expression> getList() {
-        return List.copyOf(content);
+        return content;
     }
 
     @Override
@@ -65,7 +65,10 @@ public abstract class PlainCollectionLiteral extends CollectionLiteral {
 
     public ArrayNewExpression toArrayNew() {
         int dimensions = 1;
-        Expression item = getList().getFirst();
+        if (content.size() == 0) {
+            return new ArrayNewExpression(typeHint, new Shape(dimensions), new ArrayInitializer(List.of()));
+        }
+        Expression item = content.getFirst();
         while (item instanceof PlainCollectionLiteral || (item instanceof ArrayNewExpression arr && typeHint.equals(arr.getType()))) {
             if (item instanceof PlainCollectionLiteral list)
             {
