@@ -160,8 +160,29 @@ public class CppViewer extends LanguageViewer {
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
             case IfStatement ifStatement -> toString(ifStatement);
+            case CompoundStatement compoundStatement -> toString(compoundStatement);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод узла блочного оператора  */
+    public String toString(CompoundStatement stmt) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{\n");
+        increaseIndentLevel();
+        for (Node node : stmt) {
+            String s = toString(node);
+            if (s.isEmpty()) {
+                continue;
+            }
+
+            s = indent(String.format("%s\n", s));
+            builder.append(s);
+        }
+        decreaseIndentLevel();
+        builder.append(indent("}"));
+        return builder.toString();
     }
 
     /*******************************************************************/
