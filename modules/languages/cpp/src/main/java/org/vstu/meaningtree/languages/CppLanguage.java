@@ -49,6 +49,11 @@ import org.vstu.meaningtree.nodes.statements.Loop;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
 import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
 import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
 import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
@@ -149,6 +154,10 @@ public class CppLanguage extends LanguageParser {
     private Node fromTSNode(@NotNull TSNode node) {
         Objects.requireNonNull(node);
 
+        if (node.isNull()) {
+            throw new UnsupportedParsingException("NULL Tree sitter node");
+        }
+
         Node createdNode = switch (node.getType()) {
             case "ERROR", "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
             case "translation_unit" -> fromTranslationUnit(node);
@@ -190,10 +199,66 @@ public class CppLanguage extends LanguageParser {
             case "while_statement" -> fromWhile(node);
             case "break_statement" -> fromBreakStatement(node);
             case "continue_statement" -> fromContinueStatement(node);
+            case "switch_statement" -> fromSwitchStatement(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private CaseBlock fromSwitchGroup(TSNode switchGroup) {
+        Expression matchValue =
+                (Expression) fromTSNode(switchGroup.getNamedChild(0));
+
+        var statements = new ArrayList<Node>();
+
+        for (int i = 1; i < switchGroup.getNamedChildCount(); i++) {
+            statements.add(fromTSNode(switchGroup.getNamedChild(i)));
+        }
+
+        CaseBlock caseBlock;
+        if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
+            statements.removeLast();
+            caseBlock = new BasicCaseBlock(matchValue, new CompoundStatement(null, statements));
+        }
+        else {
+            caseBlock = new FallthroughCaseBlock(matchValue, new CompoundStatement(null, statements));
+        }
+
+        return caseBlock;
+    }
+
+    private Node fromSwitchStatement(TSNode switchNode) {
+        Expression matchValue =
+                (Expression) fromTSNode(switchNode.getChildByFieldName("condition").getNamedChild(0));
+
+        DefaultCaseBlock defaultCaseBlock = null;
+        List<CaseBlock> cases = new ArrayList<>();
+
+        TSNode switchBlock = switchNode.getChildByFieldName("body");
+        for (int i = 0; i < switchBlock.getNamedChildCount(); i++) {
+            TSNode switchGroup = switchBlock.getNamedChild(i);
+
+            String labelName = getCodePiece(switchGroup.getChild(0));
+            if (labelName.equals("default")) {
+                var statements = new ArrayList<Node>();
+
+                for (int j = 1; j < switchGroup.getNamedChildCount(); j++) {
+                    statements.add(fromTSNode(switchGroup.getNamedChild(j)));
+                }
+
+                if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
+                    statements.removeLast();
+                }
+                defaultCaseBlock = new DefaultCaseBlock(new CompoundStatement(null, statements));
+            }
+            else {
+                CaseBlock caseBlock = fromSwitchGroup(switchGroup);
+                cases.add(caseBlock);
+            }
+        }
+
+        return new SwitchStatement(matchValue, cases, defaultCaseBlock);
     }
 
     private Node fromContinueStatement(TSNode continueNode) {

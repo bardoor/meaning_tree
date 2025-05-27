@@ -43,7 +43,8 @@ import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
-import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.*;
 import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
 import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
 import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
@@ -60,6 +61,7 @@ import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -170,8 +172,113 @@ public class CppViewer extends LanguageViewer {
             case GeneralForLoop generalForLoop -> toString(generalForLoop);
             case WhileLoop whileLoop -> toString(whileLoop);
             case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
+            case SwitchStatement switchStatement -> toString(switchStatement);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод свитча */
+    private String toStringCaseBlock(CaseBlock caseBlock) {
+        StringBuilder builder = new StringBuilder();
+
+        Statement caseBlockBody;
+        if (caseBlock instanceof MatchValueCaseBlock mvcb) {
+            builder.append("case ");
+            builder.append(toString(mvcb.getMatchValue()));
+            builder.append(":");
+            caseBlockBody = mvcb.getBody();
+        }
+        else if (caseBlock instanceof DefaultCaseBlock dcb) {
+            builder.append("default:");
+            caseBlockBody = dcb.getBody();
+        }
+        else {
+            throw new IllegalStateException("Unsupported case block type: " + caseBlock.getClass());
+        }
+
+        List<Node> nodesList;
+        if (caseBlockBody instanceof CompoundStatement compoundStatement) {
+            nodesList = Arrays.asList(compoundStatement.getNodes());
+        }
+        else {
+            nodesList = List.of(caseBlockBody);
+        }
+
+        // Внутри case веток нельзя объявлять переменные, нужно обернуть их скобками,
+        // поэтому проверяем наличие деклараций переменных
+        boolean hasDeclarationInside = false;
+        for (Node node : nodesList) {
+            if (node instanceof VariableDeclaration) {
+                hasDeclarationInside = true;
+                break;
+            }
+        }
+
+        if (!nodesList.isEmpty()) {
+            if (_bracketsAroundCaseBranches || hasDeclarationInside) {
+                if (_openBracketOnSameLine) {
+                    builder.append(" {\n");
+                }
+                else {
+                    builder.append("\n").append(indent("{\n"));
+                }
+            }
+            else {
+                builder.append("\n");
+            }
+
+            increaseIndentLevel();
+
+            for (Node node : nodesList) {
+                builder
+                        .append(indent(toString(node)))
+                        .append("\n");
+            }
+
+            if (caseBlock instanceof BasicCaseBlock || caseBlock instanceof DefaultCaseBlock) {
+                builder.append(indent("break;"));
+            }
+            else {
+                builder.deleteCharAt(builder.length() - 1);
+            }
+
+            decreaseIndentLevel();
+
+            if (_bracketsAroundCaseBranches || hasDeclarationInside) {
+                builder
+                        .append("\n")
+                        .append(indent("}"));
+            }
+        }
+
+        return builder.toString();
+    }
+
+    private String toString(SwitchStatement switchStatement) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("switch (");
+        builder.append(toString(switchStatement.getTargetExpression()));
+        builder.append(") ");
+
+        if (_openBracketOnSameLine) {
+            builder.append("{\n");
+        }
+        else {
+            builder.append("\n").append(indent("{\n"));
+        }
+
+        increaseIndentLevel();
+        for (CaseBlock caseBlock : switchStatement.getCases()) {
+            builder
+                    .append(indent(toStringCaseBlock(caseBlock)))
+                    .append("\n");
+        }
+        decreaseIndentLevel();
+
+        builder.append(indent("}"));
+        return builder.toString();
     }
 
     /*******************************************************************/
