@@ -742,16 +742,9 @@ public class CppTokenizer extends LanguageTokenizer {
             result.add(new Token("dynamic_cast", TokenType.CALLABLE_IDENTIFIER));
             result.add(new Token("<", TokenType.SEPARATOR));
             TokenGroup ops = tokenizeExtended(ins.getType(), result);
-            for (int i = ops.start; i < ops.stop; i++) {
-                if (result.get(i) instanceof OperatorToken) {
-                    result.set(i, new Token(result.get(i).value, TokenType.SEPARATOR));
-                } else if (result.get(i) instanceof OperandToken op && op.operandOf() != null) {
-                    Token t = result.get(i);
-                    result.set(i, new Token(t.value, TokenType.UNKNOWN));
-                }
-            }
             result.add(new Token(">", TokenType.SEPARATOR));
             OperatorToken op = getOperatorByTokenName("CALL_(");
+            ops.setMetadata(op, OperandPosition.LEFT);
             result.add(op);
             TokenGroup grp = tokenizeExtended(ins.getLeft(), result);
             grp.setMetadata(op, OperandPosition.CENTER);
