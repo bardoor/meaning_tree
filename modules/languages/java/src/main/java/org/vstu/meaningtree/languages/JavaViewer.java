@@ -505,8 +505,19 @@ public class JavaViewer extends LanguageViewer {
     private String toString(InfiniteLoop infiniteLoop) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(indent("while (true)"));
+        boolean trailingWhile = false;
+        var loopHeader = switch (infiniteLoop.getLoopType()) {
+            case FOR -> "for (;;)";
+            case WHILE -> "while (true)";
+            case DO_WHILE -> {
+                trailingWhile = true;
+                yield "do";
+            }
+        };
+
+        builder.append(indent(loopHeader));
         Statement body = infiniteLoop.getBody();
+
         if (body instanceof CompoundStatement compoundStatement) {
             if (_openBracketOnSameLine) {
                 builder
@@ -523,6 +534,10 @@ public class JavaViewer extends LanguageViewer {
             increaseIndentLevel();
             builder.append(indent(toString(body)));
             decreaseIndentLevel();
+        }
+
+        if (trailingWhile) {
+            builder.append("while (true);\n");
         }
 
         return builder.toString();
@@ -1175,9 +1190,22 @@ public class JavaViewer extends LanguageViewer {
 
     public String toString(NotOp op) {
         var arg = op.getArgument();
-        if (arg instanceof ParenthesizedExpression || arg instanceof FunctionCall || arg instanceof Literal) {
+
+        // These expressions don't need parentheses as they have higher precedence or are atomic
+        if (arg instanceof ParenthesizedExpression ||
+                arg instanceof Identifier ||  // All identifier types (SimpleIdentifier, ScopedIdentifier, QualifiedIdentifier, SelfReference, etc.)
+                arg instanceof Literal ||     // All literal types
+                arg instanceof FunctionCall ||
+                arg instanceof MemberAccess ||
+                arg instanceof IndexExpression ||
+                arg instanceof CastTypeExpression ||
+                arg instanceof UnaryExpression ||  // Other unary operators have same precedence level
+                arg instanceof ObjectNewExpression ||
+                arg instanceof ArrayNewExpression) {
             return String.format("!%s", toString(arg));
         }
+
+        // These expressions need parentheses as they have lower precedence
         return String.format("!(%s)", toString(arg));
     }
 
