@@ -1,33 +1,37 @@
 package org.vstu.meaningtree;
 
 import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.iterators.DFSNodeIterator;
+import org.vstu.meaningtree.iterators.utils.NodeInfo;
+import org.vstu.meaningtree.iterators.utils.NodeIterable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Node;
-import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.LabelAttachable;
-import org.vstu.meaningtree.utils.NodeIterator;
 
 import java.io.Serializable;
 import java.util.*;
 
-public class MeaningTree implements Serializable, LabelAttachable, Cloneable, Iterable<Node.Info> {
-    private Node _rootNode;
-    private TreeMap<Long, Node.Info> _index = null;
+public class MeaningTree implements Serializable, LabelAttachable, Cloneable, NodeIterable {
+    @TreeNode
+    private Node rootNode;
+    private TreeMap<Long, NodeInfo> _index = null;
     private Set<Label> _labels = new HashSet<>();
 
     public MeaningTree(Node rootNode) {
-        _rootNode = rootNode;
+        this.rootNode = rootNode;
     }
 
     public Node getRootNode() {
-        return _rootNode;
+        return rootNode;
     }
 
-    public void changeRoot(Node node) {_rootNode = node;}
+    public void changeRoot(Node node) {
+        rootNode = node;}
 
     public void makeIndex() {
-        TreeMap<Long, Node.Info> treeMap = new TreeMap<>();
-        for (Node.Info node : this) {
+        TreeMap<Long, NodeInfo> treeMap = new TreeMap<>();
+        for (NodeInfo node : this) {
             if (node != null) {
                 treeMap.put(node.node().getId(), node);
             }
@@ -35,28 +39,8 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
         _index = treeMap;
     }
 
-    @Experimental
-    public boolean substitute(long sourceId, Node target) {
-        Node.Info source = getNodeById(sourceId);
-
-        if (source == null) {
-            return false;
-        }
-
-        if (source.parent() != null && !source.isInCollection()) {
-            source.parent().substituteChildren(source.fieldName(), target);
-        } else if (source.parent() != null) {
-            source.parent().substituteNodeChildren(source.fieldName(), target, source.index());
-        } else if (source.id() == _rootNode.getId()) {
-            changeRoot(target);
-        } else {
-            return false;
-        }
-        return true;
-    }
-
-    public Node.Info getNodeById(long id) {
-        if (_index == null) {
+    public NodeInfo getNodeById(long id) {
+        if (_index == null || _index.isEmpty()) {
             makeIndex();
         }
         return _index.getOrDefault(id, null);
@@ -64,25 +48,16 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
 
     @Override
     @NotNull
-    /**
-     * Итератор может выдавать нулевые ссылки
-     */
-    public Iterator<Node.Info> iterator() {
+    public Iterator<NodeInfo> iterator() {
         if (_index == null) {
-            return new NodeIterator(_rootNode, true);
+            return new DFSNodeIterator(rootNode, true);
         } else {
             return _index.sequencedValues().iterator();
         }
     }
 
-    public List<Node.Info> walk() {
-        ArrayList<Node.Info> nodes = new ArrayList<>(_rootNode.walkChildren());
-        nodes.addFirst(new Node.Info(_rootNode, null, -1, "root", 0));
-        return nodes;
-    }
-
     public Node findParentOfNode(Node node) {
-        for (Node.Info inf : this) {
+        for (NodeInfo inf : this) {
             if (inf.node().equals(node)) {
                 return inf.parent();
             }
@@ -91,7 +66,7 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
     }
 
     public String generateDot() {
-        return normalizeDot("graph MeaningTree {\ndpi=255;\n" + _rootNode.generateDot() + "}");
+        return normalizeDot("graph MeaningTree {\ndpi=255;\n" + rootNode.generateDot() + "}");
     }
 
     private static String normalizeDot(String dot) {
@@ -118,17 +93,17 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         MeaningTree that = (MeaningTree) o;
-        return Objects.equals(_rootNode, that._rootNode);
+        return Objects.equals(rootNode, that.rootNode);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_rootNode);
+        return Objects.hashCode(rootNode);
     }
 
     @Override
     public MeaningTree clone() {
-        MeaningTree mt = new MeaningTree(_rootNode.clone());
+        MeaningTree mt = new MeaningTree(rootNode.clone());
         mt._labels = new HashSet<>(this._labels);
         return mt;
     }
@@ -156,6 +131,31 @@ public class MeaningTree implements Serializable, LabelAttachable, Cloneable, It
     @Override
     public Set<Label> getAllLabels() {
         return Set.copyOf(_labels);
+    }
+
+    public List<Node> allChildren() {
+        ArrayList<Node> children = new ArrayList<>();
+        children.addAll(rootNode.allChildren());
+        children.add(rootNode);
+        return children;
+    }
+
+    public List<NodeInfo> iterate() {
+        ArrayList<NodeInfo> children = new ArrayList<>();
+        children.addAll(rootNode.iterate(true));
+        return children;
+    }
+
+    public boolean substitute(long id, Node node) {
+        NodeInfo nodeInfo = getNodeById(id);
+        if (nodeInfo != null) {
+            if (rootNode.uniquenessEquals(nodeInfo.node())) {
+                changeRoot(node);
+                return true;
+            }
+            return nodeInfo.field().substitute(node);
+        }
+        return false;
     }
 }
 

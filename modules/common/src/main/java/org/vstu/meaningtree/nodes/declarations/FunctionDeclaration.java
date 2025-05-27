@@ -1,9 +1,10 @@
 package org.vstu.meaningtree.nodes.declarations;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Declaration;
+import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
-import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
@@ -12,24 +13,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionDeclaration extends Declaration {
-    private final List<DeclarationArgument> _arguments;
-    private final Identifier _name;
-    private final Type _returnType;
-    private final List<Annotation> _annotations;
+    @TreeNode private List<DeclarationArgument> arguments;
+    @TreeNode private Identifier name;
+    @TreeNode private Type returnType;
+    @TreeNode private List<Annotation> annotations;
 
     public FunctionDeclaration(Identifier name, Type returnType, List<Annotation> annotations, DeclarationArgument... arguments) {
         this(name, returnType, annotations, List.of(arguments));
     }
 
     public FunctionDeclaration(Identifier name, Type returnType, List<Annotation> annotations, List<DeclarationArgument> arguments) {
-        _name = name;
-        _annotations = new ArrayList<>(annotations);
-        _arguments = List.copyOf(arguments);
-        _returnType = returnType;
+        this.name = name;
+        this.annotations = new ArrayList<>(annotations);
+        this.arguments = List.copyOf(arguments);
+        this.returnType = returnType;
     }
 
     public Identifier getQualifiedName() {
-        return _name;
+        return name;
     }
 
     public SimpleIdentifier getName() {
@@ -38,15 +39,15 @@ public class FunctionDeclaration extends Declaration {
         } else if (getQualifiedName() instanceof ScopedIdentifier scoped) {
             return scoped.getScopeResolution().getLast();
         }
-        return (SimpleIdentifier) _name;
+        return (SimpleIdentifier) name;
     }
 
     public List<DeclarationArgument> getArguments() {
-        return _arguments;
+        return arguments;
     }
 
     public Type getReturnType() {
-        return _returnType;
+        return returnType;
     }
 
     @Override
@@ -55,10 +56,10 @@ public class FunctionDeclaration extends Declaration {
     }
 
     public List<Annotation> getAnnotations() {
-        return new ArrayList<>(_annotations);
+        return new ArrayList<>(annotations);
     }
 
     public boolean hasAnnotations() {
-        return !_annotations.isEmpty();
+        return !annotations.isEmpty();
     }
 }

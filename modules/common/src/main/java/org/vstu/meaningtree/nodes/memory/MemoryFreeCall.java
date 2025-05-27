@@ -10,6 +10,6 @@ public class MemoryFreeCall extends FunctionCall {
     }
 
     public DeleteExpression toDelete() {
-        return new DeleteExpression(_arguments.getFirst());
+        return new DeleteExpression(arguments.getFirst());
     }
 }

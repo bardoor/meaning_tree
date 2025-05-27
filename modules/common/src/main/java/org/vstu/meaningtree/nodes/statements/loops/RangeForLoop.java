@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.statements.loops;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
@@ -11,9 +12,9 @@ import org.vstu.meaningtree.utils.env.SymbolEnvironment;
  * Цикл по диапазону целых чисел (начало и конец являются частью диапазона) с заданным шагом.
  */
 public class RangeForLoop extends ForLoop {
-    private final Range _range;
-    private final SimpleIdentifier _identifier;
-    private Statement _body;
+    @TreeNode private Range range;
+    @TreeNode private SimpleIdentifier identifier;
+    @TreeNode private Statement body;
 
     /**
      * Создает цикл по диапазону.
@@ -22,9 +23,9 @@ public class RangeForLoop extends ForLoop {
      * @param body тело цикла
      */
     public RangeForLoop(Range range, SimpleIdentifier identifier, Statement body) {
-        _range = range;
-        _identifier = identifier;
-        _body = body;
+        this.range = range;
+        this.identifier = identifier;
+        this.body = body;
     }
 
     /**
@@ -45,53 +46,53 @@ public class RangeForLoop extends ForLoop {
     }
 
     public Range getRange() {
-        return _range;
+        return range;
     }
 
     public SimpleIdentifier getIdentifier() {
-        return _identifier;
+        return identifier;
     }
 
-    public Statement getBody() { return _body; }
+    public Statement getBody() { return body; }
 
     public Range.Type getRangeType() {
-        return _range.getType();
+        return range.getType();
     }
 
     public Expression getStart() {
-        return _range.getStart();
+        return range.getStart();
     }
 
     public Expression getStop() {
-        return _range.getStop();
+        return range.getStop();
     }
 
     public Expression getStep() {
-        return _range.getStep();
+        return range.getStep();
     }
 
     public long getStartValueAsLong() throws IllegalStateException {
-        return _range.getStartValueAsLong();
+        return range.getStartValueAsLong();
     }
 
     public long getStopValueAsLong() throws IllegalStateException {
-        return _range.getStopValueAsLong();
+        return range.getStopValueAsLong();
     }
 
     @Override
     public CompoundStatement makeCompoundBody(SymbolEnvironment env) {
-        if (!(_body instanceof CompoundStatement)) {
-            _body = new CompoundStatement(new SymbolEnvironment(env), getBody());
+        if (!(body instanceof CompoundStatement)) {
+            body = new CompoundStatement(new SymbolEnvironment(env), getBody());
         }
-        return (CompoundStatement) _body;
+        return (CompoundStatement) body;
     }
 
     public long getStepValueAsLong() throws IllegalStateException {
-        return _range.getStepValueAsLong();
+        return range.getStepValueAsLong();
     }
 
     public boolean isExcludingStop() {
-        return _range.isExcludingEnd();
+        return range.isExcludingEnd();
     }
 
     @Override
@@ -100,13 +101,13 @@ public class RangeForLoop extends ForLoop {
 
         builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
 
-        builder.append(_range.generateDot());
-        builder.append(_identifier.generateDot());
-        builder.append(_body.generateDot());
+        builder.append(range.generateDot());
+        builder.append(identifier.generateDot());
+        builder.append(body.generateDot());
 
-        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _range.getId(), "range"));
-        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _identifier.getId(), "ident"));
-        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, _body.getId(), "body"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, range.getId(), "range"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, identifier.getId(), "ident"));
+        builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, body.getId(), "body"));
 
         return builder.toString();
     }

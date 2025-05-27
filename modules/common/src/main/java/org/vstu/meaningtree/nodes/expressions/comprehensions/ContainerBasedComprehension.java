@@ -1,13 +1,14 @@
 package org.vstu.meaningtree.nodes.expressions.comprehensions;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 
 import java.util.Objects;
 
 public class ContainerBasedComprehension extends Comprehension {
-    private VariableDeclaration _containerItem;
-    private Expression _container;
+    @TreeNode private VariableDeclaration containerItem;
+    @TreeNode private Expression container;
 
     @Override
     public boolean equals(Object o) {
@@ -15,32 +16,32 @@ public class ContainerBasedComprehension extends Comprehension {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ContainerBasedComprehension that = (ContainerBasedComprehension) o;
-        return Objects.equals(_containerItem, that._containerItem) && Objects.equals(_container, that._container);
+        return Objects.equals(containerItem, that.containerItem) && Objects.equals(container, that.container);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _containerItem, _container);
+        return Objects.hash(super.hashCode(), containerItem, container);
     }
 
     public ContainerBasedComprehension(ComprehensionItem compItem, VariableDeclaration containerItem, Expression container, Expression condition) {
         super(compItem, condition);
-        this._containerItem = containerItem;
-        this._container = container;
+        this.containerItem = containerItem;
+        this.container = container;
     }
 
     public VariableDeclaration getContainerItemDeclaration() {
-        return _containerItem;
+        return containerItem;
     }
 
     public Expression getContainerExpression() {
-        return _container;
+        return container;
     }
 
     public ContainerBasedComprehension clone() {
         ContainerBasedComprehension obj = (ContainerBasedComprehension) super.clone();
-        obj._containerItem = _containerItem;
-        obj._container = _container;
+        obj.containerItem = containerItem;
+        obj.container = container;
         return obj;
     }
 }

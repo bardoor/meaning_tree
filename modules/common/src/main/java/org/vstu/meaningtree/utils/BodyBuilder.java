@@ -53,7 +53,7 @@ public class BodyBuilder {
             }
             _env.putNestedScope((HasSymbolScope) node, position);
         } else if (node instanceof VariableDeclaration declaration) {
-            for (VariableDeclarator v : declaration) {
+            for (VariableDeclarator v : declaration.getDeclarators()) {
                 _env.put(v.getIdentifier().toString(), new VariableRecord(position, declaration, v.getRValue()));
             }
         } else if (node instanceof FunctionDefinition func) {
@@ -76,9 +76,9 @@ public class BodyBuilder {
         SymbolEnvironment nestedEnv = new SymbolEnvironment(getEnv());
         ClassRecord record = new ClassRecord(nestedEnv, position, classDecl, class_);
         int subposition = 0;
-        for (Node rawNode : class_.getBody()) {
+        for (Node rawNode : class_.getBody().getNodes()) {
             if (rawNode instanceof FieldDeclaration declaration) {
-                for (VariableDeclarator v : declaration) {
+                for (VariableDeclarator v : declaration.getDeclarators()) {
                     nestedEnv.put(v.getIdentifier().toString(), new FieldRecord(subposition, record, declaration, v.getRValue()));
                 }
             } else if (rawNode instanceof AssignmentExpression expr && expr.getLValue() instanceof SimpleIdentifier ident) {

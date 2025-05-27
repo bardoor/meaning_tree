@@ -693,10 +693,15 @@ public class JavaLanguage extends LanguageParser {
     }
 
     private DeclarationArgument fromFormalParameter(TSNode node) {
+        if (node.getType().equals("spread_parameter")) {
+            Type type = fromTypeTSNode(node.getNamedChild(0));
+            SimpleIdentifier name = (SimpleIdentifier) fromIdentifierTSNode(node.getNamedChild(1)
+                    .getChildByFieldName("name"));
+            return DeclarationArgument.listUnpacking(type, name);
+        }
         Type type = fromTypeTSNode(node.getChildByFieldName("type"));
         SimpleIdentifier name = (SimpleIdentifier) fromIdentifierTSNode(node.getChildByFieldName("name"));
-        // Не поддерживается распаковка списков (как в Python) и значения по умолчанию
-        return new DeclarationArgument(type, false, name, null);
+        return new DeclarationArgument(type, name,null);
     }
 
     private StringLiteral fromStringLiteralTSNode(TSNode node) {

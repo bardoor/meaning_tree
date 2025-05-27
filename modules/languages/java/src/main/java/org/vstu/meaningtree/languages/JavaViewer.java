@@ -201,7 +201,7 @@ public class JavaViewer extends LanguageViewer {
             case MethodCall methodCall -> toString(methodCall);
             case FormatPrint fmt -> String.format("System.out.printf(%s)", fmt.getFormatString(), toStringExprList(fmt.getArguments()));
             case PrintValues printValues -> toString(printValues);
-            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Python");
+            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Java");
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
@@ -251,7 +251,7 @@ public class JavaViewer extends LanguageViewer {
             case PointerUnpackOp ptr -> toString(ptr);
             case ContainsOp op -> toString(op);
             case ReferenceEqOp op -> toString(op);
-            default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
+            default -> throw new UnsupportedViewingException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
 
@@ -330,7 +330,7 @@ public class JavaViewer extends LanguageViewer {
         var argumentsBuilder = new StringBuilder();
 
         builder.append("String.format(\"");
-        for (Expression stringPart : interpolatedStringLiteral) {
+        for (Expression stringPart : interpolatedStringLiteral.components()) {
             Type exprType = HindleyMilner.inference(stringPart, _typeScope);
             switch (exprType) {
                 case StringType stringType -> {
@@ -589,7 +589,7 @@ public class JavaViewer extends LanguageViewer {
 
     private String toString(IndexExpression indexExpression) {
         indexExpression = parenFiller.process(indexExpression);
-        Expression arrayName = indexExpression.getExpr();
+        Expression arrayName = indexExpression.getExpression();
         String name = toString(arrayName);
         String index = toString(indexExpression.getIndex());
         return "%s[%s]".formatted(name, index);
@@ -855,9 +855,13 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(DeclarationArgument parameter) {
-        String type = toString(parameter.getType());
+        String mid = "";
+        String type = toString(parameter.getElementType());
+        if (parameter.isListUnpacking()) {
+            mid = "...";
+        }
         String name = toString(parameter.getName());
-        return "%s %s".formatted(type, name);
+        return "%s %s %s".formatted(type, mid, name);
     }
 
     // В отличие от всех остальных методов, данный называется так,
@@ -1425,7 +1429,7 @@ public class JavaViewer extends LanguageViewer {
         StringBuilder builder = new StringBuilder();
         builder.append("{\n");
         increaseIndentLevel();
-        for (Node node : stmt) {
+        for (Node node : stmt.getNodes()) {
             String s = toString(node);
             if (s.isEmpty()) {
                 continue;

@@ -11,6 +11,7 @@ import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
@@ -116,7 +117,7 @@ public class PythonViewer extends LanguageViewer {
             case Identifier identifier -> identifierToString(identifier);
             case IndexExpression indexExpr -> {
                 indexExpr = parenFiller.process(indexExpr);
-                yield String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
+                yield String.format("%s[%s]", toString(indexExpr.getExpression()), toString(indexExpr.getIndex()));
             }
             case MemberAccess memAccess -> {
                 memAccess = parenFiller.process(memAccess);
@@ -157,6 +158,7 @@ public class PythonViewer extends LanguageViewer {
             case ExpressionStatement exprStmt -> toString(exprStmt);
             case ReturnStatement returnStmt -> returnToString(returnStmt);
             case ArrayInitializer arrayInit -> arrayInitializerToString(arrayInit);
+            case DefinitionArgument arg -> definitionArgumentToString(arg);
             case Include incl -> String.format("import %s", toString(incl.getFileName()));
             case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
             case CommaExpression ignored -> throw new UnsupportedViewingException("Comma is unsupported in this language");
@@ -167,6 +169,18 @@ public class PythonViewer extends LanguageViewer {
             case null -> throw new MeaningTreeException("Null node detected");
             default -> throw new UnsupportedViewingException("Unsupported tree element: " + node.getClass().getName());
         };
+    }
+
+    private String definitionArgumentToString(DefinitionArgument arg) {
+        if (arg.isListUnpacking()) {
+            return "*%s".formatted(toString(arg.getInitialExpression()));
+        } else if (arg.isDictUnpacking()) {
+            return "**%s".formatted(toString(arg.getInitialExpression()));
+        } else if (arg.hasVisibleName()) {
+            return "%s=%s".formatted(toString(arg.getName()), toString(arg.getInitialExpression()));
+        } else {
+            return toString(arg.getInitialExpression());
+        }
     }
 
     public String toString(PointerPackOp ptr) {
@@ -193,14 +207,14 @@ public class PythonViewer extends LanguageViewer {
     private String comprehensionToString(Comprehension compr) {
         char startBracket = '[';
         char endBracket = ']';
-        if (compr.getItem() instanceof Comprehension.KeyValuePair || compr.getItem() instanceof Comprehension.SetItem) {
+        if (compr.getItem() instanceof KeyValuePair || compr.getItem() instanceof Comprehension.SetItem) {
             startBracket = '{';
             endBracket = '}';
         }
 
         StringBuilder comprehension = new StringBuilder();
         comprehension.append(startBracket);
-        if (compr.getItem() instanceof Comprehension.KeyValuePair pair) {
+        if (compr.getItem() instanceof KeyValuePair pair) {
             comprehension.append(String.format("%s: %s", toString(pair.key()), toString(pair.value())));
         } else if (compr.getItem() instanceof Comprehension.SetItem item) {
             comprehension.append(toString(item.value()));
@@ -315,11 +329,19 @@ public class PythonViewer extends LanguageViewer {
             DeclarationArgument arg = declArgs.get(i);
             if (arg.isListUnpacking()) {
                 function.append('*');
+            } else if (arg.isDictUnpacking()) {
+                function.append("**");
             }
             function.append(toString(arg.getName()));
-            if (!(arg.getType() instanceof UnknownType) && arg.getType() != null) {
+            if (!(arg.getType() instanceof UnknownType) && arg.getType() != null
+                    && !arg.isListUnpacking()
+                    && !arg.isDictUnpacking()) {
                 function.append(": ");
                 function.append(typeToString(arg.getType()));
+            }
+            if (!(arg.getElementType() instanceof UnknownType) && (arg.isListUnpacking() || arg.isDictUnpacking())) {
+                function.append(": ");
+                function.append(typeToString(arg.getElementType()));
             }
         }
         function.append(")");
@@ -626,7 +648,7 @@ public class PythonViewer extends LanguageViewer {
                 default -> prefix += "";
             }
             StringBuilder builder = new StringBuilder();
-            for (Expression expr : interpolation) {
+            for (Expression expr : interpolation.components()) {
                 if (expr instanceof StringLiteral simpleString) {
                     if (interpolation.getStringType().equals(StringLiteral.Type.RAW)) {
                         builder.append(simpleString.getUnescapedValue());
@@ -745,12 +767,16 @@ public class PythonViewer extends LanguageViewer {
         String token = mapToToken(node).value;
         
         if (node instanceof ShortCircuitAndOp) {
-            Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
-            if (result instanceof CompoundComparison
-                    && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
-                return compoundComparisonToString((CompoundComparison) result);
-            } else {
-                return preferExplicitAndOpToString(result);
+            try {
+                Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
+                if (result instanceof CompoundComparison
+                        && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+                    return compoundComparisonToString((CompoundComparison) result);
+                } else {
+                    return preferExplicitAndOpToString(result);
+                }
+            } catch (MeaningTreeException e) {
+                return preferExplicitAndOpToString(node);
             }
         } else if (node instanceof InstanceOfOp) {
             return String.format("isinstance(%s, %s)", toString(node.getLeft()), toString(node.getRight()));
@@ -883,7 +909,7 @@ public class PythonViewer extends LanguageViewer {
         if (node.getNodes().length == 0) {
             return tab.toString().concat("pass");
         }
-        for (Node child : node) {
+        for (Node child : node.getNodes()) {
             builder.append(tab);
             if (child instanceof CompoundStatement) {
                 // Схлопываем лишний таб, так как блоки как самостоятельная сущность в Python не поддерживаются

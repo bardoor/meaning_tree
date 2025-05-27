@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
@@ -8,7 +9,7 @@ import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import java.util.Objects;
 
 public class SizeofExpression extends Expression {
-    Expression internalValue;
+    @TreeNode private Expression internalValue;
 
     public SizeofExpression(Expression expr) {
         if (expr instanceof ParenthesizedExpression paren) {

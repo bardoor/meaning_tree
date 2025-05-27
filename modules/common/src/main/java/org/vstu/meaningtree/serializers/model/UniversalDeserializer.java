@@ -25,6 +25,7 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
+import org.vstu.meaningtree.nodes.io.FormatInput;
 import org.vstu.meaningtree.nodes.io.FormatPrint;
 import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
@@ -69,6 +70,7 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
             case "PointerMemberAccess" -> deserializePointerMemberAccess(serialized);
             case "MemberAccess"-> deserializeMemberAccess(serialized);
             case "Shape" -> deserializeShape(serialized);
+            case "Range" -> deserializeRange(serialized);
             case "DefinitionArgument" -> deserializeDefArg(serialized);
             case "BooleanType", "StringType", "CharacterType",
                  "FloatType", "IntType", "PointerType",
@@ -89,6 +91,26 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
         return node;
     }
 
+    private Node deserializeRange(SerializedNode serialized) {
+        Range.Type type = switch ((int) serialized.values.get("type")) {
+            case 0 -> Range.Type.UP;
+            case 1 -> Range.Type.DOWN;
+            case 2 -> Range.Type.UNKNOWN;
+            default -> Range.Type.UP;
+        };
+        var start = serialized.fields.getOrDefault("start", null);
+        var stop = serialized.fields.getOrDefault("stop", null);
+        var step = serialized.fields.getOrDefault("step", null);
+        return new Range(
+                start == null ? null : (Expression) deserialize(start),
+                stop == null ? null : (Expression) deserialize(stop),
+                step == null ? null : (Expression) deserialize(step),
+                (boolean) serialized.values.get("isExcludingStart"),
+                (boolean) serialized.values.get("isExcludingEnd"),
+                type
+        );
+    }
+
     @Override
     public MeaningTree deserializeTree(AbstractSerializedNode serialized) {
         SerializedNode rawTree = (SerializedNode) serialized;
@@ -105,7 +127,16 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
     }
 
     private Node deserializeDefArg(SerializedNode serialized) {
-        return new DefinitionArgument((SimpleIdentifier) deserialize(serialized.fields.get("name")),
+        if ((boolean) serialized.values.get("isListUnpacking")) {
+            return DefinitionArgument.listUnpacking((Expression) deserialize(serialized.fields.get("value")));
+        } else if ((boolean) serialized.values.get("isDictUnpacking")) {
+            return DefinitionArgument.dictUnpacking((Expression) deserialize(serialized.fields.get("value")));
+        }
+        SimpleIdentifier name = null;
+        if (serialized.fields.containsKey("name") && serialized.fields.get("name") != null) {
+            name = (SimpleIdentifier) deserialize(serialized.fields.get("name"));
+        }
+        return new DefinitionArgument(name,
                 (Expression) deserialize(serialized.fields.get("value"))
                 );
     }
@@ -288,6 +319,11 @@ public class UniversalDeserializer implements Deserializer<AbstractSerializedNod
                 case "FormatPrint" -> {
                     List<Expression> exprs = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
                     return new FormatPrint((Expression) deserialize(serialized.fields.get("formatString")),
+                            exprs);
+                }
+                case "FormatInput" -> {
+                    List<Expression> exprs = (List<Expression>) deserializeList((SerializedListNode) serialized.fields.get("args"));
+                    return new FormatInput((Expression) deserialize(serialized.fields.get("formatString")),
                             exprs);
                 }
                 case "InputCommand" -> {

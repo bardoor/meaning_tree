@@ -1,8 +1,9 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.iterators.utils.CollectionFieldDescriptor;
+import org.vstu.meaningtree.iterators.utils.NodeInfo;
 import org.vstu.meaningtree.languages.utils.ExpressionDAG;
-import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.Statement;
@@ -13,8 +14,6 @@ import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
-import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
-import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SelfReference;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
@@ -41,7 +40,6 @@ import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 
 
 public class PythonSpecialNodeTransformations {
@@ -98,7 +96,7 @@ public class PythonSpecialNodeTransformations {
         if (found != -1) {
             compound.insert(found, update);
         }
-        for (Node node : compound) {
+        for (Node node : compound.getNodes()) {
             if (node instanceof ForLoop || node instanceof WhileLoop) {
                 return;
             } else if (node instanceof IfStatement ifStmt) {
@@ -176,6 +174,8 @@ public class PythonSpecialNodeTransformations {
                     graph.addEdge(cmp.getRight(), cmp.getLeft());
                 } else if (cmp instanceof GeOp) {
                     graph.addTaggedEdge(cmp.getRight(), cmp.getLeft());
+                } else {
+                    return expressionNode;
                 }
             }
 
@@ -252,7 +252,6 @@ public class PythonSpecialNodeTransformations {
         }
     }
 
-    // NEED DISCUSSION: Приемлемый ли метод "ломать" узлы дерева, чтобы выполнить постпроцессинг?
     @SuppressWarnings("unchecked")
     public static MethodDefinition detectInstanceReferences(MethodDefinition def) {
         MethodDeclaration decl = (MethodDeclaration)def.getDeclaration();
@@ -260,61 +259,25 @@ public class PythonSpecialNodeTransformations {
             return def;
         }
         SimpleIdentifier instanceName = decl.getArguments().getFirst().getName();
-        List newArgs = decl.ensureMutableNodeListInChildren("_arguments");
+        CollectionFieldDescriptor newArgsDescr = (CollectionFieldDescriptor) decl.getFieldDescriptor("arguments");
+        newArgsDescr.ensureWritable();
+        List<? extends Node> newArgs = null;
+        try {
+            newArgs = newArgsDescr.asList();
+        } catch (IllegalAccessException e) {
+            newArgs = new ArrayList<>();
+        }
         newArgs.removeFirst();
 
-        BiConsumer<Node, Map.Entry<String, Object>> callable = (Node parent, Map.Entry<String, Object> node) -> {
-            if (parent == null) {
-                return;
-            }
-            if (node.getValue() instanceof SimpleIdentifier ident && ident.equals(instanceName)) {
-                parent.substituteChildren(node.getKey(), new SelfReference(instanceName.getName()));
-            } else if (node.getValue() instanceof MethodCall call && PythonSpecificFeatures.getFunctionName(call).contains(new SimpleIdentifier("super"))) {
-                parent.substituteChildren(node.getKey(), new SuperClassReference());
-            } else if (node.getValue() instanceof List collection) {
-                collection = parent.ensureMutableNodeListInChildren(node.getKey());
-                for (int i = 0; i < collection.size(); i++) {
-                    if (collection.get(i).equals(instanceName)) {
-                        collection.set(i, new SelfReference(instanceName.getName()));
-                        break;
-                    }
-                }
-                for (int i = 0; i < collection.size(); i++) {
-                    if (collection.get(i) instanceof FunctionCall call && call.getFunctionName().contains(new SimpleIdentifier("super"))) {
-                        collection.set(i, new SuperClassReference());
-                        break;
-                    }
-                }
-            } else if (node.getValue() instanceof Map map) {
-                for (Object key : map.keySet()) {
-                    if (map.get(key).equals(instanceName)) {
-                        map.put(key, new SelfReference(instanceName.getName()));
-                        break;
-                    }
-                }
-                for (Object key : map.keySet()) {
-                    if (map.get(key) instanceof FunctionCall call && call.hasFunctionName() && call.getFunctionName().contains(new SimpleIdentifier("super"))) {
-                        map.put(key, new SuperClassReference());
-                        break;
-                    }
-                }
-            }
-        };
-        _walkChildren(null, def.getBody(), callable);
-        return def;
-    }
-
-    private static void _walkChildren(String nodeName, Node node, BiConsumer<Node, Map.Entry<String, Object>> handler) {
-        for (Map.Entry<String, Object> child : node.getChildren().entrySet()) {
-            handler.accept(node, child);
-            if (child.getValue() instanceof Node childNode) {
-                _walkChildren(child.getKey(), childNode, handler);
-            } else if (child.getValue() instanceof List collection) {
-                for (Object obj : collection) {
-                    _walkChildren(null, (Node) obj, handler);
-                }
+        for (NodeInfo info : def.getBody()) {
+            if (info.node() instanceof SimpleIdentifier ident && ident.equals(instanceName)) {
+                info.field().substitute(new SelfReference(instanceName.getName()));
+            } else if (info.node() instanceof SimpleIdentifier ident && ident.getName().equals("super")) {
+                info.field().substitute(new SuperClassReference());
             }
         }
+
+        return def;
     }
 
     /*

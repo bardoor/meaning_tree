@@ -2,6 +2,7 @@ package org.vstu.meaningtree.nodes.statements.conditions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
@@ -14,18 +15,18 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class SwitchStatement extends Statement {
-    private final Expression _targetExpression;
-    private final List<CaseBlock> _cases;
-    private final DefaultCaseBlock _defaultCase;
+    @TreeNode private Expression targetExpression;
+    @TreeNode private List<CaseBlock> cases;
+    @TreeNode private DefaultCaseBlock defaultCase;
 
     public SwitchStatement(@NotNull Expression targetExpression,
                            @NotNull List<CaseBlock> cases) {
-        _targetExpression = targetExpression;
+        this.targetExpression = targetExpression;
 
-        _defaultCase = findDefaultCase(cases);
+        defaultCase = findDefaultCase(cases);
 
-        _cases = new ArrayList<>(cases);
-        _cases.remove(_defaultCase);
+        this.cases = new ArrayList<>(cases);
+        this.cases.remove(defaultCase);
     }
 
     public SwitchStatement(@NotNull Expression targetExpression,
@@ -60,25 +61,25 @@ public class SwitchStatement extends Statement {
 
     @NotNull
     public Expression getTargetExpression() {
-        return _targetExpression;
+        return targetExpression;
     }
 
     @NotNull
     public List<CaseBlock> getCases() {
-        return _cases;
+        return cases;
     }
 
     @Nullable
     public DefaultCaseBlock getDefaultCase() {
-        return _defaultCase;
+        return defaultCase;
     }
 
     public boolean hasDefaultCase() {
-        return _defaultCase != null;
+        return defaultCase != null;
     }
 
     public List<FallthroughCaseBlock> getFallthroughCaseBlocks() {
-        return _cases
+        return cases
                 .stream()
                 .filter(caseBlock -> caseBlock instanceof FallthroughCaseBlock)
                 .map(caseBlock -> (FallthroughCaseBlock) caseBlock)
@@ -86,7 +87,7 @@ public class SwitchStatement extends Statement {
     }
 
     public void makeCompoundBranches(SymbolEnvironment env) {
-        for (CaseBlock branch : _cases) {
+        for (CaseBlock branch : cases) {
             branch.makeCompoundBody(env);
         }
     }

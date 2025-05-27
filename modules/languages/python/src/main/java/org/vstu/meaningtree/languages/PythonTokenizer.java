@@ -105,6 +105,8 @@ public class PythonTokenizer extends LanguageTokenizer {
         );
         put("if", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.CENTER)); // Условные выражения
         put("else", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.CENTER)); // Условные выражения
+        get("if").additionalOpType = OperatorType.CONDITIONAL;
+        get("else").additionalOpType = OperatorType.CONDITIONAL;
 
         put("lambda", new OperatorToken("lambda", TokenType.KEYWORD, 17, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false)); // Лямбда-выражения
         put(":=", new OperatorToken(":=", TokenType.OPERATOR, 18, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Моржовый оператор
@@ -338,11 +340,28 @@ public class PythonTokenizer extends LanguageTokenizer {
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
             case PlainCollectionLiteral plain -> tokenizePlainCollectionLiteral(plain, result);
             case DictionaryLiteral dct -> tokenizeDictCollectionLiteral(dct, result);
+            case Range range -> {
+                if (range.getStart() != null) tokenizeExtended(range.getStart(), result);
+                result.add(new Token(":", TokenType.SEPARATOR));
+                if (range.getStop() != null) tokenizeExtended(range.getStop(), result);
+                result.add(new Token(":", TokenType.SEPARATOR));
+                if (range.getStep() != null) tokenizeExtended(range.getStep(), result);
+            }
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
             case DefinitionArgument arg -> {
-                tokenizeExtended(arg.getName(), result);
-                result.add(new Token("=", TokenType.SEPARATOR));
-                tokenizeExtended(arg.getInitialExpression(), result);
+                if (arg.isDictUnpacking()) {
+                    result.add(new Token("**", TokenType.SEPARATOR));
+                    tokenizeExtended(arg.getInitialExpression(), result);
+                } else if (arg.isListUnpacking()) {
+                    result.add(new Token("*", TokenType.SEPARATOR));
+                    tokenizeExtended(arg.getInitialExpression(), result);
+                } else if (arg.hasVisibleName()) {
+                    tokenizeExtended(arg.getName(), result);
+                    result.add(new Token("=", TokenType.SEPARATOR));
+                    tokenizeExtended(arg.getInitialExpression(), result);
+                } else {
+                    tokenizeExtended(arg.getInitialExpression(), result);
+                }
             }
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
@@ -419,8 +438,10 @@ public class PythonTokenizer extends LanguageTokenizer {
             default -> new String[] {"[", "]"};
         };
         OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone(tokens[0]);
+        result.add(tok);
         for (Expression item : literal.getList()) {
-            tokenizeExtended(item, result);
+            TokenGroup grp = tokenizeExtended(item, result);
+            grp.setMetadata(tok, OperandPosition.CENTER);
             result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (literal.getList().isEmpty() && literal instanceof UnmodifiableListLiteral) {
@@ -437,9 +458,11 @@ public class PythonTokenizer extends LanguageTokenizer {
     private void tokenizeDictCollectionLiteral(DictionaryLiteral literal, TokenList result) {
         OperatorToken tok = getOperatorByTokenName("LIST_OPEN").clone("{");
         for (Map.Entry<Expression, Expression> item : literal.getDictionary().entrySet()) {
-            tokenizeExtended(item.getKey(), result);
+            TokenGroup grp = tokenizeExtended(item.getKey(), result);
+            grp.setMetadata(tok, OperandPosition.CENTER);
             result.add(new Token(":", TokenType.SEPARATOR).setOwner(tok));
-            tokenizeExtended(item.getValue(), result);
+            grp = tokenizeExtended(item.getValue(), result);
+            grp.setMetadata(tok, OperandPosition.CENTER);
             result.add(new Token(",", TokenType.COMMA).setOwner(tok));
         }
         if (!literal.getDictionary().isEmpty()) result.removeLast();
@@ -665,7 +688,7 @@ public class PythonTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeSubscript(IndexExpression subscript, TokenList result) {
-        TokenGroup leftOperand = tokenizeExtended(subscript.getExpr(), result);
+        TokenGroup leftOperand = tokenizeExtended(subscript.getExpression(), result);
         OperatorToken open = getOperatorByTokenName("[");
         result.add(open);
         leftOperand.setMetadata(open, OperandPosition.LEFT);

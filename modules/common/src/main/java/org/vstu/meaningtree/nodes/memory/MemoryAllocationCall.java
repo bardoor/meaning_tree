@@ -22,10 +22,10 @@ public class MemoryAllocationCall extends FunctionCall {
     }
 
     public NewExpression toNew() {
-        if (_arguments.get(1) instanceof IntegerLiteral lit && lit.getLongValue() == 1) {
-            return new ObjectNewExpression((Type) _arguments.getFirst());
+        if (arguments.get(1) instanceof IntegerLiteral lit && lit.getLongValue() == 1) {
+            return new ObjectNewExpression((Type) arguments.getFirst());
         } else {
-            return new ArrayNewExpression((Type) _arguments.getFirst(), new Shape(1, _arguments.get(1)));
+            return new ArrayNewExpression((Type) arguments.getFirst(), new Shape(1, arguments.get(1)));
         }
     }
 

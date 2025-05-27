@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.ArrayList;
@@ -7,18 +8,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class ArrayInitializer extends Expression {
-    private List<Expression> _values;
+    @TreeNode private List<Expression> values;
 
     public ArrayInitializer(List<Expression> values) {
-        _values = List.copyOf(values);
+        this.values = List.copyOf(values);
     }
 
     public List<Expression> getValues() {
-        return List.copyOf(_values);
+        return List.copyOf(values);
     }
 
     public int getValuesCount() {
-        return _values.size();
+        return values.size();
     }
 
     @Override
@@ -26,18 +27,18 @@ public class ArrayInitializer extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ArrayInitializer that = (ArrayInitializer) o;
-        return Objects.equals(_values, that._values);
+        return Objects.equals(values, that.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _values);
+        return Objects.hash(super.hashCode(), values);
     }
 
     @Override
     public ArrayInitializer clone() {
         ArrayInitializer obj = (ArrayInitializer) super.clone();
-        obj._values = new ArrayList<>(_values);
+        obj.values = new ArrayList<>(values);
         return obj;
     }
 }
