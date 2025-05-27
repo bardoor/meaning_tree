@@ -155,14 +155,14 @@ group: LiteralsTest
             [1, 2, 4, a, b]
 
         java:
-            new java.util.ArrayList<>(java.util.List.of(1, 2, 4, a, b));
+            new java.util.ArrayList<Object>(java.util.List.of(1, 2, 4, a, b));
 
     case: SetLiteral
         python:
             {1, 2, 3}
 
         java:
-            new java.util.HashSet<>() {{add(1);add(2);add(3);}};
+            new java.util.HashSet<Object>() {{add(1);add(2);add(3);}};
 
     case: TupleLiteral
         main python:
@@ -176,7 +176,7 @@ group: LiteralsTest
 
 
     case: DictLiteral
-        python:
+        main python:
             x = {"a": b, "x": y}
 
         java:
