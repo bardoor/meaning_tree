@@ -170,29 +170,6 @@ public class CppViewer extends LanguageViewer {
 
     /*******************************************************************/
     /* Перевод объявления переменных и их типов */
-    private String toString(Type type) {
-        return toString(type, true);
-    }
-
-    private String toString(Type type, boolean isPrimitiveWrapper) {
-        return switch (type) {
-            case FloatType floatType -> toString(floatType, isPrimitiveWrapper);
-            case IntType intType -> toString(intType, isPrimitiveWrapper);
-            case BooleanType booleanType -> toString(booleanType, isPrimitiveWrapper);
-            case StringType stringType -> toString(stringType);
-            case NoReturn voidType -> toString(voidType);
-            case UnknownType unknownType -> toString(unknownType);
-            case ArrayType arrayType -> toString(arrayType);
-            case UserType userType -> toString(userType);
-            case CharacterType characterType -> toString(characterType, isPrimitiveWrapper);
-            case SetType setType -> toString(setType);
-            case DictionaryType dictType -> toString(dictType);
-            case PlainCollectionType plain -> toString(plain);
-            case PointerType ptr -> toString(ptr.getTargetType());
-            default -> throw new IllegalStateException("Unexpected value: " + type.getClass());
-        };
-    }
-
     public String toString(SetType type) {
         // Используем std::unordered_set для неупорядоченных множеств
         return String.format("std::unordered_set<%s>", toString(type.getItemType()));
