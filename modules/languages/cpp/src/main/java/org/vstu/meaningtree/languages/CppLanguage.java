@@ -192,7 +192,7 @@ public class CppLanguage extends LanguageParser {
             return new IfStatement(condition, consequence);
         }
 
-        Statement alternative = (Statement) fromTSNode(alternativeNode);
+        Statement alternative = (Statement) fromTSNode(alternativeNode.getChild(1));
         return new IfStatement(condition, consequence, alternative);
     }
 

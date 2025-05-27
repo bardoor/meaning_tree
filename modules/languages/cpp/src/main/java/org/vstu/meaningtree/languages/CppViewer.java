@@ -225,9 +225,11 @@ public class CppViewer extends LanguageViewer {
                 }
             }
             else {
+                increaseIndentLevel();
                 builder
                         .append("\n")
-                        .append(toString(elseBranch));
+                        .append(indent(toString(elseBranch)));
+                decreaseIndentLevel();
             }
         }
         else {
