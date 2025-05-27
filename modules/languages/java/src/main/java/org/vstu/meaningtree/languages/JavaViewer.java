@@ -1357,7 +1357,6 @@ public class JavaViewer extends LanguageViewer {
     private String toString(VariableDeclarator varDecl, Type type) {
         StringBuilder builder = new StringBuilder();
 
-
         SimpleIdentifier identifier = varDecl.getIdentifier();
         Type variableType = new UnknownType();
         Expression rValue = varDecl.getRValue();
