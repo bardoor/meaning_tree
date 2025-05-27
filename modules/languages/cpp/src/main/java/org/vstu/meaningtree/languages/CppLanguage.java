@@ -181,6 +181,21 @@ public class CppLanguage extends LanguageParser {
         return createdNode;
     }
 
+    private Node fromIfStatement(TSNode node) {
+        // Берем ребенка под индексом 1, чтобы избежать захвата скобок, а значит
+        // неправильного парсинга (получаем выражение в скобках в качестве условия, а не просто выражение)
+        Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition").getChild(1));
+        Statement consequence = (Statement) fromTSNode(node.getChildByFieldName("consequence"));
+
+        TSNode alternativeNode = node.getChildByFieldName("alternative");
+        if (alternativeNode.isNull()) {
+            return new IfStatement(condition, consequence);
+        }
+
+        Statement alternative = (Statement) fromTSNode(alternativeNode);
+        return new IfStatement(condition, consequence, alternative);
+    }
+
     private Node fromConcatenatedString(TSNode node) {
         List<StringLiteral> literals = new ArrayList<>();
         for (int i = 0; i < node.getNamedChildCount(); i++) {

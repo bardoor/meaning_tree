@@ -36,10 +36,13 @@ import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.io.*;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
@@ -59,7 +62,52 @@ import java.util.stream.Collectors;
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
 public class CppViewer extends LanguageViewer {
+    private final String _indentation;
+    private int _indentLevel;
+    private final boolean _openBracketOnSameLine;
+    private final boolean _bracketsAroundCaseBranches;
+    private final boolean _autoVariableDeclaration;
 
+    public CppViewer(int indentSpaceCount,
+                      boolean openBracketOnSameLine,
+                      boolean bracketsAroundCaseBranches,
+                      boolean autoVariableDeclaration
+    ) {
+        _indentation = " ".repeat(indentSpaceCount);
+        _indentLevel = 0;
+        _openBracketOnSameLine = openBracketOnSameLine;
+        _bracketsAroundCaseBranches = bracketsAroundCaseBranches;
+        _autoVariableDeclaration = autoVariableDeclaration;
+    }
+
+    public CppViewer() {
+        this(4, true, false, false);
+    }
+
+    /*******************************************************************/
+    /* Все, что касается индетации для блоков */
+    private void increaseIndentLevel() {
+        _indentLevel++;
+    }
+
+    private void decreaseIndentLevel() {
+        _indentLevel--;
+
+        if (_indentLevel < 0) {
+            throw new MeaningTreeException("Indentation level can't be less than zero");
+        }
+    }
+
+    private String indent(String s) {
+        if (_indentLevel == 0) {
+            return s;
+        }
+
+        return _indentation.repeat(Math.max(0, _indentLevel)) + s;
+    }
+
+    /*******************************************************************/
+    /* Перевод мининг три и узлов в строки */
     @NotNull
     @Override
     public String toString(@NotNull MeaningTree meaningTree) {
@@ -111,8 +159,105 @@ public class CppViewer extends LanguageViewer {
             case Comment cmnt -> toStringComment(cmnt);
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
+            case IfStatement ifStatement -> toString(ifStatement);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод узла ветвления  */
+    public String toString(IfStatement stmt) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("if ");
+        List<ConditionBranch> branches = stmt.getBranches();
+        builder
+                .append(toString(branches.getFirst()))
+                .append("\n");
+
+        for (ConditionBranch branch : branches.subList(1, branches.size())) {
+            builder
+                    .append(indent("else if "))
+                    .append(toString(branch))
+                    .append("\n");
+        }
+
+        if (stmt.hasElseBranch()) {
+            builder.append(indent("else"));
+
+            Statement elseBranch = stmt.getElseBranch();
+            if (elseBranch instanceof IfStatement innerIfStmt) {
+                builder
+                        .append(" ")
+                        .append(toString(innerIfStmt));
+            }
+            else if (elseBranch instanceof CompoundStatement innerCompStmt) {
+                if (_openBracketOnSameLine) {
+                    builder
+                            .append(" ")
+                            .append(toString(innerCompStmt));
+                }
+                else {
+                    builder
+                            .append("\n")
+                            .append(indent(toString(innerCompStmt)));
+                }
+            }
+            else {
+                builder
+                        .append("\n")
+                        .append(toString(elseBranch));
+            }
+        }
+        else {
+            // Удаляем лишний перевод строки, если ветки else нет
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        return builder.toString();
+    }
+
+    /* Перевод одной ветки условия  */
+    private String toString(ConditionBranch branch) {
+        StringBuilder builder = new StringBuilder();
+
+        String cond = toString(branch.getCondition());
+        builder
+                .append("(")
+                .append(cond)
+                .append(")");
+
+        Statement body = branch.getBody();
+        if (body instanceof CompoundStatement compStmt) {
+            // Если телом ветки является блок кода, то необходимо определить
+            // куда нужно добавить фигурные скобки и добавить само тело
+            // Пример (для случая, когда скобка на той же строке):
+            // if (a > b) {
+            //     max = a;
+            // }
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compStmt));
+            }
+            else {
+                builder
+                        .append("\n")
+                        .append(indent(toString(compStmt)));
+            }
+        }
+        else {
+            // В случае если тело ветки не блок кода, то добавляем отступ
+            // и вставляем тело
+            // Пример:
+            // if (a > b)
+            //     max = a;
+            increaseIndentLevel();
+            builder.append("\n").append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
+
+        return builder.toString();
     }
 
     private String toStringMemoryFree(MemoryFreeCall mFree) {
