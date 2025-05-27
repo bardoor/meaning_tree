@@ -18,10 +18,7 @@ import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
 import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
-import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
-import org.vstu.meaningtree.nodes.expressions.Identifier;
-import org.vstu.meaningtree.nodes.expressions.Literal;
-import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -239,6 +236,7 @@ public class JavaViewer extends LanguageViewer {
             case ExpressionSequence expressionSequence -> toString(expressionSequence);
             case CharacterLiteral characterLiteral -> toString(characterLiteral);
             case DoWhileLoop doWhileLoop -> toString(doWhileLoop);
+            case ForEachLoop forEachLoop -> toString(forEachLoop);
             case PointerPackOp ptr -> toString(ptr);
             case DefinitionArgument defArg ->toString(defArg.getInitialExpression());
             case PointerUnpackOp ptr -> toString(ptr);
@@ -461,6 +459,26 @@ public class JavaViewer extends LanguageViewer {
         }
 
         return builder.toString();
+    }
+
+    private String toString(ForEachLoop forEachLoop) {
+        var type = toString(forEachLoop.getItem().getType());
+        var iterVarId = toString(forEachLoop.getItem().getDeclarators()[0].getIdentifier());
+        var iterable = toString(forEachLoop.getExpression());
+        var body = toString(forEachLoop.getBody());
+
+        StringBuilder builder = new StringBuilder();
+
+        return builder
+                .append("for (")
+                .append(type)
+                .append(" ")
+                .append(iterVarId)
+                .append(" : ")
+                .append(iterable)
+                .append(")\n")
+                .append(indent(body))
+                .toString();
     }
 
     private String toString(CharacterLiteral characterLiteral) {
