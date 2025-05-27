@@ -48,10 +48,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBloc
 import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
 import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
 import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
-import org.vstu.meaningtree.nodes.statements.loops.ForEachLoop;
-import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
-import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
-import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
@@ -516,9 +513,18 @@ public class PythonLanguage extends LanguageParser {
                 || condition instanceof BoolLiteral bool && bool.getValue()
                 || condition instanceof StringLiteral str && !str.getUnescapedValue().isEmpty()
         ) {
-            return new InfiniteLoop(body);
+            return new InfiniteLoop(body, getLoopType(node));
         }
         return new WhileLoop(condition, body);
+    }
+
+    private LoopType getLoopType(TSNode node) {
+        return switch (node.getType()) {
+            case "enhanced_for_statement", "for_statement" -> LoopType.FOR;
+            case "while_statement" -> LoopType.WHILE;
+            case "do_statement" -> LoopType.DO_WHILE;
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+        };
     }
 
     private IndexExpression fromIndexTSNode(TSNode node) {
