@@ -52,6 +52,9 @@ import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
 import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
 import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
@@ -184,10 +187,35 @@ public class CppLanguage extends LanguageParser {
             case "comment" -> fromComment(node);
             case "if_statement" -> fromIfStatement(node);
             case "for_statement" -> fromForStatement(node);
+            case "while_statement" -> fromWhile(node);
+            case "break_statement" -> fromBreakStatement(node);
+            case "continue_statement" -> fromContinueStatement(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromContinueStatement(TSNode continueNode) {
+        return new ContinueStatement();
+    }
+
+    private Node fromBreakStatement(TSNode breakNode) {
+        return new BreakStatement();
+    }
+
+    private Loop fromWhile(TSNode node) {
+        TSNode tsCond = node.getChildByFieldName("condition").getChild(1);
+        Expression mtCond = (Expression) fromTSNode(tsCond);
+
+        TSNode tsBody = node.getChildByFieldName("body");
+        Statement mtBody = (Statement) fromTSNode(tsBody);
+
+        if (mtCond instanceof BoolLiteral boolLiteral && boolLiteral.getValue()) {
+            return new InfiniteLoop(mtBody);
+        }
+
+        return new WhileLoop(mtCond, mtBody);
     }
 
     private Loop fromForStatement(TSNode node) {

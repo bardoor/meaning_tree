@@ -45,7 +45,11 @@ import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentState
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.components.ConditionBranch;
 import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
 import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
@@ -164,8 +168,65 @@ public class CppViewer extends LanguageViewer {
             case CompoundStatement compoundStatement -> toString(compoundStatement);
             case RangeForLoop rangeForLoop -> toString(rangeForLoop);
             case GeneralForLoop generalForLoop -> toString(generalForLoop);
+            case WhileLoop whileLoop -> toString(whileLoop);
+            case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод бесконечного цикла */
+    private String toString(InfiniteLoop infiniteLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("while (true)"));
+        Statement body = infiniteLoop.getBody();
+        if (body instanceof CompoundStatement compoundStatement) {
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compoundStatement));
+            }
+            else {
+                builder.append("\n");
+                builder.append(indent(toString(body)));
+            }
+        }
+        else {
+            builder.append("\n");
+            increaseIndentLevel();
+            builder.append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
+
+        return builder.toString();
+    }
+
+    /*******************************************************************/
+    /* Перевод операторов управления циклов */
+    private String toString(ContinueStatement stmt) {
+        return "continue;";
+    }
+
+    private String toString(BreakStatement stmt) {
+        return "break;";
+    }
+
+    /*******************************************************************/
+    /* Перевод цикла while */
+    public String toString(WhileLoop whileLoop) {
+        String header = "while (" + toString(whileLoop.getCondition()) + ")";
+
+        Statement body = whileLoop.getBody();
+        if (body instanceof CompoundStatement compStmt) {
+            return header + (_openBracketOnSameLine ? " " : "\n") + toString(compStmt);
+        }
+        else {
+            increaseIndentLevel();
+            String result = header + "\n" + indent(toString(body));
+            decreaseIndentLevel();
+            return result;
+        }
     }
 
     /*******************************************************************/
