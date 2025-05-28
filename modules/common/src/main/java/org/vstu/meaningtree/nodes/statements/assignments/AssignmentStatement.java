@@ -56,6 +56,14 @@ public class AssignmentStatement extends Statement implements HasInitialization 
     }
 
     @Override
+    public AssignmentStatement clone() {
+        AssignmentStatement obj = (AssignmentStatement) super.clone();
+        obj.lvalue = lvalue.clone();
+        obj.rvalue = rvalue.clone();
+        return obj;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;

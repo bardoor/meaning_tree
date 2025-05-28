@@ -57,11 +57,11 @@ public class FloatLiteral extends NumericLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FloatLiteral that = (FloatLiteral) o;
-        return Double.compare(_value, that._value) == 0;
+        return Double.compare(_value, that._value) == 0 && _isDoublePrecision == that._isDoublePrecision;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _value);
+        return Objects.hash(super.hashCode(), _value, _isDoublePrecision);
     }
 }

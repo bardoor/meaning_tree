@@ -47,12 +47,12 @@ public abstract class PlainCollectionLiteral extends CollectionLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PlainCollectionLiteral that = (PlainCollectionLiteral) o;
-        return Objects.equals(content, that.content);
+        return Objects.equals(content, that.content) && Objects.equals(typeHint, that.typeHint);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), content);
+        return Objects.hash(super.hashCode(), content, typeHint);
     }
 
     @Override

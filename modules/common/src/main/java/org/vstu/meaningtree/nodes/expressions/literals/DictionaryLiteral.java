@@ -63,12 +63,12 @@ public class DictionaryLiteral extends CollectionLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DictionaryLiteral that = (DictionaryLiteral) o;
-        return Objects.equals(content, that.content);
+        return Objects.equals(content, that.content) && Objects.equals(keyTypeHint, that.keyTypeHint) && Objects.equals(valueTypeHint, that.valueTypeHint);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), content);
+        return Objects.hash(super.hashCode(), content, keyTypeHint, valueTypeHint);
     }
 
     @Override
