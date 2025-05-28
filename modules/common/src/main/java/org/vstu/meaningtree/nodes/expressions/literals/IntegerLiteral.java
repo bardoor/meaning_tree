@@ -111,12 +111,12 @@ public class IntegerLiteral extends NumericLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IntegerLiteral that = (IntegerLiteral) o;
-        return _value == that._value;
+        return _value == that._value && _repr == that._repr && _isLongNumber == that._isLongNumber && _isUnsigned == that._isUnsigned;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _value);
+        return Objects.hash(super.hashCode(), _value, _isLongNumber, _isUnsigned, _repr);
     }
 
     @Override
