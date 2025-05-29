@@ -278,7 +278,7 @@ public class CppLanguage extends LanguageParser {
         Statement mtBody = (Statement) fromTSNode(tsBody);
 
         if (mtCond instanceof BoolLiteral boolLiteral && boolLiteral.getValue()) {
-            return new InfiniteLoop(mtBody);
+            return new InfiniteLoop(mtBody, LoopType.WHILE);
         }
 
         return new WhileLoop(mtCond, mtBody);
