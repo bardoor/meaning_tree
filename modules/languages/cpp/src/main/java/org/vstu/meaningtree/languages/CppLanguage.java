@@ -187,7 +187,7 @@ public class CppLanguage extends LanguageParser {
             case "initializer_list" -> fromInitializerList(node);
             case "primitive_type", "template_function", "placeholder_type_specifier", "sized_type_specifier", "type_descriptor" -> fromType(node);
             case "sizeof_expression" -> fromSizeOf(node);
-            case "compound_statement" -> fromBody(node);
+            case "compound_statement" -> fromBlock(node);
             case "new_expression" -> fromNewExpression(node);
             case "delete_expression" -> fromDeleteExpression(node);
             case "cast_expression" -> fromCastExpression(node);
@@ -205,6 +205,77 @@ public class CppLanguage extends LanguageParser {
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private FunctionDefinition fromFunction(TSNode node) {
+        // TODO: по-хорошему надо отдельную функцию для определения всех модификаторов
+        var modifiers = new ArrayList<DeclarationModifier>();
+        if (node.getChild(0).getType().equals("storage_class_specifier")
+                && getCodePiece(node.getChild(0)).equals("static")) {
+            // Статик обозначает приватность функции (по отношению к файлу, где она определена)
+            modifiers.add(DeclarationModifier.PRIVATE);
+        }
+        else {
+            modifiers.add(DeclarationModifier.PUBLIC);
+        }
+        // TODO: однако, модификаторы не определены для функций в мининг-три...
+        // Это не причина удалять код сверху, пусть будет...
+
+        Type returnType = fromType(node.getChildByFieldName("type"));
+        Identifier identifier = (Identifier) fromIdentifier(
+                node.getChildByFieldName("declarator").getChildByFieldName("declarator")
+        );
+        List<DeclarationArgument> parameters = fromFunctionParameters(
+                node.getChildByFieldName("declarator").getChildByFieldName("parameters")
+        );
+
+        // TODO: Пока не реализовано определение аннотаций
+        var declaration = new FunctionDeclaration(
+                identifier,
+                returnType,
+                List.of(),
+                parameters
+        );
+
+        CompoundStatement body = fromBlock(node.getChildByFieldName("body"));
+
+        return new FunctionDefinition(declaration, body);
+    }
+
+    private List<DeclarationArgument> fromFunctionParameters(TSNode node) {
+        List<DeclarationArgument> parameters = new ArrayList<>();
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            // TODO: может быть можно как-то более эффективно извлекать извлечь параметры...
+            // Такие сложности из-за того, что в детях также будет скобки, запятые и другие
+            // синтаксические артефакты.
+            TSNode child = node.getChild(i);
+            if (!child.getType().equals("parameter_declaration")) {
+                continue;
+            }
+
+            DeclarationArgument parameter = fromFormalParameter(child);
+            parameters.add(parameter);
+        }
+
+        return parameters;
+    }
+
+    private DeclarationArgument fromFormalParameter(TSNode node) {
+        Type type = fromType(node.getChildByFieldName("type"));
+        SimpleIdentifier name = (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("declarator"));
+        // Не поддерживается распаковка списков (как в Python) и значения по умолчанию
+        return new DeclarationArgument(type, false, name, null);
+    }
+
+    private CompoundStatement fromBlock(TSNode node) {
+        // TODO: Нужна поддержка таблицы символов
+        BodyBuilder builder = new BodyBuilder();
+        for (int i = 1; i < node.getChildCount() - 1; i++) {
+            Node child = fromTSNode(node.getChild(i));
+            builder.put(child);
+        }
+        return builder.build();
     }
 
     private CaseBlock fromSwitchGroup(TSNode switchGroup) {
@@ -479,26 +550,6 @@ public class CppLanguage extends LanguageParser {
 
     private Node fromCharLiteral(TSNode node) {
         return new CharacterLiteral(getCodePiece(node.getNamedChild(0)).charAt(0));
-    }
-
-    private Node fromFunction(TSNode node) {
-        // TODO: требуется ревизия. Сделано только для режима выражений и функции main
-        Type retType = fromType(node.getChildByFieldName("type"));
-        TSNode declarator = node.getChildByFieldName("declarator");
-        SimpleIdentifier name = (SimpleIdentifier) fromTSNode(declarator.getChildByFieldName("declarator"));
-        CompoundStatement body = fromBody(node.getChildByFieldName("body"));
-        // TODO: Аргументы игнорируются!!
-        return new FunctionDefinition(new FunctionDeclaration(name, retType, List.of(), List.of()), body);
-    }
-
-    private CompoundStatement fromBody(TSNode node) {
-        // TODO: Нужна поддержка таблицы символов
-        BodyBuilder builder = new BodyBuilder();
-        for (int i = 1; i < node.getChildCount() - 1; i++) {
-            Node child = fromTSNode(node.getChild(i));
-            builder.put(child);
-        }
-        return builder.build();
     }
 
     private Node fromInitializerList(TSNode node) {
