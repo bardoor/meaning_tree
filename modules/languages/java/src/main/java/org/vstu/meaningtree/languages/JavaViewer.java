@@ -6,13 +6,11 @@ import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.HindleyMilner;
 import org.vstu.meaningtree.languages.utils.Scope;
 import org.vstu.meaningtree.nodes.*;
-import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
-import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
-import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
-import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
+import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.definitions.ObjectConstructorDefinition;
 import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
@@ -41,6 +39,7 @@ import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.FormatInput;
 import org.vstu.meaningtree.nodes.io.FormatPrint;
+import org.vstu.meaningtree.nodes.io.InputCommand;
 import org.vstu.meaningtree.nodes.io.PrintValues;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
@@ -189,9 +188,10 @@ public class JavaViewer extends LanguageViewer {
             case RangeForLoop rangeLoop -> toString(rangeLoop);
             case ProgramEntryPoint entryPoint -> toString(entryPoint);
             case MethodCall methodCall -> toString(methodCall);
-            case FormatPrint fmt -> String.format("System.out.printf(%s)", fmt.getFormatString(), toStringExprList(fmt.getArguments()));
+            case FormatPrint fmt -> toString(fmt);
             case PrintValues printValues -> toString(printValues);
-            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Python");
+            case FormatInput fmt -> toString(fmt);
+            case InputCommand inputCommand -> toString(inputCommand);
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
@@ -242,8 +242,89 @@ public class JavaViewer extends LanguageViewer {
             case PointerUnpackOp ptr -> toString(ptr);
             case ContainsOp op -> toString(op);
             case ReferenceEqOp op -> toString(op);
+            case FunctionDefinition functionDefinition -> toString(functionDefinition);
             default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
         };
+    }
+
+    private String toString(FunctionDefinition functionDefinition) {
+        StringBuilder builder = new StringBuilder();
+
+        // Преобразование типа нужно, чтобы избежать вызова toString(Node node)
+        String methodDeclaration = toString((FunctionDeclaration) functionDefinition.getDeclaration());
+        builder.append(methodDeclaration);
+
+        String body = toString(functionDefinition.getBody());
+        if (_openBracketOnSameLine)
+        { builder.append(" ").append(body); }
+        else
+        { builder.append("\n").append(indent(body)); }
+
+        return builder.toString();
+    }
+
+    private String toString(FunctionDeclaration functionDeclaration) {
+        StringBuilder builder = new StringBuilder();
+
+        // Считаем каждую функцию доступной извне
+        builder.append("public ");
+
+        String returnType = toString(functionDeclaration.getReturnType());
+        builder.append(returnType).append(" ");
+
+        String name = toString(functionDeclaration.getName());
+        builder.append(name);
+
+        String parameters = toStringParameters(functionDeclaration.getArguments());
+        builder.append(parameters);
+
+        return builder.toString();
+    }
+
+    private String toString(InputCommand inputCommand) {
+        return toString(
+                new FormatInput(
+                        StringLiteral.fromEscaped("", StringLiteral.Type.NONE),
+                        inputCommand.getArguments()
+                )
+        );
+    }
+
+    private String toString(FormatInput formatInput) {
+        var builder = new StringBuilder();
+
+        builder.append("new Scanner(System.in).");
+        if (formatInput.getArguments().size() > 1) {
+            throw new IllegalStateException("Multiple input values are not supported in Java");
+        }
+
+        for (Expression stringPart : formatInput.getArguments()) {
+            Type exprType = HindleyMilner.inference(stringPart, _typeScope);
+            switch (exprType) {
+                case StringType stringType -> {
+                    builder.append("next()");
+                }
+                case IntType integerType -> {
+                    builder.append("nextInt()");
+                }
+                case FloatType floatType -> {
+                    builder.append("nextDouble()");
+                }
+                default -> {
+                    throw new IllegalStateException("Unsupported type in format input in Java: " + exprType);
+                }
+            }
+        }
+
+        return builder.toString();
+    }
+
+    private String toString(FormatPrint formatPrint) {
+        return String.format(
+                "System.out.printf(%s, %s)",
+                formatPrint.getFormatString(),
+                toStringExprList(formatPrint.getArguments())
+        );
     }
 
     private String toStringExprList(List<Expression> arguments) {

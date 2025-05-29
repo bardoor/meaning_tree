@@ -8,9 +8,13 @@ import java.util.Objects;
 public class FormatInput extends InputCommand {
     private final Expression _formatString;
 
-    public FormatInput(Expression formatString, Expression... values) {
-        super(List.of(values));
+    public FormatInput(Expression formatString, List<Expression> values) {
+        super(List.copyOf(values));
         _formatString = formatString;
+    }
+
+    public FormatInput(Expression formatString, Expression... values) {
+        this(formatString, List.of(values));
     }
 
     public Expression getFormatString() {
