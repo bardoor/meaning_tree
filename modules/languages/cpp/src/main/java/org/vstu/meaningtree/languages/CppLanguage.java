@@ -9,11 +9,15 @@ import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
+import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
 import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
+import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
+import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
@@ -54,10 +58,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBloc
 import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
 import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
 import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
-import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
-import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
-import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
-import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.*;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
@@ -330,7 +331,7 @@ public class CppLanguage extends LanguageParser {
         Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
 
         if (init == null && condition == null && update == null) {
-            return new InfiniteLoop(body);
+            return new InfiniteLoop(body, LoopType.FOR);
         }
 
         RangeForLoop rangeFor = tryMakeRangeForLoop(init, condition, update, body);
