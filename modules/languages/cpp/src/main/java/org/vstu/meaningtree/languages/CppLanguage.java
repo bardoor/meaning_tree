@@ -2,6 +2,7 @@ package org.vstu.meaningtree.languages;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
@@ -38,11 +39,27 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.*;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.Loop;
+import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.BasicCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.CaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.DefaultCaseBlock;
+import org.vstu.meaningtree.nodes.statements.conditions.components.FallthroughCaseBlock;
+import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
+import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
@@ -88,8 +105,11 @@ public class CppLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
-            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+        if (!errors.isEmpty()) {
+            var configParam =  getConfigParameter("skipErrors");
+            if (configParam != null && !configParam.getBooleanValue()) {
+                throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+            }
         }
         Node node = fromTSNode(rootNode);
         if (node instanceof AssignmentExpression expr) {
@@ -107,7 +127,8 @@ public class CppLanguage extends LanguageParser {
     @Override
     public TSNode getRootNode() {
         TSNode result = super.getRootNode();
-        if (getConfigParameter("expressionMode").getBooleanValue()) {
+        var configParam = getConfigParameter("expressionMode");
+        if (configParam != null && configParam.getBooleanValue()) {
             // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
             TSNode func = result.getNamedChild(0);
             assert func.getType().equals("function_definition");
@@ -132,6 +153,10 @@ public class CppLanguage extends LanguageParser {
     @NotNull
     private Node fromTSNode(@NotNull TSNode node) {
         Objects.requireNonNull(node);
+
+        if (node.isNull()) {
+            throw new UnsupportedParsingException("NULL Tree sitter node");
+        }
 
         Node createdNode = switch (node.getType()) {
             case "ERROR", "parameter_pack_expansion" -> fromTSNode(node.getNamedChild(0));
@@ -169,10 +194,264 @@ public class CppLanguage extends LanguageParser {
             case "this" -> new SelfReference("this");
             case "offsetof_expression" -> fromOffsetOf(node);
             case "comment" -> fromComment(node);
+            case "if_statement" -> fromIfStatement(node);
+            case "for_statement" -> fromForStatement(node);
+            case "while_statement" -> fromWhile(node);
+            case "break_statement" -> fromBreakStatement(node);
+            case "continue_statement" -> fromContinueStatement(node);
+            case "switch_statement" -> fromSwitchStatement(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private CaseBlock fromSwitchGroup(TSNode switchGroup) {
+        Expression matchValue =
+                (Expression) fromTSNode(switchGroup.getNamedChild(0));
+
+        var statements = new ArrayList<Node>();
+
+        for (int i = 1; i < switchGroup.getNamedChildCount(); i++) {
+            statements.add(fromTSNode(switchGroup.getNamedChild(i)));
+        }
+
+        CaseBlock caseBlock;
+        if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
+            statements.removeLast();
+            caseBlock = new BasicCaseBlock(matchValue, new CompoundStatement(null, statements));
+        }
+        else {
+            caseBlock = new FallthroughCaseBlock(matchValue, new CompoundStatement(null, statements));
+        }
+
+        return caseBlock;
+    }
+
+    private Node fromSwitchStatement(TSNode switchNode) {
+        Expression matchValue =
+                (Expression) fromTSNode(switchNode.getChildByFieldName("condition").getNamedChild(0));
+
+        DefaultCaseBlock defaultCaseBlock = null;
+        List<CaseBlock> cases = new ArrayList<>();
+
+        TSNode switchBlock = switchNode.getChildByFieldName("body");
+        for (int i = 0; i < switchBlock.getNamedChildCount(); i++) {
+            TSNode switchGroup = switchBlock.getNamedChild(i);
+
+            String labelName = getCodePiece(switchGroup.getChild(0));
+            if (labelName.equals("default")) {
+                var statements = new ArrayList<Node>();
+
+                for (int j = 1; j < switchGroup.getNamedChildCount(); j++) {
+                    statements.add(fromTSNode(switchGroup.getNamedChild(j)));
+                }
+
+                if (!statements.isEmpty() && statements.getLast() instanceof BreakStatement) {
+                    statements.removeLast();
+                }
+                defaultCaseBlock = new DefaultCaseBlock(new CompoundStatement(null, statements));
+            }
+            else {
+                CaseBlock caseBlock = fromSwitchGroup(switchGroup);
+                cases.add(caseBlock);
+            }
+        }
+
+        return new SwitchStatement(matchValue, cases, defaultCaseBlock);
+    }
+
+    private Node fromContinueStatement(TSNode continueNode) {
+        return new ContinueStatement();
+    }
+
+    private Node fromBreakStatement(TSNode breakNode) {
+        return new BreakStatement();
+    }
+
+    private Loop fromWhile(TSNode node) {
+        TSNode tsCond = node.getChildByFieldName("condition").getChild(1);
+        Expression mtCond = (Expression) fromTSNode(tsCond);
+
+        TSNode tsBody = node.getChildByFieldName("body");
+        Statement mtBody = (Statement) fromTSNode(tsBody);
+
+        if (mtCond instanceof BoolLiteral boolLiteral && boolLiteral.getValue()) {
+            return new InfiniteLoop(mtBody);
+        }
+
+        return new WhileLoop(mtCond, mtBody);
+    }
+
+    private Loop fromForStatement(TSNode node) {
+        HasInitialization init = null;
+        Expression condition = null;
+        Expression update = null;
+
+        if (!node.getChildByFieldName("initializer").isNull()) {
+            List<TSNode> assignments = getChildrenByFieldName(node, "initializer");
+
+            if (assignments.size() == 1) {
+                init = (HasInitialization) fromTSNode(assignments.getFirst());
+            }
+            else if (assignments.size() > 1) {
+                List<AssignmentStatement> assignmentStatements =
+                        assignments.stream().map(
+                                tsNode ->
+                                        assignmentExpressionToStatement((AssignmentExpression) fromTSNode(tsNode))
+                        ).toList();
+                init = new MultipleAssignmentStatement(assignmentStatements);
+            }
+            else {
+                throw new IllegalStateException("This should never occur");
+            }
+        }
+
+        if (!node.getChildByFieldName("condition").isNull()) {
+            condition = (Expression) fromTSNode(node.getChildByFieldName("condition"));
+        }
+
+        if (!node.getChildByFieldName("update").isNull()) {
+            List<TSNode> updates = getChildrenByFieldName(node, "update");
+
+            if (updates.size() == 1) {
+                update = (Expression) fromTSNode(updates.getFirst());
+            }
+            else if (updates.size() > 1) {
+                List<Expression> updateExpressions =
+                        updates.stream().map(tsNode -> (Expression) fromTSNode(tsNode)).toList();
+                update = new ExpressionSequence(updateExpressions);
+            }
+            else {
+                throw new IllegalStateException("This should never occur");
+            }
+        }
+
+        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+
+        if (init == null && condition == null && update == null) {
+            return new InfiniteLoop(body);
+        }
+
+        RangeForLoop rangeFor = tryMakeRangeForLoop(init, condition, update, body);
+        if (rangeFor != null) {
+            return rangeFor;
+        }
+
+        return new GeneralForLoop(init, condition, update, body);
+    }
+
+    private AssignmentStatement assignmentExpressionToStatement(AssignmentExpression expression) {
+        return new AssignmentStatement(expression.getLValue(), expression.getRValue());
+    }
+
+    @Nullable
+    private RangeForLoop tryMakeRangeForLoop(HasInitialization init,
+                                             Expression condition,
+                                             Expression update,
+                                             Statement body) {
+        SimpleIdentifier loopVariable = null;
+        Expression start = null;
+        Expression stop = null;
+        Expression step = null;
+        boolean isExcludingEnd = false;
+
+        if (init instanceof AssignmentExpression assignmentExpression
+                && assignmentExpression.getLValue() instanceof SimpleIdentifier loopVariable_) {
+            loopVariable = loopVariable_;
+            start = assignmentExpression.getRValue();
+        }
+        // TODO: этот ужас нужно когда-нибудь переписать нормально
+        else if (init instanceof VariableDeclaration variableDeclaration) {
+            List<VariableDeclarator> declarators = List.of(variableDeclaration.getDeclarators());
+
+            if (declarators.size() == 1) {
+                VariableDeclarator declarator = declarators.getFirst();
+                loopVariable = declarator.getIdentifier();
+
+                Expression wrappedExpression = declarator.getRValue();
+                if (wrappedExpression != null) {
+                    if (wrappedExpression instanceof IntegerLiteral start_) {
+                        start = start_;
+                    }
+                }
+            }
+        }
+
+        if (condition instanceof BinaryComparison binaryComparison
+                && (binaryComparison.getLeft().equals(loopVariable) || binaryComparison.getRight().equals(loopVariable))) {
+
+            boolean isLoopVarLeft = binaryComparison.getLeft().equals(loopVariable);
+            if (isLoopVarLeft) {
+                stop = binaryComparison.getRight();
+            } else {
+                stop = binaryComparison.getLeft();
+            }
+
+            if (binaryComparison instanceof LtOp || binaryComparison instanceof GtOp) {
+                isExcludingEnd = true;
+            }
+            else if (binaryComparison instanceof LeOp || binaryComparison instanceof GeOp) {
+                isExcludingEnd = false;
+            }
+            else {
+                // Т.к. binaryComparison может быть не только операцией больше/меньше, а еще
+                // равно/не равно, то во втором случае нельзя организовать диапазон
+                stop = null;
+            }
+        }
+
+        step = switch (update) {
+            case PostfixDecrementOp postfixDecrementOp -> new IntegerLiteral("-1");
+            case PostfixIncrementOp postfixIncrementOp -> new IntegerLiteral("1");
+            case PrefixDecrementOp prefixDecrementOp -> new IntegerLiteral("-1");
+            case PrefixIncrementOp prefixIncrementOp -> new IntegerLiteral("1");
+            case AssignmentExpression assignment -> {
+                if (assignment.getAugmentedOperator() == AugmentedAssignmentOperator.ADD) {
+                    yield assignment.getRValue();
+                } else if (assignment.getAugmentedOperator() == AugmentedAssignmentOperator.SUB) {
+                    yield new UnaryMinusOp(assignment.getRValue());
+                } else {
+                    yield null;
+                }
+            }
+            default -> null;
+        };
+
+        if (start != null && stop != null && step != null && loopVariable != null) {
+            Range range = new Range(start, stop, step, false, isExcludingEnd, Range.Type.UNKNOWN);
+            return new RangeForLoop(range, loopVariable, body);
+        }
+
+        return null;
+    }
+
+    private List<TSNode> getChildrenByFieldName(TSNode node, String fieldName) {
+        List<TSNode> nodes = new ArrayList<>();
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            String currentNodeFieldName = node.getFieldNameForChild(i);
+            if (currentNodeFieldName != null && currentNodeFieldName.equals(fieldName)) {
+                nodes.add(node.getChild(i));
+            }
+        }
+
+        return nodes;
+    }
+
+    private Node fromIfStatement(TSNode node) {
+        // Берем ребенка под индексом 1, чтобы избежать захвата скобок, а значит
+        // неправильного парсинга (получаем выражение в скобках в качестве условия, а не просто выражение)
+        Expression condition = (Expression) fromTSNode(node.getChildByFieldName("condition").getChild(1));
+        Statement consequence = (Statement) fromTSNode(node.getChildByFieldName("consequence"));
+
+        TSNode alternativeNode = node.getChildByFieldName("alternative");
+        if (alternativeNode.isNull()) {
+            return new IfStatement(condition, consequence);
+        }
+
+        Statement alternative = (Statement) fromTSNode(alternativeNode.getChild(1));
+        return new IfStatement(condition, consequence, alternative);
     }
 
     private Node fromConcatenatedString(TSNode node) {
@@ -742,8 +1021,6 @@ public class CppLanguage extends LanguageParser {
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };
     }
-
-
 
     @NotNull
     private Declaration fromDeclaration(@NotNull TSNode node) {

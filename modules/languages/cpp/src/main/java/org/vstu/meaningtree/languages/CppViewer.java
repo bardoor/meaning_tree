@@ -33,25 +33,35 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerMemberAccess;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 import org.vstu.meaningtree.nodes.io.*;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
+import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
+import org.vstu.meaningtree.nodes.statements.conditions.components.*;
+import org.vstu.meaningtree.nodes.statements.loops.GeneralForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.InfiniteLoop;
+import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
+import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
+import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
+import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
 import org.vstu.meaningtree.nodes.types.GenericUserType;
 import org.vstu.meaningtree.nodes.types.NoReturn;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
-import org.vstu.meaningtree.nodes.types.containers.ArrayType;
-import org.vstu.meaningtree.nodes.types.containers.DictionaryType;
-import org.vstu.meaningtree.nodes.types.containers.ListType;
-import org.vstu.meaningtree.nodes.types.containers.SetType;
+import org.vstu.meaningtree.nodes.types.containers.*;
+import org.vstu.meaningtree.nodes.types.containers.components.Shape;
 import org.vstu.meaningtree.utils.NodeLabel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -59,7 +69,52 @@ import java.util.stream.Collectors;
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
 public class CppViewer extends LanguageViewer {
+    private final String _indentation;
+    private int _indentLevel;
+    private final boolean _openBracketOnSameLine;
+    private final boolean _bracketsAroundCaseBranches;
+    private final boolean _autoVariableDeclaration;
 
+    public CppViewer(int indentSpaceCount,
+                      boolean openBracketOnSameLine,
+                      boolean bracketsAroundCaseBranches,
+                      boolean autoVariableDeclaration
+    ) {
+        _indentation = " ".repeat(indentSpaceCount);
+        _indentLevel = 0;
+        _openBracketOnSameLine = openBracketOnSameLine;
+        _bracketsAroundCaseBranches = bracketsAroundCaseBranches;
+        _autoVariableDeclaration = autoVariableDeclaration;
+    }
+
+    public CppViewer() {
+        this(4, true, false, false);
+    }
+
+    /*******************************************************************/
+    /* Все, что касается индетации для блоков */
+    private void increaseIndentLevel() {
+        _indentLevel++;
+    }
+
+    private void decreaseIndentLevel() {
+        _indentLevel--;
+
+        if (_indentLevel < 0) {
+            throw new MeaningTreeException("Indentation level can't be less than zero");
+        }
+    }
+
+    private String indent(String s) {
+        if (_indentLevel == 0) {
+            return s;
+        }
+
+        return _indentation.repeat(Math.max(0, _indentLevel)) + s;
+    }
+
+    /*******************************************************************/
+    /* Перевод мининг три и узлов в строки */
     @NotNull
     @Override
     public String toString(@NotNull MeaningTree meaningTree) {
@@ -87,7 +142,7 @@ public class CppViewer extends LanguageViewer {
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
             case AssignmentExpression assignmentExpression -> toStringAssignmentExpression(assignmentExpression);
-            case AssignmentStatement assignmentStatement -> toStringAssignmentExpression(assignmentStatement.toExpression()).concat(";");
+            case AssignmentStatement assignmentStatement -> toStringAssignmentStatement(assignmentStatement);
             case Type type -> toStringType(type);
             case Identifier identifier -> toStringIdentifier(identifier);
             case NumericLiteral numericLiteral -> toStringNumericLiteral(numericLiteral);
@@ -111,8 +166,605 @@ public class CppViewer extends LanguageViewer {
             case Comment cmnt -> toStringComment(cmnt);
             case InterpolatedStringLiteral interpolatedStringLiteral -> fromInterpolatedString(interpolatedStringLiteral);
             case MultipleAssignmentStatement mas -> fromMultipleAssignmentStatement(mas);
+            case IfStatement ifStatement -> toString(ifStatement);
+            case CompoundStatement compoundStatement -> toString(compoundStatement);
+            case RangeForLoop rangeForLoop -> toString(rangeForLoop);
+            case GeneralForLoop generalForLoop -> toString(generalForLoop);
+            case WhileLoop whileLoop -> toString(whileLoop);
+            case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
+            case SwitchStatement switchStatement -> toString(switchStatement);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод свитча */
+    private String toStringCaseBlock(CaseBlock caseBlock) {
+        StringBuilder builder = new StringBuilder();
+
+        Statement caseBlockBody;
+        if (caseBlock instanceof MatchValueCaseBlock mvcb) {
+            builder.append("case ");
+            builder.append(toString(mvcb.getMatchValue()));
+            builder.append(":");
+            caseBlockBody = mvcb.getBody();
+        }
+        else if (caseBlock instanceof DefaultCaseBlock dcb) {
+            builder.append("default:");
+            caseBlockBody = dcb.getBody();
+        }
+        else {
+            throw new IllegalStateException("Unsupported case block type: " + caseBlock.getClass());
+        }
+
+        List<Node> nodesList;
+        if (caseBlockBody instanceof CompoundStatement compoundStatement) {
+            nodesList = Arrays.asList(compoundStatement.getNodes());
+        }
+        else {
+            nodesList = List.of(caseBlockBody);
+        }
+
+        // Внутри case веток нельзя объявлять переменные, нужно обернуть их скобками,
+        // поэтому проверяем наличие деклараций переменных
+        boolean hasDeclarationInside = false;
+        for (Node node : nodesList) {
+            if (node instanceof VariableDeclaration) {
+                hasDeclarationInside = true;
+                break;
+            }
+        }
+
+        if (!nodesList.isEmpty()) {
+            if (_bracketsAroundCaseBranches || hasDeclarationInside) {
+                if (_openBracketOnSameLine) {
+                    builder.append(" {\n");
+                }
+                else {
+                    builder.append("\n").append(indent("{\n"));
+                }
+            }
+            else {
+                builder.append("\n");
+            }
+
+            increaseIndentLevel();
+
+            for (Node node : nodesList) {
+                builder
+                        .append(indent(toString(node)))
+                        .append("\n");
+            }
+
+            if (caseBlock instanceof BasicCaseBlock || caseBlock instanceof DefaultCaseBlock) {
+                builder.append(indent("break;"));
+            }
+            else {
+                builder.deleteCharAt(builder.length() - 1);
+            }
+
+            decreaseIndentLevel();
+
+            if (_bracketsAroundCaseBranches || hasDeclarationInside) {
+                builder
+                        .append("\n")
+                        .append(indent("}"));
+            }
+        }
+
+        return builder.toString();
+    }
+
+    private String toString(SwitchStatement switchStatement) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("switch (");
+        builder.append(toString(switchStatement.getTargetExpression()));
+        builder.append(") ");
+
+        if (_openBracketOnSameLine) {
+            builder.append("{\n");
+        }
+        else {
+            builder.append("\n").append(indent("{\n"));
+        }
+
+        increaseIndentLevel();
+        for (CaseBlock caseBlock : switchStatement.getCases()) {
+            builder
+                    .append(indent(toStringCaseBlock(caseBlock)))
+                    .append("\n");
+        }
+        decreaseIndentLevel();
+
+        builder.append(indent("}"));
+        return builder.toString();
+    }
+
+    /*******************************************************************/
+    /* Перевод бесконечного цикла */
+    private String toString(InfiniteLoop infiniteLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(indent("while (true)"));
+        Statement body = infiniteLoop.getBody();
+        if (body instanceof CompoundStatement compoundStatement) {
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compoundStatement));
+            }
+            else {
+                builder.append("\n");
+                builder.append(indent(toString(body)));
+            }
+        }
+        else {
+            builder.append("\n");
+            increaseIndentLevel();
+            builder.append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
+
+        return builder.toString();
+    }
+
+    /*******************************************************************/
+    /* Перевод операторов управления циклов */
+    private String toString(ContinueStatement stmt) {
+        return "continue;";
+    }
+
+    private String toString(BreakStatement stmt) {
+        return "break;";
+    }
+
+    /*******************************************************************/
+    /* Перевод цикла while */
+    public String toString(WhileLoop whileLoop) {
+        String header = "while (" + toString(whileLoop.getCondition()) + ")";
+
+        Statement body = whileLoop.getBody();
+        if (body instanceof CompoundStatement compStmt) {
+            return header + (_openBracketOnSameLine ? " " : "\n") + toString(compStmt);
+        }
+        else {
+            increaseIndentLevel();
+            String result = header + "\n" + indent(toString(body));
+            decreaseIndentLevel();
+            return result;
+        }
+    }
+
+    /*******************************************************************/
+    /* Перевод объявления переменных и их типов */
+    public String toString(SetType type) {
+        // Используем std::unordered_set для неупорядоченных множеств
+        return String.format("std::unordered_set<%s>", toString(type.getItemType()));
+    }
+
+    public String toString(PlainCollectionType type) {
+        return String.format("std::vector<%s>", toString(type.getItemType()));
+    }
+
+    public String toString(DictionaryType type) {
+        // std::map для ассоциативного массива (отсортированный по ключу)
+        return String.format("std::map<%s, %s>",
+                toString(type.getKeyType()),
+                toString(type.getValueType()));
+    }
+
+    private String toString(FloatType type) {
+        // float/double в зависимости от размера
+        return type.size == 64 ? "double" : "float";
+    }
+
+    private String toString(IntType type) {
+        // short/int/long в зависимости от размера
+        if (type.size == 16) {
+            return "short";
+        } else if (type.size == 32) {
+            return "int";
+        } else {
+            return "long";
+        }
+    }
+
+    private String toString(BooleanType type) {
+        return "bool";
+    }
+
+    private String toString(StringType type) {
+        return "std::string";
+    }
+
+    private String toString(NoReturn type) {
+        return "void";
+    }
+
+    private String toString(UnknownType type) {
+        // auto для неизвестных типов
+        return "auto";
+    }
+
+    private String toString(CharacterType type) {
+        return "char";
+    }
+
+    private String toString(Shape shape) {
+        // размерность массива: [dim][dim]...
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < shape.getDimensionCount(); i++) {
+            builder.append("[");
+            Expression dim = shape.getDimension(i);
+            if (dim != null) {
+                builder.append(toString(dim));
+            }
+            builder.append("]");
+        }
+        return builder.toString();
+    }
+
+    private String toString(ArrayType type) {
+        // базовый тип + размерности
+        String base = toString(type.getItemType());
+        return base + toString(type.getShape());
+    }
+
+    private String toString(VariableDeclarator varDecl, Type type) {
+        StringBuilder builder = new StringBuilder();
+
+        SimpleIdentifier identifier = varDecl.getIdentifier();
+        Type variableType = new UnknownType();
+        Expression rValue = varDecl.getRValue();
+        if (rValue != null) {
+            // TODO: починить хиндли-милнера
+            // variableType = HindleyMilner.inference(rValue, _typeScope);
+        }
+
+        // TODO: починить хиндли-милнера и тайп-скоупы
+        // addVariableToCurrentScope(identifier, variableType);
+
+        String identifierName = toString(identifier);
+        builder.append(identifierName);
+
+        if (rValue instanceof ArrayLiteral arr && type instanceof ListType) {
+            rValue = new ListLiteral(arr.getList());
+            ((ListLiteral) rValue).setTypeHint(arr.getTypeHint());
+        }
+
+        if (rValue != null) {
+            builder.append(" = ").append(toString(rValue));
+        }
+
+        return builder.toString();
+    }
+
+    public String toString(VariableDeclaration stmt) {
+        StringBuilder builder = new StringBuilder();
+
+        // const перед типом, если константа
+        if (stmt.getType().isConst()) {
+            builder.append("const ");
+        }
+        // сам тип
+        builder.append(toString(stmt.getType())).append(" ");
+
+        // перечисляем переменные через запятую
+        for (VariableDeclarator vd : stmt.getDeclarators()) {
+            builder.append(toString(vd, stmt.getType())).append(", ");
+        }
+        // убираем лишнюю ", "
+        if (builder.length() >= 2) {
+            builder.setLength(builder.length() - 2);
+        }
+        builder.append(";");
+
+        return builder.toString();
+    }
+
+    /*******************************************************************/
+    /* Перевод узла оператора присвоения */
+    private String toStringAssignmentStatement(AssignmentStatement assignmentStatement) {
+        return toStringAssignmentExpression(assignmentStatement.toExpression()).concat(";");
+    }
+
+    /*******************************************************************/
+    /* Перевод узла цикла фор общего и по диапазону */
+    public String toString(GeneralForLoop generalForLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("for (");
+
+        boolean addSemi = true;
+        if (generalForLoop.hasInitializer()) {
+            String init = toString(generalForLoop.getInitializer());
+            if (init.stripTrailing().endsWith(";")) {
+                addSemi = false;
+            }
+            builder.append(init);
+        }
+        if (addSemi) {
+            builder.append("; ");
+        }
+        else {
+            builder.append(" ");
+        }
+
+        if (generalForLoop.hasCondition()) {
+            String condition = toString(generalForLoop.getCondition());
+            builder.append(condition);
+        }
+        builder.append("; ");
+
+        if (generalForLoop.hasUpdate()) {
+            String update = toString(generalForLoop.getUpdate());
+            builder.append(update);
+        }
+
+        Statement body = generalForLoop.getBody();
+        if (body instanceof CompoundStatement compoundStatement) {
+            builder.append(")");
+
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compoundStatement));
+            }
+            else {
+                builder.append("\n");
+                builder.append(indent(toString(body)));
+            }
+        }
+        else {
+            builder.append(")\n");
+            increaseIndentLevel();
+            builder.append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
+
+        return builder.toString();
+    }
+
+    private String toString(HasInitialization init) {
+        return switch (init) {
+            case AssignmentExpression expr -> toStringAssignmentExpression(expr);
+            case AssignmentStatement stmt -> toStringAssignmentStatement(stmt);
+            case VariableDeclaration decl -> toString(decl);
+            case MultipleAssignmentStatement multipleAssignmentStatement -> {
+                // Трансляция MultipleAssignmentStatement по умолчанию не подходит -
+                // в результате будут получены присваивания, написанные через точку с запятой.
+                // Поэтому вручную получаем список присваиваний и создаем правильное отображение.
+                StringBuilder builder = new StringBuilder();
+
+                for (AssignmentStatement assignmentStatement : multipleAssignmentStatement.getStatements()) {
+                    AssignmentExpression assignmentExpression = new AssignmentExpression(
+                            assignmentStatement.getLValue(),
+                            assignmentStatement.getRValue()
+                    );
+                    builder
+                            .append(toStringAssignmentExpression(assignmentExpression))
+                            .append(", ");
+                }
+
+                // Удаляем лишние пробел и запятую в конце последнего присвоения
+                if (builder.length() > 2) {
+                    builder.deleteCharAt(builder.length() - 1);
+                    builder.deleteCharAt(builder.length() - 1);
+                }
+
+                yield builder.toString();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + init);
+        };
+    }
+
+    private String getForRangeUpdate(RangeForLoop forRangeLoop) {
+        if (forRangeLoop.getRange().getType() == Range.Type.UP) {
+            long stepValue;
+            try {
+                stepValue = forRangeLoop.getStepValueAsLong();
+            } catch (IllegalStateException exception) {
+                return String.format("%s += %s", toString(forRangeLoop.getIdentifier()), toString(forRangeLoop.getStep()));
+            }
+
+            if (stepValue == 1) {
+                return String.format("%s++", toString(forRangeLoop.getIdentifier()));
+            }
+            else {
+                return String.format("%s += %d", toString(forRangeLoop.getIdentifier()), stepValue);
+            }
+        }
+        else if (forRangeLoop.getRange().getType() == Range.Type.DOWN) {
+            long stepValue;
+            try {
+                stepValue = forRangeLoop.getStepValueAsLong();
+            } catch (IllegalStateException exception) {
+                return String.format("%s -= %s", toString(forRangeLoop.getIdentifier()), toString(forRangeLoop.getStep()));
+            }
+
+            if (stepValue == 1) {
+                return String.format("%s--", toString(forRangeLoop.getIdentifier()));
+            }
+            else {
+                return String.format("%s -= %d", toString(forRangeLoop.getIdentifier()), stepValue);
+            }
+        }
+
+        throw new MeaningTreeException("Can't determine range type in for loop");
+    }
+
+    private String getForRangeHeader(RangeForLoop forRangeLoop) {
+        if (forRangeLoop.getRange().getType() == Range.Type.UP) {
+            String header = "int %s = %s; %s %s %s; %s";
+            String compOperator = forRangeLoop.isExcludingStop() ? "<" : "<=";
+            return header.formatted(
+                    toString(forRangeLoop.getIdentifier()),
+                    toString(forRangeLoop.getStart()),
+                    toString(forRangeLoop.getIdentifier()),
+                    compOperator,
+                    toString(forRangeLoop.getStop()),
+                    getForRangeUpdate(forRangeLoop)
+            );
+        }
+        else if (forRangeLoop.getRange().getType() == Range.Type.DOWN) {
+            String header = "int %s = %s; %s %s %s; %s";
+            String compOperator = forRangeLoop.isExcludingStop() ? ">" : ">=";
+            return header.formatted(
+                    toString(forRangeLoop.getIdentifier()),
+                    toString(forRangeLoop.getStart()),
+                    toString(forRangeLoop.getIdentifier()),
+                    compOperator,
+                    toString(forRangeLoop.getStop()),
+                    getForRangeUpdate(forRangeLoop)
+            );
+        }
+
+        throw new MeaningTreeException("Can't determine range type in for loop");
+    }
+
+    public String toString(RangeForLoop forRangeLoop) {
+        StringBuilder builder = new StringBuilder();
+
+        String header = "for (" + getForRangeHeader(forRangeLoop) + ")";
+        builder.append(header);
+
+        Statement body = forRangeLoop.getBody();
+        if (body instanceof CompoundStatement compoundStatement) {
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compoundStatement));
+            } else {
+                builder.append("\n");
+                builder.append(indent(toString(body)));
+            }
+        } else {
+            builder.append("\n");
+            increaseIndentLevel();
+            builder.append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
+
+        return builder.toString();
+    }
+
+    /*******************************************************************/
+    /* Перевод узла блочного оператора  */
+    public String toString(CompoundStatement stmt) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{\n");
+        increaseIndentLevel();
+        for (Node node : stmt) {
+            String s = toString(node);
+            if (s.isEmpty()) {
+                continue;
+            }
+
+            s = indent(String.format("%s\n", s));
+            builder.append(s);
+        }
+        decreaseIndentLevel();
+        builder.append(indent("}"));
+        return builder.toString();
+    }
+
+    /*******************************************************************/
+    /* Перевод узла ветвления  */
+    public String toString(IfStatement stmt) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("if ");
+        List<ConditionBranch> branches = stmt.getBranches();
+        builder
+                .append(toString(branches.getFirst()))
+                .append("\n");
+
+        for (ConditionBranch branch : branches.subList(1, branches.size())) {
+            builder
+                    .append(indent("else if "))
+                    .append(toString(branch))
+                    .append("\n");
+        }
+
+        if (stmt.hasElseBranch()) {
+            builder.append(indent("else"));
+
+            Statement elseBranch = stmt.getElseBranch();
+            if (elseBranch instanceof IfStatement innerIfStmt) {
+                builder
+                        .append(" ")
+                        .append(toString(innerIfStmt));
+            }
+            else if (elseBranch instanceof CompoundStatement innerCompStmt) {
+                if (_openBracketOnSameLine) {
+                    builder
+                            .append(" ")
+                            .append(toString(innerCompStmt));
+                }
+                else {
+                    builder
+                            .append("\n")
+                            .append(indent(toString(innerCompStmt)));
+                }
+            }
+            else {
+                increaseIndentLevel();
+                builder
+                        .append("\n")
+                        .append(indent(toString(elseBranch)));
+                decreaseIndentLevel();
+            }
+        }
+        else {
+            // Удаляем лишний перевод строки, если ветки else нет
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        return builder.toString();
+    }
+
+    /* Перевод одной ветки условия  */
+    private String toString(ConditionBranch branch) {
+        StringBuilder builder = new StringBuilder();
+
+        String cond = toString(branch.getCondition());
+        builder
+                .append("(")
+                .append(cond)
+                .append(")");
+
+        Statement body = branch.getBody();
+        if (body instanceof CompoundStatement compStmt) {
+            // Если телом ветки является блок кода, то необходимо определить
+            // куда нужно добавить фигурные скобки и добавить само тело
+            // Пример (для случая, когда скобка на той же строке):
+            // if (a > b) {
+            //     max = a;
+            // }
+            if (_openBracketOnSameLine) {
+                builder
+                        .append(" ")
+                        .append(toString(compStmt));
+            }
+            else {
+                builder
+                        .append("\n")
+                        .append(indent(toString(compStmt)));
+            }
+        }
+        else {
+            // В случае если тело ветки не блок кода, то добавляем отступ
+            // и вставляем тело
+            // Пример:
+            // if (a > b)
+            //     max = a;
+            increaseIndentLevel();
+            builder.append("\n").append(indent(toString(body)));
+            decreaseIndentLevel();
+        }
+
+        return builder.toString();
     }
 
     private String toStringMemoryFree(MemoryFreeCall mFree) {
@@ -159,7 +811,7 @@ public class CppViewer extends LanguageViewer {
     private String fromMultipleAssignmentStatement(MultipleAssignmentStatement mas) {
         StringBuilder builder = new StringBuilder();
         for (AssignmentStatement s : mas.getStatements()) {
-            builder.append(toString(s));
+            builder.append(toStringAssignmentStatement(s));
             builder.append("\n");
         }
         return builder.substring(0, builder.length() - 1);
