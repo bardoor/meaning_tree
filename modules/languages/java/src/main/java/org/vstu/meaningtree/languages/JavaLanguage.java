@@ -196,7 +196,7 @@ public class JavaLanguage extends LanguageParser {
             case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
             case "array_initializer" -> fromArrayInitializer(node);
             case "return_statement" -> fromReturnStatementTSNode(node);
-            case "void_type" -> fromTypeTSNode(node);
+            case "void_type", "type_identifier" -> fromTypeTSNode(node);
             case "line_comment", "block_comment" -> fromCommentTSNode(node);
             case "cast_expression" -> fromCastExpressionTSNode(node);
             case "array_access" -> fromArrayAccessTSNode(node);
@@ -207,10 +207,22 @@ public class JavaLanguage extends LanguageParser {
             case "do_statement" -> fromDoStatementTSNode(node);
             case "instanceof_expression" -> fromInstanceOfTSNode(node);
             case "class_literal" -> fromClassLiteralTSNode(node);
+            case "enhanced_for_statement" -> fromEnhancedForStatementTSNode(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private Node fromEnhancedForStatementTSNode(TSNode node) {
+        Type type = (Type) fromTSNode(node.getChildByFieldName("type"));
+        SimpleIdentifier iterVarId = (SimpleIdentifier) fromTSNode(node.getChildByFieldName("name"));
+        Expression iterable = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+
+        VariableDeclaration varDecl = new VariableDeclaration(type, iterVarId);
+
+        return new ForEachLoop(varDecl, iterable, body);
     }
 
     private Node fromClassLiteralTSNode(TSNode node) {
@@ -980,7 +992,7 @@ public class JavaLanguage extends LanguageParser {
         Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
 
         if (init == null && condition == null && update == null) {
-            return new InfiniteLoop(body);
+            return new InfiniteLoop(body, getLoopType(node));
         }
 
         RangeForLoop rangeFor = tryMakeRangeForLoop(init, condition, update, body);
@@ -989,6 +1001,15 @@ public class JavaLanguage extends LanguageParser {
         }
 
         return new GeneralForLoop(init, condition, update, body);
+    }
+
+    private LoopType getLoopType(TSNode node) {
+        return switch (node.getType()) {
+            case "enhanced_for_statement", "for_statement" -> LoopType.FOR;
+            case "while_statement" -> LoopType.WHILE;
+            case "do_statement" -> LoopType.DO_WHILE;
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+        };
     }
 
     private VariableDeclarator fromVariableDeclarator(TSNode node, Type type) {
@@ -1228,7 +1249,7 @@ public class JavaLanguage extends LanguageParser {
         Statement mtBody = (Statement) fromTSNode(tsBody);
 
         if (mtCond instanceof BoolLiteral boolLiteral && boolLiteral.getValue()) {
-            return new InfiniteLoop(mtBody);
+            return new InfiniteLoop(mtBody, getLoopType(node));
         }
 
         return new WhileLoop(mtCond, mtBody);
