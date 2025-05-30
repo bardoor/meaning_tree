@@ -6,7 +6,10 @@ import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.languages.configs.*;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
+import org.vstu.meaningtree.languages.configs.params.SkipErrors;
+import org.vstu.meaningtree.languages.configs.params.TranslationUnitMode;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.tokens.Token;
@@ -14,26 +17,21 @@ import org.vstu.meaningtree.utils.tokens.TokenGroup;
 import org.vstu.meaningtree.utils.tokens.TokenList;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class LanguageTranslator {
     protected LanguageParser _language;
     protected LanguageViewer _viewer;
-    private ArrayList<ConfigParameter> _declaredConfigParams = new ArrayList<>();
+    protected Config _config = new Config();
 
-    public static ConfigParameter[] getPredefinedCommonConfig() {
-        return new ConfigParameter[] {
-                // Если translationUnitMode установлен в true, то выводится сразу полный текст программы,
-                // а не её часть (например, только выражение)
-                new ConfigParameter("translationUnitMode", true, ConfigParameter.Scope.VIEWER),
-                // Вывод только одного выражения
-                new ConfigParameter("expressionMode", false, ConfigParameter.Scope.TRANSLATOR),
-                // Попытаться сгенерировать дерево, несмотря на ошибки
-                new ConfigParameter("skipErrors", false, ConfigParameter.Scope.PARSER)
-        };
+    public static Config getPredefinedCommonConfig() {
+        return new Config(
+                new ExpressionMode(false, ConfigScope.TRANSLATOR),
+                new TranslationUnitMode(true, ConfigScope.VIEWER),
+                new SkipErrors(false, ConfigScope.PARSER)
+        );
     }
 
     /**
@@ -46,21 +44,26 @@ public abstract class LanguageTranslator {
         _language = language;
         _viewer = viewer;
 
+        _config.merge(getPredefinedCommonConfig());
+        var configParser = new ConfigParser();
 
-        _declaredConfigParams.addAll(Arrays.asList(getPredefinedCommonConfig()));
         // Загрузка конфигов, специфических для конкретного языка
-        _declaredConfigParams.addAll(Arrays.asList(getDeclaredConfigParameters()));
-        for (String paramName : rawConfig.keySet()) {
-            ConfigParameter cfg = getConfigParameter(paramName);
-            if (cfg != null) {
-                cfg.inferValueFrom(rawConfig.get(paramName));
-            }
+        for (var entry : rawConfig.entrySet()) {
+            var param = configParser.parse(entry.getKey(), entry.getValue());
+            _config.putNew(param);
         }
 
-        _language.setConfig(_declaredConfigParams.stream().filter(
-                (ConfigParameter cfg) -> cfg.getScope() == ConfigParameter.Scope.PARSER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR).toList());
-        _viewer.setConfig(_declaredConfigParams.stream().filter(
-                (ConfigParameter cfg) -> cfg.getScope() == ConfigParameter.Scope.VIEWER || cfg.getScope() == ConfigParameter.Scope.TRANSLATOR).toList());
+        _language.setConfig(
+                _config.subset(
+                        cfg -> cfg.inAnyScope(ConfigScope.PARSER, ConfigScope.TRANSLATOR)
+                )
+        );
+
+        _viewer.setConfig(
+                _config.subset(
+                        cfg -> cfg.inAnyScope(ConfigScope.VIEWER, ConfigScope.TRANSLATOR)
+                )
+        );
     }
 
     public MeaningTree getMeaningTree(String code) {
@@ -166,22 +169,11 @@ public abstract class LanguageTranslator {
         return getTokenizer().tokenizeExtended(mt);
     }
 
-    public ConfigParameter getConfigParameter(String name) {
-        for (ConfigParameter param : _declaredConfigParams) {
-            if (param.getName().equals(name)) {
-                return param;
-            }
-        }
-        return null;
+    protected <P, T extends ConfigParameter<P>> Optional<P> getConfigParameter(Class<T> configClass) {
+        return Optional.ofNullable(_config).flatMap(config -> config.get(configClass));
     }
 
     public abstract String prepareCode(String code);
 
     public abstract TokenList prepareCode(TokenList list);
-
-    /**
-     * Внимательно следите за тем, чтобы название параметра не пересекалось с уже предопределенными
-     * @return специфические параметры конфигурации языка
-     */
-    protected abstract ConfigParameter[] getDeclaredConfigParameters();
 }
