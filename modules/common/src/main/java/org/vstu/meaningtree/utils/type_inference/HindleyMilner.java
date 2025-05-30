@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.languages.utils;
+package org.vstu.meaningtree.utils.type_inference;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.*;
@@ -28,6 +28,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class HindleyMilner {
@@ -56,7 +57,7 @@ public class HindleyMilner {
     @NotNull
     public static Type inference(
             @NotNull SimpleIdentifier identifier,
-            @NotNull Scope scope) {
+            @NotNull TypeScope scope) {
         Type inferredType = scope.getVariableType(identifier);
         if (inferredType == null) {
             return new UnknownType();
@@ -85,6 +86,21 @@ public class HindleyMilner {
     }
 
     @NotNull
+    public static Type chooseGeneralType(List<Type> types) {
+        if (types.isEmpty()) {
+            return new UnknownType();
+        }
+        else if (types.size() == 1) {
+            return types.getFirst();
+        }
+
+        return chooseGeneralType(
+                types.getFirst(),
+                chooseGeneralType(types.subList(0, types.size() - 1))
+        );
+    }
+
+    @NotNull
     private static List<Expression> expressionChildren(@NotNull Expression expression) {
         return expression
                 .getChildren()
@@ -96,7 +112,7 @@ public class HindleyMilner {
 
     public static void backwardVariableTypeSet(
             @NotNull Expression expression,
-            @NotNull Scope scope,
+            @NotNull TypeScope scope,
             @NotNull Type type) {
         List<Expression> children;
         if (expression instanceof SimpleIdentifier identifier) {
@@ -139,7 +155,7 @@ public class HindleyMilner {
     }
 
     @NotNull
-    public static Type inference(@NotNull BinaryExpression binaryExpression, @NotNull Scope scope) {
+    public static Type inference(@NotNull BinaryExpression binaryExpression, @NotNull TypeScope scope) {
         Expression left = binaryExpression.getLeft();
         Expression right = binaryExpression.getRight();
 
@@ -187,7 +203,7 @@ public class HindleyMilner {
     }
 
     @NotNull
-    public static Type inference(@NotNull UnaryExpression unaryExpression, @NotNull Scope scope) {
+    public static Type inference(@NotNull UnaryExpression unaryExpression, @NotNull TypeScope scope) {
         Expression argument = unaryExpression.getArgument();
         Type operandType = inference(argument, scope);
 
@@ -217,13 +233,13 @@ public class HindleyMilner {
     }
 
     @NotNull
-    public static Type inference(@NotNull AssignmentExpression assignmentExpression, @NotNull Scope scope) {
+    public static Type inference(@NotNull AssignmentExpression assignmentExpression, @NotNull TypeScope scope) {
         AddOp addOp = new AddOp(assignmentExpression.getLValue(), assignmentExpression.getRValue());
         return inference(addOp, scope);
     }
 
     @NotNull
-    public static Type inference(@NotNull TernaryOperator ternaryOperator, @NotNull Scope scope) {
+    public static Type inference(@NotNull TernaryOperator ternaryOperator, @NotNull TypeScope scope) {
         inference(ternaryOperator.getCondition(), scope);
         Type thenExprType = inference(ternaryOperator.getThenExpr(), scope);
         Type elseExprType = inference(ternaryOperator.getElseExpr(), scope);
@@ -231,7 +247,7 @@ public class HindleyMilner {
     }
 
     @NotNull
-    public static Type inference(@NotNull Range range, @NotNull Scope scope) {
+    public static Type inference(@NotNull Range range, @NotNull TypeScope scope) {
         var start = range.getStart();
         if (start != null) {
             inference(start, scope);
@@ -253,7 +269,7 @@ public class HindleyMilner {
     }
 
     @NotNull
-    public static Type inference(@NotNull Expression expression, @NotNull Scope scope) {
+    public static Type inference(@NotNull Expression expression, @NotNull TypeScope scope) {
         return switch (expression) {
             case Literal literal -> inference(literal);
             case SimpleIdentifier identifier -> inference(identifier, scope);
@@ -271,10 +287,10 @@ public class HindleyMilner {
 
     @NotNull
     public static Type inference(@NotNull Expression expression) {
-        return inference(expression, new Scope());
+        return inference(expression, new TypeScope());
     }
 
-    public static void inference(@NotNull AssignmentStatement assignmentStatement, @NotNull Scope scope) {
+    public static void inference(@NotNull AssignmentStatement assignmentStatement, @NotNull TypeScope scope) {
         AssignmentExpression assignmentExpression = new AssignmentExpression(
                 assignmentStatement.getLValue(),
                 assignmentStatement.getRValue(),
@@ -283,7 +299,7 @@ public class HindleyMilner {
         inference(assignmentExpression, scope);
     }
 
-    public static void inference(@NotNull CompoundStatement compoundStatement, @NotNull Scope scope) {
+    public static void inference(@NotNull CompoundStatement compoundStatement, @NotNull TypeScope scope) {
 
         for (var node : compoundStatement.getNodes()) {
 
@@ -296,7 +312,7 @@ public class HindleyMilner {
         }
     }
 
-    public static void inference(@NotNull IfStatement ifStatement, @NotNull Scope scope) {
+    public static void inference(@NotNull IfStatement ifStatement, @NotNull TypeScope scope) {
 
         for (var conditionBranch : ifStatement.getBranches()) {
             inference(conditionBranch, scope);
@@ -307,7 +323,7 @@ public class HindleyMilner {
         }
     }
 
-    public static Type inference(@NotNull CompoundComparison compoundComparison, @NotNull Scope scope) {
+    public static Type inference(@NotNull CompoundComparison compoundComparison, @NotNull TypeScope scope) {
 
         for (var binaryComparison : compoundComparison.getComparisons()) {
             inference(binaryComparison, scope);
@@ -316,7 +332,7 @@ public class HindleyMilner {
         return new BooleanType();
     }
 
-    public static void inference(@NotNull SwitchStatement switchStatement, @NotNull Scope scope) {
+    public static void inference(@NotNull SwitchStatement switchStatement, @NotNull TypeScope scope) {
         inference(switchStatement.getTargetExpression(), scope);
         for (var caseBranch : switchStatement.getCases()) {
             if (caseBranch != null) {
@@ -325,31 +341,36 @@ public class HindleyMilner {
         }
     }
 
-    public static void inference(@NotNull Statement statement, @NotNull Scope scope) {
+    public static void inference(@NotNull Statement statement, @NotNull TypeScope scope) {
         inference(List.of(statement), scope);
     }
 
-    public static void inference(@NotNull VariableDeclarator variableDeclarator, @NotNull Scope scope) {
+    public static void inference(@NotNull VariableDeclarator variableDeclarator, @NotNull TypeScope scope) {
         if (variableDeclarator.hasInitialization()) {
             inference(variableDeclarator.getRValue(), scope);
         }
         inference(variableDeclarator.getIdentifier(), scope);
     }
 
-    public static void inference(@NotNull VariableDeclaration variableDeclaration, @NotNull Scope scope) {
+    public static void inference(@NotNull VariableDeclaration variableDeclaration, @NotNull TypeScope scope) {
+        var types = new ArrayList<Type>();
+
         for (var variableDeclarator : variableDeclaration.getDeclarators()) {
             inference(variableDeclarator, scope);
+            types.add(scope.getVariableType(variableDeclarator.getIdentifier()));
         }
+
+        variableDeclaration.setType(chooseGeneralType(types));
     }
     
-    public static void inference(@NotNull Declaration declaration, @NotNull Scope scope) {
+    public static void inference(@NotNull Declaration declaration, @NotNull TypeScope scope) {
         switch (declaration) {
             case VariableDeclaration variableDeclaration -> inference(variableDeclaration, scope);
             default -> throw new IllegalStateException("Unexpected declaration type: " + declaration.getClass());
         }
     }
 
-    public static void inference(@NotNull List<Node> nodes, @NotNull Scope scope) {
+    public static void inference(@NotNull List<Node> nodes, @NotNull TypeScope scope) {
 
         for (var node : nodes) {
 

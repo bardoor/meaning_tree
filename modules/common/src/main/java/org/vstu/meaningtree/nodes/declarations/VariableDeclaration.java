@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class VariableDeclaration extends Declaration implements HasInitialization, Iterable<VariableDeclarator> {
-    protected final Type _type;
+    protected Type _type;
     protected final List<VariableDeclarator> variableDeclaratorList;
 
     public VariableDeclaration(Type type, SimpleIdentifier name) {
@@ -35,6 +35,10 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
     public VariableDeclaration(Type type, List<VariableDeclarator> variableDeclarators) {
         variableDeclaratorList = List.copyOf(variableDeclarators);
         _type = type;
+    }
+
+    public void setType(Type newType) {
+        _type = newType;
     }
 
     public Type getType() {

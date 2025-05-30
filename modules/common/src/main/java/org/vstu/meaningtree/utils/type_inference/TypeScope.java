@@ -1,4 +1,4 @@
-package org.vstu.meaningtree.languages.utils;
+package org.vstu.meaningtree.utils.type_inference;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,23 +9,23 @@ import org.vstu.meaningtree.nodes.types.UnknownType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Scope {
-    private final Scope _parentScope;
+public class TypeScope {
+    private final TypeScope _parentScope;
     private final Map<SimpleIdentifier, Type> _variables;
     private final Map<SimpleIdentifier, Type> _methods;
 
-    public Scope(@Nullable Scope parentScope) {
+    public TypeScope(@Nullable TypeScope parentScope) {
         _parentScope = parentScope;
         _variables = new HashMap<>();
         _methods = new HashMap<>();
     }
 
-    public Scope() {
+    public TypeScope() {
         this(null);
     }
 
     @Nullable
-    public Scope getParentScope() {
+    public TypeScope getParentScope() {
         return _parentScope;
     }
 

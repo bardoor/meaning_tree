@@ -4,8 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
-import org.vstu.meaningtree.languages.utils.HindleyMilner;
-import org.vstu.meaningtree.languages.utils.Scope;
+import org.vstu.meaningtree.utils.type_inference.*;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.*;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
@@ -78,17 +77,17 @@ public class JavaViewer extends LanguageViewer {
     private final boolean _bracketsAroundCaseBranches;
     private final boolean _autoVariableDeclaration;
 
-    private Scope _currentScope;
-    private Scope _typeScope;
+    private TypeScope _currentScope;
+    private TypeScope _typeScope;
 
     private void enterNewScope() {
-        _currentScope = new Scope(_currentScope);
-        _typeScope = new Scope(_typeScope);
+        _currentScope = new TypeScope(_currentScope);
+        _typeScope = new TypeScope(_typeScope);
     }
 
     private void leaveScope() {
-        Scope parentScope = _currentScope.getParentScope();
-        Scope parentTypeScope = _typeScope.getParentScope();
+        TypeScope parentScope = _currentScope.getParentScope();
+        TypeScope parentTypeScope = _typeScope.getParentScope();
         if (parentScope == null) {
             throw new MeaningTreeException("No parent scope found");
         }
@@ -113,8 +112,8 @@ public class JavaViewer extends LanguageViewer {
         _indentLevel = 0;
         _openBracketOnSameLine = openBracketOnSameLine;
         _bracketsAroundCaseBranches = bracketsAroundCaseBranches;
-        _currentScope = new Scope();
-        _typeScope = new Scope();
+        _currentScope = new TypeScope();
+        _typeScope = new TypeScope();
         _autoVariableDeclaration = autoVariableDeclaration;
     }
 

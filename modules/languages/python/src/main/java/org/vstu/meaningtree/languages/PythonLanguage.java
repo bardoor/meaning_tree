@@ -63,6 +63,8 @@ import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
+import org.vstu.meaningtree.utils.type_inference.HindleyMilner;
+import org.vstu.meaningtree.utils.type_inference.TypeScope;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
@@ -73,6 +75,9 @@ import java.util.stream.Stream;
 
 public class PythonLanguage extends LanguageParser {
     private SymbolEnvironment currentContext;
+
+    private String _currentFunctionName = null;
+    private TypeScope _currentTypeScope = new TypeScope();
 
     @Override
     public TSTree getTSTree() {
@@ -616,6 +621,9 @@ public class PythonLanguage extends LanguageParser {
         // detect if __name__ == __main__ construction
         currentContext = new SymbolEnvironment(currentContext);
         CompoundStatement compound = fromCompoundTSNode(node, currentContext);
+
+        HindleyMilner.inference(List.of(compound.getNodes()), _currentTypeScope);
+
         Node entryPointNode = null;
         IfStatement entryPointIf = null;
         for (Node programNode : compound) {
@@ -648,6 +656,7 @@ public class PythonLanguage extends LanguageParser {
             }
             return nodes.getFirst();
         }
+
         return new ProgramEntryPoint(currentContext, nodes, entryPointNode);
     }
 
@@ -741,6 +750,23 @@ public class PythonLanguage extends LanguageParser {
     private Node fromAssignmentExpressionTSNode(TSNode node) {
         Expression left = (Expression) fromTSNode(node.getChildByFieldName("name"));
         Expression right = (Expression) fromTSNode(node.getChildByFieldName("value"));
+
+        if (left instanceof SimpleIdentifier variableName && right != null) {
+            var leftType = _currentTypeScope.getVariableType(variableName);
+            var rightType = HindleyMilner.inference(right, _currentTypeScope);
+
+            if (leftType == null) {
+                _currentTypeScope.changeVariableType(variableName, rightType);
+                return new VariableDeclaration(rightType, variableName, right);
+            }
+            else {
+                _currentTypeScope.changeVariableType(
+                        variableName,
+                        HindleyMilner.chooseGeneralType(leftType, rightType)
+                );
+            }
+        }
+
         return new AssignmentExpression(left, right);
     }
 
@@ -825,16 +851,32 @@ public class PythonLanguage extends LanguageParser {
             right = (Expression)rightRaw;
         }
 
-        if (!node.getChildByFieldName("type").isNull() && left instanceof SimpleIdentifier ident) {
-            Type type = determineType(node.getChildByFieldName("type"));
-            if (right instanceof PlainCollectionLiteral pl) {
-                if (type instanceof PlainCollectionType arrayType) {
-                    pl.setTypeHint(arrayType.getItemType());
-                } else {
-                    pl.setTypeHint(type);
-                }
+        //if (!node.getChildByFieldName("type").isNull() && left instanceof SimpleIdentifier ident) {
+        //    Type type = determineType(node.getChildByFieldName("type"));
+        //    if (right instanceof PlainCollectionLiteral pl) {
+        //        if (type instanceof PlainCollectionType arrayType) {
+        //            pl.setTypeHint(arrayType.getItemType());
+        //        } else {
+        //            pl.setTypeHint(type);
+        //        }
+        //    }
+        //    return new VariableDeclaration(type, ident, right);
+        //}
+
+        if (left instanceof SimpleIdentifier variableName && right != null) {
+            var leftType = _currentTypeScope.getVariableType(variableName);
+            var rightType = HindleyMilner.inference(right, _currentTypeScope);
+
+            if (leftType == null) {
+                _currentTypeScope.changeVariableType(variableName, rightType);
+                return new VariableDeclaration(rightType, variableName, right);
             }
-            return new VariableDeclaration(type, ident, right);
+            else {
+                _currentTypeScope.changeVariableType(
+                        variableName,
+                        HindleyMilner.chooseGeneralType(leftType, rightType)
+                );
+            }
         }
 
         return new AssignmentStatement(left, right, augOp);

@@ -3,7 +3,7 @@ package org.vstu.meaningtree;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import org.vstu.meaningtree.languages.LanguageTranslator;
+import org.vstu.meaningtree.languages.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
@@ -48,23 +48,16 @@ public class Main {
     public static Map<String, Class<? extends LanguageTranslator>> translators = SupportedLanguage.getStringMap();
 
     public static void main(String[] args) throws Exception {
-        TranslateCommand translateCommand = new TranslateCommand();
-        ListLangsCommand listLangsCommand = new ListLangsCommand();
+        var p1 = new PythonLanguage();
+        var mt = p1.getMeaningTree("a = 10\na = a + 0.5");
 
-        JCommander jc = JCommander.newBuilder()
-                .addCommand("translate", translateCommand)
-                .addCommand("list-langs", listLangsCommand)
-                .build();
+        var v1 = new CppViewer();
+        var code = v1.toString(mt);
+        System.out.println(code);
 
-        jc.parse(args);
-
-        if ("list-langs".equals(jc.getParsedCommand())) {
-            listSupportedLanguages();
-        } else if ("translate".equals(jc.getParsedCommand())) {
-            runTranslation(translateCommand);
-        } else {
-            jc.usage();
-        }
+        var v2 = new JavaViewer();
+        var code2 = v2.toString(mt);
+        System.out.println(code2);
     }
 
     private static void listSupportedLanguages() {
