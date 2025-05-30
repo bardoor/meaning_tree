@@ -1,6 +1,5 @@
 package org.vstu.meaningtree.languages;
 
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.utils.tokens.TokenList;
 
 import java.util.HashMap;
@@ -28,13 +27,5 @@ public class PythonTranslator extends LanguageTranslator {
     @Override
     public TokenList prepareCode(TokenList list) {
         return list;
-    }
-
-    @Override
-    protected ConfigParameter[] getDeclaredConfigParameters() {
-        return new ConfigParameter[] {
-                // Отключает распознавание составных сравнений и их преобразование из нескольких соединенных "И"
-                new ConfigParameter("disableCompoundComparisonConversion", false, ConfigParameter.Scope.TRANSLATOR)
-        };
     }
 }

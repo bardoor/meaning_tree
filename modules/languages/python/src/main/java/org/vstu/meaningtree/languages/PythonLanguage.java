@@ -4,6 +4,8 @@ import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
+import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.nodes.*;
@@ -96,7 +98,7 @@ public class PythonLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
+        if (!errors.isEmpty() && !getConfigParameter(SkipErrors.class).orElse(false)) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
@@ -629,15 +631,18 @@ public class PythonLanguage extends LanguageParser {
         }
         List<Node> nodes = new ArrayList<>(List.of(compound.getNodes()));
         nodes.remove(entryPointIf);
+
+        boolean expressionMode = getConfigParameter(ExpressionMode.class).orElse(false);
+
         if (
-                (nodes.size() > 1 && getConfigParameter("expressionMode").getBooleanValue())
+                (nodes.size() > 1 && expressionMode)
                 || (!nodes.isEmpty() && !(nodes.getFirst() instanceof ExpressionStatement) &&
                         !(nodes.getFirst() instanceof  AssignmentStatement) &&
-                        !(nodes.getFirst() instanceof Expression) && getConfigParameter("expressionMode").getBooleanValue())
+                        !(nodes.getFirst() instanceof Expression) && expressionMode)
         ) {
             throw new UnsupportedParsingException("Cannot parse the code as expression in expression mode");
         }
-        if (getConfigParameter("expressionMode").getBooleanValue() && !nodes.isEmpty()) {
+        if (expressionMode && !nodes.isEmpty()) {
             if (nodes.getFirst() instanceof ExpressionStatement exprStmt) {
                 return exprStmt.getExpression();
             }
