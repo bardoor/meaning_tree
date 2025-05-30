@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.languages;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.utils.HindleyMilner;
@@ -153,7 +154,7 @@ public class JavaViewer extends LanguageViewer {
             case PointerType ptr -> toString(ptr.getTargetType());
             case MemoryAllocationCall memoryAllocationCall -> toString(memoryAllocationCall.toNew());
             case MemoryFreeCall freeCall -> toString(freeCall.toDelete());
-            case Type type -> toString(type, true);
+            case Type type -> toString(type, false);
             case SelfReference selfReference -> toString(selfReference);
             case UnaryMinusOp unaryMinusOp -> toString(unaryMinusOp);
             case UnaryPlusOp unaryPlusOp -> toString(unaryPlusOp);
@@ -282,12 +283,32 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(InputCommand inputCommand) {
-        return toString(
-                new FormatInput(
-                        StringLiteral.fromEscaped("", StringLiteral.Type.NONE),
-                        inputCommand.getArguments()
-                )
-        );
+        var builder = new StringBuilder();
+
+        builder.append("new Scanner(System.in).");
+        if (inputCommand.getArguments().size() > 1) {
+            throw new IllegalStateException("Multiple input values are not supported in Java");
+        }
+
+        for (Expression stringPart : inputCommand.getArguments()) {
+            Type exprType = HindleyMilner.inference(stringPart, _typeScope);
+            switch (exprType) {
+                case StringType stringType -> {
+                    builder.append("next()");
+                }
+                case IntType integerType -> {
+                    builder.append("nextInt()");
+                }
+                case FloatType floatType -> {
+                    builder.append("nextDouble()");
+                }
+                default -> {
+                    throw new IllegalStateException("Unsupported type in format input in Java: " + exprType);
+                }
+            }
+        }
+
+        return builder.toString();
     }
 
     private String toString(FormatInput formatInput) {
@@ -1906,24 +1927,85 @@ public class JavaViewer extends LanguageViewer {
         builder.append("public class Main {\n\n");
         increaseIndentLevel();
 
-        builder.append(
-                indent("public static void main(String[] args) {\n")
-        );
-        increaseIndentLevel();
+        var mainMethod = getMainMethod(nodes);
+        var otherMethods = getOtherMethods(nodes);
+        var notMethods = getNotMethods(nodes);
 
-        for (Node node : nodes) {
-            builder.append(
-                    indent("%s\n".formatted(toString(node)))
-            );
+        if (mainMethod != null) {
+            // Добавляем все не-методы в body main
+            var mainBody = mainMethod.getBody();
+            for (Node node : notMethods) {
+                mainBody.insert(mainBody.getLength(), node);
+            }
+
+            // Вставляем mainMethod (с уже добавленными не-методами)
+            // Вставляем фиксированный main
+            builder.append(indent("public static void main(String[] args) {\n"));
+            increaseIndentLevel();
+
+            for (var node : mainBody.getNodes()) {
+                builder.append(indent(toString(node))).append("\n");
+            }
+
+            decreaseIndentLevel();
+            builder.append(indent("}\n"));
         }
-        decreaseIndentLevel();
 
-        builder.append(indent("}\n"));
-        decreaseIndentLevel();
+        // Вставляем все другие методы
+        for (MethodDefinition method : otherMethods) {
+            builder.append(toString(method));
+            builder.append("\n");
+        }
 
-        builder.append("}");
+        decreaseIndentLevel();
+        builder.append("}\n");
 
         return builder.toString();
+    }
+
+    @Nullable
+    private MethodDefinition getMainMethod(List<Node> nodes) {
+        for (var node : nodes) {
+            if (node instanceof FunctionDefinition functionDefinition
+                    && functionDefinition.getName().toString().equals("main")) {
+                return functionDefinition.makeMethod(
+                        null,
+                        List.of(DeclarationModifier.PUBLIC, DeclarationModifier.STATIC)
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private List<MethodDefinition> getOtherMethods(List<Node> nodes) {
+        var methods = new ArrayList<MethodDefinition>();
+
+        for (var node : nodes) {
+            if (node instanceof FunctionDefinition functionDefinition
+                    && !functionDefinition.getName().toString().equals("main")) {
+                methods.add(
+                        functionDefinition.makeMethod(
+                                null,
+                                List.of(DeclarationModifier.PUBLIC)
+                        )
+                );
+            }
+        }
+
+        return methods;
+    }
+
+    private List<Node> getNotMethods(List<Node> nodes) {
+        var notMethods = new ArrayList<Node>();
+
+        for (var node : nodes) {
+            if (!(node instanceof FunctionDefinition functionDefinition)) {
+                notMethods.add(node);
+            }
+        }
+
+        return notMethods;
     }
 
     public String toString(ProgramEntryPoint entryPoint) {
@@ -1937,11 +2019,9 @@ public class JavaViewer extends LanguageViewer {
             */
         }
 
-        //if (!entryPoint.hasMainClass()
-        //        //&& getConfigParameter("translationUnitMode").getBooleanValue()
-        //) {
-        //    return makeSimpleJavaProgram(nodes);
-        //}
+        if (!entryPoint.hasMainClass()) {
+            return makeSimpleJavaProgram(nodes);
+        }
 
         StringBuilder builder = new StringBuilder();
         for (Node node : nodes) {

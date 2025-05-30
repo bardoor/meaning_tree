@@ -142,6 +142,7 @@ public class CppViewer extends LanguageViewer {
             case MemoryAllocationCall mAlloc -> toStringMemoryAllocation(mAlloc);
             case MemoryFreeCall mFree -> toStringMemoryFree(mFree);
             case PrintCommand formatInput -> toStringPrint(formatInput);
+            case InputCommand inputCommand -> toStringInput(inputCommand);
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
             case AssignmentExpression assignmentExpression -> toStringAssignmentExpression(assignmentExpression);
@@ -179,6 +180,19 @@ public class CppViewer extends LanguageViewer {
             case FunctionDefinition functionDefinition -> toString(functionDefinition);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод оператора ввода (cin) */
+    private String toStringInput(InputCommand inputCommand) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("std::cin");
+        for (var expr : inputCommand.getArguments()) {
+            builder.append(" << ").append(toString(expr));
+        }
+
+        return builder.toString();
     }
 
     /*******************************************************************/
@@ -852,8 +866,7 @@ public class CppViewer extends LanguageViewer {
         }
         String res = String.format("std::cout << %s", print.getArguments().stream().map(this::toString).collect(Collectors.joining(" << ")));
         if (print instanceof PrintValues pVal) {
-            assert pVal.separator != null;
-            res += pVal.separator.getUnescapedValue().equals("\n") ? "<< std::endl" : "";
+            res += pVal.addsNewLine() ? " << std::endl" : "";
         }
         return res;
     }

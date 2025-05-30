@@ -112,10 +112,18 @@ public class CppLanguage extends LanguageParser {
                 throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
             }
         }
+
         Node node = fromTSNode(rootNode);
         if (node instanceof AssignmentExpression expr) {
             node = expr.toStatement();
         }
+
+        // Оборачиваем функцию main в узел ProgramEntryPoint
+        if (node instanceof FunctionDefinition functionDefinition
+                && functionDefinition.getName().toString().equals("main")) {
+            node = new ProgramEntryPoint(null, List.of(), node);
+        }
+
         return new MeaningTree(node);
     }
 
@@ -1068,7 +1076,17 @@ public class CppLanguage extends LanguageParser {
                 }
                 yield lshift;
             }
-            case ">>" -> new RightShiftOp(left, right);
+            case ">>" -> {
+                var rshift = new RightShiftOp(left, right);
+                if (binaryRecursiveFlag == -1) {
+                    Expression fName = rshift.getLeftmost();
+                    List<Expression> exprs = rshift.getRecursivePlainOperands();
+                    if (sanitizeFromStd(fName).equalsIdentifier("cin")) {
+                        yield new InputCommand(exprs.subList(1, exprs.size()));
+                    }
+                }
+                yield rshift;
+            }
             case "<=>" -> new ThreeWayComparisonOp(left, right);
             default -> throw new UnsupportedOperationException(String.format("Can't parse operator %s", getCodePiece(operator)));
         };

@@ -107,10 +107,12 @@ public class JavaLanguage extends LanguageParser {
         if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
+
         Node node = fromTSNode(rootNode);
         if (node instanceof AssignmentExpression expr) {
             node = expr.toStatement();
         }
+
         return new MeaningTree(node);
     }
 
