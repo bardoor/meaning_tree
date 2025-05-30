@@ -1,168 +1,46 @@
 package org.vstu.meaningtree.languages.configs;
 
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import java.util.Arrays;
 
-import java.util.List;
+public abstract class ConfigParameter<T> {
+    protected String _name;
+    protected T _value;
+    protected ConfigScope _scope;
 
-public class ConfigParameter {
-    public enum Scope {
-        VIEWER, // only applicable to viewer
-        PARSER, // only applicable to parser
-        TRANSLATOR // applicable both parser and viewer
+    protected ConfigParameter(String name, T value, ConfigScope scope) {
+        this(value, scope);
+        _name = name;
     }
 
-    private String name;
-    private Scope scope;
-    private Object value;
-    private Class<?> type;
-
-    private static boolean isInAllowedTypes(Object value) {
-        return List.of(Number.class,
-                String.class, Boolean.class,
-                Character.class).contains(value.getClass());
+    public ConfigParameter(T value) {
+        this(value, ConfigScope.ANY);
     }
 
-    private ConfigParameter(String name, Object value, Scope scope) {
-        if (!isInAllowedTypes(value)) {
-            throw new MeaningTreeException("Unsupported for config value type");
-        }
-        this.name = name;
-        this.scope = scope;
-        this.value = value;
-        this.type = value.getClass();
+    public ConfigParameter(T value, ConfigScope scope) {
+        _value = value;
+        _scope = scope;
     }
 
-    public ConfigParameter(String name, int value, Scope scope) {
-        this(name, (long) value, scope);
+    public String getName() { return _name; }
+    public T getValue() { return _value; }
+
+    public boolean inScope(ConfigScope scope) {
+        return _scope == ConfigScope.ANY || _scope == scope;
     }
 
-    public ConfigParameter(String name, float value, Scope scope) {
-        this(name, (double) value, scope);
+    public boolean inAnyScope(ConfigScope ...scopes) {
+        return Arrays.stream(scopes).anyMatch(this::inScope);
     }
 
-    public ConfigParameter(String name, double value, Scope scope) {
-        this(name, (Double) value, scope);
+    @Override
+    public int hashCode() {
+        return _name.hashCode();
     }
 
-    public ConfigParameter(String name, String value, Scope scope) {
-        this(name, (Object) value, scope);
-    }
-
-    public ConfigParameter(String name, byte value, Scope scope) {
-        this(name, (Byte) value, scope);
-    }
-
-    public ConfigParameter(String name, long value, Scope scope) {
-        this(name, (Long) value, scope);
-    }
-
-    public ConfigParameter(String name, boolean value, Scope scope) {
-        this(name, (Boolean) value, scope);
-    }
-
-    public ConfigParameter(String name, char value, Scope scope) {
-        this(name, (Character) value, scope);
-    }
-
-    public Class<?> getType() {
-        return type;
-    }
-
-    public long getNumber() {
-        return (Long) value;
-    }
-
-    public String getStringValue() {
-        return (String) value;
-    }
-
-    public double getDoubleValue() {
-        return (Double) value;
-    }
-
-    public char getCharacterValue() {
-        return (Character) value;
-    }
-
-    public boolean getBooleanValue() {
-        return (Boolean) value;
-    }
-
-    public Object getRawValue() {
-        return value;
-    }
-
-    public void setValue(Object newValue) {
-        if (!newValue.getClass().equals(type)) {
-            throw new MeaningTreeException("Invalid config value type. You cannot redefine type of value");
-        }
-        this.value = newValue;
-    }
-
-    public void setValue(int newValue) {
-        setValue((long) newValue);
-    }
-
-    public void setValue(byte newValue) {
-        setValue((Byte) newValue);
-    }
-
-    public void setValue(long newValue) {
-        setValue((Long) newValue);
-    }
-
-    public void setValue(String newValue) {
-        setValue((Object) newValue);
-    }
-
-    public void setValue(boolean newValue) {
-        setValue((Boolean) newValue);
-    }
-
-    public void setValue(char newValue) {
-        setValue((Character) newValue);
-    }
-
-    public void setValue(double newValue) {
-        setValue((Double) newValue);
-    }
-
-    public void setValue(float newValue) {
-        setValue((double) newValue);
-    }
-
-    public Scope getScope() {
-        return scope;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void inferValueFrom(String value) {
-        if (value.equals("true") || value.equals("false")) {
-            boolean typed = false;
-            if (value.equals("true")) {
-                typed = true;
-            }
-            setValue(typed);
-            return;
-        }
-
-        try {
-            setValue(Long.parseLong(value));
-            return;
-        } catch (NumberFormatException e) {}
-
-        try {
-            setValue(Double.parseDouble(value));
-            return;
-        } catch (NumberFormatException e) {}
-
-        if (value.length() == 1) {
-            setValue(value.charAt(0));
-        } else {
-            setValue(value);
-        }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) { return true; }
+        if (!(obj instanceof ConfigParameter<?> other)) { return false; }
+        return _name.equals(other._name);
     }
 }
