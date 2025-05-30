@@ -1949,6 +1949,17 @@ public class JavaViewer extends LanguageViewer {
             decreaseIndentLevel();
             builder.append(indent("}\n"));
         }
+        else {
+            builder.append(indent("public static void main(String[] args) {\n"));
+            increaseIndentLevel();
+
+            for (var node : notMethods) {
+                builder.append(indent(toString(node))).append("\n");
+            }
+
+            decreaseIndentLevel();
+            builder.append(indent("}\n"));
+        }
 
         // Вставляем все другие методы
         for (MethodDefinition method : otherMethods) {
@@ -2009,14 +2020,6 @@ public class JavaViewer extends LanguageViewer {
 
     public String toString(ProgramEntryPoint entryPoint) {
         List<Node> nodes = entryPoint.getBody();
-        for (var node : nodes) {
-            /*
-            TODO: temporarily disabled
-            if (node instanceof Statement statement) {
-                HindleyMilner.inference(statement, _typeScope);
-            }
-            */
-        }
 
         if (!entryPoint.hasMainClass()) {
             return makeSimpleJavaProgram(nodes);

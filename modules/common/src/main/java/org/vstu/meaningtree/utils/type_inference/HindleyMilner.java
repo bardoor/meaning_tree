@@ -357,7 +357,15 @@ public class HindleyMilner {
 
         for (var variableDeclarator : variableDeclaration.getDeclarators()) {
             inference(variableDeclarator, scope);
-            types.add(scope.getVariableType(variableDeclarator.getIdentifier()));
+
+            var varType = scope.getVariableType(variableDeclarator.getIdentifier());
+            if (varType != null) {
+                types.add(varType);
+            }
+            else if (variableDeclarator.hasInitialization()) {
+                varType = inference(variableDeclarator.getRValue(), scope);
+                types.add(varType);
+            }
         }
 
         variableDeclaration.setType(chooseGeneralType(types));

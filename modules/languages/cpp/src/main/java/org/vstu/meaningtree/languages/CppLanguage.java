@@ -74,6 +74,7 @@ import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
+import org.vstu.meaningtree.utils.type_inference.HindleyMilner;
 
 import java.util.*;
 
