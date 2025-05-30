@@ -9,7 +9,7 @@ public class Main {
 
     public static void main(String[] args) {
         var language = new JavaLanguage();
-        language.setConfig(List.of(LanguageTranslator.getPredefinedCommonConfig()));
+        language.setConfig(LanguageTranslator.getPredefinedCommonConfig());
         var viewer = new JavaViewer();
 
         var code = "while (a < b) { variable++; }";
