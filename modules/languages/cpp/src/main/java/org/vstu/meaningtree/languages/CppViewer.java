@@ -189,7 +189,7 @@ public class CppViewer extends LanguageViewer {
 
         builder.append("std::cin");
         for (var expr : inputCommand.getArguments()) {
-            builder.append(" << ").append(toString(expr));
+            builder.append(" >> ").append(toString(expr));
         }
 
         return builder.toString();
