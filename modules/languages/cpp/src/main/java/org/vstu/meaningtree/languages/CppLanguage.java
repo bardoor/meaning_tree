@@ -125,7 +125,7 @@ public class CppLanguage extends LanguageParser {
         // Оборачиваем функцию main в узел ProgramEntryPoint
         if (node instanceof FunctionDefinition functionDefinition
                 && functionDefinition.getName().toString().equals("main")) {
-            node = new ProgramEntryPoint(null, List.of(), node);
+            node = new ProgramEntryPoint(null, List.of(functionDefinition.getBody().getNodes()), node);
         }
 
         return new MeaningTree(node);
