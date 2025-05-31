@@ -1,6 +1,5 @@
 package org.vstu.meaningtree.languages;
 
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.utils.tokens.TokenList;
 
 import java.util.HashMap;
@@ -32,10 +31,5 @@ public class JsonTranslator extends LanguageTranslator {
     @Override
     public TokenList prepareCode(TokenList list) {
         return null;
-    }
-
-    @Override
-    protected ConfigParameter[] getDeclaredConfigParameters() {
-        return new ConfigParameter[0];
     }
 }

@@ -7,6 +7,8 @@ import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
+import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
@@ -107,10 +109,9 @@ public class CppLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty()) {
-            var configParam =  getConfigParameter("skipErrors");
-            if (configParam != null && !configParam.getBooleanValue()) {
-                throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
-            }
+            getConfigParameter(SkipErrors.class)
+                    .filter(Boolean::booleanValue)
+                    .orElseThrow(() -> new MeaningTreeException(String.format("Given code has syntax errors: %s", errors)));
         }
 
         Node node = fromTSNode(rootNode);
@@ -136,22 +137,30 @@ public class CppLanguage extends LanguageParser {
     @Override
     public TSNode getRootNode() {
         TSNode result = super.getRootNode();
-        var configParam = getConfigParameter("expressionMode");
-        if (configParam != null && configParam.getBooleanValue()) {
-            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
+
+        boolean expressionMode = _config.get(ExpressionMode.class).orElse(false);
+
+        if (expressionMode) {
+            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа
             TSNode func = result.getNamedChild(0);
             assert func.getType().equals("function_definition");
-            assert (getCodePiece(func.getChildByFieldName("declarator")
-                    .getChildByFieldName("declarator"))
-                    .equals("main"));
+            assert getCodePiece(
+                    func.getChildByFieldName("declarator")
+                            .getChildByFieldName("declarator")
+            ).equals("main");
+
             TSNode body = func.getChildByFieldName("body");
+
             if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
                 throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
             }
+
             if (body.getNamedChildCount() < 1) {
                 throw new UnsupportedParsingException("Main expression was not found in expression mode");
             }
+
             result = body.getNamedChild(0);
+
             if (result.getType().equals("expression_statement")) {
                 result = result.getNamedChild(0);
             }
@@ -357,10 +366,19 @@ public class CppLanguage extends LanguageParser {
         Statement mtBody = (Statement) fromTSNode(tsBody);
 
         if (mtCond instanceof BoolLiteral boolLiteral && boolLiteral.getValue()) {
-            return new InfiniteLoop(mtBody, LoopType.WHILE);
+            return new InfiniteLoop(mtBody, getLoopType(node));
         }
 
         return new WhileLoop(mtCond, mtBody);
+    }
+
+    private LoopType getLoopType(TSNode node) {
+        return switch (node.getType()) {
+            case "enhanced_for_statement", "for_statement" -> LoopType.FOR;
+            case "while_statement" -> LoopType.WHILE;
+            case "do_statement" -> LoopType.DO_WHILE;
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+        };
     }
 
     private Loop fromForStatement(TSNode node) {
@@ -410,7 +428,7 @@ public class CppLanguage extends LanguageParser {
         Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
 
         if (init == null && condition == null && update == null) {
-            return new InfiniteLoop(body, LoopType.FOR);
+            return new InfiniteLoop(body, getLoopType(node));
         }
 
         RangeForLoop rangeFor = tryMakeRangeForLoop(init, condition, update, body);
@@ -1271,7 +1289,7 @@ public class CppLanguage extends LanguageParser {
                 }
                 left = new IndexExpression(leftmost, BinaryExpression.
                         fromManyOperands(args.reversed().toArray(new Expression[0]), 0, AddOp.class), true);
-            } else if (getConfigParameter("expressionMode").getBooleanValue()) {
+            } else if (getConfigParameter(ExpressionMode.class).orElse(false)) {
                 return right;
             }
         }

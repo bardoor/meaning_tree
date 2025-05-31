@@ -2,6 +2,8 @@ package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
+import org.vstu.meaningtree.languages.configs.params.DisableCompoundComparisonConversion;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
@@ -534,7 +536,7 @@ public class PythonViewer extends LanguageViewer {
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
         if (!(expr.getLValue() instanceof SimpleIdentifier) || (expr.getRValue() instanceof AssignmentExpression)) {
-            if (getConfigParameter("expressionMode").getBooleanValue()) {
+            if (getConfigParameter(ExpressionMode.class).orElse(false)) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
             } else {
                 throw new UnsupportedViewingException("Assignment expressions in Python supports only simple identifiers");
@@ -797,7 +799,7 @@ public class PythonViewer extends LanguageViewer {
         if (node instanceof ShortCircuitAndOp) {
             Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
             if (result instanceof CompoundComparison
-                    && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+                    && !getConfigParameter(DisableCompoundComparisonConversion.class).orElse(false)) {
                 return compoundComparisonToString((CompoundComparison) result);
             } else {
                 return preferExplicitAndOpToString(result);
@@ -814,7 +816,7 @@ public class PythonViewer extends LanguageViewer {
     private String preferExplicitAndOpToString(Node node) {
         if (node instanceof ShortCircuitAndOp op) {
             return String.format("%s and %s", preferExplicitAndOpToString(op.getLeft()), preferExplicitAndOpToString(op.getRight()));
-        } else if (node instanceof CompoundComparison op && getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+        } else if (node instanceof CompoundComparison op && getConfigParameter(DisableCompoundComparisonConversion.class).orElse(false)) {
            return preferExplicitAndOpToString(BinaryExpression.fromManyOperands
                    (op.getComparisons().toArray(new BinaryComparison[0]), 0, ShortCircuitAndOp.class));
         } else {
@@ -888,6 +890,9 @@ public class PythonViewer extends LanguageViewer {
     private String unaryToString(UnaryExpression node) {
         String pattern = "";
         Expression expr = node.getArgument();
+
+        boolean expressionMode = getConfigParameter(ExpressionMode.class).orElse(false);
+
         if (node instanceof UnaryPlusOp) {
             pattern = "+%s";
         } else if (node instanceof UnaryMinusOp) {
@@ -900,7 +905,7 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof InversionOp) {
             pattern = "~%s";
         } else if (node instanceof PostfixDecrementOp || node instanceof PrefixDecrementOp) {
-            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            boolean exprRepr = origin == null && expressionMode;
             Node parent = origin == null ? null : origin.findParentOfNode(node);
             if (exprRepr || parent instanceof Expression) {
                 return String.format("%s := %s + 1", toString(expr), toString(expr));
@@ -908,7 +913,7 @@ public class PythonViewer extends LanguageViewer {
                 pattern = "%s -= 1";
             }
         } else if (node instanceof PostfixIncrementOp || node instanceof PrefixIncrementOp) {
-            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            boolean exprRepr = origin == null && expressionMode;
             Node parent = origin == null ? null : origin.findParentOfNode(node);
             if (exprRepr || parent instanceof Expression) {
                 return String.format("%s := %s + 1", toString(expr), toString(expr));

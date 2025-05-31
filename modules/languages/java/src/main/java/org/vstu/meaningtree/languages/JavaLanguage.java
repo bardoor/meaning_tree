@@ -7,6 +7,8 @@ import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
+import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
@@ -104,7 +106,7 @@ public class JavaLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
+        if (!errors.isEmpty() && !getConfigParameter(SkipErrors.class).orElse(false)) {
             throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
         }
 
@@ -120,23 +122,31 @@ public class JavaLanguage extends LanguageParser {
     public TSNode getRootNode() {
         TSNode result = super.getRootNode();
 
-        var configParam = getConfigParameter("expressionMode");
-        if (configParam != null && configParam.getBooleanValue()) {
-            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
+        Optional<Boolean> maybeExpressionMode = _config.get(ExpressionMode.class);
+
+        if (maybeExpressionMode.orElse(false)) {
+            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа
             TSNode cls = result.getNamedChild(0);
             assert cls.getType().equals("class_declaration");
+
             TSNode clsbody = cls.getChildByFieldName("body");
             assert cls.getNamedChildCount() > 0;
+
             TSNode func = clsbody.getNamedChild(0);
             assert getCodePiece(func.getChildByFieldName("name")).equals("main");
+
             TSNode body = func.getChildByFieldName("body");
+
             if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
                 throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
             }
+
             if (body.getNamedChildCount() < 1) {
                 throw new UnsupportedParsingException("Main expression was not found in expression mode");
             }
+
             result = body.getNamedChild(0);
+
             if (result.getType().equals("expression_statement")) {
                 result = result.getNamedChild(0);
             }

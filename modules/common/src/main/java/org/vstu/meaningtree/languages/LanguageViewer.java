@@ -1,13 +1,14 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.MeaningTree;
+import org.vstu.meaningtree.languages.configs.Config;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
 
-import java.util.List;
+import java.util.Optional;
 
 abstract public class LanguageViewer {
-    private List<ConfigParameter> _cfg;
+    private Config _config;
     protected MeaningTree origin;
 
     public abstract String toString(Node node);
@@ -17,16 +18,11 @@ abstract public class LanguageViewer {
         return toString(mt.getRootNode());
     }
 
-    void setConfig(List<ConfigParameter> params) {
-        _cfg = params;
+    void setConfig(Config config) {
+        _config = config;
     }
 
-    protected ConfigParameter getConfigParameter(String paramName) {
-        for (ConfigParameter param : _cfg) {
-            if (param.getName().equals(paramName)) {
-                return param;
-            }
-        }
-        return null;
+    protected <P, T extends ConfigParameter<P>> Optional<P> getConfigParameter(Class<T> configClass) {
+        return Optional.ofNullable(_config).flatMap(config -> config.get(configClass));
     }
 }
