@@ -5,8 +5,11 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
+import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
@@ -139,6 +142,7 @@ public class CppViewer extends LanguageViewer {
             case MemoryAllocationCall mAlloc -> toStringMemoryAllocation(mAlloc);
             case MemoryFreeCall mFree -> toStringMemoryFree(mFree);
             case PrintCommand formatInput -> toStringPrint(formatInput);
+            case InputCommand inputCommand -> toStringInput(inputCommand);
             case FunctionCall functionCall -> toStringFunctionCall(functionCall);
             case ParenthesizedExpression parenthesizedExpression -> toStringParenthesizedExpression(parenthesizedExpression);
             case AssignmentExpression assignmentExpression -> toStringAssignmentExpression(assignmentExpression);
@@ -173,8 +177,83 @@ public class CppViewer extends LanguageViewer {
             case WhileLoop whileLoop -> toString(whileLoop);
             case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
             case SwitchStatement switchStatement -> toString(switchStatement);
+            case FunctionDefinition functionDefinition -> toString(functionDefinition);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод оператора ввода (cin) */
+    private String toStringInput(InputCommand inputCommand) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("std::cin");
+        for (var expr : inputCommand.getArguments()) {
+            builder.append(" << ").append(toString(expr));
+        }
+
+        return builder.toString();
+    }
+
+    /*******************************************************************/
+    /* Перевод определения функции */
+    private String toString(FunctionDefinition functionDefinition) {
+        StringBuilder builder = new StringBuilder();
+
+        // Преобразование типа нужно, чтобы избежать вызова toString(Node node)
+        String functionDeclaration = toString(
+                (FunctionDeclaration) functionDefinition.getDeclaration()
+        );
+        builder.append(functionDeclaration);
+
+        String body = toString(functionDefinition.getBody());
+        if (_openBracketOnSameLine)
+        { builder.append(" ").append(body); }
+        else
+        { builder.append("\n").append(indent(body)); }
+
+        return builder.toString();
+    }
+
+    private String toString(FunctionDeclaration functionDeclaration) {
+        StringBuilder builder = new StringBuilder();
+
+        String returnType = toString(functionDeclaration.getReturnType());
+        builder.append(returnType).append(" ");
+
+        String name = toString(functionDeclaration.getName());
+        builder.append(name);
+
+        String parameters = toStringParameters(functionDeclaration.getArguments());
+        builder.append(parameters);
+
+        return builder.toString();
+    }
+
+    private String toString(DeclarationArgument parameter) {
+        String type = toString(parameter.getType());
+        String name = toString(parameter.getName());
+        return "%s %s".formatted(type, name);
+    }
+
+    private String toStringParameters(List<DeclarationArgument> parameters) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+
+        int i;
+        for (i = 0; i < parameters.size(); i++) {
+            DeclarationArgument parameter = parameters.get(i);
+            builder.append("%s, ".formatted(toString(parameter)));
+        }
+
+        // Удаляем последний пробел и запятую, если был хотя бы один параметр
+        if (i > 0) {
+            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        builder.append(")");
+        return builder.toString();
     }
 
     /*******************************************************************/
@@ -787,8 +866,7 @@ public class CppViewer extends LanguageViewer {
         }
         String res = String.format("std::cout << %s", print.getArguments().stream().map(this::toString).collect(Collectors.joining(" << ")));
         if (print instanceof PrintValues pVal) {
-            assert pVal.separator != null;
-            res += pVal.separator.getUnescapedValue().equals("\n") ? "<< std::endl" : "";
+            res += pVal.addsNewLine() ? " << std::endl" : "";
         }
         return res;
     }
