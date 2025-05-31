@@ -53,6 +53,7 @@ import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.Loop;
+import org.vstu.meaningtree.nodes.statements.ReturnStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
@@ -220,10 +221,17 @@ public class CppLanguage extends LanguageParser {
             case "break_statement" -> fromBreakStatement(node);
             case "continue_statement" -> fromContinueStatement(node);
             case "switch_statement" -> fromSwitchStatement(node);
+            case "return_statement" -> fromReturn(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
         return createdNode;
+    }
+
+    private ReturnStatement fromReturn(TSNode node) {
+        if (node.getChildCount() == 0)
+            return new ReturnStatement();
+        return new ReturnStatement((Expression) fromTSNode(node.getNamedChild(0)));
     }
 
     private FunctionDefinition fromFunction(TSNode node) {

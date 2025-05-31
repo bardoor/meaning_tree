@@ -43,6 +43,7 @@ import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
+import org.vstu.meaningtree.nodes.statements.ReturnStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.MultipleAssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
@@ -179,8 +180,22 @@ public class CppViewer extends LanguageViewer {
             case SwitchStatement switchStatement -> toString(switchStatement);
             case FunctionDefinition functionDefinition -> toString(functionDefinition);
             case ArrayInitializer arrayInitializer -> toString(arrayInitializer);
+            case ReturnStatement returnStatement -> toString(returnStatement);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод return */
+    private String toString(ReturnStatement returnStatement) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("return");
+
+        if (returnStatement.getExpression() != null)
+            builder.append(" ").append(toString(returnStatement.getExpression()));
+
+        builder.append(";");
+        return builder.toString();
     }
 
     /*******************************************************************/
