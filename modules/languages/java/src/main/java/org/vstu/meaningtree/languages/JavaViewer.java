@@ -1415,7 +1415,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(Type type) {
-        return toString(type, true);
+        return toString(type, false);
     }
 
     private String toString(Type type, boolean isPrimitiveWrapper) {
@@ -1984,7 +1984,7 @@ public class JavaViewer extends LanguageViewer {
 
         // Вставляем все другие методы
         for (MethodDefinition method : otherMethods) {
-            builder.append(toString(method));
+            builder.append(indent(toString(method)));
             builder.append("\n");
         }
 
