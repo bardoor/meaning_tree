@@ -876,13 +876,22 @@ public class PythonViewer extends LanguageViewer {
         for (int i = 0; i < node.getBranches().size(); i++) {
             ConditionBranch branch = node.getBranches().get(i);
             if (i == 0) {
-                sb.append(String.format("if %s:\n%s\n", toString(branch.getCondition()), toString(branch.getBody(), tab)));
+                if (!(branch.getBody() instanceof CompoundStatement))
+                    sb.append(String.format("if %s:\n%s\n", toString(branch.getCondition()), toString(branch.getBody(), tab.up())));
+                else
+                    sb.append(String.format("if %s:\n%s\n", toString(branch.getCondition()), toString(branch.getBody(), tab)));
             } else {
-                sb.append(String.format("%selif %s:\n%s\n", tab, toString(branch.getCondition()), toString(branch.getBody(), tab)));
+                if (!(branch.getBody() instanceof CompoundStatement))
+                    sb.append(String.format("%selif %s:\n%s\n", tab, toString(branch.getCondition()), toString(branch.getBody(), tab.up())));
+                else
+                    sb.append(String.format("%selif %s:\n%s\n", tab, toString(branch.getCondition()), toString(branch.getBody(), tab)));
             }
         }
         if (node.hasElseBranch()) {
-            sb.append(String.format("%selse:\n%s\n", tab, toString(node.getElseBranch(), tab)));
+            if (!(node.getElseBranch() instanceof CompoundStatement))
+                sb.append(String.format("%selse:\n%s\n", tab, toString(node.getElseBranch(), tab.up())));
+            else
+                sb.append(String.format("%selse:\n%s\n", tab, toString(node.getElseBranch(), tab)));
         }
         return sb.toString().stripTrailing();
     }
