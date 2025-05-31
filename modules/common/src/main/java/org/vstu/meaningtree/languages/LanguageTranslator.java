@@ -34,6 +34,8 @@ public abstract class LanguageTranslator {
         );
     }
 
+    protected Config getDeclaredConfig() { return new Config(); }
+
     /**
      * Создает транслятор языка
      * @param language - parser языка
@@ -44,7 +46,7 @@ public abstract class LanguageTranslator {
         _language = language;
         _viewer = viewer;
 
-        _config.merge(getPredefinedCommonConfig());
+        _config.merge(getPredefinedCommonConfig(), getDeclaredConfig());
         var configParser = new ConfigParser();
 
         // Загрузка конфигов, специфических для конкретного языка
