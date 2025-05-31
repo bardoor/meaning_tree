@@ -7,6 +7,7 @@ import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.configs.*;
+import org.vstu.meaningtree.languages.configs.params.EnforseEntryPoint;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.languages.configs.params.TranslationUnitMode;
@@ -30,7 +31,8 @@ public abstract class LanguageTranslator {
         return new Config(
                 new ExpressionMode(false, ConfigScope.TRANSLATOR),
                 new TranslationUnitMode(true, ConfigScope.VIEWER),
-                new SkipErrors(false, ConfigScope.PARSER)
+                new SkipErrors(false, ConfigScope.PARSER),
+                new EnforseEntryPoint(true, ConfigScope.ANY)
         );
     }
 

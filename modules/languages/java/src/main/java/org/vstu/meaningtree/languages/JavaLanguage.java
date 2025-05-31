@@ -7,6 +7,7 @@ import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.languages.configs.params.EnforseEntryPoint;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.nodes.*;
@@ -223,6 +224,7 @@ public class JavaLanguage extends LanguageParser {
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
+
         return createdNode;
     }
 
@@ -1247,7 +1249,12 @@ public class JavaLanguage extends LanguageParser {
 
         */
 
-        return new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), mainClass, mainMethod);
+        List<Node> body = new ArrayList<>();
+        if (mainMethod != null) {
+            body = Arrays.asList(mainMethod.getBody().getNodes());
+        }
+
+        return new ProgramEntryPoint(builder.getEnv(),body, mainClass, mainMethod);
     }
 
     private Loop fromWhileTSNode(TSNode node) {

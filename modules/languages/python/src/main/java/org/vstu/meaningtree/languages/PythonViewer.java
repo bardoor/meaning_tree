@@ -359,7 +359,28 @@ public class PythonViewer extends LanguageViewer {
 
     private String entryPointToString(ProgramEntryPoint programEntryPoint, Tab tab) {
         IfStatement entryPointIf = null;
-        if (programEntryPoint.hasEntryPoint()) {
+
+        var body = programEntryPoint.getBody();
+        var funcName = new SimpleIdentifier("main");
+        var funcDecl = new FunctionDeclaration(funcName, new NoReturn(), new ArrayList<>());
+        var funcDef = new FunctionDefinition(funcDecl, new CompoundStatement(new SymbolEnvironment(null), body));
+
+        var funcCall = new FunctionCall(funcName);
+
+        entryPointIf = new IfStatement(
+                new EqOp(new SimpleIdentifier("__name__"),
+                         StringLiteral.fromUnescaped("__main__", StringLiteral.Type.NONE)),
+                new CompoundStatement(new SymbolEnvironment(null), funcCall),
+                null
+        );
+
+        List<Node> nodes = new ArrayList<>();
+        nodes.add(funcDef);
+        nodes.add(entryPointIf);
+
+        return nodeListToString(nodes, tab);
+
+        /*if (programEntryPoint.hasEntryPoint()) {
             Node entryPointNode = programEntryPoint.getEntryPoint();
             if (entryPointNode instanceof FunctionDefinition func) {
                 Identifier ident;
@@ -386,7 +407,7 @@ public class PythonViewer extends LanguageViewer {
         if (entryPointIf != null) {
             nodes.add(entryPointIf);
         }
-        return nodeListToString(nodes, tab);
+        return nodeListToString(nodes, tab);*/
     }
 
     private String loopToString(Statement stmt, Tab tab) {

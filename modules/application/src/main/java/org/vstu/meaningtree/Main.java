@@ -3,6 +3,8 @@ package org.vstu.meaningtree;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.*;
 
 import java.io.ByteArrayOutputStream;
@@ -86,16 +88,22 @@ public class Main {
         LanguageTranslator fromTranslator = translators.get(fromLanguage.toLowerCase()).getDeclaredConstructor().newInstance();
         LanguageTranslator toTranslator = translators.get(toLanguage.toLowerCase()).getDeclaredConstructor().newInstance();
 
-        MeaningTree mt = fromTranslator.getMeaningTree(code);
-        String translatedCode = toTranslator.getCode(mt);
+        try {
+            MeaningTree mt = fromTranslator.getMeaningTree(code);
+            String translatedCode = toTranslator.getCode(mt);
 
-        if ("-".equals(outputFilePath)) {
-            System.out.println(translatedCode);
-        } else {
-            try (PrintWriter out = new PrintWriter(new FileWriter(outputFilePath))) {
+            if ("-".equals(outputFilePath)) {
+                System.out.println(translatedCode);
+            } else {
+                PrintWriter out = new PrintWriter(new FileWriter(outputFilePath));
                 out.print(translatedCode);
             }
-        }
+        } catch (MeaningTreeException e) {
+            System.out.println(e.getMessage());
+        } /*catch (Exception e) {
+            System.out.println("Can't translate");
+        }*/
+
     }
 
     private static String readCode(String filePath) throws IOException {
