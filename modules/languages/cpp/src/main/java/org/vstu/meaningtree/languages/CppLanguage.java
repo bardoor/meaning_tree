@@ -1323,22 +1323,11 @@ public class CppLanguage extends LanguageParser {
         FunctionDefinition entryPoint = null;
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             TSNode currNode = node.getNamedChild(i);
-            if (currNode.getType().equals("ERROR")) {
-                Node errorNode = fromTSNode(currNode);
-                if (errorNode instanceof Expression expr) {
-                    nodes.add(new ExpressionStatement(expr));
-                } else {
-                    nodes.add(errorNode);
-                }
-            } else {
-                Node converted = fromTSNode(currNode);
-                if (converted instanceof ExpressionStatement exprStmt && exprStmt.getExpression() == null) {
-                    continue;
-                }
-                if (converted instanceof FunctionDefinition funcDecl && funcDecl.getName().equalsIdentifier("main")) {
-                    entryPoint = funcDecl;
-                }
-                nodes.add(converted);
+            Node n = fromTSNode(currNode);
+            if (n instanceof FunctionDefinition functionDefinition
+                    && functionDefinition.getName().toString().equals("main")) {
+                n = new ProgramEntryPoint(null, List.of(functionDefinition.getBody().getNodes()), n);
+                return n;
             }
         }
         SymbolEnvironment context = new SymbolEnvironment(null); //TODO: fix symbol table
