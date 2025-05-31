@@ -178,8 +178,26 @@ public class CppViewer extends LanguageViewer {
             case InfiniteLoop infiniteLoop -> toString(infiniteLoop);
             case SwitchStatement switchStatement -> toString(switchStatement);
             case FunctionDefinition functionDefinition -> toString(functionDefinition);
+            case ArrayInitializer arrayInitializer -> toString(arrayInitializer);
             default -> throw new UnsupportedViewingException("Unexpected value: " + node);
         };
+    }
+
+    /*******************************************************************/
+    /* Перевод инициализатора массива */
+    private String toString(ArrayInitializer arrayInitializer) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{");
+
+        for (var value : arrayInitializer.getValues()) {
+            builder.append(toString(value)).append(", ");
+        }
+
+        builder.deleteCharAt(builder.length() - 1);
+        builder.deleteCharAt(builder.length() - 1);
+
+        builder.append("}");
+        return builder.toString();
     }
 
     /*******************************************************************/

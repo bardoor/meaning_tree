@@ -1145,6 +1145,7 @@ public class CppLanguage extends LanguageParser {
                     arrayDimension = arrayDimension.getChildByFieldName("declarator");
                 }
                 mainType = new ArrayType(mainType, dimensions.size(), dimensions);
+                System.out.println(mainType);
                 declarators.add(new VariableDeclaration(mainType, new VariableDeclarator((SimpleIdentifier) fromTSNode(arrayDimension))));
             } else if (tsDeclarator.getType().equals("init_declarator")) {
                 TSNode tsVariableName = tsDeclarator.getChildByFieldName("declarator");
