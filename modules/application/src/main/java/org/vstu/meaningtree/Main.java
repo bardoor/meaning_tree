@@ -48,16 +48,23 @@ public class Main {
     public static Map<String, Class<? extends LanguageTranslator>> translators = SupportedLanguage.getStringMap();
 
     public static void main(String[] args) throws Exception {
-        var p1 = new PythonLanguage();
-        var mt = p1.getMeaningTree("a = 10\na = a + 0.5");
+        TranslateCommand translateCommand = new TranslateCommand();
+        ListLangsCommand listLangsCommand = new ListLangsCommand();
 
-        var v1 = new CppViewer();
-        var code = v1.toString(mt);
-        System.out.println(code);
+        JCommander jc = JCommander.newBuilder()
+                .addCommand("translate", translateCommand)
+                .addCommand("list-langs", listLangsCommand)
+                .build();
 
-        var v2 = new JavaViewer();
-        var code2 = v2.toString(mt);
-        System.out.println(code2);
+        jc.parse(args);
+
+        if ("list-langs".equals(jc.getParsedCommand())) {
+            listSupportedLanguages();
+        } else if ("translate".equals(jc.getParsedCommand())) {
+            runTranslation(translateCommand);
+        } else {
+            jc.usage();
+        }
     }
 
     private static void listSupportedLanguages() {
