@@ -41,3 +41,5 @@ build/
 TSTree.dot
 modules/application/src/main/java/org/vstu/meaningtree/Testfield.java
 *.png
+out/
+modules/test/META-INF/
