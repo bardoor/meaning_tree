@@ -80,6 +80,8 @@ public class JavaViewer extends LanguageViewer {
     private TypeScope _currentScope;
     private TypeScope _typeScope;
 
+    private Type _methodReturnType = null;
+
     private void enterNewScope() {
         _currentScope = new TypeScope(_currentScope);
         _typeScope = new TypeScope(_typeScope);
@@ -749,6 +751,10 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(ReturnStatement returnStatement) {
+        System.out.println(_methodReturnType);
+        if (_methodReturnType instanceof NoReturn)
+            return "return;";
+
         Expression expression = returnStatement.getExpression();
         return (expression != null) ? "return %s;".formatted(toString(expression)) : "return;";
     }
@@ -1052,6 +1058,9 @@ public class JavaViewer extends LanguageViewer {
     private String toString(MethodDefinition methodDefinition) {
         StringBuilder builder = new StringBuilder();
 
+        // Нужен для отслеживания необходимости в return
+        _methodReturnType = ((MethodDeclaration) methodDefinition.getDeclaration()).getReturnType();
+
         // Преобразование типа нужно, чтобы избежать вызова toString(Node node)
         String methodDeclaration = toString((MethodDeclaration) methodDefinition.getDeclaration());
         builder.append(methodDeclaration);
@@ -1061,6 +1070,8 @@ public class JavaViewer extends LanguageViewer {
             { builder.append(" ").append(body); }
         else
             { builder.append("\n").append(indent(body)); }
+
+        _methodReturnType = null;
 
         return builder.toString();
     }
@@ -1961,11 +1972,14 @@ public class JavaViewer extends LanguageViewer {
             // Вставляем mainMethod (с уже добавленными не-методами)
             // Вставляем фиксированный main
             builder.append(indent("public static void main(String[] args) {\n"));
+            _methodReturnType = new NoReturn();
             increaseIndentLevel();
 
             for (var node : mainBody.getNodes()) {
                 builder.append(indent(toString(node))).append("\n");
             }
+
+            _methodReturnType = null;
 
             decreaseIndentLevel();
             builder.append(indent("}\n"));
