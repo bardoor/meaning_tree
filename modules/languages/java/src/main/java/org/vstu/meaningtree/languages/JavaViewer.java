@@ -284,13 +284,22 @@ public class JavaViewer extends LanguageViewer {
     private String toString(InputCommand inputCommand) {
         var builder = new StringBuilder();
 
-        builder.append("new Scanner(System.in).");
-        if (inputCommand.getArguments().size() > 1) {
-            throw new IllegalStateException("Multiple input values are not supported in Java");
-        }
-
+        int i = 0;
         for (Expression stringPart : inputCommand.getArguments()) {
-            Type exprType = HindleyMilner.inference(stringPart, _typeScope);
+            if (i > 0) {
+                builder
+                        .append(indent(toString(inputCommand.getArguments().getFirst())))
+                        .append(" = ")
+                        .append("new Scanner(System.in).");
+            }
+            else {
+                builder
+                        .append(toString(inputCommand.getArguments().getFirst()))
+                        .append(" = ")
+                        .append("new Scanner(System.in).");
+            }
+
+            Type exprType = HindleyMilner.inference(stringPart, _currentScope);
             switch (exprType) {
                 case StringType stringType -> {
                     builder.append("next()");
@@ -305,8 +314,12 @@ public class JavaViewer extends LanguageViewer {
                     throw new IllegalStateException("Unsupported type in format input in Java: " + exprType);
                 }
             }
+
+            builder.append("\n");
+            i += 1;
         }
 
+        builder.deleteCharAt(builder.length() - 1);
         return builder.toString();
     }
 
@@ -1508,10 +1521,16 @@ public class JavaViewer extends LanguageViewer {
         Type variableType = new UnknownType();
         Expression rValue = varDecl.getRValue();
         if (rValue != null) {
-            variableType = HindleyMilner.inference(rValue, _typeScope);
+            variableType = HindleyMilner.inference(rValue, _currentScope);
         }
 
-        addVariableToCurrentScope(identifier, variableType);
+        if (variableType instanceof UnknownType)
+            variableType = type;
+
+        addVariableToCurrentScope(
+                identifier,
+                HindleyMilner.chooseGeneralType(variableType, type)
+        );
 
         String identifierName = toString(identifier);
         builder.append(identifierName);
@@ -1542,6 +1561,8 @@ public class JavaViewer extends LanguageViewer {
 
         for (VariableDeclarator varDecl : stmt.getDeclarators()) {
             builder.append(toString(varDecl, stmt.getType())).append(", ");
+
+
         }
         // Чтобы избежать лишней головной боли на проверки "а последняя ли это декларация",
         // я автоматически после каждой декларации добавляю запятую и пробел,
