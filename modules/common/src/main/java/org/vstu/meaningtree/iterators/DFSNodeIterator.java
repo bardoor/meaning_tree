@@ -8,7 +8,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class DFSNodeIterator implements Iterator<NodeInfo> {
+public class DFSNodeIterator extends AbstractNodeIterator {
 
     private static class Frame {
         Node node;
@@ -53,6 +53,7 @@ public class DFSNodeIterator implements Iterator<NodeInfo> {
     public NodeInfo next() {
         while (!stack.isEmpty()) {
             Frame frame = stack.peek();
+            Node parentNode = frame.parentField == null ? null : frame.parentField.getOwner();
 
             if (!frame.visitedChildren) {
                 while (frame.fieldIterator.hasNext()) {
@@ -63,6 +64,9 @@ public class DFSNodeIterator implements Iterator<NodeInfo> {
                     try {
                         if (fd instanceof NodeFieldDescriptor nfd) {
                             Node child = nfd.get();
+                            if (!checkEnterCondition(child, parentNode)) {
+                                break;
+                            }
                             stack.push(new Frame(child, fd));
                             return next(); // углубляемся дальше
                         } else if (fd instanceof ArrayFieldDescriptor afd) {
@@ -83,6 +87,9 @@ public class DFSNodeIterator implements Iterator<NodeInfo> {
                     while (frame.nodeIterator.hasNext()) {
                         Node child = frame.nodeIterator.next();
                         frame.fieldIndex++;
+                        if (!checkEnterCondition(child, parentNode)) {
+                            break;
+                        }
                         stack.push(new Frame(child, frame.currentField.withIndex(frame.fieldIndex)));
                         return next();
                     }
@@ -94,7 +101,7 @@ public class DFSNodeIterator implements Iterator<NodeInfo> {
 
             stack.pop();
             int depth = stack.size();
-            return new NodeInfo(frame.node, frame.parentField == null ? null : frame.parentField.getOwner(), frame.parentField, depth);
+            return new NodeInfo(frame.node, parentNode, frame.parentField, depth);
         }
 
         throw new NoSuchElementException();

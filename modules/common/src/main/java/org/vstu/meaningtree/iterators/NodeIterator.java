@@ -6,7 +6,8 @@ import org.vstu.meaningtree.nodes.Node;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class NodeIterator implements Iterator<NodeInfo> {
+@Deprecated
+public class NodeIterator extends AbstractNodeIterator {
     public final Node root;
     private final FieldDescriptor parent;
 
