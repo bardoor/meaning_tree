@@ -72,10 +72,18 @@ public abstract class PlainCollectionLiteral extends CollectionLiteral {
         while (item instanceof PlainCollectionLiteral || (item instanceof ArrayNewExpression arr && typeHint.equals(arr.getType()))) {
             if (item instanceof PlainCollectionLiteral list)
             {
+                if (list.getList().isEmpty()) {
+                    break;
+                }
                 item = list.getList().getFirst();
                 dimensions++;
+            } else if (item instanceof ArrayNewExpression arr) {
+                dimensions += arr.getShape().getDimensionCount();
+                if (arr.getInitializer() == null || arr.getInitializer().getValues().isEmpty()) {
+                    break;
+                }
+                item = arr.getInitializer().getValues().getFirst();
             }
-            if (item instanceof ArrayNewExpression arr) dimensions += arr.getShape().getDimensionCount();
         }
         return new ArrayNewExpression(getTypeHint(), new Shape(dimensions), new ArrayInitializer(getList()));
     }
