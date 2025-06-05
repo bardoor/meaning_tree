@@ -221,7 +221,7 @@ public class PythonViewer extends LanguageViewer {
         } else if (compr.getItem() instanceof Comprehension.ListItem item) {
             comprehension.append(toString(item.value()));
         } else {
-            throw new MeaningTreeException("Неизвестный тип comprehension");
+            throw new UnsupportedViewingException("Unknown comprehension");
         }
         comprehension.append(' ');
         if (compr instanceof RangeBasedComprehension rangeBased) {
@@ -743,7 +743,7 @@ public class PythonViewer extends LanguageViewer {
         boolean isStepDefault = range.getStep() instanceof IntegerLiteral intLit && intLit.getLongValue() == 1;
 
         if (stop == null) {
-            throw new MeaningTreeException("Range must contain stop condition at least");
+            throw new UnsupportedViewingException("Range must contain stop condition at least");
         }
 
         if ((start == null || isStartDefault) && (step == null || isStepDefault)) {
@@ -830,7 +830,7 @@ public class PythonViewer extends LanguageViewer {
                 FunctionCall call = new FunctionCall(cast.getCastType(), cast.getValue());
                 return callsToString(call);
             }
-            case null, default -> throw new MeaningTreeException("Not a callable object");
+            case null, default -> throw new UnsupportedViewingException("Not a callable object");
         }
     }
 

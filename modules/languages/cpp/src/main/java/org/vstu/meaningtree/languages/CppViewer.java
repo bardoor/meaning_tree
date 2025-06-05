@@ -2,7 +2,6 @@ package org.vstu.meaningtree.languages;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
@@ -250,7 +249,7 @@ public class CppViewer extends LanguageViewer {
         } else if (_new instanceof ObjectNewExpression objectNew) {
             return String.format("new %s(%s)", toString(objectNew.getType()), toStringArguments(objectNew.getConstructorArguments()));
         } else {
-            throw new MeaningTreeException("Unknown new expression");
+            throw new UnsupportedViewingException("Unknown new expression");
         }
     }
 

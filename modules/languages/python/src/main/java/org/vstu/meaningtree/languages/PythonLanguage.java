@@ -2,7 +2,6 @@ package org.vstu.meaningtree.languages;
 
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.languages.utils.PseudoCompoundStatement;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
@@ -106,7 +105,7 @@ public class PythonLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
-            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+            throw new UnsupportedParsingException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
     }
@@ -812,7 +811,7 @@ public class PythonLanguage extends LanguageParser {
                 exprs.add(new NullLiteral());
             }
             if (idents.size() < exprs.size()) {
-                throw new MeaningTreeException("Invalid using of unpacking construction");
+                throw new UnsupportedParsingException("Invalid using of unpacking construction");
             }
 
             List<AssignmentStatement> stmts = new ArrayList<>();
@@ -934,7 +933,7 @@ public class PythonLanguage extends LanguageParser {
                 if (n instanceof Expression expr) {
                     exprs[i] = expr;
                 } else {
-                    throw new MeaningTreeException("Invalid type in expression statement, not expression");
+                    throw new UnsupportedParsingException("Invalid type in expression statement, not expression");
                 }
             }
             return new ExpressionSequence(exprs);
@@ -1017,7 +1016,8 @@ public class PythonLanguage extends LanguageParser {
                         comparisons.add(object);
                     } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
                              NoSuchMethodException e) {
-                        throw new MeaningTreeException(e);
+                        e.printStackTrace();
+                        throw new UnsupportedParsingException(e.getMessage());
                     }
                 }
                 operands.add(secondNode);

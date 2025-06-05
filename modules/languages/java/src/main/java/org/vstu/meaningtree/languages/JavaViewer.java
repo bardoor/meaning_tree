@@ -1698,7 +1698,7 @@ public class JavaViewer extends LanguageViewer {
             }
         }
 
-        throw new MeaningTreeException("Can't determine range type in for loop");
+        throw new UnsupportedViewingException("Can't determine range type in for loop");
     }
 
     private String getForRangeHeader(RangeForLoop forRangeLoop) {
@@ -1727,7 +1727,7 @@ public class JavaViewer extends LanguageViewer {
             );
         }
 
-        throw new MeaningTreeException("Can't determine range type in for loop");
+        throw new UnsupportedViewingException("Can't determine range type in for loop");
     }
 
     public String toString(RangeForLoop forRangeLoop) {

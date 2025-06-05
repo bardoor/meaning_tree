@@ -2,10 +2,10 @@ package org.vstu.meaningtree.languages;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.treesitter.TSException;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
-import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.Experimental;
@@ -103,7 +103,7 @@ public abstract class LanguageTranslator {
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(TSNode node, String code) {
         try {
             return ImmutablePair.of(true, getMeaningTree(node, code));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -111,7 +111,7 @@ public abstract class LanguageTranslator {
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(String code) {
         try {
             return ImmutablePair.of(true, getMeaningTree(code));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -131,7 +131,7 @@ public abstract class LanguageTranslator {
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(TokenList tokens) {
         try {
             return ImmutablePair.of(true, getMeaningTree(tokens));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -160,7 +160,7 @@ public abstract class LanguageTranslator {
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(TokenList tokens, Map<TokenGroup, Object> tokenValueTags) {
         try {
             return ImmutablePair.of(true, getMeaningTree(tokens, tokenValueTags));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -175,7 +175,7 @@ public abstract class LanguageTranslator {
         try {
             String result = getCode(mt);
             return ImmutablePair.of(true, result);
-        } catch (UnsupportedViewingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -184,7 +184,7 @@ public abstract class LanguageTranslator {
         try {
             TokenList result = getCodeAsTokens(mt);
             return ImmutablePair.of(true, result);
-        } catch (UnsupportedViewingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }

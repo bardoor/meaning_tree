@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
@@ -111,7 +110,7 @@ public class JavaLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
-            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+            throw new UnsupportedParsingException(String.format("Given code has syntax errors: %s", errors));
         }
         Node node = fromTSNode(rootNode);
         if (node instanceof AssignmentExpression expr) {
@@ -126,11 +125,17 @@ public class JavaLanguage extends LanguageParser {
         if (getConfigParameter("expressionMode").getBooleanValue()) {
             // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
             TSNode cls = result.getNamedChild(0);
-            assert cls.getType().equals("class_declaration");
+            if (!cls.getType().equals("class_declaration")) {
+                throw new UnsupportedParsingException("Entry point class wasn't found");
+            }
             TSNode clsbody = cls.getChildByFieldName("body");
-            assert cls.getNamedChildCount() > 0;
+            if (cls.getNamedChildCount() == 0) {
+                throw new UnsupportedParsingException("Entry point class is empty");
+            }
             TSNode func = clsbody.getNamedChild(0);
-            assert getCodePiece(func.getChildByFieldName("name")).equals("main");
+            if (!getCodePiece(func.getChildByFieldName("name")).equals("main")) {
+                throw new UnsupportedParsingException("Entry point method wasn't found");
+            }
             TSNode body = func.getChildByFieldName("body");
             if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
                 throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");

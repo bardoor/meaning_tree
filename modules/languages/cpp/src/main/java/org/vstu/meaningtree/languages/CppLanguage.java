@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
@@ -92,7 +91,7 @@ public class CppLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
-            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+            throw new UnsupportedParsingException(String.format("Given code has syntax errors: %s", errors));
         }
         Node node = fromTSNode(rootNode);
         if (node instanceof AssignmentExpression expr) {
@@ -113,10 +112,10 @@ public class CppLanguage extends LanguageParser {
         if (getConfigParameter("expressionMode").getBooleanValue()) {
             // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
             TSNode func = result.getNamedChild(0);
-            assert func.getType().equals("function_definition");
-            assert (getCodePiece(func.getChildByFieldName("declarator")
-                    .getChildByFieldName("declarator"))
-                    .equals("main"));
+            if (!func.getType().equals("function_definition") || !getCodePiece(func.getChildByFieldName("declarator")
+                    .getChildByFieldName("declarator")).equals("main")) {
+                throw new UnsupportedParsingException("Syntax parsing of entry point has failed");
+            }
             TSNode body = func.getChildByFieldName("body");
             if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
                 throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
@@ -253,7 +252,7 @@ public class CppLanguage extends LanguageParser {
         } else if (op.startsWith("*")) {
             return new PointerUnpackOp(argument);
         } else {
-            throw new MeaningTreeException("Unknown pointer expression: ".concat(op));
+            throw new UnsupportedParsingException("Unknown pointer expression: ".concat(op));
         }
     }
 
@@ -301,7 +300,7 @@ public class CppLanguage extends LanguageParser {
             ArrayInitializer initializer = !initList.isEmpty() ? new ArrayInitializer(initList) : null;
             return new ArrayNewExpression(type, new Shape(dimensions.size(), dimensions.toArray(new Expression[0])), initializer);
         } else {
-            throw new MeaningTreeException("No arguments for new expression");
+            throw new UnsupportedParsingException("No arguments for new expression");
         }
         for (int i = 0; i < childSource.getNamedChildCount(); i++) {
             args.add((Expression) fromTSNode(childSource.getNamedChild(i)));
@@ -885,7 +884,7 @@ public class CppLanguage extends LanguageParser {
                 } else if (fieldIdent instanceof ScopedIdentifier scopedIdent) {
                     identList.addAll(scopedIdent.getScopeResolution());
                 } else if (fieldIdent instanceof QualifiedIdentifier) {
-                    throw new MeaningTreeException("Unsupported scoped and qualified identifier combination");
+                    throw new UnsupportedParsingException("Unsupported scoped and qualified identifier combination");
                 }
                 return new ScopedIdentifier(identList).toMemberAccess();
             } else {
@@ -895,7 +894,7 @@ public class CppLanguage extends LanguageParser {
                 return new MemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));
             }
         } else {
-            throw new MeaningTreeException("Unknown identifier: " + node.getType());
+            throw new UnsupportedParsingException("Unknown identifier: " + node.getType());
         }
     }
 
