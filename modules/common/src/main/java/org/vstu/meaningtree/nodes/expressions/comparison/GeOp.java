@@ -9,6 +9,12 @@ public class GeOp extends BinaryComparison {
     }
 
     @Override
+    public Expression tryInvert() {
+        return new LtOp(this.getLeft(), this.getRight());
+    }
+
+
+    @Override
     public String generateDot() {
         throw new UnsupportedOperationException();
     }

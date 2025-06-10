@@ -1,6 +1,11 @@
 package org.vstu.meaningtree.serializers.model;
 
+import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.iterators.utils.ArrayFieldDescriptor;
+import org.vstu.meaningtree.iterators.utils.CollectionFieldDescriptor;
+import org.vstu.meaningtree.iterators.utils.FieldDescriptor;
+import org.vstu.meaningtree.iterators.utils.NodeFieldDescriptor;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
@@ -18,10 +23,7 @@ import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.PlacementNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
-import org.vstu.meaningtree.nodes.io.FormatPrint;
-import org.vstu.meaningtree.nodes.io.InputCommand;
-import org.vstu.meaningtree.nodes.io.PrintCommand;
-import org.vstu.meaningtree.nodes.io.PrintValues;
+import org.vstu.meaningtree.nodes.io.*;
 import org.vstu.meaningtree.nodes.memory.MemoryAllocationCall;
 import org.vstu.meaningtree.nodes.memory.MemoryFreeCall;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
@@ -31,9 +33,10 @@ import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
+import org.vstu.meaningtree.nodes.types.user.*;
 import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.Enum;
-import org.vstu.meaningtree.nodes.types.user.*;
+import org.vstu.meaningtree.utils.Label;
 
 import java.util.*;
 
@@ -41,6 +44,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     @Override
     public SerializedNode serialize(Node node) {
         SerializedNode result =  switch (node) {
+            case AssignmentExpression expr -> serialize(expr);
             case BinaryExpression expr -> serialize(expr);
             case UnaryExpression expr -> serialize(expr);
             case ParenthesizedExpression expr -> serialize(expr);
@@ -53,28 +57,42 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             case IndexExpression expr -> serialize(expr);
             case CompoundComparison compound -> serialize(compound);
             case AssignmentStatement stmt -> serialize(stmt);
-            case AssignmentExpression expr -> serialize(expr);
             case ExpressionSequence sequence -> serialize(sequence);
             case ExpressionStatement stmt -> serialize(stmt);
             case MemberAccess member -> serialize(member);
             case NewExpression newExpr -> serialize(newExpr);
             case SizeofExpression sizeOf -> serialize(sizeOf);
             case Shape shape -> serialize(shape);
+            case Range range -> serialize(range);
             case ProgramEntryPoint entryPoint -> serialize(entryPoint);
             case DefinitionArgument defArg -> serialize(defArg);
             case CastTypeExpression castType -> serialize(castType);
             default -> serializeDefault(node);
         };
-        if (node.getAssignedValueTag() != null) {
-            result.values.put("assignedValueTag", node.getAssignedValueTag());
+        Collection<Label> labels = node.getAllLabels();
+        if (!labels.isEmpty()) {
+            result.fields.put("labels", serialize(labels));
         }
         return result;
     }
 
+    @Override
+    public AbstractSerializedNode serialize(MeaningTree mt) {
+        return new SerializedNode("MeaningTree", new HashMap<>() {{
+            put("rootNode", serialize(mt.getRootNode()));
+            put("labels", serialize(mt.getAllLabels()));
+        }});
+    }
+
     public SerializedNode serialize(DefinitionArgument defArg) {
         return new SerializedNode("DefinitionArgument", new HashMap<>() {{
-            put("name", serialize(defArg.getName()));
+            if (defArg.getName() != null) {
+                put("name", serialize(defArg.getName()));
+            }
             put("value", serialize(defArg.getInitialExpression()));
+        }}, new HashMap<>() {{
+            put("isListUnpacking", defArg.isListUnpacking());
+            put("isDictUnpacking", defArg.isDictUnpacking());
         }});
     }
 
@@ -185,6 +203,10 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
         return new SerializedListNode(nodes.stream().map((Node node) -> serialize(node)).toList());
     }
 
+    public SerializedListNode serialize(Collection<? extends Label> nodes) {
+        return new SerializedListNode(nodes.stream().map((Label label) -> new SerializedLabel(label)).toList());
+    }
+
     public SerializedListNode serialize(Node[] nodes) {
         return new SerializedListNode(Arrays.stream(nodes).map(this::serialize).toList());
     }
@@ -240,6 +262,9 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
             }
             if (call instanceof FormatPrint p) {
                 put("formatString", serialize(p.getFormatString()));
+            }
+            if (call instanceof FormatInput i) {
+                put("formatString", serialize(i.getFormatString()));
             }
         }}, new HashMap<>() {{
             if (call instanceof PrintCommand || call instanceof InputCommand
@@ -319,16 +344,17 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     private SerializedNode serializeDefault(Node node) {
         HashMap<String, AbstractSerializedNode> nodes = new HashMap<>();
-        for (Map.Entry<String, Object> child : node.getChildren().entrySet()) {
-            if (child.getValue() instanceof List) {
-                nodes.put(child.getKey(), serialize((List<Node>) child.getValue()));
-            } else if (child.getValue() instanceof Node[]) {
-                nodes.put(child.getKey(), serialize((Node[]) child.getValue()));
-            } else if (child.getValue() instanceof Node) {
-                nodes.put(child.getKey(), serialize((Node) child.getValue()));
-            } else if (child.getValue() instanceof Optional opt && opt.isPresent()) {
-                nodes.put(child.getKey(), serialize((Node)opt.get()));
-            }
+        for (Map.Entry<String, FieldDescriptor> child : node.getFieldDescriptors().entrySet()) {
+            try {
+                if (child.getValue() instanceof CollectionFieldDescriptor collectionFd) {
+                    nodes.put(child.getKey(), serialize(collectionFd.asList()));
+                } else if (child.getValue() instanceof ArrayFieldDescriptor arrayFd) {
+                    nodes.put(child.getKey(), serialize(arrayFd.getAsCopiedList()));
+                } else if (child.getValue() instanceof NodeFieldDescriptor nodeFd) {
+                    nodes.put(child.getKey(), serialize(nodeFd.get()));
+                }
+            } catch (IllegalAccessException e) {}
+
         }
         return new SerializedNode(node.getNodeUniqueName(), nodes);
     }
@@ -341,7 +367,7 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
 
     public SerializedNode serialize(IndexExpression index) {
         return new SerializedNode("IndexExpression", new HashMap<>() {{
-            put("expr", serialize(index.getExpr()));
+            put("expr", serialize(index.getExpression()));
             put("index", serialize(index.getIndex()));
         }}, new HashMap<>() {{
             put("preferPointers", index.isPreferPointerRepresentation());
@@ -382,6 +408,18 @@ public class UniversalSerializer implements Serializer<AbstractSerializedNode> {
     public SerializedNode serialize(ExpressionSequence seq) {
         return new SerializedNode(seq.getClass().getSimpleName(), new HashMap<>() {{
             put("exprs", serialize(seq.getExpressions()));
+        }});
+    }
+
+    public SerializedNode serialize(Range range) {
+        return new SerializedNode(range.getClass().getSimpleName(), new HashMap<>() {{
+            if (range.getStart() != null) put("start", serialize(range.getStart()));
+            if (range.getStep() != null) put("stop", serialize(range.getStep()));
+            if (range.getStop() != null) put("step", serialize(range.getStop()));
+        }}, new HashMap<>() {{
+            put("isExcludingStart", range.isExcludingStart());
+            put("isExcludingEnd", range.isExcludingEnd());
+            put("type", range.getType().ordinal());
         }});
     }
 

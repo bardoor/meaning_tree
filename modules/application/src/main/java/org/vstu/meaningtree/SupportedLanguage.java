@@ -7,15 +7,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum SupportedLanguage {
-    JAVA("java"),
-    PYTHON("python"),
-    JSON("json"),
-    CPP("c++");
+    JAVA("java", JavaTranslator.ID),
+    PYTHON("python", PythonTranslator.ID),
+    CPP("c++", CppTranslator.ID);
 
     private final String stringValue;
+    private final int id;
 
-    SupportedLanguage(String value) {
+    SupportedLanguage(String value, int id) {
         this.stringValue = value;
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public static SupportedLanguage from(int id) {
+        for (SupportedLanguage language : translators.keySet()) {
+            if (language.id == id) {
+                return language;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -37,7 +51,7 @@ public enum SupportedLanguage {
 
     public static SupportedLanguage fromString(String s) {
         for (SupportedLanguage lang : translators.keySet()) {
-            if (lang.toString().equals(s)) {
+            if (lang.toString().equals(s.toLowerCase())) {
                 return lang;
             }
         }

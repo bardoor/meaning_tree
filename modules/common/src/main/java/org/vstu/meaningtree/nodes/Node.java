@@ -1,18 +1,19 @@
 package org.vstu.meaningtree.nodes;
 
-import org.apache.jena.sparql.expr.NodeValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.vstu.meaningtree.utils.Experimental;
-import org.vstu.meaningtree.utils.NodeIterator;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.iterators.DFSNodeIterator;
+import org.vstu.meaningtree.iterators.utils.*;
+import org.vstu.meaningtree.utils.Label;
+import org.vstu.meaningtree.utils.LabelAttachable;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.StreamSupport;
 
-abstract public class Node implements Serializable, Cloneable {
+abstract public class Node implements Serializable, Cloneable, LabelAttachable, NodeIterable {
     protected static AtomicLong _id_generator = new AtomicLong();
     protected long _id = _id_generator.incrementAndGet();
 
@@ -25,17 +26,21 @@ abstract public class Node implements Serializable, Cloneable {
         _id_generator = new AtomicLong();
     }
 
-    /**
-     * @param pos признак того, что поле, в котором он находится - массив или коллекция. Индекс в коллекции.
-     * В случае, если не в массиве, то имеет значение -1
-     */
-    public record Info(Node node, Node parent, int pos, String fieldName) {
-        public String readableFieldName() {
-            return fieldName.startsWith("_") ? fieldName.replaceFirst("_", "") : fieldName;
-        }
+    @Override
+    public @NotNull Iterator<NodeInfo> iterator() {
+        return new DFSNodeIterator(this, false);
     }
 
-    private Set<NodeLabel> _labels = new HashSet<>();
+    public List<NodeInfo> iterate(boolean includeSelf) {
+        ArrayList<NodeInfo> list = new ArrayList<>();
+        var iterator = new DFSNodeIterator(this, includeSelf);
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
+        return list.reversed();
+    }
+
+    private Set<Label> _labels = new HashSet<>();
 
     /**
      * Проверяет значение узлов по значению
@@ -76,11 +81,14 @@ abstract public class Node implements Serializable, Cloneable {
     public String generateDot() {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
-        Map<String, Object> nodes = getChildren();
-        for (String fieldName : nodes.keySet()) {
-            if (nodes.get(fieldName) instanceof Node node) {
-                builder.append(node.generateDot());
-                builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, node.getId(), fieldName));
+        var fields = getFieldDescriptors();
+        for (String fieldName : fields.keySet()) {
+            if (fields.get(fieldName) instanceof NodeFieldDescriptor fd) {
+                try {
+                    Node node = fd.get();
+                    builder.append(node.generateDot());
+                    builder.append(String.format("%s -- %s [label=\"%s\"];\n", _id, node.getId(), fieldName));
+                } catch (IllegalAccessException e) {}
             }
             // TODO: Добавить поддержку children как списков
         }
@@ -95,38 +103,6 @@ abstract public class Node implements Serializable, Cloneable {
         return this.getId() == other.getId();
     }
 
-    /**
-     * @return словарь дочерних узлов или контейнеров, состоящих из узлов данного узла. Возможные типы значений: Map, List, Node
-     */
-    @SuppressWarnings("unchecked")
-    public SortedMap<String, Object> getChildren() {
-        SortedMap<String, Object> map = new TreeMap<>();
-        Field[] fields = getAllFields(this);
-        for (Field field : fields) {
-            try {
-                field.setAccessible(true);
-                Object child = field.get(this);
-                if (child instanceof Node ||
-                        (child instanceof List collection && collection.stream().allMatch((Object obj) -> obj instanceof Node)) ||
-                        (child instanceof Map childMap
-                                && (childMap.values().stream().allMatch((Object obj) -> obj instanceof Node)
-                                || childMap.keySet().stream().allMatch((Object obj) -> obj instanceof Node))
-                        ) ||
-                        (child instanceof Node[])
-                ) {
-                    map.put(field.getName(), child);
-                } else if (child instanceof Optional<?> optional) {
-                    if (optional.isPresent() && optional.get() instanceof Node) {
-                        map.put(field.getName(), optional.get());
-                    } else {
-                        map.put(field.getName(), null);
-                    }
-                }
-            } catch (IllegalAccessException ignored) {}
-        }
-        return map;
-    }
-
     private static Field[] getAllFields(Node instance) {
         List<Field> fields = new ArrayList<Field>();
         for (Class<?> c = instance.getClass(); c != null; c = c.getSuperclass()) {
@@ -136,94 +112,12 @@ abstract public class Node implements Serializable, Cloneable {
     }
 
     /**
-     * Подменяет дочерний узел данного узла указанным, если это возможно.
-     * Списки и словари считаются дочерним объектом и в них функция не заходит.
-     * Если нужно такое поведение см. substituteNodeChildren
-     * @param fieldName - имя поля
-     * @param newChild - новый дочерний узел
-     * @return выполнилась ли замена
-     */
-    @Experimental
-    public boolean substituteChildren(String fieldName, Object newChild) {
-        Field[] fields = getAllFields(this);
-        for (Field field : fields) {
-            if (field.getName().equals(fieldName)) {
-                field.setAccessible(true);
-                try {
-                    if (field.getType().equals(Optional.class)) {
-                        field.set(this, Optional.ofNullable(newChild));
-                    } else {
-                        field.set(this, newChild);
-                    }
-                    return true;
-                } catch (IllegalAccessException | IllegalArgumentException e) {
-                    return false;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Подменяет дочерний узел данного узла указанным, если это возможно.
-     * Данный метод может менять дочерний узел даже внутри списка или словаря, если передать key
-     * @param fieldName - имя поля
-     * @param newChild - новый дочерний узел
-     * @param key - ключ словаря или индекс массива, если null - эквивалентно substituteChildren
-     * @return выполнилась ли замена
-     */
-    @Experimental
-    public boolean substituteNodeChildren(String fieldName, Object newChild, Object key) {
-        if (key == null) {
-            return substituteChildren(fieldName, newChild);
-        }
-        Field[] fields = getAllFields(this);
-        for (Field field : fields) {
-            if (field.getName().equals(fieldName)) {
-                try {
-                    Object value = field.get(this);
-                    if (value instanceof List list) {
-                        list.set((Integer)key, newChild);
-                    } else if (value instanceof Map map) {
-                        map.put(key, newChild);
-                    }
-                    return true;
-                } catch (IllegalAccessException | IllegalArgumentException e) {
-                    return false;
-                }
-            }
-        }
-        return false;
-    }
-
-    @Experimental
-    public List ensureMutableNodeListInChildren(String listName) {
-        Field[] fields = getAllFields(this);
-        for (Field field : fields) {
-            if (field.getName().equals(listName)) {
-                field.setAccessible(true);
-                try {
-                    if (field.get(this) instanceof List) {
-                        List collection = (List) field.get(this);
-                        ArrayList newList = new ArrayList(collection);
-                        substituteChildren(listName, newList);
-                        return newList;
-                    }
-                } catch (IllegalAccessException | IllegalArgumentException ex2) {
-                    return null;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * Установить привязанный тег значения к узлу. Может быть полезен для внешней модификации дерева
      * @param obj - любой объект
      */
     public void setAssignedValueTag(@Nullable Object obj) {
-        removeLabel(NodeLabel.VALUE);
-        _labels.add(new NodeLabel(NodeLabel.VALUE, obj));
+        removeLabel(Label.VALUE);
+        _labels.add(new Label(Label.VALUE, obj));
     }
 
     /**
@@ -232,7 +126,7 @@ abstract public class Node implements Serializable, Cloneable {
      */
     @Nullable
     public Object getAssignedValueTag() {
-        NodeLabel label = getLabel(NodeLabel.VALUE);
+        Label label = getLabel(Label.VALUE);
         if (label != null) {
             return label.getAttribute();
         } else {
@@ -244,99 +138,89 @@ abstract public class Node implements Serializable, Cloneable {
         return this.getClass().getName();
     }
 
-    @Experimental
-    @NotNull
-    /**
-     * Итератор может выдавать нулевые ссылки, их лучше игнорировать
-     */
-    public Iterator<Info> iterateChildren() {
-        return new NodeIterator(this, false);
-    }
-
-    @Experimental
-    public List<Node.Info> walkChildren() {
-        List<Node.Info> result = new ArrayList<>();
-        NodeIterator iterator = new NodeIterator(this, false);
-        iterator.forEachRemaining(result::add);
-        return result.stream().filter(Objects::nonNull).toList();
-    }
-
-    public void setLabel(NodeLabel label) {
+    @Override
+    public void setLabel(Label label) {
         _labels.add(label);
     }
 
-    public void setLabel(short id) {
-        _labels.add(new NodeLabel(id));
+    @Override
+    public Label getLabel(short id) {
+        return _labels.stream().filter((Label l) -> l.getId() == id).findFirst().orElse(null);
     }
 
-    public NodeLabel getLabel(short id) {
-        return _labels.stream().filter((NodeLabel l) -> l.getId() == id).findFirst().orElse(null);
-    }
-
+    @Override
     public boolean hasLabel(short id) {
-        return _labels.stream().anyMatch((NodeLabel l) -> l.getId() == id);
+        return _labels.stream().anyMatch((Label l) -> l.getId() == id);
     }
 
-    /**
-     * Переключает состояние метки
-     * @param id - айди метки
-     * @param val - атрибут
-     * @return убрана или установлена метка после вызова этой функции
-     */
-    public boolean toggleLabel(short id, Object val) {
-        NodeLabel label = getLabel(id);
-        if (label != null) {
-            _labels.remove(label);
-            return false;
-        } else {
-            _labels.add(new NodeLabel(id));
-            return true;
-        }
+    @Override
+    public boolean removeLabel(Label label) {
+        return _labels.remove(label);
     }
 
-    /**
-     * Переключает состояние метки
-     * @param id - айди метки
-     * @return убрана или установлена метка после вызова этой функции
-     */
-    public boolean toggleLabel(short id) {
-        return toggleLabel(id, null);
+    @Override
+    public Set<Label> getAllLabels() {
+        return Set.copyOf(_labels);
     }
 
-    public boolean removeLabel(short id) {
-        return _labels.remove(getLabel(id));
+    public FieldDescriptor getFieldDescriptor(String fieldName) {
+        return getFieldDescriptors().getOrDefault(fieldName, null);
     }
 
-    @Deprecated
-    public List<Node> walkAllNodes() {
-        ArrayList<Node> nodes = new ArrayList<>();
-        appendWalkNode(nodes, this);
-        return nodes;
+    public List<Node> allChildren() {
+        return StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator(), Spliterator.ORDERED),
+                false // параллельный ли стрим (false = последовательный)
+        ).map(NodeInfo::node).toList();
     }
-    private void appendWalkNode(List<Node> nodes, Node node) {
-        for (Object obj : node.getChildren().values()) {
-            if (obj instanceof List<?> list) {
-                for (Object lstChild : list) {
-                    Node childNode = (Node) lstChild;
-                    nodes.add(childNode);
-                    appendWalkNode(nodes, childNode);
+
+    public Map<String, FieldDescriptor> getFieldDescriptors() {
+        Map<String, FieldDescriptor> result = new HashMap<>();
+        for (Field field : getAllFields(this)) {
+            TreeNode treeNode = (TreeNode) Arrays.stream(field.getAnnotations())
+                    .filter((ann) -> ann instanceof TreeNode)
+                    .findFirst().orElse(null);
+            if (treeNode != null) {
+                String name = treeNode.alias() != null && !treeNode.alias().isEmpty() ? treeNode.alias() : field.getName();
+                Object value;
+                try {
+                    field.setAccessible(true);
+                    value = field.get(this);
+                } catch (IllegalAccessException e) {
+                    continue;
                 }
-            } else if (obj instanceof Map<?, ?> map) {
-                for (Object lstChild : map.values()) {
-                    Node childNode = (Node) lstChild;
-                    nodes.add(childNode);
-                    appendWalkNode(nodes, childNode);
-                }
-            } else if (obj instanceof Node childNode) {
-                nodes.add(childNode);
-                appendWalkNode(nodes, childNode);
-            } else if (obj instanceof Optional<?> optional) {
-                if (optional.isPresent()) {
-                    Node childNode = (Node) optional.get();
-                    nodes.add(childNode);
-                    appendWalkNode(nodes, childNode);
+                if (value instanceof Collection<?>) {
+                    result.put(name, new CollectionFieldDescriptor(this, name, field, treeNode.readOnly()));
+                } else if (value instanceof Node[]) {
+                    result.put(name, new ArrayFieldDescriptor(this, name, field, treeNode.readOnly()));
+                } else if (value instanceof Node) {
+                    result.put(name, new NodeFieldDescriptor(this, name, field, treeNode.readOnly()));
+                } else if (value instanceof Optional<?> opt && (opt.isPresent() ? opt.get() instanceof Node : true)) {
+                    result.put(name, new NodeFieldDescriptor(this, name, field, treeNode.readOnly()));
                 }
             }
         }
+        return result;
+    }
+
+    public boolean substituteField(String name, Object value) {
+        FieldDescriptor descr = getFieldDescriptor(name);
+        if (descr == null) {
+            return false;
+        }
+        if (descr instanceof CollectionFieldDescriptor colDescr && value instanceof Collection<?>) {
+            return colDescr.substituteCollection((Collection<?>) value);
+        } else if (value instanceof Node node && descr instanceof NodeFieldDescriptor) {
+            return descr.substitute(node);
+        }
+        return false;
+    }
+
+    public boolean substituteCollectionField(String name, Node value, int index) {
+        FieldDescriptor descr = getFieldDescriptor(name);
+        if (descr instanceof CollectionFieldDescriptor || descr instanceof ArrayFieldDescriptor) {
+            descr = descr.withIndex(index);
+        }
+        return descr.substitute(value);
     }
 }

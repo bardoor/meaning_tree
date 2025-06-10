@@ -1,25 +1,21 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.literals.IntegerLiteral;
 
 import java.util.Objects;
 
 public class Range extends Expression {
-    @Nullable
-    private Expression _start;
+    @TreeNode @Nullable private Expression start;
+    @TreeNode @Nullable private Expression stop;
+    @TreeNode @Nullable private Expression step;
 
-    @Nullable
-    private Expression _stop;
+    private boolean isExcludingStart;
+    private boolean isExcludingEnd;
 
-    @Nullable
-    private Expression _step;
-
-    private final boolean _isExcludingStart;
-    private final boolean _isExcludingEnd;
-
-    private Range.Type _rangeType;
+    private Range.Type rangeType;
 
     public enum Type {
         UP,
@@ -34,12 +30,12 @@ public class Range extends Expression {
                  boolean isExcludingEnd,
                  Range.Type rangeType
     ) {
-        _start = start;
-        _stop = stop;
-        _step = step;
-        _isExcludingStart = isExcludingStart;
-        _isExcludingEnd = isExcludingEnd;
-        _rangeType = rangeType;
+        this.start = start;
+        this.stop = stop;
+        this.step = step;
+        this.isExcludingStart = isExcludingStart;
+        this.isExcludingEnd = isExcludingEnd;
+        this.rangeType = rangeType;
     }
 
     public Range(Expression start, Expression stop) {
@@ -56,30 +52,30 @@ public class Range extends Expression {
 
     @Nullable
     public Expression getStart() {
-        return _start;
+        return start;
     }
 
     @Nullable
     public Expression getStop() {
-        return _stop;
+        return stop;
     }
 
     @Nullable
     public Expression getStep() {
-        return _step;
+        return step;
     }
 
     public boolean isExcludingStart() {
-        return _isExcludingStart;
+        return isExcludingStart;
     }
 
     public boolean isExcludingEnd() {
-        return _isExcludingEnd;
+        return isExcludingEnd;
     }
 
     public Type getType() {
-        if (_rangeType != Type.UNKNOWN) {
-            return _rangeType;
+        if (rangeType != Type.UNKNOWN) {
+            return rangeType;
         }
 
         try {
@@ -87,56 +83,56 @@ public class Range extends Expression {
             long stop = getStopValueAsLong();
 
             if (start < stop) {
-                _rangeType = Type.UP;
+                rangeType = Type.UP;
             }
             else if (start > stop) {
-                _rangeType = Type.DOWN;
+                rangeType = Type.DOWN;
             }
             else {
-                _rangeType = Type.UNKNOWN;
+                rangeType = Type.UNKNOWN;
             }
         }
         catch (IllegalStateException exception) {
-            _rangeType = Type.UNKNOWN;
+            rangeType = Type.UNKNOWN;
         }
 
-        return _rangeType;
+        return rangeType;
     }
 
     public long getStartValueAsLong() throws IllegalStateException {
-        if (_start == null) {
+        if (start == null) {
             throw new IllegalStateException("Start value is not specified");
         }
 
-        if (!(_start instanceof IntegerLiteral)) {
+        if (!(start instanceof IntegerLiteral)) {
             throw new IllegalStateException("Start value cannot be interpreted as long");
         }
 
-        return ((IntegerLiteral) _start).getLongValue();
+        return ((IntegerLiteral) start).getLongValue();
     }
 
     public long getStopValueAsLong() throws IllegalStateException {
-        if (_stop == null) {
+        if (stop == null) {
             throw new IllegalStateException("Stop value is not specified");
         }
 
-        if (!(_stop instanceof IntegerLiteral)) {
+        if (!(stop instanceof IntegerLiteral)) {
             throw new IllegalStateException("Stop value cannot be interpreted as long");
         }
 
-        return ((IntegerLiteral) _stop).getLongValue();
+        return ((IntegerLiteral) stop).getLongValue();
     }
 
     public long getStepValueAsLong() throws IllegalStateException {
-        if (_step == null) {
+        if (step == null) {
             throw new IllegalStateException("Step value is not specified");
         }
 
-        if (!(_step instanceof IntegerLiteral)) {
+        if (!(step instanceof IntegerLiteral)) {
             throw new IllegalStateException("Step value cannot be interpreted as long");
         }
 
-        return ((IntegerLiteral) _step).getLongValue();
+        return ((IntegerLiteral) step).getLongValue();
     }
 
     @Override
@@ -149,20 +145,20 @@ public class Range extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Range range = (Range) o;
-        return Objects.equals(_start, range._start) && Objects.equals(_stop, range._stop) && Objects.equals(_step, range._step);
+        return Objects.equals(start, range.start) && Objects.equals(stop, range.stop) && Objects.equals(step, range.step);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _start, _stop, _step);
+        return Objects.hash(super.hashCode(), start, stop, step);
     }
 
     @Override
     public Range clone() {
         Range obj = (Range) super.clone();
-        if (_start != null) obj._start = _start.clone();
-        if (_stop != null) obj._stop = _stop.clone();
-        if (_step != null) obj._step = _step.clone();
+        if (start != null) obj.start = start.clone();
+        if (stop != null) obj.stop = stop.clone();
+        if (step != null) obj.step = step.clone();
         return obj;
     }
 }

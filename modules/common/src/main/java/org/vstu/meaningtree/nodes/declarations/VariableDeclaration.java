@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.nodes.declarations;
 
-import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Declaration;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
@@ -10,13 +10,12 @@ import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.interfaces.HasInitialization;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-public class VariableDeclaration extends Declaration implements HasInitialization, Iterable<VariableDeclarator> {
-    protected Type _type;
-    protected final List<VariableDeclarator> variableDeclaratorList;
+public class VariableDeclaration extends Declaration implements HasInitialization {
+    @TreeNode protected Type type;
+    @TreeNode protected List<VariableDeclarator> variableDeclaratorList;
 
     public VariableDeclaration(Type type, SimpleIdentifier name) {
         this(type, name, null);
@@ -25,7 +24,7 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
     public VariableDeclaration(Type type, SimpleIdentifier name, Expression value) {
         variableDeclaratorList = new ArrayList<>();
         variableDeclaratorList.add(new VariableDeclarator(name, value));
-        _type = type;
+        this.type = type;
     }
 
     public VariableDeclaration(Type type, VariableDeclarator... variableDeclarators) {
@@ -34,15 +33,15 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
 
     public VariableDeclaration(Type type, List<VariableDeclarator> variableDeclarators) {
         variableDeclaratorList = List.copyOf(variableDeclarators);
-        _type = type;
+        this.type = type;
     }
 
     public void setType(Type newType) {
-        _type = newType;
+        type = newType;
     }
 
     public Type getType() {
-        return _type;
+        return type;
     }
 
     public FieldDeclaration makeField(List<DeclarationModifier> modifiers) {
@@ -58,22 +57,16 @@ public class VariableDeclaration extends Declaration implements HasInitializatio
         throw new UnsupportedOperationException();
     }
 
-    @NotNull
-    @Override
-    public Iterator<VariableDeclarator> iterator() {
-        return variableDeclaratorList.iterator();
-    }
-
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         VariableDeclaration that = (VariableDeclaration) o;
-        return Objects.equals(_type, that._type) && Objects.equals(variableDeclaratorList, that.variableDeclaratorList);
+        return Objects.equals(type, that.type) && Objects.equals(variableDeclaratorList, that.variableDeclaratorList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _type, variableDeclaratorList);
+        return Objects.hash(super.hashCode(), type, variableDeclaratorList);
     }
 }

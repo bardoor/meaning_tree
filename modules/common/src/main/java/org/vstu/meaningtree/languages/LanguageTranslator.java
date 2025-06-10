@@ -2,6 +2,8 @@ package org.vstu.meaningtree.languages;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.jena.riot.protobuf.wire.PB_RDF;
+import org.treesitter.TSException;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
@@ -11,8 +13,11 @@ import org.vstu.meaningtree.languages.configs.params.EnforseEntryPoint;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.languages.configs.params.TranslationUnitMode;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
+import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.Experimental;
+import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.tokens.Token;
 import org.vstu.meaningtree.utils.tokens.TokenGroup;
 import org.vstu.meaningtree.utils.tokens.TokenList;
@@ -35,6 +40,8 @@ public abstract class LanguageTranslator {
                 new EnforseEntryPoint(true, ConfigScope.ANY)
         );
     }
+
+    public abstract int getLanguageId();
 
     protected Config getDeclaredConfig() { return new Config(); }
 
@@ -71,19 +78,46 @@ public abstract class LanguageTranslator {
     }
 
     public MeaningTree getMeaningTree(String code) {
-        return _language.getMeaningTree(prepareCode(code));
+        MeaningTree mt = _language.getMeaningTree(prepareCode(code));
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
+    }
+
+    protected void setViewer(LanguageViewer viewer) {
+        _viewer = viewer;
+
+        if (_viewer != null) {
+            _viewer.setConfig(
+                    getDeclaredConfig().subset(
+                            cfg -> cfg.inAnyScope(ConfigScope.VIEWER, ConfigScope.TRANSLATOR)
+                    )
+            );
+        }
+    }
+
+    protected void setParser(LanguageParser parser) {
+        _language = parser;
+        if (_language != null) {
+            _language.setConfig(
+                    getDeclaredConfig().subset(
+                            cfg -> cfg.inAnyScope(ConfigScope.PARSER, ConfigScope.TRANSLATOR)
+                    )
+            );
+        }
     }
 
     @Experimental
     public MeaningTree getMeaningTree(TSNode node, String code) {
-        return _language.getMeaningTree(node, code);
+        MeaningTree mt = _language.getMeaningTree(node, code);
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
     }
 
     @Experimental
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(TSNode node, String code) {
         try {
             return ImmutablePair.of(true, getMeaningTree(node, code));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -91,23 +125,27 @@ public abstract class LanguageTranslator {
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(String code) {
         try {
             return ImmutablePair.of(true, getMeaningTree(code));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
 
     protected MeaningTree getMeaningTree(String code, HashMap<int[], Object> values) {
-        return _language.getMeaningTree(prepareCode(code), values);
+        MeaningTree mt = _language.getMeaningTree(prepareCode(code), values);
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
     }
 
     public MeaningTree getMeaningTree(TokenList tokenList) {
-        return getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
+        MeaningTree mt = getMeaningTree(String.join(" ", tokenList.stream().map((Token t) -> t.value).toList()));
+        mt.setLabel(new Label(Label.ORIGIN, getLanguageId()));
+        return mt;
     }
 
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(TokenList tokens) {
         try {
             return ImmutablePair.of(true, getMeaningTree(tokens));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -136,7 +174,7 @@ public abstract class LanguageTranslator {
     public Pair<Boolean, MeaningTree> tryGetMeaningTree(TokenList tokens, Map<TokenGroup, Object> tokenValueTags) {
         try {
             return ImmutablePair.of(true, getMeaningTree(tokens, tokenValueTags));
-        } catch (UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -151,7 +189,7 @@ public abstract class LanguageTranslator {
         try {
             String result = getCode(mt);
             return ImmutablePair.of(true, result);
-        } catch (UnsupportedViewingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -160,7 +198,7 @@ public abstract class LanguageTranslator {
         try {
             TokenList result = getCodeAsTokens(mt);
             return ImmutablePair.of(true, result);
-        } catch (UnsupportedViewingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }

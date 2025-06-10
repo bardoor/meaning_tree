@@ -1,24 +1,25 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.Objects;
 
 public class IndexExpression extends Expression {
-    private Expression _expr;
+    @TreeNode private Expression expression;
     // index может содержать ExpressionSequence
-    private Expression _index;
+    @TreeNode private Expression index;
 
     private boolean _preferPointers = false;
 
     public IndexExpression(Expression expr, Expression index) {
-        _expr = expr;
-        _index = index;
+        this.expression = expr;
+        this.index = index;
     }
 
     public IndexExpression(Expression expr, Expression index, boolean preferPointers) {
-        _expr = expr;
-        _index = index;
+        this.expression = expr;
+        this.index = index;
         _preferPointers = preferPointers;
     }
 
@@ -27,12 +28,12 @@ public class IndexExpression extends Expression {
         throw new UnsupportedOperationException();
     }
 
-    public Expression getExpr() {
-        return _expr;
+    public Expression getExpression() {
+        return expression;
     }
 
     public Expression getIndex() {
-        return _index;
+        return index;
     }
 
     @Override
@@ -40,19 +41,19 @@ public class IndexExpression extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IndexExpression that = (IndexExpression) o;
-        return Objects.equals(_expr, that._expr) && Objects.equals(_index, that._index) && _preferPointers == that._preferPointers;
+        return Objects.equals(expression, that.expression) && Objects.equals(index, that.index) && _preferPointers == that._preferPointers;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _expr, _index, _preferPointers);
+        return Objects.hash(super.hashCode(), expression, index, _preferPointers);
     }
 
     @Override
     public IndexExpression clone() {
         IndexExpression obj = (IndexExpression) super.clone();
-        obj._expr = _expr.clone();
-        obj._index = _index.clone();
+        obj.expression = expression.clone();
+        obj.index = index.clone();
         obj._preferPointers = _preferPointers;
         return obj;
     }

@@ -1,17 +1,18 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.statements.DeleteStatement;
 
 import java.util.Objects;
 
 public class DeleteExpression extends Expression {
-    private Expression _target;
-    private final boolean _isCollection;
+    @TreeNode private Expression target;
+    @TreeNode private final boolean isCollection;
 
     public DeleteExpression(Expression target, boolean isCollection) {
-        _target = target;
-        _isCollection = isCollection;
+        this.target = target;
+        this.isCollection = isCollection;
     }
 
     public DeleteExpression(Expression target) {
@@ -19,15 +20,15 @@ public class DeleteExpression extends Expression {
     }
 
     public Expression getTarget() {
-        return _target;
+        return target;
     }
 
     public DeleteStatement toStatement() {
-        return new DeleteStatement(_target, _isCollection);
+        return new DeleteStatement(target, isCollection);
     }
 
     public boolean isCollectionTarget() {
-        return _isCollection;
+        return isCollection;
     }
 
     @Override
@@ -35,18 +36,18 @@ public class DeleteExpression extends Expression {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         DeleteExpression that = (DeleteExpression) o;
-        return _isCollection == that._isCollection && Objects.equals(_target, that._target);
+        return isCollection == that.isCollection && Objects.equals(target, that.target);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _target, _isCollection);
+        return Objects.hash(super.hashCode(), target, isCollection);
     }
 
     @Override
     public DeleteExpression clone() {
         DeleteExpression obj = (DeleteExpression) super.clone();
-        obj._target = _target.clone();
+        obj.target = target.clone();
         return obj;
     }
 }

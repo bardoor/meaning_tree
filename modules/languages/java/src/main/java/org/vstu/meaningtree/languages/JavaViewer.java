@@ -17,6 +17,10 @@ import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
+import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
+import org.vstu.meaningtree.nodes.expressions.Identifier;
+import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
+import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -31,6 +35,7 @@ import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
@@ -62,7 +67,8 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.utils.Label;
+import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -105,11 +111,12 @@ public class JavaViewer extends LanguageViewer {
         _currentScope.addMethod(methodName, returnType);
     }
 
-    public JavaViewer(int indentSpaceCount,
+    public JavaViewer(LanguageTranslator translator, int indentSpaceCount,
                       boolean openBracketOnSameLine,
                       boolean bracketsAroundCaseBranches,
                       boolean autoVariableDeclaration
     ) {
+        super(translator);
         _indentation = " ".repeat(indentSpaceCount);
         _indentLevel = 0;
         _openBracketOnSameLine = openBracketOnSameLine;
@@ -119,14 +126,18 @@ public class JavaViewer extends LanguageViewer {
         _autoVariableDeclaration = autoVariableDeclaration;
     }
 
-    public JavaViewer() { this(4, true, false, false); }
+    public JavaViewer(LanguageTranslator translator) { this(translator, 4, true, false, false); }
 
     @Override
     public String toString(Node node) {
+        if (node instanceof UnaryExpression expr) {
+            node = parenFiller.process(expr);
+        }
+
         Objects.requireNonNull(node);
 
         // Для dummy узлов ничего не выводим
-        if (node.hasLabel(NodeLabel.DUMMY)) {
+        if (node.hasLabel(Label.DUMMY)) {
             return "";
         }
 
@@ -194,6 +205,7 @@ public class JavaViewer extends LanguageViewer {
             case PrintValues printValues -> toString(printValues);
             case FormatInput fmt -> toString(fmt);
             case InputCommand inputCommand -> toString(inputCommand);
+            case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Java");
             case FunctionCall funcCall -> toString(funcCall);
             case WhileLoop whileLoop -> toString(whileLoop);
             case ScopedIdentifier scopedIdent -> toString(scopedIdent);
@@ -245,7 +257,7 @@ public class JavaViewer extends LanguageViewer {
             case ContainsOp op -> toString(op);
             case ReferenceEqOp op -> toString(op);
             case FunctionDefinition functionDefinition -> toString(functionDefinition);
-            default -> throw new IllegalStateException(String.format("Can't stringify node %s", node.getClass()));
+            default -> throw new UnsupportedViewingException(String.format("Can't stringify node %s", node.getClass()));
         };
     }
 
@@ -439,7 +451,7 @@ public class JavaViewer extends LanguageViewer {
         var argumentsBuilder = new StringBuilder();
 
         builder.append("String.format(\"");
-        for (Expression stringPart : interpolatedStringLiteral) {
+        for (Expression stringPart : interpolatedStringLiteral.components()) {
             Type exprType = HindleyMilner.inference(stringPart, _typeScope);
             switch (exprType) {
                 case StringType stringType -> {
@@ -731,6 +743,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(TernaryOperator ternaryOperator) {
+        ternaryOperator = parenFiller.process(ternaryOperator);
         String condition = toString(ternaryOperator.getCondition());
         String consequence = toString(ternaryOperator.getThenExpr());
         String alternative = toString(ternaryOperator.getElseExpr());
@@ -738,13 +751,15 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(IndexExpression indexExpression) {
-        Expression arrayName = indexExpression.getExpr();
+        indexExpression = parenFiller.process(indexExpression);
+        Expression arrayName = indexExpression.getExpression();
         String name = toString(arrayName);
         String index = toString(indexExpression.getIndex());
         return "%s[%s]".formatted(name, index);
     }
 
     private String toString(CastTypeExpression castTypeExpression) {
+        castTypeExpression = parenFiller.process(castTypeExpression);
         String castType = toString(castTypeExpression.getCastType());
         String value = toString(castTypeExpression.getValue());
         return "(%s) %s".formatted(castType, value);
@@ -800,6 +815,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(MemberAccess memberAccess) {
+        memberAccess = parenFiller.process(memberAccess);
         String object = toString(memberAccess.getExpression());
         String member = toString(memberAccess.getMember());
         return "%s.%s".formatted(object, member);
@@ -822,6 +838,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(MethodCall methodCall) {
+        methodCall = parenFiller.process(methodCall);
         String object = toString(methodCall.getObject());
         String methodName = toString(methodCall.getFunctionName());
 
@@ -1005,9 +1022,13 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(DeclarationArgument parameter) {
-        String type = toString(parameter.getType());
+        String mid = "";
+        String type = toString(parameter.getElementType());
+        if (parameter.isListUnpacking()) {
+            mid = "...";
+        }
         String name = toString(parameter.getName());
-        return "%s %s".formatted(type, name);
+        return "%s %s %s".formatted(type, mid, name);
     }
 
     // В отличие от всех остальных методов, данный называется так,
@@ -1182,39 +1203,31 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(BinaryExpression expr, String sign) {
+        expr = parenFiller.process(expr);
         Expression left = expr.getLeft();
         Expression right = expr.getRight();
         if (expr instanceof PowOp) {
             return toString(new MethodCall(new SimpleIdentifier("Math"),
                     new SimpleIdentifier("pow"), left, right));
         }
-        if (left instanceof BinaryExpression leftBinOp
-                && tokenOfBinaryOp(leftBinOp) != null && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-            && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && tokenOfBinaryOp(rightBinOp) != null && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(sign).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
 
         return String.format("%s %s %s", toString(left), sign, toString(right));
     }
 
-    private String tokenOfBinaryOp(BinaryExpression leftBinOp) {
-        return switch (leftBinOp) {
+    @Override
+    public OperatorToken mapToToken(Expression expr) {
+        String tok = switch (expr) {
             case AddOp op -> "+";
             case SubOp op -> "-";
+            case ScopedIdentifier op -> ".";
             case MulOp op -> "*";
             case DivOp op -> "/";
             case ModOp op -> "%";
+            case PowOp op -> "CALL_(";
+            case MatMulOp op -> "CALL_(";
+            case ContainsOp op -> "CALL_(";
             case EqOp op -> "==";
+            case CastTypeExpression op -> "CAST";
             case NotEqOp op -> "!=";
             case GeOp op -> ">=";
             case ReferenceEqOp op -> "==";
@@ -1228,29 +1241,46 @@ public class JavaViewer extends LanguageViewer {
             case BitwiseOrOp op -> "|";
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
+            case FunctionCall op -> "CALL_(";
+            case TernaryOperator op -> "?";
+            case NewExpression op -> "new";
+            case QualifiedIdentifier op -> "::";
+            case MemberAccess op -> ".";
             case XorOp op -> "^";
+            case IndexExpression op -> "[";
+            case ThreeWayComparisonOp op -> "<=>";
+            case AssignmentExpression as -> {
+                AugmentedAssignmentOperator op = as.getAugmentedOperator();
+                yield switch (op) {
+                    case NONE -> "=";
+                    case ADD -> "+=";
+                    case SUB -> "-=";
+                    case MUL -> "*=";
+                    // В Java тип деления определяется не видом операции, а типом операндов,
+                    // поэтому один и тот же оператор
+                    case DIV, FLOOR_DIV -> "/=";
+                    case BITWISE_AND -> "&=";
+                    case BITWISE_OR -> "|=";
+                    case BITWISE_XOR -> "^=";
+                    case BITWISE_SHIFT_LEFT -> "<<=";
+                    case BITWISE_SHIFT_RIGHT -> ">>=";
+                    case MOD -> "%=";
+                    default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+                };
+            }
+            case FloorDivOp op -> "CALL_("; // чтобы взять токен такого же приоритета, решение не очень
+            // unary section
+            case NotOp op -> "!";
+            case InversionOp op -> "~";
+            case UnaryMinusOp op -> "UMINUS";
+            case UnaryPlusOp op -> "UPLUS";
+            case PostfixIncrementOp op -> "++";
+            case PrefixIncrementOp op -> "++U";
+            case PostfixDecrementOp op -> "--";
+            case PrefixDecrementOp op -> "--U";
             default -> null;
         };
-    }
-
-    public String tokenOfBinaryOp(AssignmentExpression expr) {
-        AugmentedAssignmentOperator op = expr.getAugmentedOperator();
-        return switch (op) {
-            case NONE -> "=";
-            case ADD -> "+=";
-            case SUB -> "-=";
-            case MUL -> "*=";
-            // В Java тип деления определяется не видом операции, а типом операндов,
-            // поэтому один и тот же оператор
-            case DIV, FLOOR_DIV -> "/=";
-            case BITWISE_AND -> "&=";
-            case BITWISE_OR -> "|=";
-            case BITWISE_XOR -> "^=";
-            case BITWISE_SHIFT_LEFT -> "<<=";
-            case BITWISE_SHIFT_RIGHT -> ">>=";
-            case MOD -> "%=";
-            default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
-        };
+        return translator.getTokenizer().getOperatorByTokenName(tok);
     }
 
     public String toString(AddOp op) {
@@ -1366,22 +1396,6 @@ public class JavaViewer extends LanguageViewer {
             default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
         };
 
-        if (left instanceof BinaryExpression leftBinOp
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && JavaTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > JavaTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
-
         if (right instanceof IntegerLiteral integerLiteral
                 && (long) integerLiteral.getValue() == 1
                 && (o.equals("+=") || o.equals("-="))) {
@@ -1398,6 +1412,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     public String toString(AssignmentExpression expr) {
+        expr = (AssignmentExpression) parenFiller.process(expr);
         return toString(expr.getAugmentedOperator(), expr.getLValue(), expr.getRValue());
     }
 
@@ -1610,7 +1625,7 @@ public class JavaViewer extends LanguageViewer {
         StringBuilder builder = new StringBuilder();
         builder.append("{\n");
         increaseIndentLevel();
-        for (Node node : stmt) {
+        for (Node node : stmt.getNodes()) {
             String s = toString(node);
             if (s.isEmpty()) {
                 continue;
@@ -1678,6 +1693,7 @@ public class JavaViewer extends LanguageViewer {
     }
 
     private String toString(BinaryComparison binComp) {
+        binComp = (BinaryComparison) parenFiller.process(binComp);
         return switch (binComp) {
             case EqOp op -> toString(op);
             case GeOp op -> toString(op);
@@ -1890,7 +1906,7 @@ public class JavaViewer extends LanguageViewer {
             }
         }
 
-        throw new MeaningTreeException("Can't determine range type in for loop");
+        throw new UnsupportedViewingException("Can't determine range type in for loop");
     }
 
     private String getForRangeHeader(RangeForLoop forRangeLoop) {
@@ -1919,7 +1935,7 @@ public class JavaViewer extends LanguageViewer {
             );
         }
 
-        throw new MeaningTreeException("Can't determine range type in for loop");
+        throw new UnsupportedViewingException("Can't determine range type in for loop");
     }
 
     public String toString(RangeForLoop forRangeLoop) {
@@ -2079,11 +2095,12 @@ public class JavaViewer extends LanguageViewer {
         return builder.toString();
     }
 
-    public String toString(QualifiedIdentifier scopedIdent) {
+    public String toString(QualifiedIdentifier qualIdent) {
+        qualIdent = parenFiller.process(qualIdent);
         StringBuilder builder = new StringBuilder();
-        builder.append(toString(scopedIdent.getScope()));
+        builder.append(toString(qualIdent.getScope()));
         builder.append("::");
-        builder.append(toString(scopedIdent.getMember()));
+        builder.append(toString(qualIdent.getMember()));
         return builder.toString();
     }
 

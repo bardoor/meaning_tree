@@ -12,6 +12,7 @@ import java.util.*;
 
 abstract public class LanguageParser {
     protected String _code = "";
+    protected LanguageTranslator translator;
     protected Config _config;
     protected Map<int[], Object> _byteValueTags = new HashMap<>();
 
