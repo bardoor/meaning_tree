@@ -1,16 +1,17 @@
 package org.vstu.meaningtree.nodes.statements;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.expressions.other.DeleteExpression;
 
 public class DeleteStatement extends Statement {
-    private final Expression _target;
-    private final boolean _isCollection;
+    @TreeNode private Expression target;
+    private boolean isCollection;
 
     public DeleteStatement(Expression target, boolean isCollection) {
-        _target = target;
-        _isCollection = isCollection;
+        this.target = target;
+        this.isCollection = isCollection;
     }
 
     public DeleteStatement(Expression target) {
@@ -18,14 +19,14 @@ public class DeleteStatement extends Statement {
     }
 
     public Expression getTarget() {
-        return _target;
+        return target;
     }
 
     public DeleteExpression toExpression() {
-        return new DeleteExpression(_target, _isCollection);
+        return new DeleteExpression(target, isCollection);
     }
 
     public boolean isCollectionTarget() {
-        return _isCollection;
+        return isCollection;
     }
 }

@@ -32,32 +32,13 @@
         <dependency>
             <groupId>io.github.bonede</groupId>
             <artifactId>tree-sitter</artifactId>
-            <version>0.24.5</version>
+            <version>0.25.3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.12.0</version>
+            <version>1.13.1</version>
         </dependency>
     </dependencies>
-
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </snapshots>
-            <name>Maven libs</name>
-            <id>snapshots-repo</id>
-            <url>https://mavenlibs.com</url>
-            <layout>default</layout>
-        </repository>
-    </repositories>
 
 </project>

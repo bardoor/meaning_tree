@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.languages.configs.params.EnforseEntryPoint;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
@@ -78,21 +77,27 @@ import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 import java.util.*;
 
 public class JavaLanguage extends LanguageParser {
-    private final TSLanguage _language;
-    private final TSParser _parser;
+    private TSLanguage _language;
+    private TSParser _parser;
     private final Map<String, UserType> _userTypes;
     private SymbolEnvironment currentContext;
 
     public JavaLanguage() {
-        _language = new TreeSitterJava();
-        _parser = new TSParser();
-        _parser.setLanguage(_language);
         _userTypes = new HashMap<>();
         currentContext = new SymbolEnvironment(null);
     }
 
+    private void _initBackend() {
+        if (_language == null) {
+            _language = new TreeSitterJava();
+            _parser = new TSParser();
+            _parser.setLanguage(_language);
+        }
+    }
+
     @Override
     public TSTree getTSTree() {
+        _initBackend();
         TSTree tree = _parser.parseString(null, _code);
         /*
         TODO: only for test
@@ -108,7 +113,7 @@ public class JavaLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty() && !getConfigParameter(SkipErrors.class).orElse(false)) {
-            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+            throw new UnsupportedParsingException(String.format("Given code has syntax errors: %s", errors));
         }
 
         Node node = fromTSNode(rootNode);
@@ -128,14 +133,22 @@ public class JavaLanguage extends LanguageParser {
         if (maybeExpressionMode.orElse(false)) {
             // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа
             TSNode cls = result.getNamedChild(0);
-            assert cls.getType().equals("class_declaration");
+
+            if (!cls.getType().equals("class_declaration")) {
+                throw new UnsupportedParsingException("Entry point class wasn't found");
+            }
 
             TSNode clsbody = cls.getChildByFieldName("body");
-            assert cls.getNamedChildCount() > 0;
+
+            if (cls.getNamedChildCount() == 0) {
+                throw new UnsupportedParsingException("Entry point class is empty");
+            }
 
             TSNode func = clsbody.getNamedChild(0);
-            assert getCodePiece(func.getChildByFieldName("name")).equals("main");
 
+            if (!getCodePiece(func.getChildByFieldName("name")).equals("main")) {
+                throw new UnsupportedParsingException("Entry point method wasn't found");
+            }
             TSNode body = func.getChildByFieldName("body");
 
             if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
@@ -541,6 +554,9 @@ public class JavaLanguage extends LanguageParser {
         }
 
         Identifier methodName = fromIdentifierTSNode(nameNode);
+        if (!(methodName instanceof SimpleIdentifier)) {
+            throw new UnsupportedParsingException("methodName must be simple identifier");
+        }
 
         List<Expression> arguments = new ArrayList<>();
         for (int i = 0; i < argumentsNode.getNamedChildCount(); i++) {
@@ -554,7 +570,7 @@ public class JavaLanguage extends LanguageParser {
         }
 
         Expression object = (Expression) fromTSNode(objectNode);
-        return new MethodCall(object, methodName, arguments);
+        return new MethodCall(object, (SimpleIdentifier) methodName, arguments);
     }
 
     private boolean isStaticImport(TSNode importDeclaration) {
@@ -712,10 +728,15 @@ public class JavaLanguage extends LanguageParser {
     }
 
     private DeclarationArgument fromFormalParameter(TSNode node) {
+        if (node.getType().equals("spread_parameter")) {
+            Type type = fromTypeTSNode(node.getNamedChild(0));
+            SimpleIdentifier name = (SimpleIdentifier) fromIdentifierTSNode(node.getNamedChild(1)
+                    .getChildByFieldName("name"));
+            return DeclarationArgument.listUnpacking(type, name);
+        }
         Type type = fromTypeTSNode(node.getChildByFieldName("type"));
         SimpleIdentifier name = (SimpleIdentifier) fromIdentifierTSNode(node.getChildByFieldName("name"));
-        // Не поддерживается распаковка списков (как в Python) и значения по умолчанию
-        return new DeclarationArgument(type, false, name, null);
+        return new DeclarationArgument(type, name,null);
     }
 
     private StringLiteral fromStringLiteralTSNode(TSNode node) {

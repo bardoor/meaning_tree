@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.nodes;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.interfaces.HasSymbolScope;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
@@ -15,7 +16,7 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
      * Однако _entryPointNode может отсутствовать, тогда точка входа - _body
      * Viewer должен сам подстроиться под эту ситуацию и адаптировать под особенности своего языка
      */
-    private List<Node> _body;
+    @TreeNode private List<Node> body;
     @Nullable
     private final SymbolEnvironment _env;
 
@@ -44,14 +45,14 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
     }
 
     public ProgramEntryPoint(@Nullable SymbolEnvironment env, List<Node> body, @Nullable ClassDefinition mainClass, @Nullable Node entryPoint) {
-        _body = body;
+        this.body = body;
         _mainClass = mainClass;
         _entryPointNode = entryPoint;
         _env = env;
     }
 
     public List<Node> getBody() {
-        return _body;
+        return body;
     }
 
     public ClassDefinition getMainClass() {
@@ -75,7 +76,7 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
         StringBuilder builder = new StringBuilder();
 
         builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
-        for (var node : _body) {
+        for (var node : body) {
             builder.append(node.generateDot());
             builder.append(String.format("%s -- %s;\n", _id, node.getId()));
         }
@@ -93,19 +94,19 @@ public class ProgramEntryPoint extends Node implements HasSymbolScope {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ProgramEntryPoint that = (ProgramEntryPoint) o;
-        return Objects.equals(_body, that._body) && Objects.equals(_entryPointNode, that._entryPointNode);
+        return Objects.equals(body, that.body) && Objects.equals(_entryPointNode, that._entryPointNode);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _body, _entryPointNode);
+        return Objects.hash(super.hashCode(), body, _entryPointNode);
     }
 
     @Override
     public ProgramEntryPoint clone() {
         ProgramEntryPoint obj = (ProgramEntryPoint) super.clone();
-        obj._body = new ArrayList<>(_body.stream().map(Node::clone).toList());
-        for (Node node : obj._body) {
+        obj.body = new ArrayList<>(body.stream().map(Node::clone).toList());
+        for (Node node : obj.body) {
             if (_mainClass != null && node.getId() == obj._mainClass.getId()) {
                 obj._mainClass = (ClassDefinition) node;
             } else if (_entryPointNode != null && node.getId() == _entryPointNode.getId()) {

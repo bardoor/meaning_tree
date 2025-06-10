@@ -11,4 +11,9 @@ public class LeOp extends BinaryComparison {
     public String generateDot() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public Expression tryInvert() {
+        return new GtOp(this.getLeft(), this.getRight());
+    }
 }

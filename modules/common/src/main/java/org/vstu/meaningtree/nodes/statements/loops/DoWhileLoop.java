@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.statements.loops;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
@@ -7,8 +8,8 @@ import org.vstu.meaningtree.nodes.statements.Loop;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 
 public class DoWhileLoop extends Loop {
-    protected final Expression condition;
-    protected Statement body;
+    @TreeNode protected Expression condition;
+    @TreeNode protected Statement body;
 
     public DoWhileLoop(Expression condition, Statement body) {
         this.condition = condition;

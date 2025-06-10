@@ -4,15 +4,12 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import org.vstu.meaningtree.languages.*;
-import org.vstu.meaningtree.languages.configs.Config;
-import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;

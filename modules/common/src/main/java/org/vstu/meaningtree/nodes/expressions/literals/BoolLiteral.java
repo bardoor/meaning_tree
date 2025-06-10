@@ -1,6 +1,8 @@
 package org.vstu.meaningtree.nodes.expressions.literals;
 
+import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.nodes.expressions.Literal;
+import org.vstu.meaningtree.utils.Label;
 
 import java.util.Objects;
 
@@ -9,7 +11,11 @@ public class BoolLiteral extends Literal {
 
     public BoolLiteral(boolean state) {
         _state = state;
+       this.setLabel(new Label(Label.VALUE, state));
     }
+
+    @Override
+    public void setAssignedValueTag(@Nullable Object obj) {}
 
     @Override
     public boolean equals(Object o) {
@@ -26,5 +32,10 @@ public class BoolLiteral extends Literal {
 
     public boolean getValue() {
         return _state;
+    }
+
+    @Override
+    public boolean evaluatesToBoolean() {
+        return true;
     }
 }

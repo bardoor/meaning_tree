@@ -2,10 +2,10 @@ package org.vstu.meaningtree.languages;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.treesitter.TSException;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
-import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
+import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
@@ -34,7 +34,7 @@ public abstract class LanguageTokenizer {
     public Pair<Boolean, TokenList> tryTokenize(String code, boolean noPrepare) {
         try {
             return ImmutablePair.of(true, tokenize(code, noPrepare));
-        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -51,7 +51,7 @@ public abstract class LanguageTokenizer {
     public Pair<Boolean, TokenList> tryTokenize(String code) {
         try {
             return ImmutablePair.of(true, tokenize(code));
-        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -71,7 +71,7 @@ public abstract class LanguageTokenizer {
     public Pair<Boolean, TokenList> tryTokenizeExtended(MeaningTree mt) {
         try {
             return ImmutablePair.of(true, tokenizeExtended(mt));
-        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -83,7 +83,7 @@ public abstract class LanguageTokenizer {
     public Pair<Boolean, TokenList> tryTokenizeExtended(String code) {
         try {
             return ImmutablePair.of(true, tokenizeExtended(code));
-        } catch (UnsupportedViewingException | UnsupportedParsingException e) {
+        } catch (TSException | MeaningTreeException | IllegalArgumentException | ClassCastException e) {
             return ImmutablePair.of(false, null);
         }
     }
@@ -129,13 +129,13 @@ public abstract class LanguageTokenizer {
                 TokenGroup group = collectTokens(node.getChild(i), tokens, true, operands);
 
                 String leftName = getFieldNameByOperandPos(OperandPosition.LEFT, node.getType());
-                String centerName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getType());
-                String rightName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getType());
+                String rightName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getType());
+                String centerName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getType());
 
                 if (!node.getParent().isNull() && parent != null) {
                     String leftParentName = getFieldNameByOperandPos(OperandPosition.LEFT, node.getParent().getType());
-                    String centerParentName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getParent().getType());
-                    String rightParentName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getParent().getType());
+                    String rightParentName = getFieldNameByOperandPos(OperandPosition.RIGHT, node.getParent().getType());
+                    String centerParentName = getFieldNameByOperandPos(OperandPosition.CENTER, node.getParent().getType());
 
                     if (leftParentName != null && leftParentName.contains(".")
                             && leftParentName.split("\\.").length == 2

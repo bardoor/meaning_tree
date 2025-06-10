@@ -2,7 +2,6 @@ package org.vstu.meaningtree.languages;
 
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
@@ -75,17 +74,15 @@ import java.util.stream.Stream;
 
 public class PythonLanguage extends LanguageParser {
     private SymbolEnvironment currentContext;
+    private TSLanguage _language;
+    private TSParser _parser;
 
     private String _currentFunctionName = null;
     private TypeScope _currentTypeScope = new TypeScope();
 
     @Override
     public TSTree getTSTree() {
-        TSParser parser = new TSParser();
-        TSLanguage pyLanguage = new TreeSitterPython();
-        parser.setLanguage(pyLanguage);
-
-        TSTree tree = parser.parseString(null, _code);
+        _initBackend();
 
         /*
         TODO: only for test
@@ -94,7 +91,15 @@ public class PythonLanguage extends LanguageParser {
         } catch (IOException e) { }
         */
 
-        return tree;
+        return _parser.parseString(null, _code);
+    }
+
+    private void _initBackend() {
+        if (_language == null) {
+            _language = new TreeSitterPython();
+            _parser = new TSParser();
+            _parser.setLanguage(_language);
+        }
     }
 
     @Override
@@ -104,7 +109,7 @@ public class PythonLanguage extends LanguageParser {
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
         if (!errors.isEmpty() && !getConfigParameter(SkipErrors.class).orElse(false)) {
-            throw new MeaningTreeException(String.format("Given code has syntax errors: %s", errors));
+            throw new UnsupportedParsingException(String.format("Given code has syntax errors: %s", errors));
         }
         return new MeaningTree(fromTSNode(rootNode));
     }
@@ -142,6 +147,8 @@ public class PythonLanguage extends LanguageParser {
             case "boolean_operator" -> fromBooleanOperatorTSNode(node);
             case "none" -> new NullLiteral();
             case "type" -> determineType(node);
+            case "list_splat" -> DefinitionArgument.listUnpacking((Expression) fromTSNode(node.getNamedChild(0)));
+            case "dictionary_splat" -> DefinitionArgument.dictUnpacking((Expression) fromTSNode(node.getNamedChild(0)));
             case "true" -> new BoolLiteral(true);
             case "false" -> new BoolLiteral(false);
             case "call" -> fromFunctionCall(node);
@@ -189,7 +196,7 @@ public class PythonLanguage extends LanguageParser {
         TSNode body = node.getChildByFieldName("body");
         Comprehension.ComprehensionItem item;
         if (body.getType().equals("pair")) {
-            item = new Comprehension.KeyValuePair(
+            item = new KeyValuePair(
                     (Expression) fromTSNode(body.getChildByFieldName("key")),
                     (Expression) fromTSNode(body.getChildByFieldName("value")));
         } else {
@@ -423,6 +430,7 @@ public class PythonLanguage extends LanguageParser {
         Type type = new UnknownType();
         Expression initial = null;
         boolean isListUnpacking = false;
+        boolean isDictUnpacking = false;
         if (namedChild.getType().equals("typed_parameter")) {
             type = determineType(namedChild.getChildByFieldName("type"));
             namedChild = namedChild.getNamedChild(0);
@@ -438,10 +446,18 @@ public class PythonLanguage extends LanguageParser {
         } else if (namedChild.getType().equals("list_splat_pattern")) {
             isListUnpacking = true;
             namedChild = namedChild.getNamedChild(0);
+        } else if (namedChild.getType().equals("dictionary_splat_pattern")) {
+            isDictUnpacking = true;
+            namedChild = namedChild.getNamedChild(0);
         }
 
         SimpleIdentifier identifier = (SimpleIdentifier) fromTSNode(namedChild);
-        return new DeclarationArgument(type, isListUnpacking, identifier, initial);
+        if (isDictUnpacking) {
+            return DeclarationArgument.dictUnpacking(type, identifier);
+        } else if (isListUnpacking) {
+            return DeclarationArgument.listUnpacking(type, identifier);
+        }
+        return new DeclarationArgument(type, identifier, initial);
     }
 
     private ClassDefinition fromClass(TSNode node) {
@@ -626,7 +642,7 @@ public class PythonLanguage extends LanguageParser {
 
         Node entryPointNode = null;
         IfStatement entryPointIf = null;
-        for (Node programNode : compound) {
+        for (Node programNode : compound.getNodes()) {
             if (programNode instanceof IfStatement ifStmt) {
                 ConditionBranch mainBranch = ifStmt.getBranches().get(0);
                 if (mainBranch.getCondition() instanceof EqOp eqOp) {
@@ -832,7 +848,7 @@ public class PythonLanguage extends LanguageParser {
                 exprs.add(new NullLiteral());
             }
             if (idents.size() < exprs.size()) {
-                throw new MeaningTreeException("Invalid using of unpacking construction");
+                throw new UnsupportedParsingException("Invalid using of unpacking construction");
             }
 
             List<AssignmentStatement> stmts = new ArrayList<>();
@@ -902,7 +918,7 @@ public class PythonLanguage extends LanguageParser {
         for (int i = 0; i < node.getChildCount(); i++) {
             Node treeNode = fromTSNode(node.getChild(i));
             if (treeNode instanceof PseudoCompoundStatement pcs) {
-                for (Node subnode : pcs) {
+                for (Node subnode : pcs.getNodes()) {
                     builder.put(subnode);
                 }
             } else if (treeNode != null) {
@@ -970,7 +986,7 @@ public class PythonLanguage extends LanguageParser {
                 if (n instanceof Expression expr) {
                     exprs[i] = expr;
                 } else {
-                    throw new MeaningTreeException("Invalid type in expression statement, not expression");
+                    throw new UnsupportedParsingException("Invalid type in expression statement, not expression");
                 }
             }
             return new ExpressionSequence(exprs);
@@ -1053,7 +1069,8 @@ public class PythonLanguage extends LanguageParser {
                         comparisons.add(object);
                     } catch (InstantiationException | InvocationTargetException | IllegalAccessException |
                              NoSuchMethodException e) {
-                        throw new MeaningTreeException(e);
+                        e.printStackTrace();
+                        throw new UnsupportedParsingException(e.getMessage());
                     }
                 }
                 operands.add(secondNode);

@@ -1,24 +1,25 @@
 package org.vstu.meaningtree.nodes.types.containers;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.interfaces.Generic;
 
 import java.util.Objects;
 
 public class PlainCollectionType extends Type implements Generic {
-    private Type _itemType;
+    @TreeNode private Type itemType;
 
     public PlainCollectionType(Type itemType) {
-        _itemType = itemType;
+        this.itemType = itemType;
     }
 
     @Override
     public Type[] getTypeParameters() {
-        return new Type[] {_itemType};
+        return new Type[] {itemType};
     }
 
     public Type getItemType() {
-        return _itemType;
+        return itemType;
     }
 
     @Override
@@ -31,18 +32,18 @@ public class PlainCollectionType extends Type implements Generic {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PlainCollectionType that = (PlainCollectionType) o;
-        return Objects.equals(_itemType, that._itemType);
+        return Objects.equals(itemType, that.itemType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _itemType);
+        return Objects.hash(super.hashCode(), itemType);
     }
 
     @Override
     public PlainCollectionType clone() {
         PlainCollectionType obj = (PlainCollectionType) super.clone();
-        obj._itemType = _itemType.clone();
+        obj.itemType = itemType.clone();
         return obj;
     }
 }

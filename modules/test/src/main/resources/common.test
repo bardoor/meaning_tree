@@ -155,7 +155,7 @@ group: LiteralsTest
             [1, 2, 4, a, b]
 
         java:
-            new java.util.ArrayList<>(java.util.List.of(1, 2, 4, a, b));
+            new java.util.ArrayList<Object>(java.util.List.of(1, 2, 4, a, b));
 
     case: SetLiteral
         python:

@@ -3,6 +3,7 @@ package org.vstu.meaningtree.serializers.rdf;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
+import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.serializers.model.*;
 
@@ -66,6 +67,8 @@ public class RDFSerializer implements Serializer<Model> {
             }
 
             nodeResource.addProperty(model.createProperty(NS, "hasFieldList"), rdfList);
+        } else if (node instanceof SerializedLabel label) {
+            nodeResource.addProperty(model.createProperty(NS, "nodeType"), model.createResource(NS + "MeaningTreeLabel"));
         }
         if (parentResource != null
                 && !parentResource.hasProperty(model.createProperty(NS, "hasField"), nodeResource)
@@ -79,6 +82,11 @@ public class RDFSerializer implements Serializer<Model> {
     @Override
     public Model serialize(Node node) {
         return serialize(new UniversalSerializer().serialize(node));
+    }
+
+    @Override
+    public Model serialize(MeaningTree mt) {
+        return serialize(new UniversalSerializer().serialize(mt));
     }
 }
 

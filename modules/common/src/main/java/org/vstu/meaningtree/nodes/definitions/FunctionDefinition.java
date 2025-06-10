@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.definitions;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Definition;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
@@ -14,11 +15,11 @@ import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements HasBodyStatement {
-    protected CompoundStatement _body;
+    @TreeNode protected CompoundStatement body;
 
     public FunctionDefinition(FunctionDeclaration declaration, CompoundStatement body) {
         super(declaration);
-        _body = body;
+        this.body = body;
     }
 
     public Identifier getName() {
@@ -41,11 +42,11 @@ public class FunctionDefinition extends Definition implements HasBodyStatement {
     }
 
     public CompoundStatement getBody() {
-        return _body;
+        return body;
     }
 
     @Override
     public CompoundStatement makeCompoundBody(SymbolEnvironment env) {
-        return _body;
+        return body;
     }
 }
