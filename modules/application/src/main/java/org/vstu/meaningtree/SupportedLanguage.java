@@ -29,7 +29,6 @@ public enum SupportedLanguage {
         translators.put(JAVA, JavaTranslator.class);
         translators.put(CPP, CppTranslator.class);
         translators.put(PYTHON, PythonTranslator.class);
-        translators.put(JSON, JsonTranslator.class);
     }
 
     public static Map<SupportedLanguage, Class<? extends LanguageTranslator>> getMap() {
