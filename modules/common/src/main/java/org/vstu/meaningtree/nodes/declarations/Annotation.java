@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.declarations;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Declaration;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
@@ -7,11 +8,11 @@ import org.vstu.meaningtree.nodes.expressions.Identifier;
 import java.util.List;
 
 public class Annotation extends Declaration {
-    private final List<Expression> arguments;
-    private final Expression _function;
+    @TreeNode private List<Expression> arguments;
+    @TreeNode private final Expression function;
 
     public Annotation(Expression function, Expression... arguments) {
-        _function = function;
+        this.function = function;
         this.arguments = List.of(arguments);
     }
 
@@ -20,15 +21,15 @@ public class Annotation extends Declaration {
     }
 
     public Expression getFunctionExpression() {
-        return _function;
+        return function;
     }
 
     public boolean hasName() {
-        return _function instanceof Identifier;
+        return function instanceof Identifier;
     }
 
     public Identifier getName() {
-        return (Identifier) _function;
+        return (Identifier) function;
     }
 
     @Override

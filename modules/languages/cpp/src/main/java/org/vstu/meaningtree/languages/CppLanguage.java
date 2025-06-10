@@ -5,26 +5,23 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
-import org.vstu.meaningtree.languages.configs.Config;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
-import org.vstu.meaningtree.nodes.declarations.MethodDeclaration;
 import org.vstu.meaningtree.nodes.declarations.SeparatedVariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
-import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
+import org.vstu.meaningtree.nodes.expressions.*;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
 import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
@@ -76,26 +73,31 @@ import org.vstu.meaningtree.nodes.types.user.Class;
 import org.vstu.meaningtree.nodes.types.user.GenericClass;
 import org.vstu.meaningtree.utils.BodyBuilder;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
-import org.vstu.meaningtree.utils.type_inference.HindleyMilner;
 
 import java.util.*;
 
 public class CppLanguage extends LanguageParser {
-    private final TSLanguage _language;
-    private final TSParser _parser;
+    private TSLanguage _language;
+    private TSParser _parser;
     private final Map<String, UserType> _userTypes;
 
     private int binaryRecursiveFlag = -1;
 
     public CppLanguage() {
-        _language = new TreeSitterCpp();
-        _parser = new TSParser();
-        _parser.setLanguage(_language);
         _userTypes = new HashMap<>();
+    }
+
+    private void _initBackend() {
+        if (_language == null) {
+            _language = new TreeSitterCpp();
+            _parser = new TSParser();
+            _parser.setLanguage(_language);
+        }
     }
 
     @Override
     public TSTree getTSTree() {
+        _initBackend();
         TSTree tree = _parser.parseString(null, _code);
         /*
         TODO: only for test
@@ -114,7 +116,7 @@ public class CppLanguage extends LanguageParser {
         if (!errors.isEmpty()) {
             getConfigParameter(SkipErrors.class)
                     .filter(Boolean::booleanValue)
-                    .orElseThrow(() -> new MeaningTreeException(String.format("Given code has syntax errors: %s", errors)));
+                    .orElseThrow(() -> new UnsupportedParsingException(String.format("Given code has syntax errors: %s", errors)));
         }
 
         Node node = fromTSNode(rootNode);
@@ -146,12 +148,10 @@ public class CppLanguage extends LanguageParser {
         if (expressionMode) {
             // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа
             TSNode func = result.getNamedChild(0);
-            assert func.getType().equals("function_definition");
-            assert getCodePiece(
-                    func.getChildByFieldName("declarator")
-                            .getChildByFieldName("declarator")
-            ).equals("main");
-
+            if (!func.getType().equals("function_definition") || !getCodePiece(func.getChildByFieldName("declarator")
+                    .getChildByFieldName("declarator")).equals("main")) {
+                throw new UnsupportedParsingException("Syntax parsing of entry point has failed");
+            }
             TSNode body = func.getChildByFieldName("body");
 
             if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
@@ -214,6 +214,8 @@ public class CppLanguage extends LanguageParser {
             case "pointer_expression" -> fromPointerExpression(node);
             case "this" -> new SelfReference("this");
             case "offsetof_expression" -> fromOffsetOf(node);
+            case "preproc_defined" -> new FunctionCall(new SimpleIdentifier("defined"), (Expression)
+                    fromTSNode(node.getNamedChild(0)));
             case "comment" -> fromComment(node);
             case "if_statement" -> fromIfStatement(node);
             case "for_statement" -> fromForStatement(node);
@@ -292,7 +294,7 @@ public class CppLanguage extends LanguageParser {
         Type type = fromType(node.getChildByFieldName("type"));
         SimpleIdentifier name = (SimpleIdentifier) fromIdentifier(node.getChildByFieldName("declarator"));
         // Не поддерживается распаковка списков (как в Python) и значения по умолчанию
-        return new DeclarationArgument(type, false, name, null);
+        return new DeclarationArgument(type,  name, null);
     }
 
     private CompoundStatement fromBlock(TSNode node) {
@@ -615,7 +617,7 @@ public class CppLanguage extends LanguageParser {
         } else if (op.startsWith("*")) {
             return new PointerUnpackOp(argument);
         } else {
-            throw new MeaningTreeException("Unknown pointer expression: ".concat(op));
+            throw new UnsupportedParsingException("Unknown pointer expression: ".concat(op));
         }
     }
 
@@ -663,7 +665,7 @@ public class CppLanguage extends LanguageParser {
             ArrayInitializer initializer = !initList.isEmpty() ? new ArrayInitializer(initList) : null;
             return new ArrayNewExpression(type, new Shape(dimensions.size(), dimensions.toArray(new Expression[0])), initializer);
         } else {
-            throw new MeaningTreeException("No arguments for new expression");
+            throw new UnsupportedParsingException("No arguments for new expression");
         }
         for (int i = 0; i < childSource.getNamedChildCount(); i++) {
             args.add((Expression) fromTSNode(childSource.getNamedChild(i)));
@@ -832,7 +834,10 @@ public class CppLanguage extends LanguageParser {
     }
 
     @NotNull
-    private NumericLiteral fromUserDefinedLiteral(@NotNull TSNode node) {
+    private Literal fromUserDefinedLiteral(@NotNull TSNode node) {
+        if (node.getChildByFieldName("number_literal").isNull()) {
+            throw new UnsupportedParsingException("Only number literals are supported");
+        }
         String value = getCodePiece(node.getChildByFieldName("number_literal"));
         String literalSuffix = getCodePiece(node.getChildByFieldName("literal_suffix"));
 
@@ -1153,7 +1158,6 @@ public class CppLanguage extends LanguageParser {
                     arrayDimension = arrayDimension.getChildByFieldName("declarator");
                 }
                 mainType = new ArrayType(mainType, dimensions.size(), dimensions);
-                System.out.println(mainType);
                 declarators.add(new VariableDeclaration(mainType, new VariableDeclarator((SimpleIdentifier) fromTSNode(arrayDimension))));
             } else if (tsDeclarator.getType().equals("init_declarator")) {
                 TSNode tsVariableName = tsDeclarator.getChildByFieldName("declarator");
@@ -1253,7 +1257,7 @@ public class CppLanguage extends LanguageParser {
                 } else if (fieldIdent instanceof ScopedIdentifier scopedIdent) {
                     identList.addAll(scopedIdent.getScopeResolution());
                 } else if (fieldIdent instanceof QualifiedIdentifier) {
-                    throw new MeaningTreeException("Unsupported scoped and qualified identifier combination");
+                    throw new UnsupportedParsingException("Unsupported scoped and qualified identifier combination");
                 }
                 return new ScopedIdentifier(identList).toMemberAccess();
             } else {
@@ -1263,7 +1267,7 @@ public class CppLanguage extends LanguageParser {
                 return new MemberAccess((Expression) fromTSNode(node.getChildByFieldName("argument")), (SimpleIdentifier) fromTSNode(node.getChildByFieldName("field")));
             }
         } else {
-            throw new MeaningTreeException("Unknown identifier: " + node.getType());
+            throw new UnsupportedParsingException("Unknown identifier: " + node.getType());
         }
     }
 

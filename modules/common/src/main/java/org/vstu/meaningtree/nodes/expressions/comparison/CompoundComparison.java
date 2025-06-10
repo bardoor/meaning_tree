@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.expressions.comparison;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.ArrayList;
@@ -7,7 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class CompoundComparison extends Expression {
-    private final List<BinaryComparison> _comparisons;
+    @TreeNode private List<BinaryComparison> comparisons;
 
     /**
      * @param comparisons - отсортированный список сравнений (example of view: {a < b, b < c} => a < b < c)
@@ -18,7 +19,7 @@ public class CompoundComparison extends Expression {
                 throw new IllegalArgumentException("Comparisons must be sorted. In pair of comparisons right operand of first must be equal to left operand of second comparison");
             }
         }
-        this._comparisons = List.of(comparisons);
+        this.comparisons = List.of(comparisons);
     }
 
     public CompoundComparison(List<BinaryComparison> members) {
@@ -31,7 +32,7 @@ public class CompoundComparison extends Expression {
 
         builder.append(String.format("%s [label=\"%s\"];\n", _id, getClass().getSimpleName()));
 
-        for (BinaryComparison comparison : _comparisons) {
+        for (BinaryComparison comparison : comparisons) {
             builder.append(comparison.generateDot());
             builder.append(String.format("%s -- %s;\n", _id, comparison.getId()));
         }
@@ -40,7 +41,12 @@ public class CompoundComparison extends Expression {
     }
 
     public List<BinaryComparison> getComparisons() {
-        return new ArrayList<>(_comparisons);
+        return new ArrayList<>(comparisons);
+    }
+
+    @Override
+    public boolean evaluatesToBoolean() {
+        return true;
     }
 
     @Override
@@ -48,11 +54,11 @@ public class CompoundComparison extends Expression {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         CompoundComparison that = (CompoundComparison) o;
-        return Objects.equals(_comparisons, that._comparisons);
+        return Objects.equals(comparisons, that.comparisons);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _comparisons);
+        return Objects.hash(super.hashCode(), comparisons);
     }
 }

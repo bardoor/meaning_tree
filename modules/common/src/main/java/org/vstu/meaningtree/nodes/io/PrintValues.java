@@ -30,7 +30,7 @@ public class PrintValues extends PrintCommand {
     }
 
     public int valuesCount() {
-        return _arguments.size();
+        return arguments.size();
     }
 
     public boolean hasAnyValues() {

@@ -13,6 +13,7 @@ import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.definitions.ClassDefinition;
 import org.vstu.meaningtree.nodes.definitions.FunctionDefinition;
 import org.vstu.meaningtree.nodes.definitions.MethodDefinition;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator;
 import org.vstu.meaningtree.nodes.enums.DeclarationModifier;
 import org.vstu.meaningtree.nodes.expressions.*;
@@ -31,6 +32,7 @@ import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
 import org.vstu.meaningtree.nodes.expressions.math.*;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ArrayNewExpression;
+import org.vstu.meaningtree.nodes.expressions.newexpr.NewExpression;
 import org.vstu.meaningtree.nodes.expressions.newexpr.ObjectNewExpression;
 import org.vstu.meaningtree.nodes.expressions.other.*;
 import org.vstu.meaningtree.nodes.expressions.pointers.PointerPackOp;
@@ -60,8 +62,9 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.env.SymbolEnvironment;
+import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,10 +74,14 @@ import java.util.stream.Collectors;
 
 
 public class PythonViewer extends LanguageViewer {
+    public PythonViewer(LanguageTranslator translator) {
+        super(translator);
+    }
+
     @Override
     public String toString(Node node) {
         // Для dummy узлов ничего не выводим
-        if (node.hasLabel(NodeLabel.DUMMY)) {
+        if (node.hasLabel(Label.DUMMY)) {
             return "";
         }
 
@@ -97,6 +104,7 @@ public class PythonViewer extends LanguageViewer {
     public String toString(Node node, Tab tab) {
         return switch (node) {
             case ProgramEntryPoint programEntryPoint -> entryPointToString(programEntryPoint, tab);
+            case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case BinaryComparison cmpNode -> comparisonToString(cmpNode);
             case BinaryExpression binaryExpression -> binaryOpToString(binaryExpression);
             case IfStatement ifStatement -> conditionToString(ifStatement, tab);
@@ -109,9 +117,18 @@ public class PythonViewer extends LanguageViewer {
             case FormatPrint fmt -> throw new UnsupportedViewingException("Format print is not supported in Python");
             case FormatInput fmt -> throw new UnsupportedViewingException("Format input is not supported in Python");
             case Identifier identifier -> identifierToString(identifier);
-            case IndexExpression indexExpr -> String.format("%s[%s]", toString(indexExpr.getExpr()), toString(indexExpr.getIndex()));
-            case MemberAccess memAccess -> String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
-            case TernaryOperator ternary -> String.format("%s if %s else %s", toString(ternary.getThenExpr()), toString(ternary.getCondition()), toString(ternary.getElseExpr()));
+            case IndexExpression indexExpr -> {
+                indexExpr = parenFiller.process(indexExpr);
+                yield String.format("%s[%s]", toString(indexExpr.getExpression()), toString(indexExpr.getIndex()));
+            }
+            case MemberAccess memAccess -> {
+                memAccess = parenFiller.process(memAccess);
+                yield String.format("%s.%s", toString(memAccess.getExpression()), toString(memAccess.getMember()));
+            }
+            case TernaryOperator ternary -> {
+                ternary = parenFiller.process(ternary);
+                yield String.format("%s if %s else %s", toString(ternary.getThenExpr()), toString(ternary.getCondition()), toString(ternary.getElseExpr()));
+            }
             case ParenthesizedExpression paren -> String.format("(%s)", toString(paren.getExpression()));
             case ObjectNewExpression newExpr -> callsToString(newExpr);
             case ArrayNewExpression newExpr -> callsToString(newExpr);
@@ -127,7 +144,6 @@ public class PythonViewer extends LanguageViewer {
             case Comment comment -> commentToString(comment);
             case Literal literal -> literalToString(literal);
             case SizeofExpression ignored -> throw new UnsupportedViewingException("Sizeof is disabled in this language");
-            case AssignmentExpression assignmentExpr -> assignmentExpressionToString(assignmentExpr);
             case AssignmentStatement assignmentStatement -> assignmentToString(assignmentStatement);
             case VariableDeclaration varDecl -> variableDeclarationToString(varDecl);
             case ForLoop forLoop -> loopToString(forLoop, tab);
@@ -144,6 +160,7 @@ public class PythonViewer extends LanguageViewer {
             case ExpressionStatement exprStmt -> toString(exprStmt);
             case ReturnStatement returnStmt -> returnToString(returnStmt);
             case ArrayInitializer arrayInit -> arrayInitializerToString(arrayInit);
+            case DefinitionArgument arg -> definitionArgumentToString(arg);
             case Include incl -> String.format("import %s", toString(incl.getFileName()));
             case PackageDeclaration packageDecl -> String.format("import %s", toString(packageDecl.getPackageName()));
             case CommaExpression ignored -> throw new UnsupportedViewingException("Comma is unsupported in this language");
@@ -154,6 +171,18 @@ public class PythonViewer extends LanguageViewer {
             case null -> throw new MeaningTreeException("Null node detected");
             default -> throw new UnsupportedViewingException("Unsupported tree element: " + node.getClass().getName());
         };
+    }
+
+    private String definitionArgumentToString(DefinitionArgument arg) {
+        if (arg.isListUnpacking()) {
+            return "*%s".formatted(toString(arg.getInitialExpression()));
+        } else if (arg.isDictUnpacking()) {
+            return "**%s".formatted(toString(arg.getInitialExpression()));
+        } else if (arg.hasVisibleName()) {
+            return "%s=%s".formatted(toString(arg.getName()), toString(arg.getInitialExpression()));
+        } else {
+            return toString(arg.getInitialExpression());
+        }
     }
 
     public String toString(PointerPackOp ptr) {
@@ -180,21 +209,21 @@ public class PythonViewer extends LanguageViewer {
     private String comprehensionToString(Comprehension compr) {
         char startBracket = '[';
         char endBracket = ']';
-        if (compr.getItem() instanceof Comprehension.KeyValuePair || compr.getItem() instanceof Comprehension.SetItem) {
+        if (compr.getItem() instanceof KeyValuePair || compr.getItem() instanceof Comprehension.SetItem) {
             startBracket = '{';
             endBracket = '}';
         }
 
         StringBuilder comprehension = new StringBuilder();
         comprehension.append(startBracket);
-        if (compr.getItem() instanceof Comprehension.KeyValuePair pair) {
+        if (compr.getItem() instanceof KeyValuePair pair) {
             comprehension.append(String.format("%s: %s", toString(pair.key()), toString(pair.value())));
         } else if (compr.getItem() instanceof Comprehension.SetItem item) {
             comprehension.append(toString(item.value()));
         } else if (compr.getItem() instanceof Comprehension.ListItem item) {
             comprehension.append(toString(item.value()));
         } else {
-            throw new MeaningTreeException("Неизвестный тип comprehension");
+            throw new UnsupportedViewingException("Unknown comprehension");
         }
         comprehension.append(' ');
         if (compr instanceof RangeBasedComprehension rangeBased) {
@@ -302,11 +331,19 @@ public class PythonViewer extends LanguageViewer {
             DeclarationArgument arg = declArgs.get(i);
             if (arg.isListUnpacking()) {
                 function.append('*');
+            } else if (arg.isDictUnpacking()) {
+                function.append("**");
             }
             function.append(toString(arg.getName()));
-            if (!(arg.getType() instanceof UnknownType) && arg.getType() != null) {
+            if (!(arg.getType() instanceof UnknownType) && arg.getType() != null
+                    && !arg.isListUnpacking()
+                    && !arg.isDictUnpacking()) {
                 function.append(": ");
                 function.append(typeToString(arg.getType()));
+            }
+            if (!(arg.getElementType() instanceof UnknownType) && (arg.isListUnpacking() || arg.isDictUnpacking())) {
+                function.append(": ");
+                function.append(typeToString(arg.getElementType()));
             }
         }
         function.append(")");
@@ -359,28 +396,7 @@ public class PythonViewer extends LanguageViewer {
 
     private String entryPointToString(ProgramEntryPoint programEntryPoint, Tab tab) {
         IfStatement entryPointIf = null;
-
-        var body = programEntryPoint.getBody();
-        var funcName = new SimpleIdentifier("main");
-        var funcDecl = new FunctionDeclaration(funcName, new NoReturn(), new ArrayList<>());
-        var funcDef = new FunctionDefinition(funcDecl, new CompoundStatement(new SymbolEnvironment(null), body));
-
-        var funcCall = new FunctionCall(funcName);
-
-        entryPointIf = new IfStatement(
-                new EqOp(new SimpleIdentifier("__name__"),
-                         StringLiteral.fromUnescaped("__main__", StringLiteral.Type.NONE)),
-                new CompoundStatement(new SymbolEnvironment(null), funcCall),
-                null
-        );
-
-        List<Node> nodes = new ArrayList<>();
-        nodes.add(funcDef);
-        nodes.add(entryPointIf);
-
-        return nodeListToString(nodes, tab);
-
-        /*if (programEntryPoint.hasEntryPoint()) {
+        if (programEntryPoint.hasEntryPoint()) {
             Node entryPointNode = programEntryPoint.getEntryPoint();
             if (entryPointNode instanceof FunctionDefinition func) {
                 Identifier ident;
@@ -407,7 +423,7 @@ public class PythonViewer extends LanguageViewer {
         if (entryPointIf != null) {
             nodes.add(entryPointIf);
         }
-        return nodeListToString(nodes, tab);*/
+        return nodeListToString(nodes, tab);
     }
 
     private String loopToString(Statement stmt, Tab tab) {
@@ -556,6 +572,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String assignmentExpressionToString(AssignmentExpression expr) {
+        expr = (AssignmentExpression) parenFiller.process(expr);
         if (!(expr.getLValue() instanceof SimpleIdentifier) || (expr.getRValue() instanceof AssignmentExpression)) {
             if (getConfigParameter(ExpressionMode.class).orElse(false)) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
@@ -633,7 +650,7 @@ public class PythonViewer extends LanguageViewer {
                 default -> prefix += "";
             }
             StringBuilder builder = new StringBuilder();
-            for (Expression expr : interpolation) {
+            for (Expression expr : interpolation.components()) {
                 if (expr instanceof StringLiteral simpleString) {
                     if (interpolation.getStringType().equals(StringLiteral.Type.RAW)) {
                         builder.append(simpleString.getUnescapedValue());
@@ -728,7 +745,7 @@ public class PythonViewer extends LanguageViewer {
         boolean isStepDefault = range.getStep() instanceof IntegerLiteral intLit && intLit.getLongValue() == 1;
 
         if (stop == null) {
-            throw new MeaningTreeException("Range must contain stop condition at least");
+            throw new UnsupportedViewingException("Range must contain stop condition at least");
         }
 
         if ((start == null || isStartDefault) && (step == null || isStepDefault)) {
@@ -744,86 +761,24 @@ public class PythonViewer extends LanguageViewer {
         return String.format("range(%s, %s, %s)", toString(start), toString(stop), toString(step));
     }
 
-    protected String tokenOfBinaryOp(BinaryExpression node) {
-        if (node instanceof AddOp) {
-            return "+";
-        } else if (node instanceof SubOp) {
-            return "-";
-        } else if (node instanceof MulOp) {
-            return "*";
-        } else if (node instanceof DivOp) {
-            return "/";
-        } else if (node instanceof PowOp) {
-            return "**";
-        } else if (node instanceof FloorDivOp) {
-            return "//";
-        } else if (node instanceof ModOp) {
-            return "%";
-        } else if (node instanceof BitwiseAndOp) {
-            return "&";
-        } else if (node instanceof BitwiseOrOp) {
-            return "|";
-        } else if (node instanceof RightShiftOp) {
-            return ">>";
-        } else if (node instanceof LeftShiftOp) {
-            return "<<";
-        } else if (node instanceof XorOp) {
-            return "^";
-        } else if (node instanceof MatMulOp) {
-            return "@";
-        } else if (node instanceof ShortCircuitAndOp) {
-            return "and";
-        } else if (node instanceof ShortCircuitOrOp) {
-            return "or";
-        } else if (node instanceof EqOp) {
-            if (node.getRight() instanceof NullLiteral) {
-                return "is";
-            }
-            return "==";
-        } else if (node instanceof NotEqOp) {
-            if (node.getRight() instanceof NullLiteral) {
-                return "is not";
-            }
-            return "!=";
-        } else if (node instanceof GeOp) {
-            return ">=";
-        } else if (node instanceof LeOp) {
-            return "<=";
-        } else if (node instanceof GtOp) {
-            return ">";
-        } else if (node instanceof LtOp) {
-            return "<";
-        } else if (node instanceof ReferenceEqOp eq) {
-            return "is";
-        } else if (node instanceof ContainsOp cnt) {
-            return "in";
-        } else if (node instanceof InstanceOfOp op) {
-            return "CALL_(";
-        } else {
-            return null;
-        }
-    }
-
     private String binaryOpToString(BinaryExpression node) {
+        node = parenFiller.process(node);
         String pattern = "";
         Expression left = node.getLeft();
         Expression right = node.getRight();
-        String token = tokenOfBinaryOp(node);
-        if (left instanceof BinaryExpression leftBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        }
-        if (right instanceof BinaryExpression rightBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        }
+        String token = mapToToken(node).value;
+
         if (node instanceof ShortCircuitAndOp) {
-            Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
-            if (result instanceof CompoundComparison
-                    && !getConfigParameter(DisableCompoundComparisonConversion.class).orElse(false)) {
-                return compoundComparisonToString((CompoundComparison) result);
-            } else {
-                return preferExplicitAndOpToString(result);
+            try {
+                Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
+                if (result instanceof CompoundComparison
+                        && !getConfigParameter(DisableCompoundComparisonConversion.class).orElse(false)) {
+                    return compoundComparisonToString((CompoundComparison) result);
+                } else {
+                    return preferExplicitAndOpToString(result);
+                }
+            } catch (MeaningTreeException e) {
+                return preferExplicitAndOpToString(node);
             }
         } else if (node instanceof InstanceOfOp) {
             return String.format("isinstance(%s, %s)", toString(node.getLeft()), toString(node.getRight()));
@@ -861,18 +816,23 @@ public class PythonViewer extends LanguageViewer {
                 }
             }
             case ObjectNewExpression newExpr -> {
-                return String.format("%s(%s)", toString(newExpr.getType()), argumentsToString(newExpr.getConstructorArguments()));
+                FunctionCall call = new FunctionCall(newExpr.getType(), newExpr.getConstructorArguments());
+                return callsToString(call);
             }
             case MethodCall funcCall -> {
-                return String.format("%s.%s(%s)", toString(funcCall.getObject()), toString(funcCall.getFunction()), argumentsToString(funcCall.getArguments()));
+                MemberAccess memAcc = parenFiller.process(new MemberAccess(funcCall.getObject(),
+                        (SimpleIdentifier) funcCall.getFunctionName()));
+                return String.format("%s(%s)", toString(memAcc), argumentsToString(funcCall.getArguments()));
             }
             case FunctionCall funcCall -> {
+                funcCall = parenFiller.processForPython(funcCall);
                 return String.format("%s(%s)", toString(PythonSpecificFeatures.getFunctionExpression(funcCall)), argumentsToString(funcCall.getArguments()));
             }
             case CastTypeExpression cast -> {
-                return String.format("%s(%s)", toString(cast.getCastType()), toString(cast.getValue()));
+                FunctionCall call = new FunctionCall(cast.getCastType(), cast.getValue());
+                return callsToString(call);
             }
-            case null, default -> throw new MeaningTreeException("Not a callable object");
+            case null, default -> throw new UnsupportedViewingException("Not a callable object");
         }
     }
 
@@ -918,6 +878,7 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String unaryToString(UnaryExpression node) {
+        node = parenFiller.process(node);
         String pattern = "";
         Expression expr = node.getArgument();
 
@@ -962,7 +923,7 @@ public class PythonViewer extends LanguageViewer {
         if (node.getNodes().length == 0) {
             return tab.toString().concat("pass");
         }
-        for (Node child : node) {
+        for (Node child : node.getNodes()) {
             builder.append(tab);
             if (child instanceof CompoundStatement) {
                 // Схлопываем лишний таб, так как блоки как самостоятельная сущность в Python не поддерживаются
@@ -994,18 +955,11 @@ public class PythonViewer extends LanguageViewer {
     }
 
     private String comparisonToString(BinaryComparison node) {
+        node = (BinaryComparison) parenFiller.process(node);
         String pattern = "";
         Expression left = node.getLeft();
         Expression right = node.getRight();
-        String token = tokenOfBinaryOp(node);
-        if (left instanceof BinaryExpression leftBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        }
-        if (right instanceof BinaryExpression rightBinOp
-                && PythonTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > PythonTokenizer.operators.get(token).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        }
+        String token = mapToToken(node).value;
         if (node instanceof ReferenceEqOp eq) {
             if (eq.isNegative()) {
                 pattern = "%s is not %s";
@@ -1045,5 +999,91 @@ public class PythonViewer extends LanguageViewer {
             sb.append(toString(cmp.getRight()));
         }
         return sb.toString();
+    }
+
+    public OperatorToken mapToToken(Expression expr) {
+        String tok = switch (expr) {
+            case AddOp op -> "+";
+            case SubOp op -> "-";
+            case MulOp op -> "*";
+            case DivOp op -> "/";
+            case ModOp op -> "%";
+            case PowOp op -> "**";
+            case MatMulOp op -> "@";
+            case ContainsOp op -> {
+                if (op.isNegative()) {
+                    yield "not in";
+                }
+                yield "in";
+            }
+            case FloorDivOp op -> "//";
+            case ReferenceEqOp op -> {
+                if (op.isNegative()) {
+                    yield "is not";
+                }
+                yield "is";
+            }
+            case EqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is";
+                }
+                yield "==";
+            }
+            case NotEqOp op -> {
+                if (op.getRight() instanceof NullLiteral) {
+                    yield "is not";
+                }
+                yield "!=";
+            }
+            case GeOp op -> ">=";
+            case LeOp op -> "<=";
+            case LtOp op -> "<";
+            case GtOp op -> ">";
+            case ScopedIdentifier op -> ".";
+            case InstanceOfOp op -> "CALL_(";
+            case ShortCircuitAndOp op -> "and";
+            case ShortCircuitOrOp op -> "or";
+            case BitwiseAndOp op -> "&";
+            case BitwiseOrOp op -> "|";
+            case LeftShiftOp op -> "<<";
+            case RightShiftOp op -> ">>";
+            case FunctionCall op -> "CALL_(";
+            case TernaryOperator op -> "if";
+            case NewExpression op -> "new";
+            case MemberAccess op -> ".";
+            case XorOp op -> "^";
+            case IndexExpression op -> "[";
+            case ThreeWayComparisonOp op -> "<=>";
+            case AssignmentExpression as -> {
+                AugmentedAssignmentOperator op = as.getAugmentedOperator();
+                yield switch (op) {
+                    case NONE -> ":=";
+                    case ADD -> "+=";
+                    case SUB -> "-=";
+                    case MUL -> "*=";
+                    // В Java тип деления определяется не видом операции, а типом операндов,
+                    // поэтому один и тот же оператор
+                    case DIV, FLOOR_DIV -> "/=";
+                    case BITWISE_AND -> "&=";
+                    case BITWISE_OR -> "|=";
+                    case BITWISE_XOR -> "^=";
+                    case BITWISE_SHIFT_LEFT -> "<<=";
+                    case BITWISE_SHIFT_RIGHT -> ">>=";
+                    case MOD -> "%=";
+                    default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+                };
+            }
+            // unary section
+            case NotOp op -> "not";
+            case InversionOp op -> "~";
+            case UnaryMinusOp op -> "UMINUS";
+            case UnaryPlusOp op -> "UPLUS";
+            case PostfixIncrementOp op -> "+=";
+            case PrefixIncrementOp op -> "+=";
+            case PostfixDecrementOp op -> "-=";
+            case PrefixDecrementOp op -> "-=";
+            default -> null;
+        };
+        return translator.getTokenizer().getOperatorByTokenName(tok);
     }
 }

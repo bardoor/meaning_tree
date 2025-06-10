@@ -2,8 +2,8 @@ package org.vstu.meaningtree.languages;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
+import org.vstu.meaningtree.iterators.utils.NodeInfo;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.FunctionDeclaration;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
@@ -18,6 +18,7 @@ import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
 import org.vstu.meaningtree.nodes.expressions.bitwise.*;
 import org.vstu.meaningtree.nodes.expressions.calls.FunctionCall;
+import org.vstu.meaningtree.nodes.expressions.calls.MethodCall;
 import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
@@ -62,7 +63,9 @@ import org.vstu.meaningtree.nodes.types.UserType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
 import org.vstu.meaningtree.nodes.types.containers.*;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.nodes.types.containers.*;
+import org.vstu.meaningtree.utils.Label;
+import org.vstu.meaningtree.utils.tokens.OperatorToken;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,6 +76,15 @@ import java.util.stream.Collectors;
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
 public class CppViewer extends LanguageViewer {
+    public CppViewer(LanguageTranslator translator) {
+        super(translator);
+        _indentation = "    ";
+        _indentLevel = 0;
+        _openBracketOnSameLine = false;
+        _bracketsAroundCaseBranches = true;
+        _autoVariableDeclaration = false;
+    }
+
     private final String _indentation;
     private int _indentLevel;
     private final boolean _openBracketOnSameLine;
@@ -105,7 +117,7 @@ public class CppViewer extends LanguageViewer {
         _indentLevel--;
 
         if (_indentLevel < 0) {
-            throw new MeaningTreeException("Indentation level can't be less than zero");
+            throw new UnsupportedViewingException("Indentation level can't be less than zero");
         }
     }
 
@@ -129,7 +141,7 @@ public class CppViewer extends LanguageViewer {
     @Override
     public String toString(@NotNull Node node) {
         // Для dummy узлов ничего не выводим
-        if (node.hasLabel(NodeLabel.DUMMY)) {
+        if (node.hasLabel(Label.DUMMY)) {
             return "";
         }
 
@@ -703,7 +715,7 @@ public class CppViewer extends LanguageViewer {
             }
         }
 
-        throw new MeaningTreeException("Can't determine range type in for loop");
+        throw new UnsupportedViewingException("Can't determine range type in for loop");
     }
 
     private String getForRangeHeader(RangeForLoop forRangeLoop) {
@@ -732,7 +744,7 @@ public class CppViewer extends LanguageViewer {
             );
         }
 
-        throw new MeaningTreeException("Can't determine range type in for loop");
+        throw new UnsupportedViewingException("Can't determine range type in for loop");
     }
 
     public String toString(RangeForLoop forRangeLoop) {
@@ -767,7 +779,9 @@ public class CppViewer extends LanguageViewer {
         StringBuilder builder = new StringBuilder();
         builder.append("{\n");
         increaseIndentLevel();
-        for (Node node : stmt) {
+        for (NodeInfo nodeInfo : stmt) {
+            var node = nodeInfo.node();
+
             String s = toString(node);
             if (s.isEmpty()) {
                 continue;
@@ -938,6 +952,7 @@ public class CppViewer extends LanguageViewer {
     }
 
     private String toStringMemberAccess(MemberAccess memAccess) {
+        memAccess = parenFiller.process(memAccess);
         String token = memAccess instanceof PointerMemberAccess ? "->" : ".";
         return String.format("%s%s%s",toString(memAccess.getExpression()), token, toString(memAccess.getMember()));
     }
@@ -945,7 +960,7 @@ public class CppViewer extends LanguageViewer {
     private String fromInterpolatedString(InterpolatedStringLiteral interpolatedStringLiteral) {
         StringBuilder builder = new StringBuilder("std::format(\"");
         List<Expression> dynamicExprs = new ArrayList<>();
-        for (Expression expr : interpolatedStringLiteral) {
+        for (Expression expr : interpolatedStringLiteral.components()) {
             if (expr instanceof StringLiteral str) {
                 builder.append(str.getEscapedValue());
             } else {
@@ -999,7 +1014,7 @@ public class CppViewer extends LanguageViewer {
         } else if (_new instanceof ObjectNewExpression objectNew) {
             return String.format("new %s(%s)", toString(objectNew.getType()), toStringArguments(objectNew.getConstructorArguments()));
         } else {
-            throw new MeaningTreeException("Unknown new expression");
+            throw new UnsupportedViewingException("Unknown new expression");
         }
     }
 
@@ -1008,6 +1023,7 @@ public class CppViewer extends LanguageViewer {
     }
 
     private String toStringCast(CastTypeExpression cast) {
+        cast = parenFiller.process(cast);
         return String.format("(%s)%s", toString(cast.getCastType()), toString(cast.getValue()));
     }
 
@@ -1109,7 +1125,8 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringIndexExpression(@NotNull IndexExpression indexExpression) {
-        String base = toString(indexExpression.getExpr());
+        indexExpression = parenFiller.process(indexExpression);
+        String base = toString(indexExpression.getExpression());
         String indices = toString(indexExpression.getIndex());
         if (indexExpression.isPreferPointerRepresentation()) {
             return "*(%s + %s)".formatted(base, indices);
@@ -1138,6 +1155,7 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringTernaryOperator(@NotNull TernaryOperator ternaryOperator) {
+        ternaryOperator = parenFiller.process(ternaryOperator);
         String condition = toString(ternaryOperator.getCondition());
         String then = toString(ternaryOperator.getThenExpr());
         String else_ = toString(ternaryOperator.getElseExpr());
@@ -1169,6 +1187,9 @@ public class CppViewer extends LanguageViewer {
 
     @NotNull
     private String toStringFunctionCall(@NotNull FunctionCall functionCall) {
+        if (functionCall instanceof MethodCall call) {
+            functionCall = parenFiller.process(call);
+        }
         String functionName = toString(functionCall.getFunction());
         return functionName + "(" + toStringFunctionCallArgumentsList(functionCall.getArguments()) + ")";
     }
@@ -1181,6 +1202,7 @@ public class CppViewer extends LanguageViewer {
     @NotNull
     private String toStringAssignmentExpression(@NotNull AssignmentExpression assign) {
         AugmentedAssignmentOperator op = assign.getAugmentedOperator();
+        assign = (AssignmentExpression) parenFiller.process(assign);
         Expression left = assign.getLValue();
         Expression right = assign.getRValue();
 
@@ -1207,21 +1229,6 @@ public class CppViewer extends LanguageViewer {
             default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
         };
 
-        if (left instanceof BinaryExpression leftBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > CppTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(o).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > CppTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(o).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
 
         String l = toString(left);
         String r = toString(right);
@@ -1246,7 +1253,10 @@ public class CppViewer extends LanguageViewer {
         return switch (identifier) {
             case SimpleIdentifier simpleIdentifier -> simpleIdentifier.getName();
             case ScopedIdentifier scopedIdentifier -> String.join(".", scopedIdentifier.getScopeResolution().stream().map(this::toStringIdentifier).toList());
-            case QualifiedIdentifier qualifiedIdentifier -> String.format("%s::%s", this.toStringIdentifier(qualifiedIdentifier.getScope()), this.toStringIdentifier(qualifiedIdentifier.getMember()));
+            case QualifiedIdentifier qualifiedIdentifier -> {
+                qualifiedIdentifier = parenFiller.process(qualifiedIdentifier);
+                yield String.format("%s::%s", this.toStringIdentifier(qualifiedIdentifier.getScope()), this.toStringIdentifier(qualifiedIdentifier.getMember()));
+            }
             default -> throw new IllegalStateException("Unexpected value: " + identifier);
         };
     }
@@ -1313,9 +1323,10 @@ public class CppViewer extends LanguageViewer {
                 yield String.format("%s &", toStringType(ref.getTargetType()));
             }
             case DictionaryType dct -> String.format("std::map<%s, %s>", toStringType(dct.getKeyType()), toStringType(dct.getValueType()));
-            case ListType lst -> String.format("std::vector<%s>", toStringType(lst.getItemType()));
             case ArrayType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
+            case UnmodifiableListType array ->  String.format("std::array<%s>", toStringType(array.getItemType()));
             case SetType set ->  String.format("std::set<%s>", toStringType(set.getItemType()));
+            case PlainCollectionType lst -> String.format("std::vector<%s>", toStringType(lst.getItemType()));
             case StringType str -> "std::string"; // TODO: пока нет способа хорошо представить юникод-строки
             case GenericUserType gusr -> String.format("%s<%s>", toString(gusr.getQualifiedName()), toStringArguments(List.of(gusr.getTypeParameters())));
             case UserType usr -> toString(usr.getQualifiedName());
@@ -1351,6 +1362,7 @@ public class CppViewer extends LanguageViewer {
                 && p.getExpression() instanceof InstanceOfOp op) {
             return String.format("dynamic_cast<%s>(%s) == nullptr", toString(op.getRight()), toString(op.getLeft()));
         }
+        unaryExpression = parenFiller.process(unaryExpression);
 
         String operator = switch (unaryExpression) {
             case NotOp op -> "!";
@@ -1370,7 +1382,6 @@ public class CppViewer extends LanguageViewer {
                 || unaryExpression instanceof PostfixIncrementOp) {
             return toString(unaryExpression.getArgument()) + operator;
         }
-
         return operator + toString(unaryExpression.getArgument());
     }
 
@@ -1396,6 +1407,7 @@ public class CppViewer extends LanguageViewer {
             return String.format("(long) (%s / %s)", toString(op.getLeft()), toString(op.getRight()));
         }
 
+        binaryExpression = parenFiller.process(binaryExpression);
         Expression left = binaryExpression.getLeft();
         Expression right = binaryExpression.getRight();
 
@@ -1422,22 +1434,6 @@ public class CppViewer extends LanguageViewer {
             default -> throw new IllegalStateException("Unexpected value: " + binaryExpression);
         };
 
-        if (left instanceof BinaryExpression leftBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(leftBinOp)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            left = new ParenthesizedExpression(leftBinOp);
-        } else if (left instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            left = new ParenthesizedExpression(assignmentExpression);
-        }
-
-        if (right instanceof BinaryExpression rightBinOp
-                && CppTokenizer.operators.get(tokenOfBinaryOp(rightBinOp)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            right = new ParenthesizedExpression(rightBinOp);
-        } else if (right instanceof AssignmentExpression assignmentExpression
-                && CppTokenizer.operators.get(tokenOfBinaryOp(assignmentExpression)).precedence > CppTokenizer.operators.get(operator).precedence) {
-            right = new ParenthesizedExpression(assignmentExpression);
-        }
-
         return "%s %s %s".formatted(
                 toString(left),
                 operator,
@@ -1445,8 +1441,8 @@ public class CppViewer extends LanguageViewer {
         );
     }
 
-    private String tokenOfBinaryOp(BinaryExpression leftBinOp) {
-        return switch (leftBinOp) {
+    public OperatorToken mapToToken(Expression expr) {
+        String tok = switch (expr) {
             case AddOp op -> "+";
             case SubOp op -> "-";
             case MulOp op -> "*";
@@ -1454,42 +1450,67 @@ public class CppViewer extends LanguageViewer {
             case ModOp op -> "%";
             case EqOp op -> "==";
             case NotEqOp op -> "!=";
+            case PowOp op -> "CALL_(";
+            case MatMulOp op -> "CALL_(";
+            case ContainsOp op -> "CALL_(";
             case GeOp op -> ">=";
             case ReferenceEqOp op -> "==";
             case LeOp op -> "<=";
+            case CastTypeExpression op -> "CAST";
+            case ScopedIdentifier op -> ".";
             case LtOp op -> "<";
             case GtOp op -> ">";
-            case InstanceOfOp op -> "instanceof";
+            case InstanceOfOp op -> "CALL_(";
             case ShortCircuitAndOp op -> "&&";
             case ShortCircuitOrOp op -> "||";
             case BitwiseAndOp op -> "&";
             case BitwiseOrOp op -> "|";
             case LeftShiftOp op -> "<<";
             case RightShiftOp op -> ">>";
+            case FunctionCall op -> "CALL_(";
+            case TernaryOperator op -> "?";
+            case PointerMemberAccess op -> "->";
+            case NewExpression op -> "new";
+            case DeleteExpression op -> "delete";
+            case CommaExpression op -> ",";
+            case QualifiedIdentifier op -> "::";
+            case MemberAccess op -> ".";
             case XorOp op -> "^";
+            case IndexExpression op -> "[";
             case ThreeWayComparisonOp op -> "<=>";
+            case AssignmentExpression as -> {
+                AugmentedAssignmentOperator op = as.getAugmentedOperator();
+                yield switch (op) {
+                    case NONE -> "=";
+                    case ADD -> "+=";
+                    case SUB -> "-=";
+                    case MUL -> "*=";
+                    // В Java тип деления определяется не видом операции, а типом операндов,
+                    // поэтому один и тот же оператор
+                    case DIV, FLOOR_DIV -> "/=";
+                    case BITWISE_AND -> "&=";
+                    case BITWISE_OR -> "|=";
+                    case BITWISE_XOR -> "^=";
+                    case BITWISE_SHIFT_LEFT -> "<<=";
+                    case BITWISE_SHIFT_RIGHT -> ">>=";
+                    case MOD -> "%=";
+                    default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
+                };
+            }
             case FloorDivOp op -> "CALL_("; // чтобы взять токен такого же приоритета, решение не очень
-            default -> throw new IllegalStateException("Unexpected type of binary operator: " + leftBinOp.getClass().getName());
+            // unary section
+            case NotOp op -> "!";
+            case InversionOp op -> "~";
+            case UnaryMinusOp op -> "UMINUS";
+            case UnaryPlusOp op -> "UPLUS";
+            case PostfixIncrementOp op -> "++";
+            case PrefixIncrementOp op -> "++U";
+            case PostfixDecrementOp op -> "--";
+            case PrefixDecrementOp op -> "--U";
+            case PointerPackOp op -> "POINTER_&";
+            case PointerUnpackOp op -> "POINTER_*";
+            default -> null;
         };
-    }
-
-    public String tokenOfBinaryOp(AssignmentExpression expr) {
-        AugmentedAssignmentOperator op = expr.getAugmentedOperator();
-        return switch (op) {
-            case NONE -> "=";
-            case ADD -> "+=";
-            case SUB -> "-=";
-            case MUL -> "*=";
-            // В Java тип деления определяется не видом операции, а типом операндов,
-            // поэтому один и тот же оператор
-            case DIV, FLOOR_DIV -> "/=";
-            case BITWISE_AND -> "&=";
-            case BITWISE_OR -> "|=";
-            case BITWISE_XOR -> "^=";
-            case BITWISE_SHIFT_LEFT -> "<<=";
-            case BITWISE_SHIFT_RIGHT -> ">>=";
-            case MOD -> "%=";
-            default -> throw new IllegalStateException("Unexpected type of augmented assignment operator: " + op);
-        };
+        return translator.getTokenizer().getOperatorByTokenName(tok);
     }
 }

@@ -1,30 +1,31 @@
 package org.vstu.meaningtree.nodes.expressions.other;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 
 import java.util.Objects;
 
 public class TernaryOperator extends Expression {
-    private Expression _condition;
-    private Expression _thenExpr;
-    private Expression _elseExpr;
+    @TreeNode private Expression condition;
+    @TreeNode private Expression thenExpr;
+    @TreeNode private Expression elseExpr;
 
     public TernaryOperator(Expression condition, Expression thenExpr, Expression elseExpr) {
-        _condition = condition;
-        _thenExpr = thenExpr;
-        _elseExpr = elseExpr;
+        this.condition = condition;
+        this.thenExpr = thenExpr;
+        this.elseExpr = elseExpr;
     }
 
     public Expression getCondition() {
-        return _condition;
+        return condition;
     }
 
     public Expression getThenExpr() {
-        return _thenExpr;
+        return thenExpr;
     }
 
     public Expression getElseExpr() {
-        return _elseExpr;
+        return elseExpr;
     }
 
     @Override
@@ -37,20 +38,20 @@ public class TernaryOperator extends Expression {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TernaryOperator that = (TernaryOperator) o;
-        return Objects.equals(_condition, that._condition) && Objects.equals(_thenExpr, that._thenExpr) && Objects.equals(_elseExpr, that._elseExpr);
+        return Objects.equals(condition, that.condition) && Objects.equals(thenExpr, that.thenExpr) && Objects.equals(elseExpr, that.elseExpr);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _condition, _thenExpr, _elseExpr);
+        return Objects.hash(super.hashCode(), condition, thenExpr, elseExpr);
     }
 
     @Override
     public TernaryOperator clone() {
         TernaryOperator obj = (TernaryOperator) super.clone();
-        obj._condition = _condition.clone();
-        obj._elseExpr = _elseExpr.clone();
-        obj._thenExpr = _thenExpr.clone();
+        obj.condition = condition.clone();
+        obj.elseExpr = elseExpr.clone();
+        obj.thenExpr = thenExpr.clone();
         return obj;
     }
 }

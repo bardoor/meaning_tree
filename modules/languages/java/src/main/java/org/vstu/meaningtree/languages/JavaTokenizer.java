@@ -6,6 +6,7 @@ import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.nodes.definitions.components.DefinitionArgument;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.ParenthesizedExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
@@ -16,7 +17,7 @@ import org.vstu.meaningtree.nodes.expressions.comparison.*;
 import org.vstu.meaningtree.nodes.expressions.identifiers.QualifiedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.ScopedIdentifier;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
-import org.vstu.meaningtree.nodes.expressions.literals.ArrayLiteral;
+import org.vstu.meaningtree.nodes.expressions.literals.PlainCollectionLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.NotOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
@@ -30,7 +31,8 @@ import org.vstu.meaningtree.nodes.expressions.pointers.PointerUnpackOp;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
 import org.vstu.meaningtree.nodes.statements.ExpressionStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
-import org.vstu.meaningtree.utils.NodeLabel;
+import org.vstu.meaningtree.nodes.types.builtin.IntType;
+import org.vstu.meaningtree.utils.Label;
 import org.vstu.meaningtree.utils.TreeSitterUtils;
 import org.vstu.meaningtree.utils.tokens.*;
 
@@ -51,8 +53,6 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("CALL_(", braces.getFirst());
         put("CALL_)", braces.getLast());
 
-        put("CAST", new OperatorToken("CAST", TokenType.CAST, 1, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
-
         List<OperatorToken> collection = OperatorToken.makeComplex(1,
                 OperatorArity.BINARY, OperatorAssociativity.LEFT, false,
                 new String[] {"{", "}"},
@@ -72,6 +72,7 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("]", subscript.getLast());
 
         put("new", new OperatorToken("new", TokenType.OPERATOR, 1, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
+        get("new").additionalOpType = OperatorType.NEW;
         put(".", new OperatorToken(".", TokenType.OPERATOR, 1, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX));
 
         put("++", new OperatorToken("++", TokenType.OPERATOR, 2, OperatorAssociativity.LEFT, OperatorArity.UNARY, false, OperatorTokenPosition.POSTFIX).setFirstOperandToEvaluation(OperandPosition.LEFT));   // Постфиксный инкремент
@@ -84,52 +85,56 @@ public class JavaTokenizer extends LanguageTokenizer {
         put("!", new OperatorToken("!", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));     // Логическое НЕ
         put("~", new OperatorToken("~", TokenType.OPERATOR, 3, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));     // Побитовая инверсия
 
-        put("*", new OperatorToken("*", TokenType.OPERATOR, 4, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Умножение
-        put("/", new OperatorToken("/", TokenType.OPERATOR, 4, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Деление
-        put("%", new OperatorToken("%", TokenType.OPERATOR, 4, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Остаток от деления
+        put("CAST", new OperatorToken("CAST", TokenType.CAST, 4, OperatorAssociativity.RIGHT, OperatorArity.UNARY, false));
 
-        put("+", new OperatorToken("+", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Сложение (бинарный)
-        put("-", new OperatorToken("-", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Вычитание (бинарный)
+        put("*", new OperatorToken("*", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Умножение
+        put("/", new OperatorToken("/", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Деление
+        put("%", new OperatorToken("%", TokenType.OPERATOR, 5, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Остаток от деления
 
-        put("<<", new OperatorToken("<<", TokenType.OPERATOR, 6, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Левый сдвиг
-        put(">>", new OperatorToken(">>", TokenType.OPERATOR, 6, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Правый сдвиг
-        put(">>>", new OperatorToken(">>>", TokenType.OPERATOR, 6, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Беззнаковый правый сдвиг
+        put("+", new OperatorToken("+", TokenType.OPERATOR, 6, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Сложение (бинарный)
+        put("-", new OperatorToken("-", TokenType.OPERATOR, 6, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Вычитание (бинарный)
 
-        put("<", new OperatorToken("<", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Меньше
-        put("<=", new OperatorToken("<=", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Меньше или равно
-        put(">", new OperatorToken(">", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Больше
-        put(">=", new OperatorToken(">=", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Больше или равно
-        put("instanceof", new OperatorToken("instanceof", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Проверка на тип
+        put("<<", new OperatorToken("<<", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Левый сдвиг
+        put(">>", new OperatorToken(">>", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Правый сдвиг
+        put(">>>", new OperatorToken(">>>", TokenType.OPERATOR, 7, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Беззнаковый правый сдвиг
 
-        put("==", new OperatorToken("==", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Равно
-        put("!=", new OperatorToken("!=", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Не равно
+        put("<", new OperatorToken("<", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Меньше
+        put("<=", new OperatorToken("<=", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Меньше или равно
+        put(">", new OperatorToken(">", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Больше
+        put(">=", new OperatorToken(">=", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Больше или равно
+        put("instanceof", new OperatorToken("instanceof", TokenType.OPERATOR, 8, OperatorAssociativity.LEFT, OperatorArity.BINARY, false)); // Проверка на тип
 
-        put("&", new OperatorToken("&", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Побитовое И
-        put("^", new OperatorToken("^", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));    // Побитовое исключающее ИЛИ
-        put("|", new OperatorToken("|", TokenType.OPERATOR, 11, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));    // Побитовое ИЛИ
+        put("==", new OperatorToken("==", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Равно
+        put("!=", new OperatorToken("!=", TokenType.OPERATOR, 9, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));   // Не равно
 
-        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));  // Логическое И
-        put("||", new OperatorToken("||", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));  // Логическое ИЛИ
+        put("&", new OperatorToken("&", TokenType.OPERATOR, 10, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));     // Побитовое И
+        put("^", new OperatorToken("^", TokenType.OPERATOR, 11, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));    // Побитовое исключающее ИЛИ
+        put("|", new OperatorToken("|", TokenType.OPERATOR, 12, OperatorAssociativity.LEFT, OperatorArity.BINARY, false));    // Побитовое ИЛИ
 
-        List<OperatorToken> ternary = OperatorToken.makeComplex(14, OperatorArity.TERNARY,
+        put("&&", new OperatorToken("&&", TokenType.OPERATOR, 13, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.AND));  // Логическое И
+        put("||", new OperatorToken("||", TokenType.OPERATOR, 14, OperatorAssociativity.LEFT, OperatorArity.BINARY, true, OperatorTokenPosition.INFIX, OperatorType.OR));  // Логическое ИЛИ
+
+        List<OperatorToken> ternary = OperatorToken.makeComplex(15, OperatorArity.TERNARY,
                 OperatorAssociativity.RIGHT, true, new String[] {"?", ":"},
                 new TokenType[] {TokenType.OPERATOR, TokenType.OPERATOR}
         );
         put("?", ternary.getFirst().setFirstOperandToEvaluation(OperandPosition.LEFT));  // Тернарный оператор
         put(":", ternary.getLast().setFirstOperandToEvaluation(OperandPosition.LEFT));
+        get("?").additionalOpType = OperatorType.CONDITIONAL;
+        get(":").additionalOpType = OperatorType.CONDITIONAL;
 
-        put("=", new OperatorToken("=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));   // Присваивание
-        put("+=", new OperatorToken("+=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Сложение с присваиванием
-        put("-=", new OperatorToken("-=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Вычитание с присваиванием
-        put("*=", new OperatorToken("*=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Умножение с присваиванием
-        put("/=", new OperatorToken("/=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Деление с присваиванием
-        put("%=", new OperatorToken("%=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Остаток с присваиванием
-        put("<<=", new OperatorToken("<<=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Левый сдвиг с присваиванием
-        put(">>=", new OperatorToken(">>=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Правый сдвиг с присваиванием
-        put(">>>=", new OperatorToken(">>>=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Беззнаковый правый сдвиг с присваиванием
-        put("&=", new OperatorToken("&=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Побитовое И с присваиванием
-        put("^=", new OperatorToken("^=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Побитовое исключающее ИЛИ с присваиванием
-        put("|=", new OperatorToken("|=", TokenType.OPERATOR, 15, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Побитовое ИЛИ с присваиванием
+        put("=", new OperatorToken("=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false));   // Присваивание
+        put("+=", new OperatorToken("+=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Сложение с присваиванием
+        put("-=", new OperatorToken("-=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Вычитание с присваиванием
+        put("*=", new OperatorToken("*=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Умножение с присваиванием
+        put("/=", new OperatorToken("/=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Деление с присваиванием
+        put("%=", new OperatorToken("%=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Остаток с присваиванием
+        put("<<=", new OperatorToken("<<=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Левый сдвиг с присваиванием
+        put(">>=", new OperatorToken(">>=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Правый сдвиг с присваиванием
+        put(">>>=", new OperatorToken(">>>=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Беззнаковый правый сдвиг с присваиванием
+        put("&=", new OperatorToken("&=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Побитовое И с присваиванием
+        put("^=", new OperatorToken("^=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Побитовое исключающее ИЛИ с присваиванием
+        put("|=", new OperatorToken("|=", TokenType.OPERATOR, 16, OperatorAssociativity.RIGHT, OperatorArity.BINARY, false)); // Побитовое ИЛИ с присваиванием
     }};
 
 
@@ -161,11 +166,11 @@ public class JavaTokenizer extends LanguageTokenizer {
             }
         }
 
-        if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().isNull() && node.getParent().getType().equals("method_invocation")) {
+        if (!node.getParent().isNull() && tokenValue.equals("(") && !node.getParent().getParent().isNull() && node.getParent().getParent().getType().equals("method_invocation")) {
             return operators.get("CALL_(").clone();
         }
 
-        if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().isNull() && node.getParent().getType().equals("method_invocation")) {
+        if (!node.getParent().isNull() && tokenValue.equals(")") && !node.getParent().getParent().isNull() && node.getParent().getParent().getType().equals("method_invocation")) {
             return operators.get("CALL_)").clone();
         }
 
@@ -305,11 +310,41 @@ public class JavaTokenizer extends LanguageTokenizer {
     }
 
     public TokenGroup tokenizeExtended(Node node, TokenList result) {
-        if (node.hasLabel(NodeLabel.DUMMY)) {
+        if (node instanceof BinaryExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof UnaryExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof IndexExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof CastTypeExpression expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof MemberAccess expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof TernaryOperator expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof QualifiedIdentifier expr) {
+            node = this.viewer.parenFiller.process(expr);
+        } else if (node instanceof MethodCall call) {
+            node = this.viewer.parenFiller.process(call);
+        }
+
+        if (node.hasLabel(Label.DUMMY)) {
             return new TokenGroup(0, 0, result);
         }
         int posStart = result.size();
         switch (node) {
+            case AssignmentExpression assignment -> {
+                OperatorToken opTok = getOperatorByTokenName("=");
+                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
+                result.add(opTok);
+                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
+                group1.setMetadata(opTok, OperandPosition.LEFT);
+                group2.setMetadata(opTok, OperandPosition.RIGHT);
+                if (assignment.getAssignedValueTag() != null) {
+                    opTok.assignValue(assignment.getAssignedValueTag());
+                    valueSetNodes.add(assignment.getId());
+                }
+            }
             case BinaryExpression binOp -> tokenizeBinary(binOp, result);
             case PointerPackOp packOp -> tokenizeExtended(packOp.getArgument(), result);
             case PointerUnpackOp unpackOp -> tokenizeExtended(unpackOp.getArgument(), result);
@@ -321,8 +356,9 @@ public class JavaTokenizer extends LanguageTokenizer {
             case MemberAccess access -> tokenizeFieldOp(access, result);
             case CompoundComparison comparison -> tokenizeCompoundComparison(comparison, result);
             case IndexExpression subscript -> tokenizeSubscript(subscript, result);
-            case ArrayLiteral plain -> tokenizeNew(plain.toArrayNew(), result);
+            case PlainCollectionLiteral plain -> tokenizeNew(plain.toArrayNew(), result);
             case TernaryOperator ternary -> tokenizeTernary(ternary, result);
+            case DefinitionArgument arg -> tokenizeExtended(arg.getInitialExpression(), result);
             case SimpleIdentifier ident -> {
                 result.add(new Token(ident.getName(), TokenType.IDENTIFIER));
             }
@@ -345,18 +381,7 @@ public class JavaTokenizer extends LanguageTokenizer {
                 tokenizeExtended(paren.getExpression(), result);
                 result.add(new Token(")", TokenType.CLOSING_BRACE));
             }
-            case AssignmentExpression assignment -> {
-                OperatorToken opTok = getOperatorByTokenName("=");
-                TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
-                result.add(opTok);
-                TokenGroup group2 = tokenizeExtended(assignment.getRValue(), result);
-                group1.setMetadata(opTok, OperandPosition.LEFT);
-                group2.setMetadata(opTok, OperandPosition.RIGHT);
-                if (assignment.getAssignedValueTag() != null) {
-                    opTok.assignValue(assignment.getAssignedValueTag());
-                    valueSetNodes.add(assignment.getId());
-                }
-            }
+
             case AssignmentStatement assignment -> {
                 OperatorToken opTok = getOperatorByTokenName("=");
                 TokenGroup group1 = tokenizeExtended(assignment.getLValue(), result);
@@ -435,21 +460,26 @@ public class JavaTokenizer extends LanguageTokenizer {
                         TokenGroup operand = tokenizeExtended(arrNew.getShape().getDimension(i), result);
                         operand.setMetadata(newTok, OperandPosition.CENTER);
                     }
-                    result.add(new Token("][", TokenType.SEPARATOR));
+                    if (i != arrNew.getShape().getDimensionCount() - 1) {
+                        result.add(new Token("][", TokenType.SEPARATOR));
+                    }
                 }
-                result.add(new Token("]", TokenType.SUBSCRIPT_CLOSING_BRACE));
+                result.add(new Token("]", TokenType.SEPARATOR));
                 if (arrNew.getAssignedValueTag() != null) {
                     newTok.assignValue(arrNew.getAssignedValueTag());
                     valueSetNodes.add(arrNew.getId());
                 }
                 if (arrNew.getInitializer() != null) {
+                    newTok.additionalOpType = OperatorType.NEW_ARRAY;
                     OperatorToken tok = getOperatorByTokenName("{");
                     tok.setMetadata(newTok, OperandPosition.RIGHT);
                     result.add(tok);
                     for (Expression expr : arrNew.getInitializer().getValues()) {
-                        tokenizeExtended(expr, result);
+                        TokenGroup grp = tokenizeExtended(expr, result);
+                        grp.setMetadata(tok, OperandPosition.CENTER);
                         result.add(new Token(",", TokenType.COMMA).setOwner(tok));
                     }
+                    if (!arrNew.getInitializer().getValues().isEmpty()) result.removeLast();
                     result.add(getOperatorByTokenName("}"));
                 }
             }
@@ -545,6 +575,15 @@ public class JavaTokenizer extends LanguageTokenizer {
             case InstanceOfOp op -> "instanceof";
             default -> null;
         };
+        if (binOp instanceof FloorDivOp) {
+            tokenizeExtended(new CastTypeExpression(new IntType(64), new DivOp(binOp.getLeft(), binOp.getRight())), result);
+            return;
+        }
+        if (binOp instanceof PowOp) {
+            tokenizeExtended(new MethodCall(new SimpleIdentifier("Math"),
+                    new SimpleIdentifier("pow"), binOp.getLeft(), binOp.getRight()), result);
+            return;
+        }
         if (binOp instanceof ContainsOp) {
             tokenizeExtended(new MethodCall(binOp.getRight(), new SimpleIdentifier("contains"), binOp.getLeft()), result);
             return;
@@ -614,7 +653,7 @@ public class JavaTokenizer extends LanguageTokenizer {
     }
 
     private void tokenizeSubscript(IndexExpression subscript, TokenList result) {
-        TokenGroup leftOperand = tokenizeExtended(subscript.getExpr(), result);
+        TokenGroup leftOperand = tokenizeExtended(subscript.getExpression(), result);
         OperatorToken open = getOperatorByTokenName("[");
         result.add(open);
         leftOperand.setMetadata(open, OperandPosition.LEFT);

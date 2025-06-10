@@ -1,15 +1,16 @@
 package org.vstu.meaningtree.nodes.modules;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.expressions.Identifier;
 
 import java.util.List;
 
 public class ImportMembers extends Import {
-    private final List<Identifier> _members;
+    @TreeNode private List<Identifier> members;
 
     public ImportMembers(Identifier scope, List<Identifier> members) {
         super(scope);
-        _members = List.copyOf(members);
+        this.members = List.copyOf(members);
     }
 
     public ImportMembers(Identifier scope, Identifier... members) {
@@ -17,6 +18,6 @@ public class ImportMembers extends Import {
     }
 
     public List<Identifier> getMembers() {
-        return _members;
+        return members;
     }
 }

@@ -1,5 +1,6 @@
 package org.vstu.meaningtree.nodes.types.containers;
 
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.types.containers.components.Shape;
@@ -9,16 +10,16 @@ import java.util.Objects;
 
 public class ArrayType extends PlainCollectionType {
 
-    private Shape _shape;
+    @TreeNode private Shape shape;
 
     public ArrayType(Type itemType, int dimensionCount) {
         super(itemType);
-        _shape = new Shape(dimensionCount);
+        shape = new Shape(dimensionCount);
     }
 
     public ArrayType(Type itemType, Expression size) {
         super(itemType);
-        _shape = new Shape(1, size);
+        shape = new Shape(1, size);
     }
 
     public ArrayType(Type itemType, int dimensionCount, Expression... dimensions) {
@@ -27,15 +28,15 @@ public class ArrayType extends PlainCollectionType {
 
     public ArrayType(Type itemType, int dimensionCount, List<Expression> dimensions) {
         super(itemType);
-        _shape = new Shape(dimensionCount, dimensions);
+        shape = new Shape(dimensionCount, dimensions);
     }
 
     public Shape getShape() {
-        return _shape;
+        return shape;
     }
 
     public int getDimensionsCount() {
-        return _shape.getDimensionCount();
+        return shape.getDimensionCount();
     }
 
     @Override
@@ -48,18 +49,18 @@ public class ArrayType extends PlainCollectionType {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ArrayType arrayType = (ArrayType) o;
-        return Objects.equals(_shape, arrayType._shape);
+        return Objects.equals(shape, arrayType.shape);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _shape);
+        return Objects.hash(super.hashCode(), shape);
     }
 
     @Override
     public ArrayType clone() {
         ArrayType obj = (ArrayType) super.clone();
-        obj._shape = _shape.clone();
+        obj.shape = shape.clone();
         return obj;
     }
 }

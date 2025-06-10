@@ -9,12 +9,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JavaTranslator extends LanguageTranslator {
+    public static final int ID = 2;
+
     public JavaTranslator(Map<String, String> rawConfig) {
-        super(new JavaLanguage(), new JavaViewer(), rawConfig);
+        super(new JavaLanguage(), null, rawConfig);
+        this.setViewer(new JavaViewer(this));
     }
 
     public JavaTranslator() {
-        super(new JavaLanguage(), new JavaViewer(), new HashMap<>());
+        super(new JavaLanguage(), null, new HashMap<>());
+        this.setViewer(new JavaViewer(this));
+    }
+
+    @Override
+    public int getLanguageId() {
+        return ID;
     }
 
     @Override

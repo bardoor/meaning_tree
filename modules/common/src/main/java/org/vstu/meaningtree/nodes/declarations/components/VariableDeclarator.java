@@ -1,6 +1,7 @@
 package org.vstu.meaningtree.nodes.declarations.components;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
@@ -8,14 +9,12 @@ import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import java.util.Objects;
 
 public class VariableDeclarator extends Node {
-    private final SimpleIdentifier _identifier;
-
-    @Nullable
-    private final Expression _rvalue;
+    @TreeNode private SimpleIdentifier identifier;
+    @TreeNode @Nullable private Expression rvalue;
 
     public VariableDeclarator(SimpleIdentifier identifier, @Nullable Expression rvalue) {
-        _identifier = identifier;
-        _rvalue = rvalue;
+        this.identifier = identifier;
+        this.rvalue = rvalue;
     }
 
     public VariableDeclarator(SimpleIdentifier identifier) {
@@ -24,15 +23,15 @@ public class VariableDeclarator extends Node {
 
     @Nullable
     public Expression getRValue() {
-        return _rvalue;
+        return rvalue;
     }
 
     public boolean hasInitialization() {
-        return _rvalue != null;
+        return rvalue != null;
     }
 
     public SimpleIdentifier getIdentifier() {
-        return _identifier;
+        return identifier;
     }
 
     @Override
@@ -40,11 +39,11 @@ public class VariableDeclarator extends Node {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         VariableDeclarator that = (VariableDeclarator) o;
-        return Objects.equals(_identifier, that._identifier) && Objects.equals(_rvalue, that._rvalue);
+        return Objects.equals(identifier, that.identifier) && Objects.equals(rvalue, that.rvalue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), _identifier, _rvalue);
+        return Objects.hash(super.hashCode(), identifier, rvalue);
     }
 }

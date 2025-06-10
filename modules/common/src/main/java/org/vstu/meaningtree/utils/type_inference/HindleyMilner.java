@@ -102,9 +102,7 @@ public class HindleyMilner {
 
     @NotNull
     private static List<Expression> expressionChildren(@NotNull Expression expression) {
-        return expression
-                .getChildren()
-                .values()
+        return expression.allChildren()
                 .stream()
                 .map(node -> (Expression) node)
                 .toList();
@@ -273,10 +271,10 @@ public class HindleyMilner {
         return switch (expression) {
             case Literal literal -> inference(literal);
             case SimpleIdentifier identifier -> inference(identifier, scope);
+            case AssignmentExpression assignmentExpression -> inference(assignmentExpression, scope);
             case UnaryExpression unaryExpression -> inference(unaryExpression, scope);
             case BinaryExpression binaryExpression -> inference(binaryExpression, scope);
             case ParenthesizedExpression parenthesizedExpression -> inference(parenthesizedExpression.getExpression(), scope);
-            case AssignmentExpression assignmentExpression -> inference(assignmentExpression, scope);
             case CompoundComparison compoundComparison -> inference(compoundComparison, scope);
             case TernaryOperator ternaryOperator -> inference(ternaryOperator, scope);
             case Range range -> inference(range, scope);
@@ -391,9 +389,7 @@ public class HindleyMilner {
                 case VariableDeclaration variableDeclaration -> inference(variableDeclaration, scope);
                 case VariableDeclarator variableDeclarator -> inference(variableDeclarator, scope);
                 case null, default -> {
-                    List<Node> nodes_ = node
-                            .getChildren()
-                            .values()
+                    List<Node> nodes_ = node.allChildren()
                             .stream()
                             .map(obj -> (Node) obj)
                             .toList();

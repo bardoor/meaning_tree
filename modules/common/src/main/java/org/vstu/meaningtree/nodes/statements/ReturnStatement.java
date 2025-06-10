@@ -1,14 +1,15 @@
 package org.vstu.meaningtree.nodes.statements;
 
 import org.jetbrains.annotations.Nullable;
+import org.vstu.meaningtree.iterators.utils.TreeNode;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Statement;
 
 public class ReturnStatement extends Statement {
-    private final Expression _expr;
+    @TreeNode private Expression expression;
 
     public ReturnStatement(Expression expr) {
-        _expr = expr;
+        expression = expr;
     }
 
     public ReturnStatement() {
@@ -22,6 +23,6 @@ public class ReturnStatement extends Statement {
 
     @Nullable
     public Expression getExpression() {
-        return _expr;
+        return expression;
     }
 }

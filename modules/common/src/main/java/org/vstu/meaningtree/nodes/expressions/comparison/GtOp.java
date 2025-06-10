@@ -8,5 +8,8 @@ public class GtOp extends BinaryComparison {
         super(left, right);
     }
 
-
+    @Override
+    public Expression tryInvert() {
+        return new LeOp(this.getLeft(), this.getRight());
+    }
 }

@@ -67,12 +67,12 @@ public class StringLiteral extends Literal {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StringLiteral that = (StringLiteral) o;
-        return Objects.equals(value, that.value);
+        return Objects.equals(value, that.value) && stringType == that.stringType && charSize == that.charSize;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(value);
+        return Objects.hash(value, stringType, charSize);
     }
 
 }
