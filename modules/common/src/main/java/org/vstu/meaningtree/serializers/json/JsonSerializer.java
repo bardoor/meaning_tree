@@ -1,7 +1,9 @@
-package org.vstu.meaningtree.languages;
+package org.vstu.meaningtree.serializers.json;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
+import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.nodes.Comment;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
@@ -31,86 +33,89 @@ import org.vstu.meaningtree.nodes.statements.loops.RangeForLoop;
 import org.vstu.meaningtree.nodes.statements.loops.WhileLoop;
 import org.vstu.meaningtree.nodes.statements.loops.control.BreakStatement;
 import org.vstu.meaningtree.nodes.statements.loops.control.ContinueStatement;
+import org.vstu.meaningtree.serializers.model.Serializer;
 
 import java.util.Objects;
 
-public class JsonViewer extends LanguageViewer {
+public class JsonSerializer implements Serializer<JsonObject> {
     @Override
-    public String toString(Node node) {
-        return toJson(node).toString();
+    public JsonObject serialize(MeaningTree mt) {
+        return serialize(mt.getRootNode());
     }
 
-    public JsonObject toJson(Node node) {
+
+    @Override
+    public JsonObject serialize(Node node) {
         var json = switch (node) {
             // Operators
-            case AddOp op -> toJson(op);
-            case SubOp op -> toJson(op);
-            case MulOp op -> toJson(op);
-            case DivOp op -> toJson(op);
-            case ModOp op -> toJson(op);
-            case MatMulOp op -> toJson(op);
-            case FloorDivOp op -> toJson(op);
-            case EqOp op -> toJson(op);
-            case GeOp op -> toJson(op);
-            case GtOp op -> toJson(op);
-            case LeOp op -> toJson(op);
-            case LtOp op -> toJson(op);
-            case UnaryMinusOp unaryMinusOp -> toJson(unaryMinusOp);
-            case UnaryPlusOp unaryPlusOp -> toJson(unaryPlusOp);
-            case InstanceOfOp op -> toJson(op);
-            case NotEqOp op -> toJson(op);
-            case ShortCircuitAndOp op -> toJson(op);
-            case ShortCircuitOrOp op -> toJson(op);
-            case PowOp op -> toJson(op);
-            case NotOp op -> toJson(op);
-            case PostfixIncrementOp inc -> toJson(inc);
-            case PostfixDecrementOp dec -> toJson(dec);
-            case PrefixIncrementOp inc -> toJson(inc);
-            case PrefixDecrementOp dec -> toJson(dec);
-            case BitwiseAndOp bitwiseAndOp -> toJson(bitwiseAndOp);
-            case BitwiseOrOp bitwiseOrOp -> toJson(bitwiseOrOp);
-            case XorOp xorOp -> toJson(xorOp);
-            case InversionOp inversionOp -> toJson(inversionOp);
-            case LeftShiftOp leftShiftOp -> toJson(leftShiftOp);
-            case RightShiftOp rightShiftOp -> toJson(rightShiftOp);
-            case ContainsOp op -> toJson(op);
-            case ReferenceEqOp op -> toJson(op);
-            case TernaryOperator ternaryOperator -> toJson(ternaryOperator);
+            case AddOp op -> serialize(op);
+            case SubOp op -> serialize(op);
+            case MulOp op -> serialize(op);
+            case DivOp op -> serialize(op);
+            case ModOp op -> serialize(op);
+            case MatMulOp op -> serialize(op);
+            case FloorDivOp op -> serialize(op);
+            case EqOp op -> serialize(op);
+            case GeOp op -> serialize(op);
+            case GtOp op -> serialize(op);
+            case LeOp op -> serialize(op);
+            case LtOp op -> serialize(op);
+            case UnaryMinusOp unaryMinusOp -> serialize(unaryMinusOp);
+            case UnaryPlusOp unaryPlusOp -> serialize(unaryPlusOp);
+            case InstanceOfOp op -> serialize(op);
+            case NotEqOp op -> serialize(op);
+            case ShortCircuitAndOp op -> serialize(op);
+            case ShortCircuitOrOp op -> serialize(op);
+            case PowOp op -> serialize(op);
+            case NotOp op -> serialize(op);
+            case PostfixIncrementOp inc -> serialize(inc);
+            case PostfixDecrementOp dec -> serialize(dec);
+            case PrefixIncrementOp inc -> serialize(inc);
+            case PrefixDecrementOp dec -> serialize(dec);
+            case BitwiseAndOp bitwiseAndOp -> serialize(bitwiseAndOp);
+            case BitwiseOrOp bitwiseOrOp -> serialize(bitwiseOrOp);
+            case XorOp xorOp -> serialize(xorOp);
+            case InversionOp inversionOp -> serialize(inversionOp);
+            case LeftShiftOp leftShiftOp -> serialize(leftShiftOp);
+            case RightShiftOp rightShiftOp -> serialize(rightShiftOp);
+            case ContainsOp op -> serialize(op);
+            case ReferenceEqOp op -> serialize(op);
+            case TernaryOperator ternaryOperator -> serialize(ternaryOperator);
 
             // Literals
-            case FloatLiteral l -> toJson(l);
-            case IntegerLiteral l -> toJson(l);
-            case StringLiteral l -> toJson(l);
-            case NullLiteral l -> toJson(l);
-            case BoolLiteral l -> toJson(l);
-            case CharacterLiteral l -> toJson(l);
+            case FloatLiteral l -> serialize(l);
+            case IntegerLiteral l -> serialize(l);
+            case StringLiteral l -> serialize(l);
+            case NullLiteral l -> serialize(l);
+            case BoolLiteral l -> serialize(l);
+            case CharacterLiteral l -> serialize(l);
 
             // Expressions
-            case ParenthesizedExpression expr -> toJson(expr);
-            case SimpleIdentifier expr -> toJson(expr);
-            case AssignmentExpression expr -> toJson(expr);
-            case CompoundComparison cmp -> toJson(cmp);
-            case FunctionCall funcCall -> toJson(funcCall);
-            case IndexExpression indexExpression -> toJson(indexExpression);
-            case Range range -> toJson(range);
+            case ParenthesizedExpression expr -> serialize(expr);
+            case SimpleIdentifier expr -> serialize(expr);
+            case AssignmentExpression expr -> serialize(expr);
+            case CompoundComparison cmp -> serialize(cmp);
+            case FunctionCall funcCall -> serialize(funcCall);
+            case IndexExpression indexExpression -> serialize(indexExpression);
+            case Range range -> serialize(range);
 
             // Statements
-            case AssignmentStatement stmt -> toJson(stmt);
-            case VariableDeclaration stmt -> toJson(stmt);
-            case CompoundStatement stmt -> toJson(stmt);
-            case ExpressionStatement stmt -> toJson(stmt);
-            case IfStatement stmt -> toJson(stmt);
-            case ConditionBranch stmt -> toJson(stmt);
-            case GeneralForLoop stmt -> toJson(stmt);
-            case RangeForLoop rangeLoop -> toJson(rangeLoop);
-            case WhileLoop whileLoop -> toJson(whileLoop);
-            case BreakStatement stmt -> toJson(stmt);
-            case ContinueStatement stmt -> toJson(stmt);
-            case SwitchStatement switchStatement -> toJson(switchStatement);
-            case DoWhileLoop doWhileLoop -> toJson(doWhileLoop);
+            case AssignmentStatement stmt -> serialize(stmt);
+            case VariableDeclaration stmt -> serialize(stmt);
+            case CompoundStatement stmt -> serialize(stmt);
+            case ExpressionStatement stmt -> serialize(stmt);
+            case IfStatement stmt -> serialize(stmt);
+            case ConditionBranch stmt -> serialize(stmt);
+            case GeneralForLoop stmt -> serialize(stmt);
+            case RangeForLoop rangeLoop -> serialize(rangeLoop);
+            case WhileLoop whileLoop -> serialize(whileLoop);
+            case BreakStatement stmt -> serialize(stmt);
+            case ContinueStatement stmt -> serialize(stmt);
+            case SwitchStatement switchStatement -> serialize(switchStatement);
+            case DoWhileLoop doWhileLoop -> serialize(doWhileLoop);
 
-            case ProgramEntryPoint entryPoint -> toJson(entryPoint);
-            case Comment comment -> toJson(comment);
+            case ProgramEntryPoint entryPoint -> serialize(entryPoint);
+            case Comment comment -> serialize(comment);
 
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
@@ -120,362 +125,361 @@ public class JsonViewer extends LanguageViewer {
         return json;
     }
 
-
     /* -----------------------------
     |          Operators            |
     ------------------------------ */
 
     @NotNull
-    private JsonObject toJson(@NotNull AddOp op) {
+    private JsonObject serialize(@NotNull AddOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "add_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull SubOp op) {
+    private JsonObject serialize(@NotNull SubOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "sub_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull MulOp op) {
+    private JsonObject serialize(@NotNull MulOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "mul_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull DivOp op) {
+    private JsonObject serialize(@NotNull DivOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "div_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ModOp op) {
+    private JsonObject serialize(@NotNull ModOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "mod_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull MatMulOp op) {
+    private JsonObject serialize(@NotNull MatMulOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "matrix_mul_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull FloorDivOp op) {
+    private JsonObject serialize(@NotNull FloorDivOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "floor_div_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull PowOp op) {
+    private JsonObject serialize(@NotNull PowOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "pow_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull EqOp op) {
+    private JsonObject serialize(@NotNull EqOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "eq_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull GeOp op) {
+    private JsonObject serialize(@NotNull GeOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "ge_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull GtOp op) {
+    private JsonObject serialize(@NotNull GtOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "gt_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull LeOp op) {
+    private JsonObject serialize(@NotNull LeOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "le_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull LtOp op) {
+    private JsonObject serialize(@NotNull LtOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "lt_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull NotEqOp op) {
+    private JsonObject serialize(@NotNull NotEqOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "not_eq_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ReferenceEqOp op) {
+    private JsonObject serialize(@NotNull ReferenceEqOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "reference_eq_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ShortCircuitAndOp op) {
+    private JsonObject serialize(@NotNull ShortCircuitAndOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "short_circuit_and_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ShortCircuitOrOp op) {
+    private JsonObject serialize(@NotNull ShortCircuitOrOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "short_circuit_or_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull NotOp op) {
+    private JsonObject serialize(@NotNull NotOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "unary_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull UnaryMinusOp op) {
+    private JsonObject serialize(@NotNull UnaryMinusOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "unary_minus_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull UnaryPlusOp op) {
+    private JsonObject serialize(@NotNull UnaryPlusOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "unary_plus_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull PostfixIncrementOp op) {
+    private JsonObject serialize(@NotNull PostfixIncrementOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "unary_postfix_inc_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull PostfixDecrementOp op) {
+    private JsonObject serialize(@NotNull PostfixDecrementOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "unary_postfix_dec_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull PrefixIncrementOp op) {
+    private JsonObject serialize(@NotNull PrefixIncrementOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "unary_prefix_inc_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull PrefixDecrementOp op) {
+    private JsonObject serialize(@NotNull PrefixDecrementOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "unary_prefix_dec_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull BitwiseAndOp op) {
+    private JsonObject serialize(@NotNull BitwiseAndOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "bitwise_and_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull BitwiseOrOp op) {
+    private JsonObject serialize(@NotNull BitwiseOrOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "bitwise_or_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull XorOp op) {
+    private JsonObject serialize(@NotNull XorOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "xor_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull InversionOp op) {
+    private JsonObject serialize(@NotNull InversionOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "inversion_operator");
-        json.add("operand", toJson(op.getArgument()));
+        json.add("operand", serialize(op.getArgument()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull LeftShiftOp op) {
+    private JsonObject serialize(@NotNull LeftShiftOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "left_shift_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull RightShiftOp op) {
+    private JsonObject serialize(@NotNull RightShiftOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "right_shift_operator");
-        json.add("left_operand", toJson(op.getLeft()));
-        json.add("right_operand", toJson(op.getRight()));
+        json.add("left_operand", serialize(op.getLeft()));
+        json.add("right_operand", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull InstanceOfOp op) {
+    private JsonObject serialize(@NotNull InstanceOfOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "instance_of_operator");
-        json.add("expression", toJson(op.getLeft()));
-        json.add("type", toJson(op.getRight()));
+        json.add("expression", serialize(op.getLeft()));
+        json.add("type", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ContainsOp op) {
+    private JsonObject serialize(@NotNull ContainsOp op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "contains_operator");
-        json.add("element", toJson(op.getLeft()));
-        json.add("collection", toJson(op.getRight()));
+        json.add("element", serialize(op.getLeft()));
+        json.add("collection", serialize(op.getRight()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull TernaryOperator op) {
+    private JsonObject serialize(@NotNull TernaryOperator op) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "ternary_operator");
-        json.add("condition", toJson(op.getCondition()));
-        json.add("true_expression", toJson(op.getThenExpr()));
-        json.add("false_expression", toJson(op.getElseExpr()));
+        json.add("condition", serialize(op.getCondition()));
+        json.add("true_expression", serialize(op.getThenExpr()));
+        json.add("false_expression", serialize(op.getElseExpr()));
 
         return json;
     }
@@ -485,7 +489,7 @@ public class JsonViewer extends LanguageViewer {
     ------------------------------ */
 
     @NotNull
-    private JsonObject toJson(@NotNull FloatLiteral floatLiteral) {
+    private JsonObject serialize(@NotNull FloatLiteral floatLiteral) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "float_literal");
@@ -496,7 +500,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull IntegerLiteral integerLiteral) {
+    private JsonObject serialize(@NotNull IntegerLiteral integerLiteral) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "int_literal");
@@ -507,7 +511,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull StringLiteral stringLiteral) {
+    private JsonObject serialize(@NotNull StringLiteral stringLiteral) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "string_literal");
@@ -517,7 +521,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull NullLiteral nullLiteral) {
+    private JsonObject serialize(@NotNull NullLiteral nullLiteral) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "null_literal");
@@ -526,7 +530,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull BoolLiteral boolLiteral) {
+    private JsonObject serialize(@NotNull BoolLiteral boolLiteral) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "bool_literal");
@@ -536,7 +540,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull CharacterLiteral characterLiteral) {
+    private JsonObject serialize(@NotNull CharacterLiteral characterLiteral) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "char_literal");
@@ -551,17 +555,17 @@ public class JsonViewer extends LanguageViewer {
     ------------------------------ */
 
     @NotNull
-    private JsonObject toJson(@NotNull ParenthesizedExpression expr) {
+    private JsonObject serialize(@NotNull ParenthesizedExpression expr) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "parenthesized_expression");
-        json.add("expression", toJson(expr.getExpression()));
+        json.add("expression", serialize(expr.getExpression()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull SimpleIdentifier expr) {
+    private JsonObject serialize(@NotNull SimpleIdentifier expr) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "identifier");
@@ -571,57 +575,57 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull AssignmentExpression expr) {
+    private JsonObject serialize(@NotNull AssignmentExpression expr) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "assignment_expression");
-        json.add("target", toJson(expr.getLValue()));
-        json.add("value", toJson(expr.getRValue()));
+        json.add("target", serialize(expr.getLValue()));
+        json.add("value", serialize(expr.getRValue()));
 
         return json;
     }
 
     // TODO: Я думаю это не работает но сейчас 2 часа ночи...
     @NotNull
-    private JsonObject toJson(@NotNull CompoundComparison cmp) {
+    private JsonObject serialize(@NotNull CompoundComparison cmp) {
         JsonObject json = new JsonObject();
         json.addProperty("type", "compound_comparison");
-        
+
         JsonArray comparisons = new JsonArray();
         for (var comparison : cmp.getComparisons()) {
             JsonObject jsonComparison = new JsonObject();
-            jsonComparison.add("left", toJson(comparison.getLeft()));
+            jsonComparison.add("left", serialize(comparison.getLeft()));
             jsonComparison.addProperty("operator", comparison.getClass().getSimpleName());
-            jsonComparison.add("right", toJson(comparison.getRight()));
+            jsonComparison.add("right", serialize(comparison.getRight()));
         }
-        
+
         json.add("comparisons", comparisons);
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull FunctionCall funcCall) {
+    private JsonObject serialize(@NotNull FunctionCall funcCall) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "function_call");
-        json.add("function", toJson(funcCall.getFunction()));
-        
+        json.add("function", serialize(funcCall.getFunction()));
+
         JsonArray args = new JsonArray();
         for (var arg : funcCall.getArguments()) {
-            args.add(toJson(arg));
+            args.add(serialize(arg));
         }
-        
+
         json.add("arguments", args);
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull IndexExpression indexExpression) {
+    private JsonObject serialize(@NotNull IndexExpression indexExpression) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "index_expression");
-        json.add("expr", toJson(indexExpression.getExpr()));
-        json.add("index", toJson(indexExpression.getIndex()));
+        json.add("expr", serialize(indexExpression.getExpression()));
+        json.add("index", serialize(indexExpression.getIndex()));
 
         return json;
     }
@@ -632,18 +636,18 @@ public class JsonViewer extends LanguageViewer {
     ------------------------------ */
 
     @NotNull
-    private JsonObject toJson(@NotNull AssignmentStatement stmt) {
+    private JsonObject serialize(@NotNull AssignmentStatement stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "assignment_statement");
-        json.add("target", toJson(stmt.getLValue()));
-        json.add("value", toJson(stmt.getRValue()));
+        json.add("target", serialize(stmt.getLValue()));
+        json.add("value", serialize(stmt.getRValue()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull VariableDeclaration stmt) {
+    private JsonObject serialize(@NotNull VariableDeclaration stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "variable_declaration");
@@ -651,9 +655,9 @@ public class JsonViewer extends LanguageViewer {
         JsonArray declarators = new JsonArray();
         for (VariableDeclarator varDecl : stmt.getDeclarators()) {
             JsonObject jsonDeclaration = new JsonObject();
-            jsonDeclaration.add("identifier", toJson(varDecl.getIdentifier()));
+            jsonDeclaration.add("identifier", serialize(varDecl.getIdentifier()));
             if (varDecl.getRValue() != null) {
-                jsonDeclaration.add("rvalue", toJson(varDecl.getRValue()));
+                jsonDeclaration.add("rvalue", serialize(varDecl.getRValue()));
             }
             declarators.add(jsonDeclaration);
         }
@@ -663,13 +667,13 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull CompoundStatement stmt) {
+    private JsonObject serialize(@NotNull CompoundStatement stmt) {
         JsonObject json = new JsonObject();
         json.addProperty("type", "compound_statement");
 
         JsonArray statements = new JsonArray();
         for (var statement : stmt.getNodes()) {
-            statements.add(toJson(statement));
+            statements.add(serialize(statement));
         }
 
         json.add("statements", statements);
@@ -677,23 +681,23 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ExpressionStatement stmt) {
+    private JsonObject serialize(@NotNull ExpressionStatement stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "expression_statement");
-        json.add("expression", toJson(stmt.getExpression()));
+        json.add("expression", serialize(stmt.getExpression()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull IfStatement stmt) {
+    private JsonObject serialize(@NotNull IfStatement stmt) {
         JsonObject json = new JsonObject();
         json.addProperty("type", "if_statement");
 
         JsonArray branches = new JsonArray();
         for (var branch : stmt.getBranches()) {
-            branches.add(toJson(branch));
+            branches.add(serialize(branch));
         }
 
         json.add("branches", branches);
@@ -701,14 +705,14 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ConditionBranch branch) {
+    private JsonObject serialize(@NotNull ConditionBranch branch) {
         JsonObject branchJson = new JsonObject();
 
         if (branch.getCondition() != null) {
-            branchJson.add("condition", toJson(branch.getCondition()));
+            branchJson.add("condition", serialize(branch.getCondition()));
         }
 
-        branchJson.add("body", toJson(branch.getBody()));
+        branchJson.add("body", serialize(branch.getBody()));
         branchJson.addProperty("id", branch.getId());
         branchJson.addProperty("type", "condition_branch");
 
@@ -718,70 +722,70 @@ public class JsonViewer extends LanguageViewer {
 
     // TODO: сделать это как таковое
     @NotNull
-    private JsonObject toJson(@NotNull GeneralForLoop stmt) {
+    private JsonObject serialize(@NotNull GeneralForLoop stmt) {
         JsonObject json = new JsonObject();
         json.addProperty("type", "general_for_loop");
 
         /*
         if (stmt.getInitializer() != null) {
-            json.add("initializer", toJson(stmt.getInitializer()));
+            json.add("initializer", serialize(stmt.getInitializer()));
         }
          */
 
         if (stmt.getCondition() != null) {
-            json.add("condition", toJson(stmt.getCondition()));
+            json.add("condition", serialize(stmt.getCondition()));
         }
 
         if (stmt.getUpdate() != null) {
-            json.add("update", toJson(stmt.getUpdate()));
+            json.add("update", serialize(stmt.getUpdate()));
         }
 
-        json.add("body", toJson(stmt.getBody()));
+        json.add("body", serialize(stmt.getBody()));
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull Range range) {
+    private JsonObject serialize(@NotNull Range range) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "range");
-        json.add("start", toJson(range.getStart()));
-        json.add("stop", toJson(range.getStop()));
-        json.add("step", toJson(range.getStep()));
+        json.add("start", serialize(range.getStart()));
+        json.add("stop", serialize(range.getStop()));
+        json.add("step", serialize(range.getStep()));
 
         json.addProperty("isExcludingStart", range.isExcludingStart());
         json.addProperty("isExcludingEnd", range.isExcludingEnd());
-    
+
         json.addProperty("rangeType", range.getType().name().toLowerCase());
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull RangeForLoop stmt) {
+    private JsonObject serialize(@NotNull RangeForLoop stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "range_for_loop");
-        json.add("identifier", toJson(stmt.getIdentifier()));
-        json.add("range", toJson(stmt.getRange()));
-        json.add("body", toJson(stmt.getBody()));
+        json.add("identifier", serialize(stmt.getIdentifier()));
+        json.add("range", serialize(stmt.getRange()));
+        json.add("body", serialize(stmt.getBody()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull WhileLoop stmt) {
+    private JsonObject serialize(@NotNull WhileLoop stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "while_loop");
-        json.add("condition", toJson(stmt.getCondition()));
-        json.add("body", toJson(stmt.getBody()));
+        json.add("condition", serialize(stmt.getCondition()));
+        json.add("body", serialize(stmt.getBody()));
 
         return json;
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull BreakStatement stmt) {
+    private JsonObject serialize(@NotNull BreakStatement stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "break_statement");
@@ -790,7 +794,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull ContinueStatement stmt) {
+    private JsonObject serialize(@NotNull ContinueStatement stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "continue_statement");
@@ -799,18 +803,18 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull SwitchStatement stmt) {
+    private JsonObject serialize(@NotNull SwitchStatement stmt) {
         JsonObject json = new JsonObject();
         json.addProperty("type", "switch_statement");
-        json.add("expression", toJson(stmt.getTargetExpression()));
+        json.add("expression", serialize(stmt.getTargetExpression()));
 
         JsonArray cases = new JsonArray();
         for (var switchCase : stmt.getCases()) {
-            cases.add(toJson(switchCase.getBody()));
+            cases.add(serialize(switchCase.getBody()));
         }
 
         if (stmt.hasDefaultCase()) {
-            json.add("default", toJson(Objects.requireNonNull(stmt.getDefaultCase())));
+            json.add("default", serialize(Objects.requireNonNull(stmt.getDefaultCase())));
         }
 
         json.add("cases", cases);
@@ -818,12 +822,12 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull DoWhileLoop stmt) {
+    private JsonObject serialize(@NotNull DoWhileLoop stmt) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "do_while_loop");
-        json.add("body", toJson(stmt.getBody()));
-        json.add("condition", toJson(stmt.getCondition()));
+        json.add("body", serialize(stmt.getBody()));
+        json.add("condition", serialize(stmt.getCondition()));
 
         return json;
     }
@@ -834,14 +838,14 @@ public class JsonViewer extends LanguageViewer {
     ------------------------------ */
 
     @NotNull
-    private JsonObject toJson(@NotNull ProgramEntryPoint entryPoint) {
+    private JsonObject serialize(@NotNull ProgramEntryPoint entryPoint) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "program_entry_point");
 
         JsonArray body = new JsonArray();
         for (var entry : entryPoint.getBody()) {
-            body.add(toJson(entry));
+            body.add(serialize(entry));
         }
 
         json.add("body", body);
@@ -849,7 +853,7 @@ public class JsonViewer extends LanguageViewer {
     }
 
     @NotNull
-    private JsonObject toJson(@NotNull Comment comment) {
+    private JsonObject serialize(@NotNull Comment comment) {
         JsonObject json = new JsonObject();
 
         json.addProperty("type", "comment");

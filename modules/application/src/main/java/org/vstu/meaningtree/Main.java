@@ -3,16 +3,24 @@ package org.vstu.meaningtree;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import org.apache.jena.rdf.model.Model;
 import org.vstu.meaningtree.languages.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.vstu.meaningtree.nodes.Node;
+import org.vstu.meaningtree.serializers.json.JsonSerializer;
+import org.vstu.meaningtree.serializers.model.IOAlias;
+import org.vstu.meaningtree.serializers.model.IOAliases;
+import org.vstu.meaningtree.serializers.rdf.RDFSerializer;
+
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 public class Main {
 
@@ -21,7 +29,7 @@ public class Main {
         @Parameter(names = "--from", description = "Source language", required = true)
         private String fromLanguage;
 
-        @Parameter(names = "--to", description = "Target language", required = true)
+        @Parameter(names = "--to", description = "Target language")
         private String toLanguage;
 
         @Parameter(names = "--task",
@@ -30,6 +38,9 @@ public class Main {
                         "wrap_while_loop_and_replace_it_with_do_while, convert_redundant_condition_checks, " +
                         "add_duplicated_case_bodies, add_redundant_condition_check_after_loop")
         private String task;
+
+        @Parameter(names = "--serialize", description = "Serialization format: json or rdf")
+        private String serializeFormat;
 
         @Parameter(description = "<input_file> [output_file]", required = true, arity = 1)
         private java.util.List<String> positionalParams;
@@ -46,6 +57,10 @@ public class Main {
             return task;
         }
 
+        public String getSerializeFormat() {
+            return serializeFormat;
+        }
+
         public String getInputFile() {
             return positionalParams.getFirst();
         }
@@ -60,6 +75,19 @@ public class Main {
 
     public static Map<String, Class<? extends LanguageTranslator>> translators =
             SupportedLanguage.getStringMap();
+
+    private static final IOAliases<Function<Node, String>> serializers = new IOAliases<>(List.of(
+            new IOAlias<>("json", node -> {
+                JsonObject json = new JsonSerializer().serialize(node);
+                return new GsonBuilder().setPrettyPrinting().create().toJson(json);
+            }),
+            new IOAlias<>("rdf", node -> {
+                Model model = new RDFSerializer().serialize(node);
+                StringWriter writer = new StringWriter();
+                model.write(writer, "RDF/XML");
+                return writer.toString();
+            })
+    ));
 
     public static void main(String[] args) throws Exception {
         TranslateCommand translateCommand = new TranslateCommand();
@@ -88,13 +116,25 @@ public class Main {
 
     private static void runTranslation(TranslateCommand cmd) throws Exception {
         String fromLanguage = cmd.getFromLanguage().toLowerCase();
-        String toLanguage = cmd.getToLanguage().toLowerCase();
+        String toLanguage = cmd.getToLanguage();
         String inputFilePath = cmd.getInputFile();
         String outputFilePath = cmd.getOutputFile();
         String taskString = cmd.getTask();
+        String serializeFormat = cmd.getSerializeFormat();
 
-        if (!translators.containsKey(fromLanguage) || !translators.containsKey(toLanguage)) {
-            System.err.println("Unsupported language. Supported languages: " + translators.keySet());
+        // Validate that either --to or --serialize is specified
+        if (toLanguage == null && serializeFormat == null) {
+            System.err.println("Either --to (target language) or --serialize (format) must be specified");
+            return;
+        }
+
+        if (!translators.containsKey(fromLanguage)) {
+            System.err.println("Unsupported source language: " + fromLanguage + ". Supported languages: " + translators.keySet());
+            return;
+        }
+
+        if (toLanguage != null && !translators.containsKey(toLanguage.toLowerCase())) {
+            System.err.println("Unsupported target language: " + toLanguage + ". Supported languages: " + translators.keySet());
             return;
         }
 
@@ -106,7 +146,7 @@ public class Main {
         LanguageTranslator fromTranslator =
                 translators.get(fromLanguage).getDeclaredConstructor().newInstance();
         //fromTranslator.setConfig(new Config(new SkipErrors(true)));
-        var mt = fromTranslator.getMeaningTree(code);
+        var meaningTree = fromTranslator.getMeaningTree(code);
 
         // If a task is specified, convert the string to the enum and generate the refactor problem
         if (taskString != null) {
@@ -115,24 +155,30 @@ public class Main {
                 // parseTask already printed an error message
                 return;
             }
-            var problem = AugletsRefactorProblemsGenerator.generate(mt, taskEnum, true, Collections.emptyMap());
-            mt = problem.problemMeaningTree();
+            var problem = AugletsRefactorProblemsGenerator.generate(meaningTree, taskEnum, true, Collections.emptyMap());
+            meaningTree = problem.problemMeaningTree();
         }
 
-        // Instantiate target-language translator
-        LanguageTranslator toTranslator =
-                translators.get(toLanguage).getDeclaredConstructor().newInstance();
-        //toTranslator.setConfig(new Config(new SkipErrors(true)));
+        final var rootNode = meaningTree.getRootNode();
 
-        // Generate the final code
-        String translatedCode = toTranslator.getCode(mt);
+        // Handle serialization if requested
+        if (serializeFormat != null) {
+            serializers.apply(serializeFormat, function -> function.apply(rootNode))
+                    .ifPresentOrElse(
+                            result -> writeOutput(result, outputFilePath),
+                            () -> System.err.println("Unknown serialization format: " + serializeFormat + ". " + serializers.getSupportedFormatsMessage())
+                    );
+            return;
+        }
 
-        if ("-".equals(outputFilePath)) {
-            System.out.println(translatedCode);
-        } else {
-            try (PrintWriter out = new PrintWriter(new FileWriter(outputFilePath))) {
-                out.print(translatedCode);
-            }
+        // Instantiate target-language translator and generate code
+        if (toLanguage != null) {
+            LanguageTranslator toTranslator =
+                    translators.get(toLanguage.toLowerCase()).getDeclaredConstructor().newInstance();
+            //toTranslator.setConfig(new Config(new SkipErrors(true)));
+            String translatedCode = toTranslator.getCode(meaningTree);
+            
+            writeOutput(translatedCode, outputFilePath);
         }
     }
 
@@ -155,6 +201,20 @@ public class Main {
                 System.err.println("  - " + t.name().toLowerCase(Locale.ROOT));
             }
             return null;
+        }
+    }
+
+    private static void writeOutput(String content, String outputFilePath) {
+        try {
+            if ("-".equals(outputFilePath)) {
+                System.out.println(content);
+            } else {
+                try (PrintWriter out = new PrintWriter(new FileWriter(outputFilePath))) {
+                    out.print(content);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing output: " + e.getMessage());
         }
     }
 
