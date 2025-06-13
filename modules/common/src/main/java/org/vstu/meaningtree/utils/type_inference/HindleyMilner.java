@@ -17,6 +17,7 @@ import org.vstu.meaningtree.nodes.expressions.logical.*;
 import org.vstu.meaningtree.nodes.expressions.math.AddOp;
 import org.vstu.meaningtree.nodes.expressions.math.DivOp;
 import org.vstu.meaningtree.nodes.expressions.other.AssignmentExpression;
+import org.vstu.meaningtree.nodes.expressions.other.KeyValuePair;
 import org.vstu.meaningtree.nodes.expressions.other.Range;
 import org.vstu.meaningtree.nodes.expressions.other.TernaryOperator;
 import org.vstu.meaningtree.nodes.expressions.unary.*;
@@ -27,6 +28,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +52,118 @@ public class HindleyMilner {
             case StringLiteral stringLiteral -> new StringType();
             case InterpolatedStringLiteral interpolatedStringLiteral -> new StringType();
             case NullLiteral nullLiteral -> new UnknownType();
+            case ArrayLiteral arrayLiteral -> inference(arrayLiteral);
+            case ListLiteral listLiteral -> inference(listLiteral);
+            case DictionaryLiteral dictionaryLiteral -> inference(dictionaryLiteral);
+            case SetLiteral setLiteral -> inference(setLiteral);
+            case UnmodifiableListLiteral unmodifiableListLiteral -> inference(unmodifiableListLiteral);
+            case CharacterLiteral characterLiteral -> new CharacterType();
             default -> new UnknownType();
         };
+    }
+
+    @NotNull
+    public static UnmodifiableListType inference(@NotNull UnmodifiableListLiteral unmodifiableListLiteral) {
+        Type valueType = null;
+        if (unmodifiableListLiteral.getTypeHint() != null
+                && !(unmodifiableListLiteral.getTypeHint() instanceof UnknownType)) {
+            valueType = unmodifiableListLiteral.getTypeHint();
+        }
+
+        if (valueType == null) {
+            valueType = chooseGeneralType(inference(unmodifiableListLiteral.getList()));
+        }
+
+        return new UnmodifiableListType(valueType);
+    }
+
+    @NotNull
+    public static SetType inference(@NotNull SetLiteral setLiteral) {
+        Type valueType = null;
+        if (setLiteral.getTypeHint() != null
+                && !(setLiteral.getTypeHint() instanceof UnknownType)) {
+            valueType = setLiteral.getTypeHint();
+        }
+
+        if (valueType == null) {
+            valueType = chooseGeneralType(inference(setLiteral.getList()));
+        }
+
+        return new SetType(valueType);
+    }
+
+    @NotNull
+    public static DictionaryType inference(@NotNull DictionaryLiteral dictionaryLiteral) {
+        Type keyType = null;
+        if (dictionaryLiteral.getKeyTypeHint() != null
+                && !(dictionaryLiteral.getKeyTypeHint() instanceof UnknownType)) {
+            keyType = dictionaryLiteral.getKeyTypeHint();
+        }
+
+        Type valueType = null;
+        if (dictionaryLiteral.getValueTypeHint() != null
+                && !(dictionaryLiteral.getValueTypeHint() instanceof UnknownType)) {
+            valueType = dictionaryLiteral.getValueTypeHint();
+        }
+
+        if (keyType == null || valueType == null) {
+            var content = dictionaryLiteral.getContent();
+
+            var keys = content.stream().map(KeyValuePair::key).toList();
+            var values = content.stream().map(KeyValuePair::value).toList();
+
+            var inferredKeyType = chooseGeneralType(inference(keys));
+            var inferredValueType = chooseGeneralType(inference(values));
+
+            if (keyType == null)
+                keyType = inferredKeyType;
+
+            if (valueType == null)
+                valueType = inferredValueType;
+        }
+
+        return new DictionaryType(keyType, valueType);
+    }
+
+    @NotNull
+    public static ListType inference(@NotNull ListLiteral listLiteral) {
+        Type valueType = null;
+        if (listLiteral.getTypeHint() != null
+                && !(listLiteral.getTypeHint() instanceof UnknownType)) {
+            valueType = listLiteral.getTypeHint();
+        }
+
+        if (valueType == null) {
+            var inferredTypes = inference(listLiteral.getList());
+            valueType = chooseGeneralType(inferredTypes);
+        }
+
+        return new ListType(valueType);
+    }
+
+    @NotNull
+    public static ArrayType inference(@NotNull ArrayLiteral arrayLiteral) {
+        Type valueType = null;
+        if (arrayLiteral.getTypeHint() != null
+                && !(arrayLiteral.getTypeHint() instanceof UnknownType)) {
+            valueType = arrayLiteral.getTypeHint();
+        }
+
+        if (valueType == null) {
+            var inferredTypes = inference(arrayLiteral.getList());
+            valueType = chooseGeneralType(inferredTypes);
+        }
+
+        var size = new IntegerLiteral(arrayLiteral.getList().size());
+        return new ArrayType(valueType, size);
+    }
+
+    @NotNull
+    private static List<Type> inference(@NotNull List<Expression> expressions) {
+        return expressions
+                .stream()
+                .map(HindleyMilner::inference)
+                .toList();
     }
 
     @NotNull
