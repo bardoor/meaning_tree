@@ -27,6 +27,7 @@ import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.SwitchStatement;
 import org.vstu.meaningtree.nodes.types.UnknownType;
 import org.vstu.meaningtree.nodes.types.builtin.*;
+import org.vstu.meaningtree.nodes.types.containers.ArrayType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +51,21 @@ public class HindleyMilner {
             case StringLiteral stringLiteral -> new StringType();
             case InterpolatedStringLiteral interpolatedStringLiteral -> new StringType();
             case NullLiteral nullLiteral -> new UnknownType();
+            case ArrayLiteral arrayLiteral -> inference(arrayLiteral);
             default -> new UnknownType();
         };
+    }
+
+    @NotNull
+    public static ArrayType inference(@NotNull ArrayLiteral arrayLiteral) {
+        var inferredTypes = arrayLiteral
+                .getList()
+                .stream()
+                .map(HindleyMilner::inference)
+                .toList();
+        var size = new IntegerLiteral(inferredTypes.size());
+        var generalType = chooseGeneralType(inferredTypes);
+        return new ArrayType(generalType, size);
     }
 
     @NotNull
