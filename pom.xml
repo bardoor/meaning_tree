@@ -19,7 +19,6 @@
         <module>modules/test</module>
         <module>modules/utils</module>
         <module>modules/generators</module>
-        <module>modules/languages/json</module>
     </modules>
 
     <properties>
