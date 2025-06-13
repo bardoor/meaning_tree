@@ -867,18 +867,6 @@ public class PythonLanguage extends LanguageParser {
             right = (Expression)rightRaw;
         }
 
-        //if (!node.getChildByFieldName("type").isNull() && left instanceof SimpleIdentifier ident) {
-        //    Type type = determineType(node.getChildByFieldName("type"));
-        //    if (right instanceof PlainCollectionLiteral pl) {
-        //        if (type instanceof PlainCollectionType arrayType) {
-        //            pl.setTypeHint(arrayType.getItemType());
-        //        } else {
-        //            pl.setTypeHint(type);
-        //        }
-        //    }
-        //    return new VariableDeclaration(type, ident, right);
-        //}
-
         if (left instanceof SimpleIdentifier variableName && right != null) {
             var leftType = _currentTypeScope.getVariableType(variableName);
             var rightType = HindleyMilner.inference(right, _currentTypeScope);
