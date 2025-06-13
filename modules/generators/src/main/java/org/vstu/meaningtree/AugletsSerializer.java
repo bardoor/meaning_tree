@@ -1,25 +1,44 @@
 package org.vstu.meaningtree;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.nodes.ProgramEntryPoint;
 import org.vstu.meaningtree.nodes.Type;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.UnaryExpression;
-import org.vstu.meaningtree.nodes.expressions.comparison.*;
+import org.vstu.meaningtree.nodes.expressions.comparison.EqOp;
+import org.vstu.meaningtree.nodes.expressions.comparison.GeOp;
+import org.vstu.meaningtree.nodes.expressions.comparison.GtOp;
+import org.vstu.meaningtree.nodes.expressions.comparison.LeOp;
+import org.vstu.meaningtree.nodes.expressions.comparison.LtOp;
+import org.vstu.meaningtree.nodes.expressions.comparison.NotEqOp;
 import org.vstu.meaningtree.nodes.expressions.identifiers.SimpleIdentifier;
 import org.vstu.meaningtree.nodes.expressions.literals.NumericLiteral;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitAndOp;
 import org.vstu.meaningtree.nodes.expressions.logical.ShortCircuitOrOp;
-import org.vstu.meaningtree.nodes.expressions.math.*;
-import org.vstu.meaningtree.nodes.expressions.unary.*;
+import org.vstu.meaningtree.nodes.expressions.math.AddOp;
+import org.vstu.meaningtree.nodes.expressions.math.DivOp;
+import org.vstu.meaningtree.nodes.expressions.math.FloorDivOp;
+import org.vstu.meaningtree.nodes.expressions.math.ModOp;
+import org.vstu.meaningtree.nodes.expressions.math.MulOp;
+import org.vstu.meaningtree.nodes.expressions.math.SubOp;
+import org.vstu.meaningtree.nodes.expressions.unary.PostfixDecrementOp;
+import org.vstu.meaningtree.nodes.expressions.unary.PostfixIncrementOp;
+import org.vstu.meaningtree.nodes.expressions.unary.PrefixDecrementOp;
+import org.vstu.meaningtree.nodes.expressions.unary.PrefixIncrementOp;
+import org.vstu.meaningtree.nodes.expressions.unary.UnaryMinusOp;
+import org.vstu.meaningtree.nodes.expressions.unary.UnaryPlusOp;
 import org.vstu.meaningtree.nodes.statements.CompoundStatement;
 import org.vstu.meaningtree.nodes.statements.assignments.AssignmentStatement;
 import org.vstu.meaningtree.nodes.statements.conditions.IfStatement;
-import org.vstu.meaningtree.nodes.types.builtin.*;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.vstu.meaningtree.nodes.types.builtin.BooleanType;
+import org.vstu.meaningtree.nodes.types.builtin.CharacterType;
+import org.vstu.meaningtree.nodes.types.builtin.FloatType;
+import org.vstu.meaningtree.nodes.types.builtin.IntType;
+import org.vstu.meaningtree.nodes.types.builtin.StringType;
 
 public class AugletsSerializer {
     private int _variableNumber = 0;
@@ -166,20 +185,20 @@ public class AugletsSerializer {
 
     private String toString(BinaryExpression binaryExpression) {
         var opSymbol = switch (binaryExpression) {
-            case AddOp _               -> "+";
-            case SubOp _               -> "-";
-            case MulOp _               -> "*";
-            case DivOp _               -> "/";
-            case ModOp _               -> "%";
-            case FloorDivOp _          -> "/";
-            case EqOp _                -> "==";
-            case NotEqOp _             -> "!=";
-            case GeOp _                -> ">=";
-            case GtOp _                -> ">";
-            case LeOp _                -> "<=";
-            case LtOp _                -> "<";
-            case ShortCircuitAndOp _   -> "&&";
-            case ShortCircuitOrOp _    -> "||";
+            case AddOp op               -> "+";
+            case SubOp op               -> "-";
+            case MulOp op               -> "*";
+            case DivOp op               -> "/";
+            case ModOp op               -> "%";
+            case FloorDivOp op          -> "/";
+            case EqOp op                -> "==";
+            case NotEqOp op             -> "!=";
+            case GeOp op                -> ">=";
+            case GtOp op                -> ">";
+            case LeOp op                -> "<=";
+            case LtOp op                -> "<";
+            case ShortCircuitAndOp op   -> "&&";
+            case ShortCircuitOrOp op    -> "||";
             default -> throw new IllegalArgumentException(
                     "Unknown binary operator: " + binaryExpression.getClass().getSimpleName());
         };
@@ -196,12 +215,12 @@ public class AugletsSerializer {
     private String toString(UnaryExpression expr) {
         var arg = expr.getArgument();
         return switch (expr) {
-            case UnaryPlusOp _ -> "+" + toString(arg);
-            case UnaryMinusOp _ -> "-" + toString(arg);
-            case PrefixIncrementOp _ -> "++" + toString(arg);
-            case PrefixDecrementOp _ -> "--" + toString(arg);
-            case PostfixIncrementOp _ -> toString(arg) + "++";
-            case PostfixDecrementOp _ -> toString(arg) + "--";
+            case UnaryPlusOp op -> "+" + toString(arg);
+            case UnaryMinusOp op -> "-" + toString(arg);
+            case PrefixIncrementOp op -> "++" + toString(arg);
+            case PrefixDecrementOp op -> "--" + toString(arg);
+            case PostfixIncrementOp op -> toString(arg) + "++";
+            case PostfixDecrementOp op -> toString(arg) + "--";
             default -> throw new IllegalStateException("Unexpected value: " + expr);
         };
     }
