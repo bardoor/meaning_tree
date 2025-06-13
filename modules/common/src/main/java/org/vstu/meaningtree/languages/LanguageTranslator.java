@@ -64,17 +64,21 @@ public abstract class LanguageTranslator {
             _config.putNew(param);
         }
 
-        _language.setConfig(
-                _config.subset(
-                        cfg -> cfg.inAnyScope(ConfigScope.PARSER, ConfigScope.TRANSLATOR)
-                )
-        );
+        if (language != null) {
+            _language.setConfig(
+                    _config.subset(
+                            cfg -> cfg.inAnyScope(ConfigScope.PARSER, ConfigScope.TRANSLATOR)
+                    )
+            );
+        }
 
-        _viewer.setConfig(
-                _config.subset(
-                        cfg -> cfg.inAnyScope(ConfigScope.VIEWER, ConfigScope.TRANSLATOR)
-                )
-        );
+        if (viewer != null) {
+            _viewer.setConfig(
+                    _config.subset(
+                            cfg -> cfg.inAnyScope(ConfigScope.VIEWER, ConfigScope.TRANSLATOR)
+                    )
+            );
+        }
     }
 
     public MeaningTree getMeaningTree(String code) {

@@ -50,7 +50,7 @@ public class IfStatement extends Statement {
 
     public IfStatement(List<ConditionBranch> branches, @Nullable Statement elseBranch) {
         _elseBranch = elseBranch;
-        branches = new ArrayList<>(branches);
+        this.branches = new ArrayList<>(branches);
     }
 
     public IfStatement(Expression condition, Statement thenBranch) {
