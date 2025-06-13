@@ -3,6 +3,7 @@ package org.vstu.meaningtree.languages;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.configs.params.DisableCompoundComparisonConversion;
+import org.vstu.meaningtree.languages.configs.params.EnforceEntryPoint;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
@@ -396,7 +397,7 @@ public class PythonViewer extends LanguageViewer {
 
     private String entryPointToString(ProgramEntryPoint programEntryPoint, Tab tab) {
         IfStatement entryPointIf = null;
-        if (programEntryPoint.hasEntryPoint()) {
+        if (getConfigParameter(EnforceEntryPoint.class).orElse(false) && programEntryPoint.hasEntryPoint()) {
             Node entryPointNode = programEntryPoint.getEntryPoint();
             if (entryPointNode instanceof FunctionDefinition func) {
                 Identifier ident;

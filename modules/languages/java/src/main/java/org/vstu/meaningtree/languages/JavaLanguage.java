@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
-import org.vstu.meaningtree.languages.configs.params.EnforseEntryPoint;
+import org.vstu.meaningtree.languages.configs.params.EnforceEntryPoint;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.nodes.*;
@@ -1271,11 +1271,14 @@ public class JavaLanguage extends LanguageParser {
         */
 
         List<Node> body = new ArrayList<>();
+
         if (mainMethod != null) {
             body = Arrays.asList(mainMethod.getBody().getNodes());
+        } else if (getConfigParameter(EnforceEntryPoint.class).orElse(false)) {
+            body = Arrays.asList(builder.getCurrentNodes());
         }
 
-        return new ProgramEntryPoint(builder.getEnv(),body, mainClass, mainMethod);
+        return new ProgramEntryPoint(builder.getEnv(), body, mainClass, mainMethod);
     }
 
     private Loop fromWhileTSNode(TSNode node) {

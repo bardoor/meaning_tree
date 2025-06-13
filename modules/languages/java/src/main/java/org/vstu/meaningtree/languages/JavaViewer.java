@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
+import org.vstu.meaningtree.languages.configs.params.EnforceEntryPoint;
 import org.vstu.meaningtree.utils.type_inference.*;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.*;
@@ -2077,7 +2078,7 @@ public class JavaViewer extends LanguageViewer {
     public String toString(ProgramEntryPoint entryPoint) {
         List<Node> nodes = entryPoint.getBody();
 
-        if (!entryPoint.hasMainClass()) {
+        if (getConfigParameter(EnforceEntryPoint.class).orElse(false) && !entryPoint.hasMainClass()) {
             return makeSimpleJavaProgram(nodes);
         }
 

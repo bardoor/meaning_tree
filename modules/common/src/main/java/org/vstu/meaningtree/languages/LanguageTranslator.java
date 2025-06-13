@@ -2,14 +2,11 @@ package org.vstu.meaningtree.languages;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.jena.riot.protobuf.wire.PB_RDF;
 import org.treesitter.TSException;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
-import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
-import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
 import org.vstu.meaningtree.languages.configs.*;
-import org.vstu.meaningtree.languages.configs.params.EnforseEntryPoint;
+import org.vstu.meaningtree.languages.configs.params.EnforceEntryPoint;
 import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.languages.configs.params.TranslationUnitMode;
@@ -37,7 +34,7 @@ public abstract class LanguageTranslator {
                 new ExpressionMode(false, ConfigScope.TRANSLATOR),
                 new TranslationUnitMode(true, ConfigScope.VIEWER),
                 new SkipErrors(false, ConfigScope.PARSER),
-                new EnforseEntryPoint(true, ConfigScope.ANY)
+                new EnforceEntryPoint(true, ConfigScope.ANY)
         );
     }
 

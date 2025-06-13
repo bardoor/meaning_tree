@@ -1328,6 +1328,7 @@ public class CppLanguage extends LanguageParser {
         for (int i = 0; i < node.getNamedChildCount(); i++) {
             TSNode currNode = node.getNamedChild(i);
             Node n = fromTSNode(currNode);
+            nodes.add(n);
             if (n instanceof FunctionDefinition functionDefinition
                     && functionDefinition.getName().toString().equals("main")) {
                 n = new ProgramEntryPoint(null, List.of(functionDefinition.getBody().getNodes()), n);

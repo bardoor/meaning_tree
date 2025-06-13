@@ -3,14 +3,14 @@ package org.vstu.meaningtree.languages.configs.params;
 import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.languages.configs.ConfigScope;
 
-public class EnforseEntryPoint extends ConfigParameter<Boolean> {
-    public static final String name = "enforseEntryPoint";
+public class EnforceEntryPoint extends ConfigParameter<Boolean> {
+    public static final String name = "enforceEntryPoint";
 
-    public EnforseEntryPoint(Boolean value, ConfigScope scope) {
+    public EnforceEntryPoint(Boolean value, ConfigScope scope) {
         super(name, value, scope);
     }
 
-    public EnforseEntryPoint(Boolean value) {
+    public EnforceEntryPoint(Boolean value) {
         this(value, ConfigScope.ANY);
     }
 }
