@@ -13,12 +13,12 @@ public class JavaTranslator extends LanguageTranslator {
 
     public JavaTranslator(Map<String, String> rawConfig) {
         super(new JavaLanguage(), null, rawConfig);
-        this.setViewer(new JavaViewer(this));
+        this.setViewer(new JavaViewer(this.getTokenizer()));
     }
 
     public JavaTranslator() {
         super(new JavaLanguage(), null, new HashMap<>());
-        this.setViewer(new JavaViewer(this));
+        this.setViewer(new JavaViewer(this.getTokenizer()));
     }
 
     @Override

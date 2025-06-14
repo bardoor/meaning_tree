@@ -18,12 +18,12 @@ abstract public class LanguageViewer {
         this.parenFiller = new ParenthesesFiller(this::mapToToken);
     }
 
-    public LanguageViewer(LanguageTranslator translator) {
-        this.translator = translator;
+    public LanguageViewer(LanguageTokenizer tokenizer) {
+        this.tokenizer = tokenizer;
         this.parenFiller = new ParenthesesFiller(this::mapToToken);
     }
 
-    protected LanguageTranslator translator;
+    protected LanguageTokenizer tokenizer;
     protected ParenthesesFiller parenFiller;
 
     public abstract String toString(Node node);

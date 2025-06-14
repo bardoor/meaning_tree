@@ -76,8 +76,8 @@ import java.util.stream.Collectors;
 import static org.vstu.meaningtree.nodes.enums.AugmentedAssignmentOperator.POW;
 
 public class CppViewer extends LanguageViewer {
-    public CppViewer(LanguageTranslator translator) {
-        super(translator);
+    public CppViewer(LanguageTokenizer tokenizer) {
+        super(tokenizer);
         _indentation = "    ";
         _indentLevel = 0;
         _openBracketOnSameLine = false;
@@ -1511,6 +1511,6 @@ public class CppViewer extends LanguageViewer {
             case PointerUnpackOp op -> "POINTER_*";
             default -> null;
         };
-        return translator.getTokenizer().getOperatorByTokenName(tok);
+        return tokenizer.getOperatorByTokenName(tok);
     }
 }

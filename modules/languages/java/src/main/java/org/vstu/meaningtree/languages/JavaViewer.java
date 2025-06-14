@@ -130,9 +130,9 @@ public class JavaViewer extends LanguageViewer {
         _autoVariableDeclaration = autoVariableDeclaration;
     }
 
-    public JavaViewer(LanguageTranslator translator) {
+    public JavaViewer(LanguageTokenizer tokenizer) {
         this(4, true, false, false);
-        this.translator = translator;
+        this.tokenizer = tokenizer;
     }
 
     @Override
@@ -1286,7 +1286,7 @@ public class JavaViewer extends LanguageViewer {
             case PrefixDecrementOp op -> "--U";
             default -> null;
         };
-        return translator.getTokenizer().getOperatorByTokenName(tok);
+        return tokenizer.getOperatorByTokenName(tok);
     }
 
     public String toString(AddOp op) {
