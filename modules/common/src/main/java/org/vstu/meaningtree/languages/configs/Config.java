@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 public class Config {
     private final Map<Class<?>, ConfigParameter<?>> parameters = new HashMap<>();
 
-    public Config(ConfigParameter<?> ...configParameters) {
+    public Config(ConfigParameter<?>... configParameters) {
         put(configParameters);
     }
 
@@ -22,7 +22,7 @@ public class Config {
         }
     }
 
-    public void put(ConfigParameter<?> ...configParameters) {
+    public void put(ConfigParameter<?>... configParameters) {
         for (var param : configParameters) {
             put(param);
         }

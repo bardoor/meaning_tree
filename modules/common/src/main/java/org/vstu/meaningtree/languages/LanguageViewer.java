@@ -2,7 +2,7 @@ package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.languages.configs.Config;
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.languages.configs.ConfigScopedParameter;
 import org.vstu.meaningtree.nodes.Expression;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.ParenthesesFiller;
@@ -38,7 +38,7 @@ abstract public class LanguageViewer {
         _config = config;
     }
 
-    protected <P, T extends ConfigParameter<P>> Optional<P> getConfigParameter(Class<T> configClass) {
+    protected <P, T extends ConfigScopedParameter<P>> Optional<P> getConfigParameter(Class<T> configClass) {
         return Optional.ofNullable(_config).flatMap(config -> config.get(configClass));
     }
 }

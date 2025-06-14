@@ -1,7 +1,6 @@
 package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.languages.configs.Config;
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
 import org.vstu.meaningtree.languages.configs.ConfigScope;
 import org.vstu.meaningtree.languages.configs.params.DisableCompoundComparisonConversion;
 import org.vstu.meaningtree.utils.tokens.TokenList;

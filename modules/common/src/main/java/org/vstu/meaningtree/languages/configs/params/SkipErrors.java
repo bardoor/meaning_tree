@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.languages.configs.params;
 
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.languages.configs.ConfigScopedParameter;
 import org.vstu.meaningtree.languages.configs.ConfigScope;
 
 /**
@@ -10,11 +10,13 @@ import org.vstu.meaningtree.languages.configs.ConfigScope;
  * Если значение {@code false}, то при ошибках трансляция будет прервана.
  * <p>
  */
-public class SkipErrors extends ConfigParameter<Boolean> {
+public class SkipErrors extends ConfigScopedParameter<Boolean> {
     public static final String name = "skipErrors";
 
+    public String getName() { return name; }
+
     public SkipErrors(Boolean value, ConfigScope scope) {
-        super(name, value, scope);
+        super(value, scope);
     }
 
     public SkipErrors(Boolean value) {

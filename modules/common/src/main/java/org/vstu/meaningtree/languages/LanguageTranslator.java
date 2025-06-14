@@ -11,7 +11,7 @@ import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.languages.configs.params.TranslationUnitMode;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.languages.configs.ConfigScopedParameter;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.Label;
@@ -63,17 +63,13 @@ public abstract class LanguageTranslator {
 
         if (language != null) {
             _language.setConfig(
-                    _config.subset(
-                            cfg -> cfg.inAnyScope(ConfigScope.PARSER, ConfigScope.TRANSLATOR)
-                    )
+                    _config.subset(ConfigScopedParameter.forScopes(ConfigScope.PARSER, ConfigScope.TRANSLATOR))
             );
         }
 
         if (viewer != null) {
             _viewer.setConfig(
-                    _config.subset(
-                            cfg -> cfg.inAnyScope(ConfigScope.VIEWER, ConfigScope.TRANSLATOR)
-                    )
+                    _config.subset(ConfigScopedParameter.forScopes(ConfigScope.VIEWER, ConfigScope.TRANSLATOR))
             );
         }
     }
@@ -89,9 +85,7 @@ public abstract class LanguageTranslator {
 
         if (_viewer != null) {
             _viewer.setConfig(
-                    getDeclaredConfig().subset(
-                            cfg -> cfg.inAnyScope(ConfigScope.VIEWER, ConfigScope.TRANSLATOR)
-                    )
+                    getDeclaredConfig().subset(ConfigScopedParameter.forScopes(ConfigScope.VIEWER, ConfigScope.TRANSLATOR))
             );
         }
     }
@@ -100,9 +94,7 @@ public abstract class LanguageTranslator {
         _language = parser;
         if (_language != null) {
             _language.setConfig(
-                    getDeclaredConfig().subset(
-                            cfg -> cfg.inAnyScope(ConfigScope.PARSER, ConfigScope.TRANSLATOR)
-                    )
+                    getDeclaredConfig().subset(ConfigScopedParameter.forScopes(ConfigScope.PARSER, ConfigScope.TRANSLATOR))
             );
         }
     }
@@ -212,7 +204,7 @@ public abstract class LanguageTranslator {
         return getTokenizer().tokenizeExtended(mt);
     }
 
-    protected <P, T extends ConfigParameter<P>> Optional<P> getConfigParameter(Class<T> configClass) {
+    protected <P, T extends ConfigScopedParameter<P>> Optional<P> getConfigParameter(Class<T> configClass) {
         return Optional.ofNullable(_config).flatMap(config -> config.get(configClass));
     }
 

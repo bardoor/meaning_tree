@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.languages.configs.params;
 
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.languages.configs.ConfigScopedParameter;
 import org.vstu.meaningtree.languages.configs.ConfigScope;
 
 /**
@@ -10,11 +10,13 @@ import org.vstu.meaningtree.languages.configs.ConfigScope;
  * Если значение {@code false}, то будет выведена полная программа.
  * <p>
  */
-public class ExpressionMode extends ConfigParameter<Boolean> {
+public class ExpressionMode extends ConfigScopedParameter<Boolean> {
     public static final String name = "expressionMode";
 
+    public String getName() { return name; }
+
     public ExpressionMode(Boolean value, ConfigScope scope) {
-        super(name, value, scope);
+        super(value, scope);
     }
 
     public ExpressionMode(Boolean value) {

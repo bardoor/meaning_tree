@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.languages.configs.params;
 
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.languages.configs.ConfigScopedParameter;
 import org.vstu.meaningtree.languages.configs.ConfigScope;
 
 /**
@@ -10,11 +10,13 @@ import org.vstu.meaningtree.languages.configs.ConfigScope;
  * Если значение {@code false}, то может быть выведена только часть программы — например, одно выражение.
  * <p>
  */
-public class TranslationUnitMode extends ConfigParameter<Boolean> {
+public class TranslationUnitMode extends ConfigScopedParameter<Boolean> {
     public static final String name = "translationUnitMode";
 
+    public String getName() { return name; }
+
     public TranslationUnitMode(Boolean value, ConfigScope scope) {
-        super(name, value, scope);
+        super(value, scope);
     }
 
     public TranslationUnitMode(Boolean value) {

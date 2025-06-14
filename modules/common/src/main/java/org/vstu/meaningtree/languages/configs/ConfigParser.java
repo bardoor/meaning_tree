@@ -4,7 +4,7 @@ import org.vstu.meaningtree.exceptions.UnsupportedConfigParameterException;
 import org.vstu.meaningtree.languages.configs.params.*;
 
 public class ConfigParser {
-    public ConfigParameter<?> parse(String key, String val) {
+    public ConfigScopedParameter<?> parse(String key, String val) {
         return switch (key) {
             case ExpressionMode.name -> new ExpressionMode(Boolean.parseBoolean(val));
             case TranslationUnitMode.name -> new TranslationUnitMode(Boolean.parseBoolean(val));
