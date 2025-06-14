@@ -9,8 +9,9 @@ import org.vstu.meaningtree.utils.env.SymbolEnvironment;
 public class InfiniteLoop extends Loop {
     @TreeNode private Statement body;
 
-    public InfiniteLoop(Statement body) {
+    public InfiniteLoop(Statement body, LoopType originalType) {
         this.body = body;
+        _originalType = originalType;
     }
 
     @Override

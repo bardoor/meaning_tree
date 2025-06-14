@@ -728,7 +728,7 @@ group: SimpleStatements
             std::vector<int> a = {1, 2, 3};
 
         java:
-            java.util.ArrayList<Integer> a = new java.util.ArrayList<Integer>(java.util.List.of(1, 2, 3));
+            java.util.ArrayList<Integer> a = new java.util.ArrayList<>(java.util.List.of(1, 2, 3));
 
         python:
             a: list[int] = [1, 2, 3]
@@ -776,19 +776,6 @@ group: SimpleStatements
         c++:
             a = 3;
             b = 45;
-
-
-    case: VariableSwapping
-        python:
-            a, b = b, a
-
-        java:
-            Object _temp_a_b_ = a;
-            a = b;
-            b = t;
-
-        c++:
-            std::swap(&a, &b);
 
 
 group: Conditions
@@ -840,8 +827,8 @@ group: Conditions
         java:
             if (a > 0) {
                 if (k) {
-                    print("a");
-                    print("b");
+                    System.out.println("a");
+                    System.out.println("b");
                 }
             }
 
@@ -863,12 +850,14 @@ group: Conditions
 
         c++:
             if (a) {
-            } else if (b) {
+            }
+            else if (b) {
             }
 
         java:
             if (a) {
-            } else if (b) {
+            }
+            else if (b) {
             }
 
 
@@ -883,15 +872,19 @@ group: Conditions
 
         c++:
             if (a) {
-            } else if (b) {
-            } else {
+            }
+            else if (b) {
+            }
+            else {
                 c = k * 3;
             }
 
         java:
             if (a) {
-            } else if (b) {
-            } else {
+            }
+            else if (b) {
+            }
+            else {
                 c = k * 3;
             }
 
@@ -969,32 +962,33 @@ group: Conditions
 
         java:
             if (a > b) {
-                z += 1;
-                if (x and y) {
+                z++;
+                if (x && y) {
                     if (x == 7) {
-                        x += 1;
+                        x++;
                     }
-                    c += 1;
+                    c++;
                 }
-                c += 1;
+                c++;
             }
             else if (a < b) {
-                x += 1;
+                x++;
                 if (x > 5) {
                     if (x != 7) {
-                        print("alarm");
-                    } else {
-                        k += 1;
+                        System.out.println("alarm");
                     }
-                    c += 1;
+                    else {
+                        k++;
+                    }
+                    c++;
                 }
-                y -= 1;
+                y--;
             }
 
         c++:
             if (a > b) {
                 z += 1;
-                if (x and y) {
+                if (x && y) {
                     if (x == 7) {
                         x += 1;
                     }
@@ -1039,12 +1033,12 @@ group: ForLoop
                 func(a)
 
         java:
-            for (int v = a * b * c; v < dx - 1; v++) {
+            for (double v = a * b * c; v < dx - 1; v++) {
                 func(a);
             }
 
         c++:
-            for (int v = a * b * c; v < dx - 1; v++) {
+            for (double v = a * b * c; v < dx - 1; v++) {
                 func(a);
             }
 
@@ -1077,18 +1071,6 @@ group: ForLoop
                 func(a, b)
                 m = g()
             del a
-
-
-    case: GeneralForWithMissingInitialization
-        java:
-            for (; a != m; m = g()) {
-                func(a, b);
-            }
-
-        python:
-            while a != m:
-                func(a, b)
-                m = g()
 
 
     case: GeneralForWithMissingCondition

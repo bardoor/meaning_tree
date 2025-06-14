@@ -1,6 +1,6 @@
 package org.vstu.meaningtree.languages;
 
-import org.vstu.meaningtree.languages.configs.ConfigParameter;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.utils.tokens.Token;
 import org.vstu.meaningtree.utils.tokens.TokenList;
 import org.vstu.meaningtree.utils.tokens.TokenType;
@@ -33,21 +33,26 @@ public class CppTranslator extends LanguageTranslator {
 
     @Override
     public String prepareCode(String code) {
-        if (getConfigParameter("expressionMode").getBooleanValue() && !code.endsWith(";")) {
-            code = code + ";";
-        }
-        if (getConfigParameter("expressionMode").getBooleanValue()) {
+        boolean expressionMode = getConfigParameter(ExpressionMode.class).orElse(false);
+
+        if (expressionMode) {
+            if (!code.endsWith(";")) {
+                code += ";";
+            }
             code = String.format("int main() {%s}", code);
         }
+
         return code;
     }
 
     @Override
     public TokenList prepareCode(TokenList list) {
-        if (getConfigParameter("expressionMode").getBooleanValue() && !list.getLast().type.equals(TokenType.SEPARATOR)) {
-            list.add(new Token(";", TokenType.SEPARATOR));
-        }
-        if (getConfigParameter("expressionMode").getBooleanValue()) {
+        boolean expressionMode = getConfigParameter(ExpressionMode.class).orElse(false);
+
+        if (expressionMode) {
+            if (!list.getLast().type.equals(TokenType.SEPARATOR)) {
+                list.add(new Token(";", TokenType.SEPARATOR));
+            }
             TokenList final_ = getTokenizer().tokenize("int main() {}", false);
             final_.addAll(
                     final_.indexOf(
@@ -57,13 +62,8 @@ public class CppTranslator extends LanguageTranslator {
             );
             return final_;
         }
+
         return list;
     }
 
-
-
-    @Override
-    protected ConfigParameter[] getDeclaredConfigParameters() {
-        return new ConfigParameter[0];
-    }
 }
