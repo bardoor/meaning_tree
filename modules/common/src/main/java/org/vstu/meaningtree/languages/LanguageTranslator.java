@@ -6,12 +6,11 @@ import org.treesitter.TSException;
 import org.treesitter.TSNode;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.languages.configs.*;
-import org.vstu.meaningtree.languages.configs.params.EnforceEntryPoint;
-import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
-import org.vstu.meaningtree.languages.configs.params.SkipErrors;
-import org.vstu.meaningtree.languages.configs.params.TranslationUnitMode;
+import org.vstu.meaningtree.languages.configs.params.*;
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.languages.configs.ConfigScopedParameter;
+import org.vstu.meaningtree.languages.configs.parser.ConfigMapping;
+import org.vstu.meaningtree.languages.configs.parser.ConfigParser;
 import org.vstu.meaningtree.nodes.Node;
 import org.vstu.meaningtree.utils.Experimental;
 import org.vstu.meaningtree.utils.Label;
@@ -42,6 +41,38 @@ public abstract class LanguageTranslator {
 
     protected Config getDeclaredConfig() { return new Config(); }
 
+    protected ConfigParser configParser = defaultConfigParser();
+
+    protected ConfigParser defaultConfigParser() {
+        return new ConfigParser(
+                new ConfigMapping<>(
+                        "disableCompoundComparisonConversion",
+                        DisableCompoundComparisonConversion::parse,
+                        DisableCompoundComparisonConversion::new
+                ),
+                new ConfigMapping<>(
+                        "enforceEntryPoint",
+                        EnforceEntryPoint::parse,
+                        EnforceEntryPoint::new
+                ),
+                new ConfigMapping<>(
+                        "expressionMode",
+                        ExpressionMode::parse,
+                        ExpressionMode::new
+                ),
+                new ConfigMapping<>(
+                        "skipErrors",
+                        SkipErrors::parse,
+                        SkipErrors::new
+                ),
+                new ConfigMapping<>(
+                        "translationUnitMode",
+                        TranslationUnitMode::parse,
+                        TranslationUnitMode::new
+                )
+        );
+    }
+
     /**
      * Создает транслятор языка
      * @param language - parser языка
@@ -53,7 +84,6 @@ public abstract class LanguageTranslator {
         _viewer = viewer;
 
         _config.merge(getPredefinedCommonConfig(), getDeclaredConfig());
-        var configParser = new ConfigParser();
 
         // Загрузка конфигов, специфических для конкретного языка
         for (var entry : rawConfig.entrySet()) {
