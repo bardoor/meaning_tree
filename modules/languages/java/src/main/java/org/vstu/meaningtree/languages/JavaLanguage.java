@@ -6,6 +6,9 @@ import org.jetbrains.annotations.Nullable;
 import org.treesitter.*;
 import org.vstu.meaningtree.MeaningTree;
 import org.vstu.meaningtree.exceptions.UnsupportedParsingException;
+import org.vstu.meaningtree.languages.configs.params.EnforceEntryPoint;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
+import org.vstu.meaningtree.languages.configs.params.SkipErrors;
 import org.vstu.meaningtree.nodes.*;
 import org.vstu.meaningtree.nodes.declarations.ClassDeclaration;
 import org.vstu.meaningtree.nodes.declarations.FieldDeclaration;
@@ -109,41 +112,55 @@ public class JavaLanguage extends LanguageParser {
         _code = code;
         TSNode rootNode = getRootNode();
         List<String> errors = lookupErrors(rootNode);
-        if (!errors.isEmpty() && !getConfigParameter("skipErrors").getBooleanValue()) {
+        if (!errors.isEmpty() && !getConfigParameter(SkipErrors.class).orElse(false)) {
             throw new UnsupportedParsingException(String.format("Given code has syntax errors: %s", errors));
         }
+
         Node node = fromTSNode(rootNode);
         if (node instanceof AssignmentExpression expr) {
             node = expr.toStatement();
         }
+
         return new MeaningTree(node);
     }
 
     @Override
     public TSNode getRootNode() {
         TSNode result = super.getRootNode();
-        if (getConfigParameter("expressionMode").getBooleanValue()) {
-            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа, чтобы парсинг выражения был корректен (имел контекст внутри функции)
+
+        Optional<Boolean> maybeExpressionMode = _config.get(ExpressionMode.class);
+
+        if (maybeExpressionMode.orElse(false)) {
+            // В режиме выражений в код перед парсингом подставляется заглушка в виде точки входа
             TSNode cls = result.getNamedChild(0);
+
             if (!cls.getType().equals("class_declaration")) {
                 throw new UnsupportedParsingException("Entry point class wasn't found");
             }
+
             TSNode clsbody = cls.getChildByFieldName("body");
+
             if (cls.getNamedChildCount() == 0) {
                 throw new UnsupportedParsingException("Entry point class is empty");
             }
+
             TSNode func = clsbody.getNamedChild(0);
+
             if (!getCodePiece(func.getChildByFieldName("name")).equals("main")) {
                 throw new UnsupportedParsingException("Entry point method wasn't found");
             }
             TSNode body = func.getChildByFieldName("body");
+
             if (body.getNamedChildCount() > 1 && !body.getNamedChild(0).isError()) {
                 throw new UnsupportedParsingException("Many expressions in given code (you're using expression mode)");
             }
+
             if (body.getNamedChildCount() < 1) {
                 throw new UnsupportedParsingException("Main expression was not found in expression mode");
             }
+
             result = body.getNamedChild(0);
+
             if (result.getType().equals("expression_statement")) {
                 result = result.getNamedChild(0);
             }
@@ -205,7 +222,7 @@ public class JavaLanguage extends LanguageParser {
             case "array_creation_expression" -> fromArrayCreationExpressionTSNode(node);
             case "array_initializer" -> fromArrayInitializer(node);
             case "return_statement" -> fromReturnStatementTSNode(node);
-            case "void_type" -> fromTypeTSNode(node);
+            case "void_type", "type_identifier" -> fromTypeTSNode(node);
             case "line_comment", "block_comment" -> fromCommentTSNode(node);
             case "cast_expression" -> fromCastExpressionTSNode(node);
             case "array_access" -> fromArrayAccessTSNode(node);
@@ -216,10 +233,23 @@ public class JavaLanguage extends LanguageParser {
             case "do_statement" -> fromDoStatementTSNode(node);
             case "instanceof_expression" -> fromInstanceOfTSNode(node);
             case "class_literal" -> fromClassLiteralTSNode(node);
+            case "enhanced_for_statement" -> fromEnhancedForStatementTSNode(node);
             default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
         };
         assignValue(node, createdNode);
+
         return createdNode;
+    }
+
+    private Node fromEnhancedForStatementTSNode(TSNode node) {
+        Type type = (Type) fromTSNode(node.getChildByFieldName("type"));
+        SimpleIdentifier iterVarId = (SimpleIdentifier) fromTSNode(node.getChildByFieldName("name"));
+        Expression iterable = (Expression) fromTSNode(node.getChildByFieldName("value"));
+        Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
+
+        VariableDeclaration varDecl = new VariableDeclaration(type, iterVarId);
+
+        return new ForEachLoop(varDecl, iterable, body);
     }
 
     private Node fromClassLiteralTSNode(TSNode node) {
@@ -997,7 +1027,7 @@ public class JavaLanguage extends LanguageParser {
         Statement body = (Statement) fromTSNode(node.getChildByFieldName("body"));
 
         if (init == null && condition == null && update == null) {
-            return new InfiniteLoop(body);
+            return new InfiniteLoop(body, getLoopType(node));
         }
 
         RangeForLoop rangeFor = tryMakeRangeForLoop(init, condition, update, body);
@@ -1006,6 +1036,15 @@ public class JavaLanguage extends LanguageParser {
         }
 
         return new GeneralForLoop(init, condition, update, body);
+    }
+
+    private LoopType getLoopType(TSNode node) {
+        return switch (node.getType()) {
+            case "enhanced_for_statement", "for_statement" -> LoopType.FOR;
+            case "while_statement" -> LoopType.WHILE;
+            case "do_statement" -> LoopType.DO_WHILE;
+            default -> throw new UnsupportedParsingException(String.format("Can't parse %s this code:\n%s", node.getType(), getCodePiece(node)));
+        };
     }
 
     private VariableDeclarator fromVariableDeclarator(TSNode node, Type type) {
@@ -1217,6 +1256,7 @@ public class JavaLanguage extends LanguageParser {
             }
         }
 
+        /*
         Node[] nodes = builder.getCurrentNodes();
         if (
                 (nodes.length > 1 && getConfigParameter("expressionMode").getBooleanValue())
@@ -1228,7 +1268,17 @@ public class JavaLanguage extends LanguageParser {
             throw new UnsupportedParsingException("Cannot parse the code as expression in expression mode");
         }
 
-        return new ProgramEntryPoint(builder.getEnv(), List.of(builder.getCurrentNodes()), mainClass, mainMethod);
+        */
+
+        List<Node> body = new ArrayList<>();
+
+        if (mainMethod != null) {
+            body = Arrays.asList(mainMethod.getBody().getNodes());
+        } else if (getConfigParameter(EnforceEntryPoint.class).orElse(false)) {
+            body = Arrays.asList(builder.getCurrentNodes());
+        }
+
+        return new ProgramEntryPoint(builder.getEnv(), body, mainClass, mainMethod);
     }
 
     private Loop fromWhileTSNode(TSNode node) {
@@ -1242,7 +1292,7 @@ public class JavaLanguage extends LanguageParser {
         Statement mtBody = (Statement) fromTSNode(tsBody);
 
         if (mtCond instanceof BoolLiteral boolLiteral && boolLiteral.getValue()) {
-            return new InfiniteLoop(mtBody);
+            return new InfiniteLoop(mtBody, getLoopType(node));
         }
 
         return new WhileLoop(mtCond, mtBody);

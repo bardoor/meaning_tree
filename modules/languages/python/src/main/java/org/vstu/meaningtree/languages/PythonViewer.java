@@ -2,6 +2,9 @@ package org.vstu.meaningtree.languages;
 
 import org.vstu.meaningtree.exceptions.MeaningTreeException;
 import org.vstu.meaningtree.exceptions.UnsupportedViewingException;
+import org.vstu.meaningtree.languages.configs.params.DisableCompoundComparisonConversion;
+import org.vstu.meaningtree.languages.configs.params.EnforceEntryPoint;
+import org.vstu.meaningtree.languages.configs.params.ExpressionMode;
 import org.vstu.meaningtree.languages.utils.PythonSpecificFeatures;
 import org.vstu.meaningtree.languages.utils.Tab;
 import org.vstu.meaningtree.nodes.*;
@@ -72,8 +75,8 @@ import java.util.stream.Collectors;
 
 
 public class PythonViewer extends LanguageViewer {
-    public PythonViewer(LanguageTranslator translator) {
-        super(translator);
+    public PythonViewer(LanguageTokenizer tokenizer) {
+        super(tokenizer);
     }
 
     @Override
@@ -394,7 +397,7 @@ public class PythonViewer extends LanguageViewer {
 
     private String entryPointToString(ProgramEntryPoint programEntryPoint, Tab tab) {
         IfStatement entryPointIf = null;
-        if (programEntryPoint.hasEntryPoint()) {
+        if (getConfigParameter(EnforceEntryPoint.class).orElse(false) && programEntryPoint.hasEntryPoint()) {
             Node entryPointNode = programEntryPoint.getEntryPoint();
             if (entryPointNode instanceof FunctionDefinition func) {
                 Identifier ident;
@@ -572,7 +575,7 @@ public class PythonViewer extends LanguageViewer {
     private String assignmentExpressionToString(AssignmentExpression expr) {
         expr = (AssignmentExpression) parenFiller.process(expr);
         if (!(expr.getLValue() instanceof SimpleIdentifier) || (expr.getRValue() instanceof AssignmentExpression)) {
-            if (getConfigParameter("expressionMode").getBooleanValue()) {
+            if (getConfigParameter(ExpressionMode.class).orElse(false)) {
                 return String.format("%s = %s", toString(expr.getLValue()), toString(expr.getRValue()));
             } else {
                 throw new UnsupportedViewingException("Assignment expressions in Python supports only simple identifiers");
@@ -765,12 +768,12 @@ public class PythonViewer extends LanguageViewer {
         Expression left = node.getLeft();
         Expression right = node.getRight();
         String token = mapToToken(node).value;
-        
+
         if (node instanceof ShortCircuitAndOp) {
             try {
                 Node result = PythonSpecialNodeTransformations.detectCompoundComparison(node);
                 if (result instanceof CompoundComparison
-                        && !getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+                        && !getConfigParameter(DisableCompoundComparisonConversion.class).orElse(false)) {
                     return compoundComparisonToString((CompoundComparison) result);
                 } else {
                     return preferExplicitAndOpToString(result);
@@ -790,7 +793,7 @@ public class PythonViewer extends LanguageViewer {
     private String preferExplicitAndOpToString(Node node) {
         if (node instanceof ShortCircuitAndOp op) {
             return String.format("%s and %s", preferExplicitAndOpToString(op.getLeft()), preferExplicitAndOpToString(op.getRight()));
-        } else if (node instanceof CompoundComparison op && getConfigParameter("disableCompoundComparisonConversion").getBooleanValue()) {
+        } else if (node instanceof CompoundComparison op && getConfigParameter(DisableCompoundComparisonConversion.class).orElse(false)) {
            return preferExplicitAndOpToString(BinaryExpression.fromManyOperands
                    (op.getComparisons().toArray(new BinaryComparison[0]), 0, ShortCircuitAndOp.class));
         } else {
@@ -855,13 +858,22 @@ public class PythonViewer extends LanguageViewer {
         for (int i = 0; i < node.getBranches().size(); i++) {
             ConditionBranch branch = node.getBranches().get(i);
             if (i == 0) {
-                sb.append(String.format("if %s:\n%s\n", toString(branch.getCondition()), toString(branch.getBody(), tab)));
+                if (!(branch.getBody() instanceof CompoundStatement))
+                    sb.append(String.format("if %s:\n%s\n", toString(branch.getCondition()), toString(branch.getBody(), tab.up())));
+                else
+                    sb.append(String.format("if %s:\n%s\n", toString(branch.getCondition()), toString(branch.getBody(), tab)));
             } else {
-                sb.append(String.format("%selif %s:\n%s\n", tab, toString(branch.getCondition()), toString(branch.getBody(), tab)));
+                if (!(branch.getBody() instanceof CompoundStatement))
+                    sb.append(String.format("%selif %s:\n%s\n", tab, toString(branch.getCondition()), toString(branch.getBody(), tab.up())));
+                else
+                    sb.append(String.format("%selif %s:\n%s\n", tab, toString(branch.getCondition()), toString(branch.getBody(), tab)));
             }
         }
         if (node.hasElseBranch()) {
-            sb.append(String.format("%selse:\n%s\n", tab, toString(node.getElseBranch(), tab)));
+            if (!(node.getElseBranch() instanceof CompoundStatement))
+                sb.append(String.format("%selse:\n%s\n", tab, toString(node.getElseBranch(), tab.up())));
+            else
+                sb.append(String.format("%selse:\n%s\n", tab, toString(node.getElseBranch(), tab)));
         }
         return sb.toString().stripTrailing();
     }
@@ -870,6 +882,9 @@ public class PythonViewer extends LanguageViewer {
         node = parenFiller.process(node);
         String pattern = "";
         Expression expr = node.getArgument();
+
+        boolean expressionMode = getConfigParameter(ExpressionMode.class).orElse(false);
+
         if (node instanceof UnaryPlusOp) {
             pattern = "+%s";
         } else if (node instanceof UnaryMinusOp) {
@@ -882,7 +897,7 @@ public class PythonViewer extends LanguageViewer {
         } else if (node instanceof InversionOp) {
             pattern = "~%s";
         } else if (node instanceof PostfixDecrementOp || node instanceof PrefixDecrementOp) {
-            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            boolean exprRepr = origin == null && expressionMode;
             Node parent = origin == null ? null : origin.findParentOfNode(node);
             if (exprRepr || parent instanceof Expression) {
                 return String.format("%s := %s + 1", toString(expr), toString(expr));
@@ -890,7 +905,7 @@ public class PythonViewer extends LanguageViewer {
                 pattern = "%s -= 1";
             }
         } else if (node instanceof PostfixIncrementOp || node instanceof PrefixIncrementOp) {
-            boolean exprRepr = origin == null && getConfigParameter("expressionMode").getBooleanValue();
+            boolean exprRepr = origin == null && expressionMode;
             Node parent = origin == null ? null : origin.findParentOfNode(node);
             if (exprRepr || parent instanceof Expression) {
                 return String.format("%s := %s + 1", toString(expr), toString(expr));
@@ -1070,6 +1085,6 @@ public class PythonViewer extends LanguageViewer {
             case PrefixDecrementOp op -> "-=";
             default -> null;
         };
-        return translator.getTokenizer().getOperatorByTokenName(tok);
+        return tokenizer.getOperatorByTokenName(tok);
     }
 }
