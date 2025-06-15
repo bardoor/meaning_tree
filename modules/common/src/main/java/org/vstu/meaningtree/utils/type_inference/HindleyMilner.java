@@ -2,7 +2,9 @@ package org.vstu.meaningtree.utils.type_inference;
 
 import org.jetbrains.annotations.NotNull;
 import org.vstu.meaningtree.nodes.*;
+import org.vstu.meaningtree.nodes.declarations.Annotation;
 import org.vstu.meaningtree.nodes.declarations.VariableDeclaration;
+import org.vstu.meaningtree.nodes.declarations.components.DeclarationArgument;
 import org.vstu.meaningtree.nodes.declarations.components.VariableDeclarator;
 import org.vstu.meaningtree.nodes.expressions.BinaryExpression;
 import org.vstu.meaningtree.nodes.expressions.Literal;
@@ -480,12 +482,32 @@ public class HindleyMilner {
 
         variableDeclaration.setType(chooseGeneralType(types));
     }
-    
+
     public static void inference(@NotNull Declaration declaration, @NotNull TypeScope scope) {
         switch (declaration) {
             case VariableDeclaration variableDeclaration -> inference(variableDeclaration, scope);
+            case DeclarationArgument declarationArgument -> inference(declarationArgument, scope);
+            case Annotation annotation -> inference(List.of(annotation.getArguments()), scope);
             default -> throw new IllegalStateException("Unexpected declaration type: " + declaration.getClass());
         }
+    }
+
+    public static void inference(@NotNull DeclarationArgument declarationArgument, @NotNull TypeScope scope) {
+        Type type;
+        if (declarationArgument.getType() != null
+                && !(declarationArgument.getType() instanceof UnknownType)) {
+            type = declarationArgument.getType();
+        }
+        else {
+            if (declarationArgument.hasInitialExpression()) {
+                type = inference(declarationArgument.getInitialExpression(), scope);
+            }
+            else {
+                type = new UnknownType();
+            }
+        }
+
+        scope.changeVariableType(declarationArgument.getName(), type);
     }
 
     public static void inference(@NotNull List<Node> nodes, @NotNull TypeScope scope) {
@@ -500,6 +522,7 @@ public class HindleyMilner {
                 case SwitchStatement switchStatement -> inference(switchStatement, scope);
                 case VariableDeclaration variableDeclaration -> inference(variableDeclaration, scope);
                 case VariableDeclarator variableDeclarator -> inference(variableDeclarator, scope);
+                case Expression expression -> inference(expression, scope);
                 case null, default -> {
                     List<Node> nodes_ = node.allChildren()
                             .stream()
@@ -515,7 +538,7 @@ public class HindleyMilner {
                         } else if (node_ instanceof Declaration d) {
                             inference(d, scope);
                         } else {
-                            throw new IllegalArgumentException("Unsupported node type: " + node_.getClass());
+                            inference(List.of(node_), scope);
                         }
                     }
                 }
